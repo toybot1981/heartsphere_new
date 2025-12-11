@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
-    List<JournalEntry> findByUserId(Long userId);
-    List<JournalEntry> findByWorldId(Long worldId);
-    List<JournalEntry> findByEraId(Long eraId);
-    List<JournalEntry> findByCharacterId(Long characterId);
+public interface JournalEntryRepository extends JpaRepository<JournalEntry, String> {
+    List<JournalEntry> findByUser_Id(Long userId);
+    List<JournalEntry> findByWorld_Id(Long worldId);
+    List<JournalEntry> findByEra_Id(Long eraId);
+    List<JournalEntry> findByCharacter_Id(Long characterId);
 }

@@ -27,6 +27,9 @@ public class Era {
     @Column(name = "end_year")
     private Integer endYear;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     @ManyToOne
     @JoinColumn(name = "world_id", nullable = false)
     private World world;

@@ -4,7 +4,8 @@ import { GameState } from '../types';
 
 const DB_NAME = 'HeartSphereDB';
 const STORE_NAME = 'gameState';
-const DB_VERSION = 1;
+const CUSTOM_SCENE_MAPPINGS_STORE = 'customSceneMappings';
+const DB_VERSION = 2;
 const LEGACY_STORAGE_KEY = 'HEARTSPHERE_MEMORY_CORE_V1';
 
 // Definte a partial type for saving to avoid saving unnecessary UI state
@@ -33,6 +34,9 @@ export const storageService = {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME);
         }
+        if (!db.objectStoreNames.contains(CUSTOM_SCENE_MAPPINGS_STORE)) {
+          db.createObjectStore(CUSTOM_SCENE_MAPPINGS_STORE);
+        }
       };
     });
   },
@@ -57,7 +61,9 @@ export const storageService = {
         settings: state.settings,
         mailbox: state.mailbox,
         lastLoginTime: state.lastLoginTime,
-        sceneMemories: state.sceneMemories || {}, 
+        sceneMemories: state.sceneMemories || {},
+        userWorldScenes: state.userWorldScenes || [], // Save remote world data for local-first loading
+        showWelcomeOverlay: state.showWelcomeOverlay // Save welcome overlay state
       };
 
       const db = await storageService.initDB();
@@ -152,6 +158,8 @@ export const storageService = {
         mailbox: currentState.mailbox,
         lastLoginTime: currentState.lastLoginTime,
         sceneMemories: currentState.sceneMemories || {},
+        userWorldScenes: currentState.userWorldScenes || [],
+        showWelcomeOverlay: currentState.showWelcomeOverlay
       };
       return JSON.stringify(stateToSave);
   },
@@ -177,6 +185,46 @@ export const storageService = {
     } catch (e) {
       console.error("Restore failed:", e);
       return false;
+    }
+  },
+
+  /**
+   * Save custom scene mappings to IndexedDB
+   */
+  saveCustomSceneMappings: async (mappings: { [sceneId: string]: number }): Promise<void> => {
+    try {
+      const db = await storageService.initDB();
+      const transaction = db.transaction(CUSTOM_SCENE_MAPPINGS_STORE, "readwrite");
+      const store = transaction.objectStore(CUSTOM_SCENE_MAPPINGS_STORE);
+      const request = store.put(mappings, 'customSceneMappings');
+
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    } catch (e) {
+      console.error("Error saving custom scene mappings:", e);
+      throw e;
+    }
+  },
+
+  /**
+   * Load custom scene mappings from IndexedDB
+   */
+  getCustomSceneMappings: async (): Promise<{ [sceneId: string]: number } | null> => {
+    try {
+      const db = await storageService.initDB();
+      const transaction = db.transaction(CUSTOM_SCENE_MAPPINGS_STORE, "readonly");
+      const store = transaction.objectStore(CUSTOM_SCENE_MAPPINGS_STORE);
+      const request = store.get('customSceneMappings');
+
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    } catch (e) {
+      console.error("Error loading custom scene mappings:", e);
+      return null;
     }
   }
 };

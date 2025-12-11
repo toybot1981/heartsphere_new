@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import java.util.UUID;
 
 import java.time.LocalDateTime;
 
@@ -12,8 +13,17 @@ import java.time.LocalDateTime;
 @Table(name = "journal_entries")
 public class JournalEntry {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+    
+    @PrePersist
+    public void generateIdAndTimestamp() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+        if (this.timestamp == null) {
+            this.timestamp = System.currentTimeMillis();
+        }
+    }
 
     @Column(nullable = false)
     private String title;
@@ -23,6 +33,9 @@ public class JournalEntry {
 
     @Column(name = "entry_date")
     private LocalDateTime entryDate;
+
+    @Column(nullable = false)
+    private Long timestamp;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

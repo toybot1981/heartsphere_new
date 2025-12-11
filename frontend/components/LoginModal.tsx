@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
-import { authApi } from '../services/api';
+import { authApi, wechatApi } from '../services/api';
 
 interface LoginModalProps {
-  onLoginSuccess: (method: 'password' | 'wechat', identifier: string) => void;
+  onLoginSuccess: (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => void;
   onCancel: () => void;
 }
 
@@ -60,7 +60,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
           const response = await authApi.login(username, password);
           // 保存token到本地存储
           localStorage.setItem('auth_token', response.token);
-          onLoginSuccess('password', username);
+          onLoginSuccess('password', username, response.isFirstLogin, response.worlds);
       } catch (err: any) {
           setError(err.message || '登录失败，请检查用户名和密码');
       } finally {
@@ -87,7 +87,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
           const response = await authApi.register(registerUsername, registerEmail, registerPassword);
           // 保存token到本地存储
           localStorage.setItem('auth_token', response.token);
-          onLoginSuccess('password', registerUsername);
+          onLoginSuccess('password', registerUsername, response.isFirstLogin, response.worlds);
       } catch (err: any) {
           setRegisterError(err.message || '注册失败，请稍后重试');
       } finally {
@@ -103,12 +103,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
           const response = await wechatApi.login('mock_wechat_code');
           // 保存token到本地存储
           localStorage.setItem('auth_token', response.token);
-          onLoginSuccess('wechat', response.username);
+          onLoginSuccess('wechat', response.username, response.isFirstLogin);
       } catch (err: any) {
           console.error('微信登录失败:', err);
           // 模拟成功
           setTimeout(() => {
-              onLoginSuccess('wechat', 'wx_user_' + Date.now());
+              onLoginSuccess('wechat', 'wx_user_' + Date.now(), true);
           }, 1000);
       }
   };

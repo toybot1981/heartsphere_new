@@ -14,11 +14,17 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect }) => {
       className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-400/50"
     >
       <div className="absolute inset-0 bg-gray-900">
-        <img 
-          src={scene.imageUrl} 
-          alt={scene.name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        {scene.imageUrl ? (
+          <img 
+            src={scene.imageUrl} 
+            alt={scene.name}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center">
+            <div className="text-6xl opacity-30">✨</div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-90 transition-opacity group-hover:opacity-75" />
       </div>
 

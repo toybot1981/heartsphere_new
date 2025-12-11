@@ -1,8 +1,9 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, MouseEvent, ChangeEvent } from 'react';
 import { JournalEntry } from '../types';
 import { Button } from './Button';
 import { geminiService } from '../services/gemini';
+import { imageApi } from '../services/api';
 
 interface RealWorldScreenProps {
   entries: JournalEntry[];
@@ -31,12 +32,16 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const [mirrorInsight, setMirrorInsight] = useState<string | null>(null);
   const [isConsultingMirror, setIsConsultingMirror] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Handlers ---
 
-  const handleCreateClick = () => {
+  const handleCreateClick = (event: MouseEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
     setSelectedEntry(null);
     setNewTitle('');
     setNewContent('');
@@ -46,7 +51,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     setIsCreating(true);
   };
 
-  const handleEditClick = (entry: JournalEntry) => {
+  const handleEditClick = (entry: JournalEntry, event?: MouseEvent<HTMLElement>): void => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     setSelectedEntry(entry);
     setNewTitle(entry.title);
     setNewContent(entry.content);
@@ -56,7 +65,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     setIsCreating(true);
   };
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e: MouseEvent<HTMLButtonElement>): void => {
       e.stopPropagation();
       if (confirm('确定要删除这篇日记吗？')) {
           onDeleteEntry(id);
@@ -67,55 +76,182 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
+    console.log("=== [RealWorldScreen] 开始保存日志 ===");
+    
+    // 1. 记录保存开始时的状态
+    console.log("[步骤1/6] 保存日志初始参数:", {
+      timestamp: new Date().toISOString(),
+      newTitle: newTitle.trim(),
+      newContent: newContent.trim(),
+      uploadedImageUrl: uploadedImageUrl ? "[存在图片URL]" : "无图片",
+      autoGenerateImage: autoGenerateImage,
+      isEditing: isEditing,
+      hasSelectedEntry: !!selectedEntry,
+      selectedEntryId: selectedEntry?.id,
+      mirrorInsight: mirrorInsight ? "[存在镜像洞察]" : "无镜像洞察"
+    });
+    
+    // 2. 表单验证分支
+    console.log("[步骤2/6] 开始表单验证");
     if (!newTitle.trim() || !newContent.trim()) {
+        console.error("[步骤2/6] 表单验证失败: 标题和内容不能为空");
         alert("标题和内容不能为空");
+        console.log("=== [RealWorldScreen] 保存日志失败: 表单验证不通过 ===");
         return;
     }
     
+    console.log("[步骤2/6] 表单验证通过，继续处理");
+    
     let finalImageUrl = uploadedImageUrl;
 
-    // Auto-generate image if enabled, no upload, and creating new or content changed significantly
-    if (!finalImageUrl && autoGenerateImage) {
+    // 3. 图片处理分支
+    console.log("[步骤3/6] 检查图片状态");
+    // 如果uploadedImageUrl是base64，先上传
+    if (finalImageUrl && finalImageUrl.startsWith('data:')) {
+        console.log("[步骤3/6] 检测到base64图片，先上传到服务器");
         setIsGeneratingImage(true);
         try {
-            const generated = await geminiService.generateMoodImage(newContent);
-            if (generated) finalImageUrl = generated;
-        } catch (e) {
-            console.error("Auto image generation failed", e);
+            const token = localStorage.getItem('auth_token');
+            const result = await imageApi.uploadBase64Image(finalImageUrl, 'journal', token || undefined);
+            if (result.success && result.url) {
+                finalImageUrl = result.url;
+                console.log("[步骤3/6] Base64图片上传成功:", finalImageUrl);
+            } else {
+                console.warn("[步骤3/6] Base64图片上传失败，使用base64");
+            }
+        } catch (error) {
+            console.error("[步骤3/6] Base64图片上传异常:", error);
         } finally {
             setIsGeneratingImage(false);
         }
     }
+    
+    // 如果还没有图片且启用了自动生成
+    if (!finalImageUrl && autoGenerateImage) {
+        console.log("[步骤3/6] 开始自动生成图片");
+        setIsGeneratingImage(true);
+        try {
+            console.log("[步骤3/6] 调用geminiService.generateMoodImage生成图片");
+            const generated = await geminiService.generateMoodImage(newContent);
+            console.log("[步骤3/6] 图片生成结果:", generated ? "[生成成功]" : "[生成失败]");
+            if (generated) {
+                // 如果生成的是base64，也上传
+                if (generated.startsWith('data:')) {
+                    const token = localStorage.getItem('auth_token');
+                    const uploadResult = await imageApi.uploadBase64Image(generated, 'journal', token || undefined);
+                    if (uploadResult.success && uploadResult.url) {
+                        finalImageUrl = uploadResult.url;
+                        console.log("[步骤3/6] 生成的base64图片上传成功");
+                    } else {
+                        finalImageUrl = generated;
+                        console.log("[步骤3/6] 生成的base64图片上传失败，使用base64");
+                    }
+                } else {
+                    finalImageUrl = generated;
+                    console.log("[步骤3/6] 图片生成成功，使用生成的图片URL");
+                }
+            } else {
+                console.log("[步骤3/6] 图片生成成功，但返回为空");
+            }
+        } catch (e: unknown) {
+            console.error("[步骤3/6] 自动图片生成失败:", e);
+        } finally {
+            setIsGeneratingImage(false);
+            console.log("[步骤3/6] 图片生成流程结束，最终imageUrl:", finalImageUrl ? "[存在图片URL]" : "无图片");
+        }
+    } else {
+        console.log("[步骤3/6] 跳过图片生成，使用已上传图片或不使用图片");
+    }
 
+    // 4. 保存日志分支
+    console.log("[步骤4/6] 开始保存日志到应用状态");
     if (isEditing && selectedEntry) {
-        onUpdateEntry({
+        console.log("[步骤4/6] 进入编辑模式保存分支");
+        console.log("[步骤4/6] 要更新的日志ID:", selectedEntry.id);
+        
+        const updatedEntry = {
             ...selectedEntry,
             title: newTitle,
             content: newContent,
             imageUrl: finalImageUrl,
             insight: mirrorInsight || undefined
+        };
+        
+        console.log("[步骤4/6] 准备更新的日志内容:", {
+            id: updatedEntry.id,
+            title: updatedEntry.title,
+            contentLength: updatedEntry.content.length,
+            hasImage: !!updatedEntry.imageUrl,
+            hasInsight: !!updatedEntry.insight
         });
+        
+        console.log("[步骤4/6] 调用App.tsx中的onUpdateEntry方法");
+        onUpdateEntry(updatedEntry);
+        console.log("[步骤4/6] onUpdateEntry调用完成");
     } else {
+        console.log("[步骤4/6] 进入新建模式保存分支");
+        
+        console.log("[步骤4/6] 准备创建的日志内容:", {
+            title: newTitle,
+            contentLength: newContent.length,
+            hasImage: !!finalImageUrl,
+            hasInsight: !!mirrorInsight
+        });
+        
+        console.log("[步骤4/6] 调用App.tsx中的onAddEntry方法");
         onAddEntry(newTitle, newContent, finalImageUrl, mirrorInsight || undefined);
+        console.log("[步骤4/6] onAddEntry调用完成");
     }
+    
+    // 5. 清理状态
+    console.log("[步骤5/6] 开始清理表单状态");
     setIsCreating(false);
     setIsEditing(false);
     setSelectedEntry(null);
+    console.log("[步骤5/6] 表单状态清理完成");
+    
+    // 6. 保存完成
+    console.log("[步骤6/6] 日志保存流程全部完成");
+    console.log("=== [RealWorldScreen] 保存日志结束 ===");
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setUploadedImageUrl(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 先显示预览（base64）
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        setUploadedImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 自动上传到服务器
+    setIsUploadingImage(true);
+    setUploadError('');
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const result = await imageApi.uploadImage(file, 'journal', token || undefined);
+      
+      if (result.success && result.url) {
+        // 使用服务器返回的URL替换base64预览
+        setUploadedImageUrl(result.url);
+        console.log('图片上传成功:', result.url);
+      } else {
+        throw new Error(result.error || '上传失败');
+      }
+    } catch (err: any) {
+      console.error('图片上传失败:', err);
+      setUploadError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
+      // 保持base64预览
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
-  const handleConsultMirrorClick = async () => {
+  const handleConsultMirrorClick = async (): Promise<void> => {
       if (!newContent.trim()) return;
       setIsConsultingMirror(true);
       
@@ -127,7 +263,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           if (insight) {
               setMirrorInsight(insight);
           }
-      } catch (e) {
+      } catch (e: unknown) {
           alert("本我镜像连接失败，请稍后重试。");
       } finally {
           setIsConsultingMirror(false);
@@ -172,7 +308,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       {sortedEntries.map(entry => (
                           <div 
                             key={entry.id} 
-                            onClick={() => handleEditClick(entry)}
+                            onClick={(event: MouseEvent<HTMLDivElement>) => handleEditClick(entry, event)}
                             className="group bg-slate-800 rounded-2xl border border-slate-700 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-900/10 transition-all cursor-pointer overflow-hidden flex flex-col"
                           >
                               {entry.imageUrl && (
@@ -194,14 +330,14 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                       <span className="text-xs text-slate-600">{new Date(entry.timestamp).toLocaleDateString()}</span>
                                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button 
-                                            onClick={(e) => { e.stopPropagation(); onExplore(entry); }} 
+                                            onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
                                             className="p-2 bg-indigo-600 rounded-full hover:bg-indigo-500 text-white shadow-lg"
                                             title="带着问题进入心域"
                                           >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                           </button>
                                           <button 
-                                            onClick={(e) => handleDeleteClick(entry.id, e)} 
+                                            onClick={(e: MouseEvent<HTMLButtonElement>) => handleDeleteClick(entry.id, e)} 
                                             className="p-2 bg-slate-700 rounded-full hover:bg-red-900/50 hover:text-red-400 text-slate-400"
                                           >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
@@ -226,14 +362,14 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
                       <input 
                           value={newTitle} 
-                          onChange={(e) => setNewTitle(e.target.value)} 
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value)} 
                           placeholder="标题 (例如: 深夜的思考)" 
                           className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:border-cyan-500 outline-none font-bold"
                       />
                       
                       <textarea 
                           value={newContent} 
-                          onChange={(e) => setNewContent(e.target.value)} 
+                          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewContent(e.target.value)} 
                           placeholder="在这里写下你的想法、困惑或梦境..." 
                           className="w-full flex-1 min-h-[200px] bg-slate-900/50 border border-slate-600 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:border-cyan-500 outline-none resize-none leading-relaxed"
                       />
@@ -266,21 +402,37 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           
                           <div className="relative flex-1">
                               <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                onClick={() => !isUploadingImage && fileInputRef.current?.click()}
+                                disabled={isUploadingImage}
+                                className="w-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-wait"
                               >
-                                  <span>🖼️</span> {uploadedImageUrl ? '更换图片' : '上传/生成配图'}
+                                  {isUploadingImage ? (
+                                      <>
+                                          <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
+                                          <span>上传中...</span>
+                                      </>
+                                  ) : (
+                                      <>
+                                          <span>🖼️</span> {uploadedImageUrl ? '更换图片' : '上传/生成配图'}
+                                      </>
+                                  )}
                               </button>
-                              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" disabled={isUploadingImage} />
                           </div>
                       </div>
 
                       {uploadedImageUrl && (
                           <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-600">
                               <img src={uploadedImageUrl} className="w-full h-full object-cover" alt="Preview" />
-                              <button onClick={() => setUploadedImageUrl(undefined)} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors">&times;</button>
+                              <button 
+                                  onClick={() => setUploadedImageUrl(undefined)} 
+                                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                              >
+                                  ×
+                              </button>
                           </div>
                       )}
+                      {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
                   </div>
 
                   <div className="pt-4 mt-2 border-t border-slate-700 flex justify-end gap-3">

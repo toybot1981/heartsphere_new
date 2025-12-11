@@ -17,6 +17,10 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   # CORS 配置
   web:
     cors:
@@ -37,3 +41,13 @@ wechat:
   app-id: ${WECHAT_APP_ID:your-wechat-app-id}
   app-secret: ${WECHAT_APP_SECRET:your-wechat-app-secret}
   redirect-uri: ${WECHAT_REDIRECT_URI:http://localhost:3000/login/wechat}
+
+# 图片存储配置
+app:
+  image:
+    storage:
+      type: ${IMAGE_STORAGE_TYPE:local} # local, oss, s3
+      local:
+        path: ${IMAGE_STORAGE_PATH:./uploads/images}
+      base-url: ${IMAGE_BASE_URL:http://localhost:8081/api/images}  # 注意：端口应与application.properties中的server.port一致，实际访问URL会自动添加 /files/ 前缀
+      max-size: ${IMAGE_MAX_SIZE:10485760} # 10MB (单位：字节)

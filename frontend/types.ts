@@ -81,6 +81,8 @@ export interface WorldScene {
   characters: Character[];
   mainStory?: Character;
   memories?: EraMemory[]; // Personal memories specific to this era
+  scenes?: any[]; // Scenes for this era
+  worldId?: number; // Associated world ID
 }
 
 export type AIProvider = 'gemini' | 'openai' | 'qwen' | 'doubao';
@@ -181,6 +183,7 @@ export interface GameState {
 
   customScenarios: CustomScenario[];
   customScenes: WorldScene[];
+  userWorldScenes: WorldScene[]; // 用户从后端获取的世界场景
   journalEntries: JournalEntry[];
   activeJournalEntryId: string | null; // Track which entry is currently being "explored"
   currentScenarioState?: {
@@ -193,4 +196,5 @@ export interface GameState {
   sceneMemories: Record<string, EraMemory[]>; // Map sceneId -> memories
   
   debugLogs: DebugLog[]; // Store runtime logs
+  showWelcomeOverlay: boolean; // 是否显示首次登录欢迎蒙层
 }

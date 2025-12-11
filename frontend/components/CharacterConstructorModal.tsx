@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Character, WorldScene } from '../types';
 import { geminiService } from '../services/gemini';
+import { imageApi } from '../services/api';
 import { Button } from './Button';
 
 interface CharacterConstructorModalProps {
@@ -19,6 +20,11 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   
   // Edit Mode State
   const [activeTab, setActiveTab] = useState<'basic' | 'personality' | 'depth' | 'visuals'>('basic');
+  
+  // Upload states
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingBackground, setIsUploadingBackground] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   
   // Refs for uploads
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -72,18 +78,54 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
     }
   };
 
-  const handleFileUpload = (type: 'avatar' | 'background', e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (type: 'avatar' | 'background', e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file && generatedCharacter) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
+      if (!file || !generatedCharacter) return;
+
+      // 先显示预览（base64）
+      const reader = new FileReader();
+      reader.onloadend = () => {
+          if (type === 'avatar') {
+              updateCharacter('avatarUrl', reader.result as string);
+          } else {
+              updateCharacter('backgroundUrl', reader.result as string);
+          }
+      };
+      reader.readAsDataURL(file);
+
+      // 自动上传到服务器
+      if (type === 'avatar') {
+          setIsUploadingAvatar(true);
+      } else {
+          setIsUploadingBackground(true);
+      }
+      setUploadError('');
+      
+      try {
+          const token = localStorage.getItem('auth_token');
+          const result = await imageApi.uploadImage(file, 'character', token || undefined);
+          
+          if (result.success && result.url) {
+              // 使用服务器返回的URL替换base64预览
               if (type === 'avatar') {
-                  updateCharacter('avatarUrl', reader.result as string);
+                  updateCharacter('avatarUrl', result.url);
               } else {
-                  updateCharacter('backgroundUrl', reader.result as string);
+                  updateCharacter('backgroundUrl', result.url);
               }
-          };
-          reader.readAsDataURL(file);
+              console.log('图片上传成功:', result.url);
+          } else {
+              throw new Error(result.error || '上传失败');
+          }
+      } catch (err: any) {
+          console.error('图片上传失败:', err);
+          setUploadError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
+          // 保持base64预览
+      } finally {
+          if (type === 'avatar') {
+              setIsUploadingAvatar(false);
+          } else {
+              setIsUploadingBackground(false);
+          }
       }
   };
 
@@ -189,12 +231,18 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  <span className="text-xs font-bold text-gray-400">角色头像</span>
                                  <div className="flex gap-2">
                                      <button onClick={() => handleGetPrompt('avatar')} className="text-[10px] text-pink-400 hover:text-pink-300">复制 Prompt</button>
-                                     <button onClick={() => avatarInputRef.current?.click()} className="text-[10px] bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">上传</button>
+                                     <button onClick={() => avatarInputRef.current?.click()} disabled={isUploadingAvatar} className="text-[10px] bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 disabled:opacity-50">
+                                         {isUploadingAvatar ? '上传中...' : '上传'}
+                                     </button>
                                  </div>
                              </div>
                              <input type="file" ref={avatarInputRef} onChange={e => handleFileUpload('avatar', e)} accept="image/*" className="hidden" />
                              <div className="flex justify-center">
-                                 <img src={generatedCharacter.avatarUrl} className="h-32 object-contain rounded" />
+                                 {generatedCharacter.avatarUrl ? (
+                                     <img src={generatedCharacter.avatarUrl} className="h-32 object-contain rounded" alt="Avatar" />
+                                 ) : (
+                                     <div className="h-32 w-32 bg-gray-700 rounded flex items-center justify-center text-gray-500 text-xs">暂无头像</div>
+                                 )}
                              </div>
                          </div>
 
@@ -204,14 +252,21 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  <span className="text-xs font-bold text-gray-400">背景场景</span>
                                  <div className="flex gap-2">
                                      <button onClick={() => handleGetPrompt('background')} className="text-[10px] text-pink-400 hover:text-pink-300">复制 Prompt</button>
-                                     <button onClick={() => bgInputRef.current?.click()} className="text-[10px] bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">上传</button>
+                                     <button onClick={() => bgInputRef.current?.click()} disabled={isUploadingBackground} className="text-[10px] bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 disabled:opacity-50">
+                                         {isUploadingBackground ? '上传中...' : '上传'}
+                                     </button>
                                  </div>
                              </div>
                              <input type="file" ref={bgInputRef} onChange={e => handleFileUpload('background', e)} accept="image/*" className="hidden" />
                              <div className="flex justify-center">
-                                 <img src={generatedCharacter.backgroundUrl} className="h-32 w-full object-cover rounded" />
+                                 {generatedCharacter.backgroundUrl ? (
+                                     <img src={generatedCharacter.backgroundUrl} className="h-32 w-full object-cover rounded" alt="Background" />
+                                 ) : (
+                                     <div className="h-32 w-full bg-gray-700 rounded flex items-center justify-center text-gray-500 text-xs">暂无背景</div>
+                                 )}
                              </div>
                          </div>
+                         {uploadError && <p className="text-xs text-red-400 mt-2">{uploadError}</p>}
                      </div>
                  )}
              </div>

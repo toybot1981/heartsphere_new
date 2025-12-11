@@ -1,5 +1,6 @@
 package com.heartsphere.config;
 
+import com.heartsphere.security.JwtAuthenticationFilter;
 import com.heartsphere.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -50,6 +51,11 @@ public class WebSecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 // 启用默认的CORS配置，使用application.yml中的配置
@@ -75,7 +81,7 @@ public class WebSecurityConfig {
                 // 配置授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 允许公开访问的端点
-                        .requestMatchers("/api/auth/**", "/api/wechat/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/admin/auth/**", "/api/wechat/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // 允许所有OPTIONS请求
                         .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
                         // 允许所有请求，方便开发测试
@@ -83,6 +89,9 @@ public class WebSecurityConfig {
 
         // 配置认证提供者
         http.authenticationProvider(authenticationProvider());
+
+        // 添加JWT过滤器
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

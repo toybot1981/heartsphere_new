@@ -41,6 +41,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         customCharacters: {},
         customScenarios: [],
         customScenes: [],
+        userWorldScenes: [],
         journalEntries: [],
         activeJournalEntryId: null,
         settings: { 

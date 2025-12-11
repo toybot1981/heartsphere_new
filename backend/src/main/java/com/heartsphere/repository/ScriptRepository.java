@@ -8,7 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ScriptRepository extends JpaRepository<Script, Long> {
-    List<Script> findByUserId(Long userId);
-    List<Script> findByWorldId(Long worldId);
-    List<Script> findByEraId(Long eraId);
+    List<Script> findByUser_Id(Long userId);
+    List<Script> findByWorld_Id(Long worldId);
+    List<Script> findByEra_Id(Long eraId);
 }

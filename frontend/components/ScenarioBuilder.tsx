@@ -27,8 +27,8 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({ initialScenari
     if (initialScenario) {
       setTitle(initialScenario.title);
       setDescription(initialScenario.description);
-      setNodes(initialScenario.nodes);
-      setSelectedNodeId(initialScenario.startNodeId);
+      setNodes(initialScenario.nodes || { 'start': { id: 'start', title: '开场场景', prompt: '描述一个阳光明媚的大学早晨。介绍樱向用户跑来的场景。', options: [] } });
+      setSelectedNodeId(initialScenario.startNodeId || 'start');
     }
   }, [initialScenario]);
 
@@ -158,7 +158,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({ initialScenari
           {currentNode ? (
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
-               <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center font-bold text-lg">{Object.keys(nodes).indexOf(selectedNodeId) + 1}</div>
+               <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center font-bold text-lg">{nodes && selectedNodeId ? Object.keys(nodes).indexOf(selectedNodeId) + 1 : 1}</div>
                <div className="flex-1">
                  <label className="block text-xs text-gray-400 mb-1">节点标题 (内部标识)</label>
                  <input value={currentNode.title} onChange={e => updateNode('title', e.target.value)} className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 focus:border-pink-500 outline-none font-bold text-lg" />

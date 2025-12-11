@@ -3,6 +3,10 @@ package com.heartsphere.controller;
 import com.heartsphere.dto.AuthResponse;
 import com.heartsphere.entity.User;
 import com.heartsphere.repository.UserRepository;
+import com.heartsphere.entity.World;
+import com.heartsphere.repository.WorldRepository;
+import java.util.List;
+import com.heartsphere.service.InitializationService;
 import com.heartsphere.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +31,12 @@ public class WeChatController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private InitializationService initializationService;
+
+    @Autowired
+    private WorldRepository worldRepository;
 
     @Value("${wechat.app-id}")
     private String wechatAppId;
@@ -67,10 +77,27 @@ public class WeChatController {
                     return userRepository.save(newUser);
                 });
 
+        // 使用新添加的findByUserId方法查询用户的世界
+        List<World> userWorlds = worldRepository.findByUserId(user.getId());
+        boolean isFirstLogin = userWorlds.isEmpty();
+        if (isFirstLogin) {
+            // 初始化用户数据（世界、时代、角色）
+            initializationService.initializeUserData(user);
+        }
+
         // 生成JWT令牌
         String jwt = jwtUtils.generateJwtTokenFromUsername(user.getUsername());
 
-        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getNickname(), user.getAvatar()));
+        // 返回登录响应，包含是否是首次登录的标识
+        return ResponseEntity.ok(Map.of(
+                "token", jwt,
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "email", user.getEmail(),
+                "nickname", user.getNickname(),
+                "avatar", user.getAvatar(),
+                "isFirstLogin", isFirstLogin
+        ));
     }
 
     @GetMapping("/appid")

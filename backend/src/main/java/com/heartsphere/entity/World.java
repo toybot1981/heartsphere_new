@@ -32,4 +32,8 @@ public class World {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    
+    // 冗余字段，用于Spring Data JPA的findByUserId查询
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
 }

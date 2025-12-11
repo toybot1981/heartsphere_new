@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppSettings, GameState, AIProvider, WorldScene, Character, CustomScenario } from '../types';
 import { Button } from '../components/Button';
 import { WORLD_SCENES } from '../constants';
+import { adminApi, imageApi } from '../services/api';
 
 interface AdminScreenProps {
     gameState: GameState;
@@ -27,14 +28,14 @@ const AdminSidebarItem: React.FC<{ label: string; icon: string; active: boolean;
     </button>
 );
 
-const AdminHeader: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
+const AdminHeader: React.FC<{ title: string; onBack: () => void; onLogout: () => void }> = ({ title, onBack, onLogout }) => (
     <div className="h-16 bg-slate-900 border-b border-slate-700 flex justify-between items-center px-6 shrink-0">
         <h2 className="text-lg font-bold text-slate-100">{title}</h2>
         <div className="flex items-center gap-4">
             <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded border border-slate-700">Admin Mode</span>
-            <button onClick={onBack} className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
+            <button onClick={onLogout} className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                退出后台
+                退出登录
             </button>
         </div>
     </div>
@@ -75,7 +76,11 @@ const ConfigSection: React.FC<{ title: string; children: React.ReactNode }> = ({
 
 export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGameState, onResetWorld, onBack }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [adminToken, setAdminToken] = useState<string | null>(null);
+    const [loginError, setLoginError] = useState('');
+    const [loading, setLoading] = useState(false);
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'settings'>('dashboard');
@@ -87,9 +92,97 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     
     // Form Data Holders
     const [formData, setFormData] = useState<any>({});
+    
+    // Image upload states
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isUploadingBackground, setIsUploadingBackground] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    
+    // File input refs
+    const eraImageInputRef = useRef<HTMLInputElement>(null);
+    const charAvatarInputRef = useRef<HTMLInputElement>(null);
+    const charBackgroundInputRef = useRef<HTMLInputElement>(null);
 
-    const handleLogin = () => {
-        if (password === 'admin' || password === 'heartsphere') setIsAuthenticated(true);
+    // 系统数据状态
+    const [systemWorlds, setSystemWorlds] = useState<any[]>([]);
+    const [systemEras, setSystemEras] = useState<any[]>([]);
+    const [systemCharacters, setSystemCharacters] = useState<any[]>([]);
+
+    // 检查本地存储的token
+    useEffect(() => {
+        console.log("========== [AdminScreen] 检查本地token ==========");
+        const token = localStorage.getItem('admin_token');
+        console.log("[AdminScreen] 本地token存在:", !!token);
+        if (token) {
+            console.log("[AdminScreen] 发现本地token，自动登录...");
+            setAdminToken(token);
+            setIsAuthenticated(true);
+            loadSystemData(token);
+        } else {
+            console.log("[AdminScreen] 未找到本地token，显示登录界面");
+        }
+    }, []);
+
+    const handleLogin = async () => {
+        console.log("========== [AdminScreen] 管理员登录 ==========");
+        console.log("[AdminScreen] 用户名:", username);
+        setLoginError('');
+        setLoading(true);
+        try {
+            console.log("[AdminScreen] 调用adminApi.login...");
+            const response = await adminApi.login(username, password);
+            console.log("[AdminScreen] 登录成功，收到token:", !!response.token);
+            setAdminToken(response.token);
+            localStorage.setItem('admin_token', response.token);
+            setIsAuthenticated(true);
+            console.log("[AdminScreen] 认证状态已更新，开始加载系统数据...");
+            await loadSystemData(response.token);
+            console.log("[AdminScreen] 登录流程完成");
+        } catch (error: any) {
+            console.error('[AdminScreen] 登录失败:', error);
+            console.error('[AdminScreen] 错误详情:', error.message || error);
+            setLoginError(error.message || '登录失败，请检查用户名和密码');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        setAdminToken(null);
+        localStorage.removeItem('admin_token');
+        setIsAuthenticated(false);
+        setUsername('');
+        setPassword('');
+    };
+
+    const loadSystemData = async (token: string) => {
+        console.log("========== [AdminScreen] 加载系统数据 ==========");
+        console.log("[AdminScreen] Token存在:", !!token);
+        try {
+            console.log("[AdminScreen] 开始并行加载系统数据...");
+            const [worlds, eras, characters] = await Promise.all([
+                adminApi.worlds.getAll(token),
+                adminApi.eras.getAll(token),
+                adminApi.characters.getAll(token)
+            ]);
+            console.log("[AdminScreen] 数据加载成功:", {
+                worlds: worlds.length,
+                eras: eras.length,
+                characters: characters.length
+            });
+            setSystemWorlds(worlds);
+            setSystemEras(eras);
+            setSystemCharacters(characters);
+            console.log("[AdminScreen] 系统数据状态已更新");
+        } catch (error) {
+            console.error('[AdminScreen] 加载系统数据失败:', error);
+            console.error('[AdminScreen] 错误详情:', error);
+            // 即使加载失败，也显示界面，只是数据为空
+            setSystemWorlds([]);
+            setSystemEras([]);
+            setSystemCharacters([]);
+        }
     };
 
     // --- CRUD Logic Wrappers ---
@@ -115,42 +208,45 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
 
     // --- Era (Scene) Management ---
     
-    const saveEra = () => {
-        // If editing a built-in scene (checked by ID presence in WORLD_SCENES), we must generate a new ID
-        // unless the user explicitly wants to "shadow" it (which can be complex).
-        // For simplicity: saving a built-in creates a custom copy.
-        const isBuiltIn = WORLD_SCENES.some(s => s.id === editingId);
-        const finalId = isBuiltIn ? `custom_${editingId}_${Date.now()}` : (editingId || `scene_${Date.now()}`);
-
-        const newScene: WorldScene = {
-            id: finalId,
-            name: formData.name || '未命名时代',
-            description: formData.description || '',
-            imageUrl: formData.imageUrl || 'https://picsum.photos/seed/default/800/1200',
-            characters: formData.characters || [],
-            mainStory: formData.mainStory
-        };
-
-        let updatedScenes = [...gameState.customScenes];
+    const saveEra = async () => {
+        if (!adminToken) return;
         
-        // If we are editing an existing custom scene
-        if (editingId && !isBuiltIn) {
-            updatedScenes = updatedScenes.map(s => s.id === editingId ? newScene : s);
-        } else {
-            // New creation or cloning built-in
-            updatedScenes.push(newScene);
-        }
+        try {
+            const dto = {
+                name: formData.name || '未命名时代',
+                description: formData.description || '',
+                imageUrl: formData.imageUrl || '',
+                startYear: formData.startYear || null,
+                endYear: formData.endYear || null,
+                isActive: formData.isActive !== undefined ? formData.isActive : true,
+                sortOrder: formData.sortOrder || 0
+            };
 
-        onUpdateGameState({ ...gameState, customScenes: updatedScenes });
-        switchToList();
+            if (editingId && typeof editingId === 'number') {
+                // 更新
+                await adminApi.eras.update(editingId, dto, adminToken);
+            } else {
+                // 创建
+                await adminApi.eras.create(dto, adminToken);
+            }
+            
+            // 重新加载数据
+            await loadSystemData(adminToken);
+            switchToList();
+        } catch (error: any) {
+            alert('保存失败: ' + (error.message || '未知错误'));
+        }
     };
 
-    const deleteEra = (id: string) => {
-        if (window.confirm('删除此时代将同时删除其下属的所有自定义角色。确定继续吗？')) {
-            const updatedScenes = gameState.customScenes.filter(s => s.id !== id);
-            const updatedChars = { ...gameState.customCharacters };
-            delete updatedChars[id];
-            onUpdateGameState({ ...gameState, customScenes: updatedScenes, customCharacters: updatedChars });
+    const deleteEra = async (id: number) => {
+        if (!adminToken) return;
+        if (!window.confirm('确定要删除这个系统时代吗？')) return;
+        
+        try {
+            await adminApi.eras.delete(id, adminToken);
+            await loadSystemData(adminToken);
+        } catch (error: any) {
+            alert('删除失败: ' + (error.message || '未知错误'));
         }
     };
 
@@ -301,16 +397,42 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                         <p className="text-slate-500 text-sm mt-2">HeartSphere Admin Console</p>
                     </div>
                     <div className="space-y-4">
-                        <input 
-                            type="password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-center tracking-widest"
-                            placeholder="输入密码 (admin)"
-                            autoFocus
-                        />
-                        <Button onClick={handleLogin} fullWidth className="bg-indigo-600 hover:bg-indigo-500 py-3">进入系统</Button>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-400 mb-2">用户名</label>
+                            <TextInput
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="请输入用户名"
+                                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                autoFocus
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-400 mb-2">密码</label>
+                            <TextInput
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="请输入密码"
+                                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                            />
+                        </div>
+                        {loginError && (
+                            <div className="text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded px-3 py-2">
+                                {loginError}
+                            </div>
+                        )}
+                        <Button
+                            onClick={handleLogin}
+                            disabled={loading || !username || !password}
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-3"
+                        >
+                            {loading ? '登录中...' : '进入系统'}
+                        </Button>
+                        <p className="text-xs text-slate-500 text-center mt-2">
+                            默认账号: admin / 123456
+                        </p>
                         <button onClick={onBack} className="w-full text-xs text-slate-600 hover:text-slate-400 mt-4">返回应用首页</button>
                     </div>
                 </div>
@@ -358,7 +480,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     activeSection === 'eras' ? '时代与场景管理' :
                     activeSection === 'characters' ? 'E-Soul 角色数据库' :
                     activeSection === 'scenarios' ? '互动剧本库' : '系统全局设置'
-                } onBack={onBack} />
+                } onBack={onBack} onLogout={handleLogout} />
 
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
                     
@@ -412,21 +534,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800">
-                                                {allScenes.map(scene => {
-                                                    const isSystem = WORLD_SCENES.some(s => s.id === scene.id);
+                                                {systemEras.map(era => {
                                                     return (
-                                                        <tr key={scene.id} className="hover:bg-slate-800/50 transition-colors">
-                                                            <td className="p-4"><img src={scene.imageUrl} className="w-12 h-16 object-cover rounded" alt="" /></td>
-                                                            <td className="p-4 font-bold text-white">
-                                                                {scene.name}
-                                                                {isSystem && <span className="ml-2 text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">SYSTEM</span>}
+                                                        <tr key={era.id} className="hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-4">
+                                                                {era.imageUrl ? (
+                                                                    <img src={era.imageUrl} className="w-12 h-16 object-cover rounded" alt="" />
+                                                                ) : (
+                                                                    <div className="w-12 h-16 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded flex items-center justify-center text-xs opacity-50">无图</div>
+                                                                )}
                                                             </td>
-                                                            <td className="p-4 text-sm text-slate-400 max-w-xs truncate">{scene.description}</td>
+                                                            <td className="p-4 font-bold text-white">
+                                                                {era.name}
+                                                                <span className="ml-2 text-[10px] bg-indigo-800 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-700">SYSTEM</span>
+                                                            </td>
+                                                            <td className="p-4 text-sm text-slate-400 max-w-xs truncate">{era.description}</td>
                                                             <td className="p-4 text-right space-x-2">
-                                                                <button onClick={() => switchToEdit(scene)} className="text-indigo-400 hover:text-white text-sm font-medium">
-                                                                    {isSystem ? '复刻/编辑' : '编辑'}
+                                                                <button onClick={() => switchToEdit(era)} className="text-indigo-400 hover:text-white text-sm font-medium">
+                                                                    编辑
                                                                 </button>
-                                                                {!isSystem && <button onClick={() => deleteEra(scene.id)} className="text-red-400 hover:text-white text-sm font-medium">删除</button>}
+                                                                <button onClick={() => deleteEra(era.id)} className="text-red-400 hover:text-white text-sm font-medium">删除</button>
                                                             </td>
                                                         </tr>
                                                     );
@@ -445,8 +572,61 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     <InputGroup label="背景简介">
                                         <TextArea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} rows={4} />
                                     </InputGroup>
-                                    <InputGroup label="封面图片 URL (建议 3:4 比例)">
-                                        <TextInput value={formData.imageUrl || ''} onChange={e => setFormData({...formData, imageUrl: e.target.value})} />
+                                    <InputGroup label="封面图片">
+                                        <div className="space-y-2">
+                                            <div className="flex gap-2">
+                                                <TextInput 
+                                                    value={formData.imageUrl || ''} 
+                                                    onChange={e => setFormData({...formData, imageUrl: e.target.value})} 
+                                                    placeholder="图片URL或点击上传"
+                                                />
+                                                <button 
+                                                    onClick={() => eraImageInputRef.current?.click()} 
+                                                    disabled={isUploadingImage}
+                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
+                                                >
+                                                    {isUploadingImage ? '上传中...' : '上传'}
+                                                </button>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                ref={eraImageInputRef} 
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    
+                                                    setIsUploadingImage(true);
+                                                    setUploadError('');
+                                                    
+                                                    try {
+                                                        const result = await imageApi.uploadImage(file, 'era', adminToken || undefined);
+                                                        if (result.success && result.url) {
+                                                            setFormData({...formData, imageUrl: result.url});
+                                                        } else {
+                                                            throw new Error(result.error || '上传失败');
+                                                        }
+                                                    } catch (err: any) {
+                                                        setUploadError('图片上传失败: ' + (err.message || '未知错误'));
+                                                    } finally {
+                                                        setIsUploadingImage(false);
+                                                    }
+                                                }} 
+                                                accept="image/*" 
+                                                className="hidden" 
+                                            />
+                                            {formData.imageUrl && (
+                                                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-600">
+                                                    <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button 
+                                                        onClick={() => setFormData({...formData, imageUrl: ''})} 
+                                                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+                                        </div>
                                     </InputGroup>
                                     <div className="flex justify-end gap-3 mt-8">
                                         <Button variant="ghost" onClick={switchToList}>取消</Button>
@@ -530,12 +710,117 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
 
                                         <div className="space-y-4">
                                             <h4 className="text-sm font-bold text-pink-400 border-b border-pink-900/30 pb-2">视觉与人设</h4>
-                                            <InputGroup label="头像 URL">
-                                                <TextInput value={formData.avatarUrl || ''} onChange={e => setFormData({...formData, avatarUrl: e.target.value})} />
+                                            <InputGroup label="头像">
+                                                <div className="space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <TextInput 
+                                                            value={formData.avatarUrl || ''} 
+                                                            onChange={e => setFormData({...formData, avatarUrl: e.target.value})} 
+                                                            placeholder="头像URL或点击上传"
+                                                        />
+                                                        <button 
+                                                            onClick={() => charAvatarInputRef.current?.click()} 
+                                                            disabled={isUploadingAvatar}
+                                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
+                                                        >
+                                                            {isUploadingAvatar ? '上传中...' : '上传'}
+                                                        </button>
+                                                    </div>
+                                                    <input 
+                                                        type="file" 
+                                                        ref={charAvatarInputRef} 
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            
+                                                            setIsUploadingAvatar(true);
+                                                            setUploadError('');
+                                                            
+                                                            try {
+                                                                const result = await imageApi.uploadImage(file, 'character', adminToken || undefined);
+                                                                if (result.success && result.url) {
+                                                                    setFormData({...formData, avatarUrl: result.url});
+                                                                } else {
+                                                                    throw new Error(result.error || '上传失败');
+                                                                }
+                                                            } catch (err: any) {
+                                                                setUploadError('头像上传失败: ' + (err.message || '未知错误'));
+                                                            } finally {
+                                                                setIsUploadingAvatar(false);
+                                                            }
+                                                        }} 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                    />
+                                                    {formData.avatarUrl && (
+                                                        <div className="relative w-20 h-20 rounded-full overflow-hidden border border-slate-600">
+                                                            <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                                            <button 
+                                                                onClick={() => setFormData({...formData, avatarUrl: ''})} 
+                                                                className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </InputGroup>
-                                            <InputGroup label="背景图 URL">
-                                                <TextInput value={formData.backgroundUrl || ''} onChange={e => setFormData({...formData, backgroundUrl: e.target.value})} />
+                                            <InputGroup label="背景">
+                                                <div className="space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <TextInput 
+                                                            value={formData.backgroundUrl || ''} 
+                                                            onChange={e => setFormData({...formData, backgroundUrl: e.target.value})} 
+                                                            placeholder="背景URL或点击上传"
+                                                        />
+                                                        <button 
+                                                            onClick={() => charBackgroundInputRef.current?.click()} 
+                                                            disabled={isUploadingBackground}
+                                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
+                                                        >
+                                                            {isUploadingBackground ? '上传中...' : '上传'}
+                                                        </button>
+                                                    </div>
+                                                    <input 
+                                                        type="file" 
+                                                        ref={charBackgroundInputRef} 
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            
+                                                            setIsUploadingBackground(true);
+                                                            setUploadError('');
+                                                            
+                                                            try {
+                                                                const result = await imageApi.uploadImage(file, 'character', adminToken || undefined);
+                                                                if (result.success && result.url) {
+                                                                    setFormData({...formData, backgroundUrl: result.url});
+                                                                } else {
+                                                                    throw new Error(result.error || '上传失败');
+                                                                }
+                                                            } catch (err: any) {
+                                                                setUploadError('背景上传失败: ' + (err.message || '未知错误'));
+                                                            } finally {
+                                                                setIsUploadingBackground(false);
+                                                            }
+                                                        }} 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                    />
+                                                    {formData.backgroundUrl && (
+                                                        <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-600">
+                                                            <img src={formData.backgroundUrl} alt="Background" className="w-full h-full object-cover" />
+                                                            <button 
+                                                                onClick={() => setFormData({...formData, backgroundUrl: ''})} 
+                                                                className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </InputGroup>
+                                            {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
                                             <InputGroup label="第一句问候">
                                                 <TextArea value={formData.firstMessage || ''} onChange={e => setFormData({...formData, firstMessage: e.target.value})} rows={2} />
                                             </InputGroup>

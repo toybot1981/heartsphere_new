@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AppSettings, GameState, AIProvider, WorldScene, Character, CustomScenario } from '../types';
 import { Button } from './Button';
 import { WORLD_SCENES } from '../constants';
+import { characterApi } from '../services/api';
 
 interface AdminScreenProps {
     gameState: GameState;
@@ -212,13 +213,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         switchToList();
     };
 
-    const deleteCharacter = (charId: string) => {
+    const deleteCharacter = async (charId: string) => {
         if (!window.confirm('确定删除此角色吗？(内置角色无法被物理删除，只能删除其自定义副本)')) return;
         let updatedCustomChars = { ...gameState.customCharacters };
         Object.keys(updatedCustomChars).forEach(sId => {
             updatedCustomChars[sId] = updatedCustomChars[sId].filter(c => c.id !== charId);
         });
         onUpdateGameState({ ...gameState, customCharacters: updatedCustomChars });
+        
+        // 检查是否有认证token
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            try {
+                // 调用后端API删除角色
+                await characterApi.deleteCharacter(parseInt(charId), token);
+                console.log('角色已从服务器删除');
+            } catch (error) {
+                console.error('删除角色时出错:', error);
+                // 后端删除失败不影响前端状态
+            }
+        }
     };
 
     // --- Scenario Management ---
@@ -416,7 +430,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                     const isSystem = WORLD_SCENES.some(s => s.id === scene.id);
                                                     return (
                                                         <tr key={scene.id} className="hover:bg-slate-800/50 transition-colors">
-                                                            <td className="p-4"><img src={scene.imageUrl} className="w-12 h-16 object-cover rounded" alt="" /></td>
+                                                            <td className="p-4">
+                                                              {scene.imageUrl ? (
+                                                                <img src={scene.imageUrl} className="w-12 h-16 object-cover rounded" alt="" />
+                                                              ) : (
+                                                                <div className="w-12 h-16 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded flex items-center justify-center text-xs opacity-50">无图</div>
+                                                              )}
+                                                            </td>
                                                             <td className="p-4 font-bold text-white">
                                                                 {scene.name}
                                                                 {isSystem && <span className="ml-2 text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">SYSTEM</span>}
@@ -480,7 +500,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                             <tbody className="divide-y divide-slate-800">
                                                 {getAllCharacters().map((char, idx) => (
                                                     <tr key={`${char.id}_${idx}`} className="hover:bg-slate-800/50 transition-colors">
-                                                        <td className="p-4"><img src={char.avatarUrl} className="w-10 h-10 object-cover rounded-full border border-slate-700" alt="" /></td>
+                                                        <td className="p-4">
+                                                          {char.avatarUrl ? (
+                                                            <img src={char.avatarUrl} className="w-10 h-10 object-cover rounded-full border border-slate-700" alt="" />
+                                                          ) : (
+                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-full border border-slate-700 flex items-center justify-center text-xs text-slate-400">无</div>
+                                                          )}
+                                                        </td>
                                                         <td className="p-4 font-bold text-white">
                                                             {char.name}
                                                             {char.isSystem && <span className="ml-2 text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">SYSTEM</span>}

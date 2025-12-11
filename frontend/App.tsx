@@ -9,7 +9,8 @@ import { SceneCard } from './components/SceneCard';
 import { Character, GameState, Message, CustomScenario, AppSettings, WorldScene, JournalEntry, JournalEcho, Mail, EraMemory, DebugLog } from './types';
 import { geminiService } from './services/gemini';
 import { storageService } from './services/storage';
-import { authApi } from './services/api';
+import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi } from './services/api';
+import { syncService } from './services/syncService';
 import { EraConstructorModal } from './components/EraConstructorModal';
 import { CharacterConstructorModal } from './components/CharacterConstructorModal';
 import { EntryPoint } from './components/EntryPoint';
@@ -22,12 +23,40 @@ import { ConnectionSpace } from './components/ConnectionSpace';
 import { AdminScreen } from './admin/AdminScreen';
 import { LoginModal } from './components/LoginModal';
 import { MobileApp } from './mobile/MobileApp';
+import { WelcomeOverlay } from './components/WelcomeOverlay';
 
 const App: React.FC = () => {
   
+  // --- 友好的错误提示函数 ---
+  const showSyncErrorToast = (operation: string): void => {
+    // 创建一个友好的错误提示
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 z-50 bg-red-600/90 text-white px-6 py-4 rounded-lg shadow-2xl border border-red-400/50 max-w-md animate-fade-in';
+    toast.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="text-2xl">⚠️</div>
+        <div class="flex-1">
+          <div class="font-bold text-lg mb-1">远程同步失败</div>
+          <div class="text-sm text-red-100">${operation}已保存到本地，但未能同步到服务器。请检查网络连接后重试。</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-white/70 hover:text-white text-xl leading-none">×</button>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // 5秒后自动消失
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 5000);
+  };
+  
   // --- Device Adaptation & Mode Switching ---
   
-  const checkIsMobile = () => {
+  const checkIsMobile = (): boolean => {
     if (typeof window === 'undefined') return false;
     const userAgent = navigator.userAgent || '';
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
@@ -66,6 +95,7 @@ const App: React.FC = () => {
     customCharacters: {},
     customScenarios: [EXAMPLE_SCENARIO],
     customScenes: [],
+    userWorldScenes: [],
     journalEntries: [],
     activeJournalEntryId: null,
     settings: { 
@@ -87,6 +117,7 @@ const App: React.FC = () => {
     lastLoginTime: Date.now(),
     sceneMemories: {}, 
     debugLogs: [],
+    showWelcomeOverlay: false,
   };
 
   const [gameState, setGameState] = useState<GameState>(DEFAULT_STATE);
@@ -111,6 +142,7 @@ const App: React.FC = () => {
   const pendingActionRef = useRef<() => void>(() => {});
 
   const hasCheckedMail = useRef(false);
+  const hasLoadedEntryPointData = useRef(false);
   
   // Use ref to access current gameState in event listeners without stale closures
   const gameStateRef = useRef(gameState);
@@ -118,7 +150,7 @@ const App: React.FC = () => {
 
   // --- PERSISTENCE LOGIC ---
   
-  const loadGameData = async () => {
+  const loadGameData = async (): Promise<void> => {
       setIsLoaded(false);
       const loadedState = await storageService.loadState();
       if (loadedState) {
@@ -153,6 +185,7 @@ const App: React.FC = () => {
             lastLoginTime: loadedState.lastLoginTime || Date.now(),
             sceneMemories: loadedState.sceneMemories || {},
             customCharacters: loadedState.customCharacters || {},
+            userWorldScenes: loadedState.userWorldScenes || [],
             debugLogs: [], 
             settings: mergedSettings
           }));
@@ -166,6 +199,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadGameData();
+    syncService.init(); // 初始化同步服务
   }, []);
 
   useEffect(() => {
@@ -184,9 +218,9 @@ const App: React.FC = () => {
   // Logging hook
   useEffect(() => {
       geminiService.setLogCallback((log: DebugLog) => {
-          setGameState(prev => ({
-              ...prev,
-              debugLogs: [...prev.debugLogs, log]
+          setGameState((prevGameState: GameState) => ({
+              ...prevGameState,
+              debugLogs: [...prevGameState.debugLogs, log]
           }));
       });
   }, []);
@@ -237,14 +271,14 @@ const App: React.FC = () => {
             const chattedCharIds = Object.keys(gameState.history);
             let candidate: Character | null = null;
             if (chattedCharIds.length > 0) {
-                 const allScenes = [...WORLD_SCENES, ...gameState.customScenes];
+                 const allScenes = [...getCurrentScenes(), ...gameState.customScenes];
                  for (const scene of allScenes) {
                      const sceneChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
                      const found = sceneChars.find(c => c.id === chattedCharIds[0]);
                      if (found) { candidate = found; break; }
                  }
             }
-            if (!candidate) candidate = WORLD_SCENES[0].characters[0]; 
+            if (!candidate) candidate = getCurrentScenes()[0].characters[0]; 
 
             if (candidate) {
                  const letter = await geminiService.generateChronosLetter(candidate, gameState.userProfile!, gameState.journalEntries);
@@ -268,6 +302,229 @@ const App: React.FC = () => {
     checkMail();
   }, [isLoaded, gameState.userProfile]);
 
+  // 当进入entryPoint（我的心域）或sceneSelection（场景选择）时，如果是登录用户，加载并同步时代数据
+  useEffect(() => {
+    const shouldLoadData = gameState.currentScreen === 'entryPoint' || gameState.currentScreen === 'sceneSelection';
+    
+    console.log('[DataLoader useEffect] 触发检查:', {
+      currentScreen: gameState.currentScreen,
+      shouldLoadData,
+      hasUserProfile: !!gameState.userProfile,
+      isGuest: gameState.userProfile?.isGuest,
+      userWorldScenesCount: gameState.userWorldScenes?.length || 0,
+      hasLoadedEntryPointData: hasLoadedEntryPointData.current
+    });
+    
+    // 重置标志，当离开需要加载数据的页面时
+    if (!shouldLoadData) {
+      hasLoadedEntryPointData.current = false;
+      return;
+    }
+    
+    if (shouldLoadData && gameState.userProfile && !gameState.userProfile.isGuest) {
+      // 防止重复加载：只有在已有数据且标志为true时才跳过
+      // 如果标志为true但没有数据，说明上次加载失败，需要重新加载
+      if (hasLoadedEntryPointData.current && gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
+        console.log('[DataLoader] 已经加载过数据且数据存在，跳过。数据数量:', gameState.userWorldScenes.length);
+        return;
+      }
+      
+      // 如果标志为true但没有数据，重置标志并继续加载
+      if (hasLoadedEntryPointData.current && (!gameState.userWorldScenes || gameState.userWorldScenes.length === 0)) {
+        console.log('[DataLoader] 标志为true但数据为空，重置标志并重新加载');
+        hasLoadedEntryPointData.current = false;
+      }
+      const token = localStorage.getItem('auth_token');
+      console.log(`[DataLoader ${gameState.currentScreen}] 条件检查通过，token存在:`, !!token);
+      
+      if (token) {
+        console.log(`[DataLoader ${gameState.currentScreen}] ========== 开始加载时代数据 ==========`);
+        console.log(`[DataLoader ${gameState.currentScreen}] 当前本地数据:`, {
+          userWorldScenesCount: gameState.userWorldScenes?.length || 0,
+          userWorldScenes: gameState.userWorldScenes
+        });
+        
+        // 异步加载远程数据并同步
+        const screenName = gameState.currentScreen; // 捕获当前屏幕名称
+        const loadAndSyncWorldData = async (): Promise<void> => {
+          try {
+            console.log(`[DataLoader ${screenName}] 步骤1: 开始获取世界列表...`);
+            const worlds = await worldApi.getAllWorlds(token);
+            console.log(`[DataLoader ${screenName}] 步骤1完成: 获取世界列表成功，数量:`, worlds.length);
+            console.log(`[DataLoader ${screenName}] 世界列表详情:`, JSON.stringify(worlds, null, 2));
+            
+            console.log(`[DataLoader ${screenName}] 步骤2: 开始获取时代列表...`);
+            const eras = await eraApi.getAllEras(token);
+            console.log(`[DataLoader ${screenName}] 步骤2完成: 获取时代列表成功，数量:`, eras.length);
+            console.log(`[DataLoader ${screenName}] 时代列表详情（原始）:`, JSON.stringify(eras, null, 2));
+            if (eras.length > 0) {
+              console.log(`[DataLoader ${screenName}] 第一个时代的结构分析:`, {
+                keys: Object.keys(eras[0]),
+                hasWorldId: 'worldId' in eras[0],
+                hasWorld: 'world' in eras[0],
+                worldIdValue: (eras[0] as any).worldId,
+                worldValue: (eras[0] as any).world,
+                fullObject: eras[0]
+              });
+            }
+            
+            console.log(`[DataLoader ${screenName}] 步骤3: 开始获取角色列表...`);
+            const characters = await characterApi.getAllCharacters(token);
+            console.log(`[DataLoader ${screenName}] 步骤3完成: 获取角色列表成功，数量:`, characters.length);
+            console.log(`[DataLoader ${screenName}] 角色列表详情:`, JSON.stringify(characters, null, 2));
+            
+            // 将后端数据转换为前端需要的WorldScene格式
+            const userWorldScenes: WorldScene[] = [];
+            
+            console.log(`[DataLoader ${screenName}] 步骤4: 开始按世界分组时代...`);
+            // 按世界分组时代
+            const erasByWorldId = new Map<number, typeof eras[0][]>();
+            eras.forEach(era => {
+              // 尝试多种方式获取worldId
+              const worldId = era.worldId || (era as any).world?.id || (era as any).worldId;
+              console.log(`[DataLoader ${screenName}] 处理时代:`, { 
+                eraId: era.id, 
+                eraName: era.name, 
+                worldId,
+                eraKeys: Object.keys(era),
+                eraFull: JSON.stringify(era, null, 2)
+              });
+              if (worldId) {
+                if (!erasByWorldId.has(worldId)) {
+                  erasByWorldId.set(worldId, []);
+                }
+                erasByWorldId.get(worldId)?.push(era);
+              } else {
+                console.warn(`[DataLoader ${screenName}] 时代缺少worldId，完整对象:`, JSON.stringify(era, null, 2));
+                console.warn(`[DataLoader ${screenName}] 尝试从world对象获取:`, (era as any).world);
+              }
+            });
+            console.log(`[DataLoader ${screenName}] 步骤4完成: 时代分组结果:`, Array.from(erasByWorldId.entries()).map(([k, v]) => ({ worldId: k, erasCount: v.length })));
+            
+            console.log(`[DataLoader ${screenName}] 步骤5: 开始按时代分组角色...`);
+            // 按时代分组角色
+            const charactersByEraId = new Map<number, typeof characters[0][]>();
+            characters.forEach(char => {
+              const eraId = char.eraId;
+              console.log(`[DataLoader ${screenName}] 处理角色:`, { charId: char.id, charName: char.name, eraId });
+              if (eraId) {
+                if (!charactersByEraId.has(eraId)) {
+                  charactersByEraId.set(eraId, []);
+                }
+                charactersByEraId.get(eraId)?.push(char);
+              } else {
+                console.warn(`[DataLoader ${screenName}] 角色缺少eraId:`, char);
+              }
+            });
+            console.log(`[DataLoader ${screenName}] 步骤5完成: 角色分组结果:`, Array.from(charactersByEraId.entries()).map(([k, v]) => ({ eraId: k, charsCount: v.length })));
+            
+            console.log(`[DataLoader ${screenName}] 步骤6: 开始创建WorldScene对象...`);
+            // 创建WorldScene对象
+            worlds.forEach(world => {
+              console.log(`[DataLoader ${screenName}] 处理世界:`, { worldId: world.id, worldName: world.name });
+              const worldEras = erasByWorldId.get(world.id) || [];
+              console.log(`[DataLoader ${screenName}] 该世界包含`, worldEras.length, '个时代');
+              
+              worldEras.forEach(era => {
+                const eraCharacters = charactersByEraId.get(era.id) || [];
+                console.log(`[DataLoader ${screenName}] 创建场景:`, { 
+                  eraId: era.id, 
+                  eraName: era.name, 
+                  charactersCount: eraCharacters.length 
+                });
+                
+                const scene: WorldScene = {
+                  id: era.id.toString(),
+                  name: era.name,
+                  description: era.description,
+                  imageUrl: era.imageUrl || '',
+                  characters: eraCharacters.map(char => ({
+                    id: char.id.toString(),
+                    name: char.name,
+                    age: char.age,
+                    role: char.role,
+                    bio: char.bio,
+                    avatarUrl: char.avatarUrl || '',
+                    backgroundUrl: char.backgroundUrl || '',
+                    themeColor: char.themeColor || 'blue-500',
+                    colorAccent: char.colorAccent || '#3b82f6',
+                    firstMessage: char.firstMessage || '',
+                    systemInstruction: char.systemInstruction || '',
+                    voiceName: char.voiceName || 'Aoede',
+                    mbti: char.mbti || 'INFJ',
+                    tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [],
+                    speechStyle: char.speechStyle || '',
+                    catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [],
+                    secrets: char.secrets || '',
+                    motivations: char.motivations || '',
+                    relationships: char.relationships || ''
+                  })),
+                  scenes: [],
+                  worldId: world.id
+                };
+                
+                userWorldScenes.push(scene);
+              });
+            });
+            
+            console.log(`[DataLoader ${screenName}] 步骤6完成: 共创建`, userWorldScenes.length, '个场景');
+            console.log(`[DataLoader ${screenName}] 场景详情:`, JSON.stringify(userWorldScenes.map(s => ({ id: s.id, name: s.name, worldId: s.worldId, charsCount: s.characters.length })), null, 2));
+            
+            console.log(`[DataLoader ${screenName}] 步骤7: 开始更新游戏状态...`);
+            // 更新游戏状态，同步远程数据
+            setGameState(prev => {
+              console.log(`[DataLoader ${screenName}] 状态更新前:`, {
+                prevUserWorldScenesCount: prev.userWorldScenes?.length || 0,
+                newUserWorldScenesCount: userWorldScenes.length
+              });
+              return {
+                ...prev,
+                userWorldScenes: userWorldScenes,
+                lastLoginTime: Date.now()
+              };
+            });
+            
+            console.log(`[DataLoader ${screenName}] ========== 时代数据加载并同步完成 ==========`);
+            console.log(`[DataLoader ${screenName}] 最终结果: 共`, userWorldScenes.length, '个场景');
+            
+            // 只有在成功加载数据后才设置标志
+            if (userWorldScenes.length > 0) {
+              hasLoadedEntryPointData.current = true;
+              console.log(`[DataLoader ${screenName}] 数据加载成功，设置标志为true`);
+            } else {
+              console.warn(`[DataLoader ${screenName}] 数据加载完成但场景数量为0，不设置标志`);
+            }
+          } catch (error) {
+            console.error(`[DataLoader ${screenName}] ========== 加载时代数据失败 ==========`);
+            console.error(`[DataLoader ${screenName}] 错误详情:`, error);
+            if (error instanceof Error) {
+              console.error(`[DataLoader ${screenName}] 错误消息:`, error.message);
+              console.error(`[DataLoader ${screenName}] 错误堆栈:`, error.stack);
+            }
+            // 加载失败时重置标志，允许重试
+            hasLoadedEntryPointData.current = false;
+            console.log(`[DataLoader ${screenName}] 加载失败，重置标志为false，允许重试`);
+          }
+        };
+        
+        // 如果本地已有数据，先显示本地数据，然后后台同步
+        if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
+          console.log(`[DataLoader ${screenName}] 检测到本地已有数据，数量:`, gameState.userWorldScenes.length);
+          console.log(`[DataLoader ${screenName}] 使用本地数据，后台同步远程数据`);
+          loadAndSyncWorldData(); // 后台同步
+        } else {
+          console.log(`[DataLoader ${screenName}] 检测到本地无数据`);
+          console.log(`[DataLoader ${screenName}] 本地无数据，立即加载远程数据`);
+          loadAndSyncWorldData(); // 立即加载
+        }
+      } else {
+        console.warn(`[DataLoader ${gameState.currentScreen}] token不存在，无法加载数据`);
+      }
+    } else {
+      console.log(`[DataLoader] 条件检查未通过，不加载数据`);
+    }
+  }, [gameState.currentScreen, gameState.userProfile]);
+
 
   // --- AUTH HELPER ---
   
@@ -281,15 +538,108 @@ const App: React.FC = () => {
   };
 
   // 处理登录成功
-  const handleLoginSuccess = async (method: 'password' | 'wechat', identifier: string) => {
+  const handleLoginSuccess = async (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]): Promise<void> => {
     // 从localStorage获取token
     const token = localStorage.getItem('auth_token');
+    console.log('登录成功:', method, identifier, '首次登录:', isFirstLogin);
     
     if (token) {
       try {
         // 使用token获取完整用户信息
         const userInfo = await authApi.getCurrentUser(token);
         
+        // 获取日记列表
+        console.log('尝试获取日记列表...');
+        const journalEntries = await journalApi.getAllJournalEntries(token);
+        console.log('获取日记列表成功:', journalEntries);
+        
+        // 获取世界列表 (如果登录响应中没有，则单独获取)
+        const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
+        console.log('获取世界列表成功:', remoteWorlds);
+        
+        // 获取时代列表
+        const eras = await eraApi.getAllEras(token);
+        console.log('获取时代列表成功:', eras);
+        
+        // 获取角色列表
+        const characters = await characterApi.getAllCharacters(token);
+        console.log('获取角色列表成功:', characters);
+        
+        // 将后端数据转换为前端需要的WorldScene格式
+        const userWorldScenes: WorldScene[] = [];
+        
+        // 按世界分组时代
+        const erasByWorldId = new Map<number, typeof eras[0][]>();
+        eras.forEach(era => {
+          // 后端现在直接返回worldId
+          const worldId = era.worldId;
+          if (worldId) {
+            if (!erasByWorldId.has(worldId)) {
+              erasByWorldId.set(worldId, []);
+            }
+            erasByWorldId.get(worldId)?.push(era);
+          } else {
+            console.warn('时代数据缺少worldId:', era);
+          }
+        });
+        
+        // 按时代分组角色
+        const charactersByEraId = new Map<number, typeof characters[0][]>();
+        characters.forEach(char => {
+          // 后端现在直接返回eraId
+          const eraId = char.eraId;
+          if (eraId) {
+            if (!charactersByEraId.has(eraId)) {
+              charactersByEraId.set(eraId, []);
+            }
+            charactersByEraId.get(eraId)?.push(char);
+          } else {
+            console.warn('角色数据缺少eraId:', char);
+          }
+        });
+        
+        // 创建WorldScene对象
+        remoteWorlds.forEach(world => {
+          const worldEras = erasByWorldId.get(world.id) || [];
+          
+          worldEras.forEach(era => {
+            const eraCharacters = charactersByEraId.get(era.id) || [];
+            
+            const scene: WorldScene = {
+              id: era.id.toString(), // 使用后端返回的时代ID
+              name: era.name,
+              description: era.description,
+              imageUrl: era.imageUrl || '',
+              characters: eraCharacters.map(char => ({
+                id: char.id.toString(),
+                name: char.name,
+                age: char.age,
+                role: char.role,
+                bio: char.bio,
+                avatarUrl: char.avatarUrl || '',
+                backgroundUrl: char.backgroundUrl || '',
+                themeColor: char.themeColor || 'blue-500',
+                colorAccent: char.colorAccent || '#3b82f6',
+                firstMessage: char.firstMessage || '',
+                systemInstruction: char.systemInstruction || '',
+                voiceName: char.voiceName || 'Aoede',
+                mbti: char.mbti || 'INFJ',
+                tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [], // Ensure string[]
+                speechStyle: char.speechStyle || '',
+                catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [], // Ensure string[]
+                secrets: char.secrets || '',
+                motivations: char.motivations || '',
+                relationships: char.relationships || ''
+              })),
+              scenes: [], // 时代实体没有scenes字段，使用空数组
+              worldId: world.id
+            };
+            
+            userWorldScenes.push(scene);
+          });
+        });
+        
+        // 更新用户信息和日记列表，使用远程加载的世界数据
         setGameState(prev => ({
           ...prev,
           userProfile: {
@@ -299,10 +649,157 @@ const App: React.FC = () => {
             email: userInfo.email,
             isGuest: false,
             phoneNumber: method === 'password' ? identifier : undefined,
-          }
+          },
+          journalEntries: journalEntries.map(entry => ({
+            id: entry.id, // 直接使用后端返回的字符串id
+            title: entry.title,
+            content: entry.content,
+            timestamp: new Date(entry.entryDate).getTime(),
+            imageUrl: '',
+            insight: undefined
+          })),
+          userWorldScenes: userWorldScenes,
+          selectedSceneId: userWorldScenes.length > 0 
+            ? (prev.selectedSceneId && userWorldScenes.some(scene => scene.id === prev.selectedSceneId) 
+              ? prev.selectedSceneId 
+              : userWorldScenes[0].id)
+            : prev.selectedSceneId,
+          showWelcomeOverlay: !!isFirstLogin,
+          lastLoginTime: Date.now()
         }));
+        
+        // 后台异步加载远程世界数据，实现本地优先加载
+        const loadRemoteWorldData = async (): Promise<void> => {
+          try {
+            console.log('后台加载远程世界数据...');
+            
+            // 获取世界列表
+            const updatedWorlds = await worldApi.getAllWorlds(token);
+            
+            // 获取时代列表
+            const updatedEras = await eraApi.getAllEras(token);
+            
+            // 获取角色列表
+            const updatedCharacters = await characterApi.getAllCharacters(token);
+            
+            // 将后端数据转换为前端需要的WorldScene格式
+            const userWorldScenes: WorldScene[] = [];
+            
+            // 按世界分组时代
+            const erasByWorldId = new Map<number, typeof eras[0][]>();
+            eras.forEach(era => {
+              // 后端现在直接返回worldId
+              const worldId = era.worldId;
+              if (worldId) {
+                if (!erasByWorldId.has(worldId)) {
+                  erasByWorldId.set(worldId, []);
+                }
+                erasByWorldId.get(worldId)?.push(era);
+              } else {
+                console.warn('时代数据缺少worldId:', era);
+              }
+            });
+            
+            // 按时代分组角色
+            const charactersByEraId = new Map<number, typeof characters[0][]>();
+            characters.forEach(char => {
+              // 后端现在直接返回eraId
+              const eraId = char.eraId;
+              if (eraId) {
+                if (!charactersByEraId.has(eraId)) {
+                  charactersByEraId.set(eraId, []);
+                }
+                charactersByEraId.get(eraId)?.push(char);
+              } else {
+                console.warn('角色数据缺少eraId:', char);
+              }
+            });
+            
+            // 按世界分组时代
+            const updatedErasByWorldId = new Map<number, typeof updatedEras[0][]>();
+            updatedEras.forEach(era => {
+              const worldId = era.worldId;
+              if (worldId) {
+                if (!updatedErasByWorldId.has(worldId)) {
+                  updatedErasByWorldId.set(worldId, []);
+                }
+                updatedErasByWorldId.get(worldId)?.push(era);
+              }
+            });
+            
+            // 按时代分组角色
+            const updatedCharactersByEraId = new Map<number, typeof updatedCharacters[0][]>();
+            updatedCharacters.forEach(char => {
+              const eraId = char.eraId;
+              if (eraId) {
+                if (!updatedCharactersByEraId.has(eraId)) {
+                  updatedCharactersByEraId.set(eraId, []);
+                }
+                updatedCharactersByEraId.get(eraId)?.push(char);
+              }
+            });
+            
+            // 创建WorldScene对象
+            const updatedUserWorldScenes: WorldScene[] = [];
+            updatedWorlds.forEach(world => {
+              const worldEras = updatedErasByWorldId.get(world.id) || [];
+              
+              worldEras.forEach(era => {
+                const eraCharacters = updatedCharactersByEraId.get(era.id) || [];
+                
+                const scene: WorldScene = {
+                  id: era.id.toString(),
+                  name: era.name,
+                  description: era.description,
+                  imageUrl: era.imageUrl || '',
+                  characters: eraCharacters.map(char => ({
+                    id: char.id.toString(),
+                    name: char.name,
+                    age: char.age,
+                    role: char.role,
+                    bio: char.bio,
+                    avatarUrl: char.avatarUrl || '',
+                    backgroundUrl: char.backgroundUrl || '',
+                    themeColor: char.themeColor || 'blue-500',
+                    colorAccent: char.colorAccent || '#3b82f6',
+                    firstMessage: char.firstMessage || '',
+                    systemInstruction: char.systemInstruction || '',
+                    voiceName: char.voiceName || 'Aoede',
+                    mbti: char.mbti || 'INFJ',
+                    tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [],
+                    speechStyle: char.speechStyle || '',
+                    catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [],
+                    secrets: char.secrets || '',
+                    motivations: char.motivations || '',
+                    relationships: char.relationships || ''
+                  })),
+                  scenes: [],
+                  worldId: world.id
+                };
+                
+                updatedUserWorldScenes.push(scene);
+              });
+            });
+            
+            // 更新游戏状态，将远程加载的世界数据存储在userWorldScenes中
+            setGameState(prev => ({
+              ...prev,
+              userWorldScenes: updatedUserWorldScenes,
+              lastLoginTime: Date.now()
+            }));
+            
+            console.log('远程世界数据加载完成并更新到本地');
+          } catch (error) {
+            console.error('加载远程世界数据失败:', error);
+          }
+        };
+        
+        // 在后台定期更新远程数据
+        loadRemoteWorldData();
+        
+        // 首次登录欢迎界面已在上面设置
       } catch (err) {
-        console.error('获取用户信息失败:', err);
+        console.error('获取用户信息或日记列表失败:', err);
         // 如果获取失败，使用基本信息
         setGameState(prev => ({
           ...prev,
@@ -312,7 +809,9 @@ const App: React.FC = () => {
             avatarUrl: '',
             isGuest: false,
             phoneNumber: method === 'password' ? identifier : undefined,
-          }
+          },
+          journalEntries: [],
+          showWelcomeOverlay: !!isFirstLogin
         }));
       }
     } else {
@@ -325,7 +824,8 @@ const App: React.FC = () => {
           avatarUrl: '',
           isGuest: false,
           phoneNumber: method === 'password' ? identifier : undefined,
-        }
+        },
+        showWelcomeOverlay: !!isFirstLogin
       }));
     }
     
@@ -337,13 +837,140 @@ const App: React.FC = () => {
     }
   };
 
-  // 检查本地存储中的token，自动登录
+  // 关闭欢迎蒙层
+  const handleCloseWelcomeOverlay = () => {
+    setGameState(prev => ({
+      ...prev,
+      showWelcomeOverlay: false
+    }));
+  };
+
+  // 检查本地存储中的token，自动登录并获取日记列表
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('auth_token');
+      console.log('检查本地存储中的token:', token);
       if (token) {
         try {
+          console.log('尝试自动登录...');
           const userInfo = await authApi.getCurrentUser(token);
+          console.log('自动登录成功:', userInfo);
+          
+          // 获取日记列表
+          console.log('尝试获取日记列表...');
+          const journalEntries = await journalApi.getAllJournalEntries(token);
+          console.log('获取日记列表成功:', journalEntries);
+          
+          // 获取世界列表
+          console.log('尝试获取世界列表...');
+          const worlds = await worldApi.getAllWorlds(token);
+          console.log('获取世界列表成功:', worlds);
+          
+          // 获取时代列表
+          console.log('尝试获取时代列表...');
+          const eras = await eraApi.getAllEras(token);
+          console.log('获取时代列表成功:', eras);
+          
+          // 获取角色列表
+          console.log('尝试获取角色列表...');
+          const characters = await characterApi.getAllCharacters(token);
+          console.log('获取角色列表成功:', characters);
+          
+          // 将后端数据转换为前端需要的WorldScene格式
+          const userWorldScenes: WorldScene[] = [];
+          
+          // 按世界分组时代
+          const erasByWorldId = new Map<number, any[]>();
+          eras.forEach(era => {
+            // 后端现在直接返回worldId
+            const worldId = era.worldId;
+            if (worldId) {
+              if (!erasByWorldId.has(worldId)) {
+                erasByWorldId.set(worldId, []);
+              }
+              erasByWorldId.get(worldId)?.push(era);
+            } else {
+              console.warn('时代数据缺少worldId:', era);
+            }
+          });
+          
+          // 按时代分组角色
+          const charactersByEraId = new Map<number, any[]>();
+          characters.forEach(char => {
+            // 后端现在直接返回eraId
+            const eraId = char.eraId;
+            if (eraId) {
+              if (!charactersByEraId.has(eraId)) {
+                charactersByEraId.set(eraId, []);
+              }
+              charactersByEraId.get(eraId)?.push(char);
+            } else {
+              console.warn('角色数据缺少eraId:', char);
+            }
+          });
+          
+          // 创建WorldScene对象
+          worlds.forEach(world => {
+            const worldEras = erasByWorldId.get(world.id) || [];
+            
+            worldEras.forEach(era => {
+              const eraCharacters = charactersByEraId.get(era.id) || [];
+              
+              const scene: WorldScene = {
+                id: era.id.toString(), // 使用后端返回的时代ID
+                name: era.name,
+                description: era.description,
+                imageUrl: era.imageUrl || '',
+                characters: eraCharacters.map(char => ({
+                  id: char.id.toString(),
+                  name: char.name,
+                  age: char.age,
+                  role: char.role,
+                  bio: char.bio,
+                  avatarUrl: char.avatarUrl || '',
+                  backgroundUrl: char.backgroundUrl || '',
+                  themeColor: char.themeColor || 'blue-500',
+                  colorAccent: char.colorAccent || '#3b82f6',
+                  firstMessage: char.firstMessage || '',
+                  systemInstruction: char.systemInstruction || '',
+                  voiceName: char.voiceName || 'Aoede',
+                  mbti: char.mbti || 'INFJ',
+                  tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [], // Ensure string[]
+                  speechStyle: char.speechStyle || '',
+                  catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [], // Ensure string[]
+                  secrets: char.secrets || '',
+                  motivations: char.motivations || '',
+                  relationships: char.relationships || ''
+                })),
+                mainStory: eraCharacters.length > 0 ? {
+                  id: eraCharacters[0].id.toString(),
+                  name: eraCharacters[0].name,
+                  age: eraCharacters[0].age,
+                  role: eraCharacters[0].role || '主角',
+                  bio: eraCharacters[0].bio || '',
+                  avatarUrl: eraCharacters[0].avatarUrl || '',
+                  backgroundUrl: eraCharacters[0].backgroundUrl || '',
+                  themeColor: eraCharacters[0].themeColor || 'blue-500',
+                  colorAccent: eraCharacters[0].colorAccent || '#3b82f6',
+                  firstMessage: eraCharacters[0].firstMessage || '',
+                  systemInstruction: eraCharacters[0].systemInstruction || '',
+                  voiceName: eraCharacters[0].voiceName || 'Aoede',
+                  mbti: eraCharacters[0].mbti || 'INFJ',
+                  tags: eraCharacters[0].tags ? (typeof eraCharacters[0].tags === 'string' ? eraCharacters[0].tags.split(',').filter(tag => tag.trim()) : eraCharacters[0].tags) : [], // Ensure string[]
+                  speechStyle: eraCharacters[0].speechStyle || '',
+                  catchphrases: eraCharacters[0].catchphrases ? (typeof eraCharacters[0].catchphrases === 'string' ? eraCharacters[0].catchphrases.split(',').filter(phrase => phrase.trim()) : eraCharacters[0].catchphrases) : [], // Ensure string[]
+                  secrets: eraCharacters[0].secrets || '',
+                  motivations: eraCharacters[0].motivations || '',
+                  relationships: eraCharacters[0].relationships || ''
+                } : undefined // 如果没有角色，则设置为undefined
+              };
+              
+              userWorldScenes.push(scene);
+            });
+          });
+          
+          console.log('转换后的用户世界场景:', userWorldScenes);
+          
           setGameState(prev => ({
             ...prev,
             userProfile: {
@@ -352,27 +979,62 @@ const App: React.FC = () => {
               avatarUrl: userInfo.avatar || '',
               email: userInfo.email,
               isGuest: false,
-            }
+            },
+            journalEntries: journalEntries.map(entry => ({
+              id: entry.id, // 直接使用后端返回的字符串id
+              title: entry.title,
+              content: entry.content,
+              timestamp: new Date(entry.entryDate).getTime(),
+              imageUrl: '',
+              insight: undefined
+            })),
+            // 使用从后端获取的世界场景，而不是本地预置数据
+            userWorldScenes: userWorldScenes,
+            // 如果有选中的场景ID，确保它存在于后端数据中，否则选择第一个场景
+            selectedSceneId: userWorldScenes.length > 0 
+              ? (prev.selectedSceneId && userWorldScenes.some(scene => scene.id === prev.selectedSceneId) 
+                ? prev.selectedSceneId 
+                : userWorldScenes[0].id)
+              : prev.selectedSceneId
           }));
-        } catch (err) {
-          console.error('自动登录失败:', err);
+        } catch (err: any) {
+          console.error('自动登录或获取日记失败:', err.message || err);
           // token无效，清除
           localStorage.removeItem('auth_token');
         }
+      } else {
+        console.log('本地存储中没有找到token，用户未登录');
       }
     };
     
     checkAuth();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     // 清除localStorage中的token
     localStorage.removeItem('auth_token');
     
+    // 创建一个干净的状态，只保留设置和全局数据，清除所有用户相关信息
     const nextState: GameState = {
         ...gameState,
         userProfile: null,
-        currentScreen: 'profileSetup'
+        currentScreen: 'profileSetup',
+        journalEntries: [],
+        selectedSceneId: null,
+        selectedCharacterId: null,
+        selectedScenarioId: null,
+        tempStoryCharacter: null,
+        editingScenarioId: null,
+        history: {},
+        customAvatars: {},
+        generatingAvatarId: null,
+        activeJournalEntryId: null,
+        customCharacters: {},
+        customScenarios: [],
+        currentScenarioState: undefined,
+        mailbox: [],
+        sceneMemories: {},
+        debugLogs: []
     };
     
     // Update UI immediately
@@ -386,19 +1048,19 @@ const App: React.FC = () => {
 
   // --- HANDLERS ---
 
-  const handleSwitchToMobile = async () => {
+  const handleSwitchToMobile = async (): Promise<void> => {
     // Save PC state before switching
     await storageService.saveState({ ...gameState, lastLoginTime: Date.now() });
     setIsMobileMode(true);
   };
 
-  const handleSwitchToPC = () => {
+  const handleSwitchToPC = (): void => {
     setIsMobileMode(false);
     // Reload data to pick up changes from mobile
     loadGameData();
   };
 
-  const handleProfileSubmit = () => {
+  const handleProfileSubmit = (): void => {
     if(!profileNickname.trim()) return;
     const profile = { 
         nickname: profileNickname, 
@@ -413,15 +1075,16 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleEnterNexus = () => {
+  const handleEnterNexus = (): void => {
      setGameState(prev => ({ ...prev, currentScreen: 'entryPoint' }));
   };
 
-  const handleEnterRealWorld = () => {
+  const handleEnterRealWorld = (): void => {
     setGameState(prev => ({ ...prev, currentScreen: 'realWorld' }));
   };
 
-  const handleSceneSelect = (sceneId: string) => {
+  const handleSceneSelect = (sceneId: string): void => {
+    // 先更新UI状态
     setGameState(prev => ({ 
         ...prev, 
         selectedSceneId: sceneId, 
@@ -430,9 +1093,132 @@ const App: React.FC = () => {
         selectedScenarioId: null,
         currentScreen: 'characterSelection' 
     }));
+    
+    // 如果是登录用户，异步加载该世界的时代数据
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // 使用setTimeout确保在状态更新后执行
+      setTimeout(async () => {
+        try {
+          setGameState(prev => {
+            const userProfile = prev.userProfile;
+            if (!userProfile || userProfile.isGuest) return prev;
+            
+            // 找到当前场景对应的世界ID
+            const currentScenes = prev.userWorldScenes && prev.userWorldScenes.length > 0
+              ? [...prev.userWorldScenes, ...prev.customScenes]
+              : [...WORLD_SCENES, ...prev.customScenes];
+            const selectedScene = currentScenes.find(s => s.id === sceneId);
+            const worldId = (selectedScene as any)?.worldId;
+            
+            if (worldId) {
+              console.log(`[handleSceneSelect] 按世界ID加载时代数据: worldId=${worldId}, sceneId=${sceneId}`);
+              
+              // 异步加载数据
+              (async () => {
+                try {
+                  // 按世界ID获取时代列表
+                  const eras = await eraApi.getErasByWorldId(worldId, token);
+                  console.log(`[handleSceneSelect] 获取到时代数据:`, eras);
+                  
+                  // 按世界ID获取角色列表
+                  const characters = await characterApi.getCharactersByWorldId(worldId, token);
+                  console.log(`[handleSceneSelect] 获取到角色数据:`, characters);
+                  
+                  // 按时代分组角色
+                  const charactersByEraId = new Map<number, any[]>();
+                  characters.forEach(char => {
+                    // 后端现在直接返回eraId
+                    const eraId = char.eraId;
+                    if (eraId) {
+                      if (!charactersByEraId.has(eraId)) {
+                        charactersByEraId.set(eraId, []);
+                      }
+                      charactersByEraId.get(eraId)?.push(char);
+                    } else {
+                      console.warn('角色数据缺少eraId:', char);
+                    }
+                  });
+                  
+                  // 更新该世界的时代和角色数据
+                  setGameState(prevState => {
+                    const updatedScenes = (prevState.userWorldScenes || []).map(scene => {
+                      // 找到属于当前世界的场景（时代）
+                      const era = eras.find(e => e.id.toString() === scene.id);
+                      if (era) {
+                        const eraCharacters = charactersByEraId.get(era.id) || [];
+                        return {
+                          ...scene,
+                          characters: eraCharacters.map(char => ({
+                            id: char.id.toString(),
+                            name: char.name,
+                            age: char.age,
+                            role: char.role,
+                            bio: char.bio,
+                            avatarUrl: char.avatarUrl || '',
+                            backgroundUrl: char.backgroundUrl || '',
+                            themeColor: char.themeColor || 'blue-500',
+                            colorAccent: char.colorAccent || '#3b82f6',
+                            firstMessage: char.firstMessage || '',
+                            systemInstruction: char.systemInstruction || '',
+                            voiceName: char.voiceName || 'Aoede',
+                            mbti: char.mbti || 'INFJ',
+                            tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [],
+                            speechStyle: char.speechStyle || '',
+                            catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [],
+                            secrets: char.secrets || '',
+                            motivations: char.motivations || '',
+                            relationships: char.relationships || ''
+                          })),
+                          mainStory: eraCharacters.length > 0 ? {
+                            id: eraCharacters[0].id.toString(),
+                            name: eraCharacters[0].name,
+                            age: eraCharacters[0].age,
+                            role: eraCharacters[0].role || '主角',
+                            bio: eraCharacters[0].bio || '',
+                            avatarUrl: eraCharacters[0].avatarUrl || '',
+                            backgroundUrl: eraCharacters[0].backgroundUrl || '',
+                            themeColor: eraCharacters[0].themeColor || 'blue-500',
+                            colorAccent: eraCharacters[0].colorAccent || '#3b82f6',
+                            firstMessage: eraCharacters[0].firstMessage || '',
+                            systemInstruction: eraCharacters[0].systemInstruction || '',
+                            voiceName: eraCharacters[0].voiceName || 'Aoede',
+                            mbti: eraCharacters[0].mbti || 'INFJ',
+                            tags: eraCharacters[0].tags ? (typeof eraCharacters[0].tags === 'string' ? eraCharacters[0].tags.split(',').filter(tag => tag.trim()) : eraCharacters[0].tags) : [],
+                            speechStyle: eraCharacters[0].speechStyle || '',
+                            catchphrases: eraCharacters[0].catchphrases ? (typeof eraCharacters[0].catchphrases === 'string' ? eraCharacters[0].catchphrases.split(',').filter(phrase => phrase.trim()) : eraCharacters[0].catchphrases) : [],
+                            secrets: eraCharacters[0].secrets || '',
+                            motivations: eraCharacters[0].motivations || '',
+                            relationships: eraCharacters[0].relationships || ''
+                          } : undefined
+                        };
+                      }
+                      return scene;
+                    });
+                    
+                    console.log(`[handleSceneSelect] 时代数据更新完成，更新了 ${updatedScenes.length} 个场景`);
+                    
+                    return {
+                      ...prevState,
+                      userWorldScenes: updatedScenes
+                    };
+                  });
+                } catch (error) {
+                  console.error(`[handleSceneSelect] 加载时代数据失败:`, error);
+                }
+              })();
+            }
+            
+            return prev;
+          });
+        } catch (error) {
+          console.error(`[handleSceneSelect] 处理失败:`, error);
+        }
+      }, 0);
+    }
   };
 
-  const handleCharacterSelect = (character: Character) => {
+  const handleCharacterSelect = (character: Character): void => {
     if (gameState.activeJournalEntryId) {
         const entry = gameState.journalEntries.find(e => e.id === gameState.activeJournalEntryId);
         if (entry) {
@@ -467,7 +1253,7 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleChatWithCharacterByName = (characterName: string) => {
+  const handleChatWithCharacterByName = (characterName: string): void => {
     const allScenes = [...WORLD_SCENES, ...gameState.customScenes];
     let foundChar: Character | null = null;
     let foundSceneId: string | null = null;
@@ -546,23 +1332,131 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveEra = (newScene: WorldScene) => {
+  const handleSaveEra = async (newScene: WorldScene) => {
+    // 1. 先保存到本地（立即更新UI）
+    const isNumericId = /^\d+$/.test(newScene.id);
+    const isEditing = isNumericId && editingScene;
+    
+    // 如果是编辑现有场景，直接更新；如果是新建，只添加到customScenes（临时）
     setGameState(prev => {
-        const exists = prev.customScenes.some(s => s.id === newScene.id);
-        if (exists) {
-            return {
-                ...prev,
-                customScenes: prev.customScenes.map(s => s.id === newScene.id ? newScene : s)
-            };
+      if (isEditing) {
+        // 编辑模式：更新两个列表
+        return {
+          ...prev,
+          customScenes: prev.customScenes.map(s => s.id === newScene.id ? newScene : s),
+          userWorldScenes: (prev.userWorldScenes || []).map(s => s.id === newScene.id ? newScene : s)
+        };
+      } else {
+        // 新建模式：只添加到customScenes（临时ID），同步成功后会移到userWorldScenes
+        const existsInCustomScenes = prev.customScenes.some(s => s.id === newScene.id);
+        if (existsInCustomScenes) {
+          return {
+            ...prev,
+            customScenes: prev.customScenes.map(s => s.id === newScene.id ? newScene : s)
+          };
         } else {
-            return {
-                ...prev,
-                customScenes: [...prev.customScenes, newScene]
-            };
+          return {
+            ...prev,
+            customScenes: [...prev.customScenes, newScene]
+          };
         }
+      }
     });
+
     setShowEraCreator(false);
     setEditingScene(null);
+
+    // 2. 异步同步到服务器（如果已登录）
+    const token = localStorage.getItem('auth_token');
+    if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+      return; // 游客模式，只保存到本地
+    }
+
+    // 异步同步，不阻塞UI
+    (async () => {
+      try {
+        // 获取用户的默认世界ID（通常是"心域"世界）
+        let worldId: number | null = null;
+        
+        // 如果场景有worldId，使用它
+        if (newScene.worldId) {
+          worldId = newScene.worldId;
+        } else {
+          // 否则，获取用户的第一个世界（通常是"心域"）
+          const worlds = await worldApi.getAllWorlds(token);
+          if (worlds.length > 0) {
+            worldId = worlds[0].id; // 使用第一个世界（通常是默认的"心域"）
+          } else {
+            console.error('用户没有世界，无法同步时代');
+            showSyncErrorToast('时代');
+            return;
+          }
+        }
+
+        // 判断是创建还是更新
+        const eraId = isNumericId ? parseInt(newScene.id, 10) : null;
+
+        let savedEra: any;
+        if (eraId && isEditing) {
+          // 更新现有时代
+          console.log(`[handleSaveEra] 同步更新时代: eraId=${eraId}, worldId=${worldId}`);
+          savedEra = await eraApi.updateEra(eraId, {
+            name: newScene.name,
+            description: newScene.description,
+            startYear: undefined,
+            endYear: undefined,
+            worldId: worldId,
+            imageUrl: newScene.imageUrl || undefined,
+          }, token);
+        } else {
+          // 创建新时代
+          console.log(`[handleSaveEra] 同步创建时代: worldId=${worldId}`);
+          savedEra = await eraApi.createEra({
+            name: newScene.name,
+            description: newScene.description,
+            startYear: undefined,
+            endYear: undefined,
+            worldId: worldId,
+            imageUrl: newScene.imageUrl || undefined,
+          }, token);
+        }
+
+        console.log(`[handleSaveEra] 后端同步成功:`, savedEra);
+
+        // 将后端返回的时代转换为WorldScene格式并更新本地状态
+        const updatedScene: WorldScene = {
+          id: savedEra.id.toString(),
+          name: savedEra.name,
+          description: savedEra.description,
+          imageUrl: savedEra.imageUrl || newScene.imageUrl || '',
+          characters: newScene.characters || [],
+          worldId: savedEra.worldId,
+          mainStory: newScene.mainStory
+        };
+
+        // 更新本地状态（使用服务器返回的ID）
+        setGameState(prev => {
+          // 移除临时ID的场景（从customScenes和userWorldScenes中）
+          const updatedUserWorldScenes = (prev.userWorldScenes || [])
+            .filter(s => s.id !== newScene.id) // 移除临时ID
+            .filter(s => s.id !== updatedScene.id.toString()) // 避免重复
+            .concat([updatedScene]); // 添加服务器返回的场景
+
+          const updatedCustomScenes = prev.customScenes
+            .filter(s => s.id !== newScene.id) // 移除临时ID
+            .filter(s => s.id !== updatedScene.id.toString()); // 避免重复，服务器场景不应该在customScenes中
+
+          return {
+            ...prev,
+            userWorldScenes: updatedUserWorldScenes,
+            customScenes: updatedCustomScenes
+          };
+        });
+      } catch (error) {
+        console.error('[handleSaveEra] 同步时代失败:', error);
+        showSyncErrorToast('时代');
+      }
+    })();
   };
 
   const handleDeleteEra = (sceneId: string, e?: React.MouseEvent) => {
@@ -571,37 +1465,72 @@ const App: React.FC = () => {
           e.preventDefault();
       }
       if(window.confirm("确定要删除这个时代吗？里面的所有角色和记忆都将消失。")) {
+          // 1. 先删除本地（立即更新UI）
           setGameState(prev => ({
               ...prev,
               customScenes: prev.customScenes.filter(s => s.id !== sceneId),
+              userWorldScenes: (prev.userWorldScenes || []).filter(s => s.id !== sceneId),
               customCharacters: Object.fromEntries(
                  Object.entries(prev.customCharacters).filter(([id]) => id !== sceneId)
               )
           }));
           setShowEraCreator(false);
           setEditingScene(null);
+
+          // 2. 异步同步到服务器（如果已登录且ID是数字）
+          const token = localStorage.getItem('auth_token');
+          const isNumericId = /^\d+$/.test(sceneId);
+          if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+              (async () => {
+                  try {
+                      const eraId = parseInt(sceneId, 10);
+                      await eraApi.deleteEra(eraId, token);
+                      console.log('Era deleted from server:', eraId);
+                  } catch (error) {
+                      console.error('Failed to delete era from server:', error);
+                      showSyncErrorToast('时代删除');
+                  }
+              })();
+          }
       }
   };
 
-  const handleSaveCharacter = (newCharacter: Character) => {
+  const handleSaveCharacter = async (newCharacter: Character) => {
+    console.log("========== [App] 保存角色 ==========");
+    console.log("[App] 角色信息:", {
+      id: newCharacter.id,
+      name: newCharacter.name,
+      role: newCharacter.role,
+      bio: newCharacter.bio ? `长度${newCharacter.bio.length}` : "无",
+      avatarUrl: newCharacter.avatarUrl ? "存在" : "无",
+      backgroundUrl: newCharacter.backgroundUrl ? "存在" : "无"
+    });
+    
     const sceneId = gameState.selectedSceneId || editingCharacterSceneId;
+    console.log(`[App] 场景ID: ${sceneId}`);
     
     if (!sceneId) {
-        console.error("No scene context for saving character");
+        console.error("[App] 保存角色失败: 没有场景上下文");
         return;
     }
     
+    // 1. 先保存到本地（立即更新UI）
+    console.log("[App] 步骤1: 保存到本地状态");
     setGameState(prev => {
         const existingCustomChars = prev.customCharacters[sceneId] || [];
         const isEditing = existingCustomChars.some(c => c.id === newCharacter.id);
+        console.log(`[App] 场景 ${sceneId} 已有 ${existingCustomChars.length} 个角色，是否编辑: ${isEditing}`);
         
-        let newChars = [];
+        let newChars: Character[] = [];
         if (isEditing) {
             newChars = existingCustomChars.map(c => c.id === newCharacter.id ? newCharacter : c);
+            console.log(`[App] 更新角色: ${newCharacter.id}`);
         } else {
             newChars = [...existingCustomChars, newCharacter];
+            console.log(`[App] 添加新角色: ${newCharacter.id}`);
         }
 
+        console.log(`[App] 场景 ${sceneId} 现在有 ${newChars.length} 个角色`);
         return {
             ...prev,
             customCharacters: {
@@ -614,9 +1543,35 @@ const App: React.FC = () => {
     setShowCharacterCreator(false);
     setEditingCharacter(null);
     setEditingCharacterSceneId(null);
+    console.log("[App] 步骤1完成: 本地状态已更新");
+
+    // 2. 异步同步到服务器（如果已登录）
+    const token = localStorage.getItem('auth_token');
+    const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
+    console.log(`[App] 步骤2: 同步到服务器, token存在=${!!token}, isGuest=${isGuest}`);
+    
+    if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
+        (async () => {
+            try {
+                console.log("[App] 开始同步角色到服务器");
+                await syncService.handleLocalDataChange('character', {
+                    ...newCharacter,
+                    description: newCharacter.bio,
+                    age: newCharacter.age,
+                    gender: newCharacter.role
+                });
+                console.log(`[App] 角色同步成功: ID=${newCharacter.id}, name=${newCharacter.name}`);
+            } catch (error) {
+                console.error(`[App] 角色同步失败: ID=${newCharacter.id}`, error);
+                showSyncErrorToast('角色');
+            }
+        })();
+    } else {
+        console.log("[App] 跳过服务器同步: 未登录或游客模式");
+    }
   };
 
-  const handleSaveScenario = (scenario: CustomScenario) => {
+  const handleSaveScenario = async (scenario: CustomScenario) => {
     if (!gameState.selectedSceneId && !gameState.editingScenarioId) return;
     
     const sceneId = gameState.selectedSceneId || gameState.customScenarios.find(s => s.id === scenario.id)?.sceneId;
@@ -624,6 +1579,7 @@ const App: React.FC = () => {
 
     const completeScenario = { ...scenario, sceneId };
     
+    // Update local state immediately for UI responsiveness
     setGameState(prev => {
         const exists = prev.customScenarios.some(s => s.id === scenario.id);
         let newScenarios = [...prev.customScenarios];
@@ -639,18 +1595,43 @@ const App: React.FC = () => {
             editingScenarioId: null
         };
     });
+
+    // 异步同步到服务器（如果已登录）
+    const token = localStorage.getItem('auth_token');
+    if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
+      (async () => {
+        try {
+          await syncService.handleLocalDataChange('scenario', completeScenario);
+          console.log('Scenario synced with server:', completeScenario.id);
+        } catch (error) {
+          console.error('Error syncing scenario:', error);
+          showSyncErrorToast('剧本');
+        }
+      })();
+    }
   };
 
-  const handleDeleteScenario = (scenarioId: string, e: React.MouseEvent) => {
+  const handleDeleteScenario = async (scenarioId: string, e: React.MouseEvent) => {
       e.stopPropagation(); 
       e.preventDefault();
       if (window.confirm("确定要删除这个剧本吗？")) {
+          // Update local state immediately for UI responsiveness
           setGameState(prev => ({
               ...prev,
               customScenarios: prev.customScenarios.filter(s => s.id !== scenarioId),
               editingScenarioId: prev.editingScenarioId === scenarioId ? null : prev.editingScenarioId,
               selectedScenarioId: prev.selectedScenarioId === scenarioId ? null : prev.selectedScenarioId
           }));
+
+          // Sync with server
+          try {
+            await scriptApi.deleteScript(parseInt(scenarioId), localStorage.getItem('auth_token') || '');
+            console.log('Scenario deleted from server:', scenarioId);
+          } catch (error) {
+            console.error('Error deleting scenario from server:', error);
+            // Show error message to user
+            alert('剧本删除同步失败，请检查网络连接或稍后重试。');
+          }
       }
   };
 
@@ -710,7 +1691,8 @@ const App: React.FC = () => {
       }));
   };
 
-  const handleAddJournalEntry = (title: string, content: string, imageUrl?: string, insight?: string) => {
+  const handleAddJournalEntry = async (title: string, content: string, imageUrl?: string, insight?: string) => {
+      // 1. 先保存到本地（立即更新UI）
       const newEntry: JournalEntry = {
           id: `entry_${Date.now()}`,
           title,
@@ -719,27 +1701,97 @@ const App: React.FC = () => {
           imageUrl,
           insight
       };
+      
       setGameState(prev => ({
           ...prev,
           journalEntries: [...prev.journalEntries, newEntry]
       }));
+
+      // 2. 异步同步到服务器（如果已登录）
+      const token = localStorage.getItem('auth_token');
+      if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
+          (async () => {
+              try {
+                  const apiRequestData = {
+                      title,
+                      content,
+                      entryDate: new Date().toISOString()
+                  };
+                  
+                  const savedEntry = await journalApi.createJournalEntry(apiRequestData, token);
+                  
+                  // 更新本地状态（使用服务器返回的ID）
+                  setGameState(prev => ({
+                      ...prev,
+                      journalEntries: prev.journalEntries.map(e => 
+                          e.id === newEntry.id 
+                              ? { ...e, id: savedEntry.id.toString() }
+                              : e
+                      )
+                  }));
+                  
+                  console.log('Journal entry synced with server:', savedEntry.id);
+              } catch (error) {
+                  console.error('Failed to sync journal entry with server:', error);
+                  showSyncErrorToast('日志');
+              }
+          })();
+      }
   };
 
-  const handleUpdateJournalEntry = (updatedEntry: JournalEntry) => {
+  const handleUpdateJournalEntry = async (updatedEntry: JournalEntry) => {
+      // 1. 先保存到本地（立即更新UI）
       setGameState(prev => ({
           ...prev,
           journalEntries: prev.journalEntries.map(e => e.id === updatedEntry.id ? updatedEntry : e)
       }));
+
+      // 2. 异步同步到服务器（如果已登录且ID是数字）
+      const token = localStorage.getItem('auth_token');
+      const isNumericId = /^\d+$/.test(updatedEntry.id);
+      if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+          (async () => {
+              try {
+                  const apiRequestData = {
+                      title: updatedEntry.title,
+                      content: updatedEntry.content,
+                      entryDate: new Date(updatedEntry.timestamp).toISOString()
+                  };
+                  
+                  await journalApi.updateJournalEntry(updatedEntry.id, apiRequestData, token);
+                  console.log('Journal entry synced with server:', updatedEntry.id);
+              } catch (error) {
+                  console.error('Failed to sync journal entry with server:', error);
+                  showSyncErrorToast('日志');
+              }
+          })();
+      }
   };
 
-  const handleDeleteJournalEntry = (id: string) => {
+  const handleDeleteJournalEntry = async (id: string) => {
+      // 1. 先删除本地（立即更新UI）
       setGameState(prev => ({
           ...prev,
           journalEntries: prev.journalEntries.filter(e => e.id !== id)
       }));
+
+      // 2. 异步同步到服务器（如果已登录且ID是数字）
+      const token = localStorage.getItem('auth_token');
+      const isNumericId = /^\d+$/.test(id);
+      if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+          (async () => {
+              try {
+                  await journalApi.deleteJournalEntry(id, token);
+                  console.log('Journal entry deleted from server:', id);
+              } catch (error) {
+                  console.error('Failed to delete journal entry from server:', error);
+                  showSyncErrorToast('日志删除');
+              }
+          })();
+      }
   };
 
-  const handleExploreWithEntry = (entry: JournalEntry) => {
+  const handleExploreWithEntry = (entry: JournalEntry): void => {
       setGameState(prev => ({
           ...prev,
           activeJournalEntryId: entry.id,
@@ -758,14 +1810,14 @@ const App: React.FC = () => {
       return geminiService.generateMirrorInsight(content, recentContext);
   };
 
-  const handleMarkMailRead = (mailId: string) => {
-      setGameState(prev => ({
+  const handleMarkMailRead = (mailId: string): void => {
+      setGameState((prev: GameState) => ({
           ...prev,
           mailbox: prev.mailbox.map(m => m.id === mailId ? { ...m, isRead: true } : m)
       }));
   };
 
-  const handleAddMemory = (content: string, imageUrl?: string) => {
+  const handleAddMemory = (content: string, imageUrl?: string): void => {
     if (!memoryScene) return;
     const newMemory: EraMemory = {
         id: `mem_${Date.now()}`,
@@ -786,7 +1838,7 @@ const App: React.FC = () => {
     });
   };
 
-  const handleDeleteMemory = (memoryId: string) => {
+  const handleDeleteMemory = (memoryId: string): void => {
      if (!memoryScene) return;
      setGameState(prev => {
          const existingMemories = prev.sceneMemories[memoryScene.id] || [];
@@ -800,37 +1852,51 @@ const App: React.FC = () => {
      });
   };
 
-  const openMemoryModal = (e: React.MouseEvent, scene: WorldScene) => {
+  const openMemoryModal = (e: React.MouseEvent<HTMLButtonElement>, scene: WorldScene): void => {
       e.stopPropagation();
       setMemoryScene(scene);
       setShowEraMemory(true);
   };
   
-  const launchEditCharacter = (char: Character, sceneId: string) => {
+  const launchEditCharacter = (char: Character, sceneId: string): void => {
       setEditingCharacter(char);
       setEditingCharacterSceneId(sceneId);
       setShowCharacterCreator(true);
   };
 
-  const getEditingCharacterScene = () => {
+  const getEditingCharacterScene = (): WorldScene => {
+      const currentScenes = getCurrentScenes();
       if (gameState.selectedSceneId) {
-          return [...WORLD_SCENES, ...gameState.customScenes].find(s => s.id === gameState.selectedSceneId) || WORLD_SCENES[0];
+          return currentScenes.find(s => s.id === gameState.selectedSceneId) || currentScenes[0];
       }
       if (editingCharacterSceneId) {
-          return [...WORLD_SCENES, ...gameState.customScenes].find(s => s.id === editingCharacterSceneId) || WORLD_SCENES[0];
+          return currentScenes.find(s => s.id === editingCharacterSceneId) || currentScenes[0];
       }
-      return WORLD_SCENES[0];
+      return currentScenes[0];
   };
 
-  // --- RENDER BLOCK (Must be last) ---
+  // --- RENDER BLOCK (Must be last) ---  
+  
+  // 根据用户是否登录，决定使用后端数据还是本地预置数据
+  const getCurrentScenes = () => {
+    if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes) {
+      // 登录用户：使用从后端获取的用户专属场景 + 自定义场景（排除已在userWorldScenes中的）
+      const userWorldSceneIds = new Set(gameState.userWorldScenes.map(s => s.id));
+      const customScenesOnly = gameState.customScenes.filter(s => !userWorldSceneIds.has(s.id));
+      return [...gameState.userWorldScenes, ...customScenesOnly];
+    } else {
+      // 游客：使用本地预置场景 + 自定义场景
+      return [...WORLD_SCENES, ...gameState.customScenes];
+    }
+  };
   
   if (isMobileMode) {
       return <MobileApp onSwitchToPC={handleSwitchToPC} />;
   }
 
   if (!isLoaded) return <div className="h-screen w-screen bg-black flex items-center justify-center text-white">Loading HeartSphere Core...</div>;
-
-  const currentSceneLocal = [...WORLD_SCENES, ...gameState.customScenes].find(s => s.id === gameState.selectedSceneId);
+  
+  const currentSceneLocal = getCurrentScenes().find(s => s.id === gameState.selectedSceneId);
   
   let sceneCharacters: Character[] = [];
   if (currentSceneLocal) {
@@ -838,7 +1904,7 @@ const App: React.FC = () => {
       sceneCharacters = [...currentSceneLocal.characters, ...customCharsForScene];
   }
 
-  const allCharacters = [...WORLD_SCENES, ...gameState.customScenes].reduce((acc, scene) => {
+  const allCharacters = getCurrentScenes().reduce((acc, scene) => {
       const sceneChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
       return [...acc, ...sceneChars];
   }, [] as Character[]);
@@ -859,11 +1925,16 @@ const App: React.FC = () => {
     <div className="relative h-screen w-screen bg-black overflow-hidden font-sans text-white">
       
       {showLoginModal && (
-          <LoginModal 
-             onLoginSuccess={handleLoginSuccess}
-             onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
-          />
-      )}
+            <LoginModal
+              onLoginSuccess={handleLoginSuccess}
+              onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
+            />
+          )}
+
+          {/* 欢迎蒙层 */}
+          {gameState.showWelcomeOverlay && (
+            <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
+          )}
 
       {gameState.currentScreen === 'profileSetup' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 p-6">
@@ -1006,7 +2077,7 @@ const App: React.FC = () => {
            )}
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pb-10 scrollbar-hide">
-              {[...WORLD_SCENES, ...gameState.customScenes].map(scene => {
+              {getCurrentScenes().map(scene => {
                  const isCustom = gameState.customScenes.some(s => s.id === scene.id);
                  return (
                     <div key={scene.id} className="relative group">

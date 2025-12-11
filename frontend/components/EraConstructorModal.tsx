@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { WorldScene } from '../types';
 import { geminiService } from '../services/gemini';
+import { imageApi } from '../services/api';
 import { Button } from './Button';
 
 interface EraConstructorModalProps {
@@ -16,11 +17,13 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   
   // Image Source Mode: 'generate' | 'upload'
   const [imageMode, setImageMode] = useState<'generate' | 'upload'>('generate');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   // Pre-fill data if editing
   useEffect(() => {
@@ -50,15 +53,40 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const result = reader.result as string;
-            setImageUrl(result);
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 先显示预览（base64）
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setImageUrl(result); // 临时显示预览
+    };
+    reader.readAsDataURL(file);
+    setUploadedFile(file);
+
+    // 自动上传到服务器
+    setIsUploading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const result = await imageApi.uploadImage(file, 'era', token || undefined);
+      
+      if (result.success && result.url) {
+        // 使用服务器返回的URL替换base64预览
+        setImageUrl(result.url);
+        console.log('图片上传成功:', result.url);
+      } else {
+        throw new Error(result.error || '上传失败');
+      }
+    } catch (err: any) {
+      console.error('图片上传失败:', err);
+      setError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览，保存时可能无法正常显示。');
+      // 保持base64预览，但提示用户
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -81,10 +109,52 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !description || !imageUrl) {
         setError('请填写所有字段并设置封面图片。');
         return;
+    }
+
+    // 如果imageUrl是base64（还未上传），先上传
+    let finalImageUrl = imageUrl;
+    if (imageUrl.startsWith('data:')) {
+      if (uploadedFile) {
+        // 有文件但还未上传成功，尝试上传
+        setIsLoading(true);
+        setError('');
+        try {
+          const token = localStorage.getItem('auth_token');
+          const result = await imageApi.uploadImage(uploadedFile, 'era', token || undefined);
+          if (result.success && result.url) {
+            finalImageUrl = result.url;
+          } else {
+            throw new Error(result.error || '上传失败');
+          }
+        } catch (err: any) {
+          setError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
+          // 继续使用base64，但提示用户
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // 没有文件，可能是直接粘贴的base64，尝试上传base64
+        setIsLoading(true);
+        setError('');
+        try {
+          const token = localStorage.getItem('auth_token');
+          const result = await imageApi.uploadBase64Image(imageUrl, 'era', token || undefined);
+          if (result.success && result.url) {
+            finalImageUrl = result.url;
+          } else {
+            throw new Error(result.error || '上传失败');
+          }
+        } catch (err: any) {
+          setError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
+          // 继续使用base64
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
     
     // If editing, keep the original ID. If new, generate ID.
@@ -92,14 +162,14 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         id: initialScene ? initialScene.id : `custom_era_${Date.now()}`,
         name,
         description,
-        imageUrl,
+        imageUrl: finalImageUrl,
         characters: initialScene ? initialScene.characters : [], // Preserve characters if editing
         mainStory: initialScene ? initialScene.mainStory : undefined
     };
     onSave(newScene);
   };
 
-  const isSaveDisabled = !name || !description || !imageUrl || isLoading;
+  const isSaveDisabled = !name || !description || !imageUrl || isLoading || isUploading;
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
@@ -150,12 +220,13 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                             📋 获取 AI 提示词
                         </Button>
                         {imageUrl && (
-                            <Button onClick={handleAnalyzeImage} disabled={isLoading} className="bg-gradient-to-r from-pink-600 to-purple-600 text-xs">
+                            <Button onClick={handleAnalyzeImage} disabled={isLoading || isUploading} className="bg-gradient-to-r from-pink-600 to-purple-600 text-xs">
                                 {isLoading ? '解析中...' : '🧠 解析影像记忆'}
                             </Button>
                         )}
                     </div>
-                    {!imageUrl && <p className="text-xs text-gray-600">请上传图片...</p>}
+                    {isUploading && <p className="text-xs text-blue-400">正在上传图片到服务器...</p>}
+                    {!imageUrl && !isUploading && <p className="text-xs text-gray-600">请上传图片...</p>}
                 </div>
             </div>
         </div>
@@ -184,9 +255,9 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                     删除时代
                 </Button>
             )}
-            <Button variant="ghost" onClick={onClose}>取消</Button>
+            <Button variant="ghost" onClick={onClose} disabled={isLoading || isUploading}>取消</Button>
             <Button onClick={handleSave} disabled={isSaveDisabled}>
-                {initialScene ? '保存修改' : '创建时代'}
+                {isLoading || isUploading ? '处理中...' : (initialScene ? '保存修改' : '创建时代')}
             </Button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { WorldScene, EraMemory } from '../types';
+import { imageApi } from '../services/api';
 import { Button } from './Button';
 
 interface EraMemoryModalProps {
@@ -14,16 +15,42 @@ interface EraMemoryModalProps {
 export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories, onAddMemory, onDeleteMemory, onClose }) => {
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 先显示预览（base64）
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 自动上传到服务器
+    setIsUploading(true);
+    setUploadError('');
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const result = await imageApi.uploadImage(file, 'journal', token || undefined);
+      
+      if (result.success && result.url) {
+        // 使用服务器返回的URL替换base64预览
+        setImageUrl(result.url);
+        console.log('图片上传成功:', result.url);
+      } else {
+        throw new Error(result.error || '上传失败');
+      }
+    } catch (err: any) {
+      console.error('图片上传失败:', err);
+      setUploadError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
+      // 保持base64预览
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -54,12 +81,30 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
             />
             
             <div 
-              onClick={() => fileInputRef.current?.click()}
-              className={`w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-all overflow-hidden ${imageUrl ? 'border-pink-500' : 'border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+              className={`w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center transition-all overflow-hidden ${
+                imageUrl ? 'border-pink-500' : isUploading ? 'border-blue-500 cursor-wait' : 'border-slate-700 hover:border-slate-500 hover:bg-slate-800 cursor-pointer'
+              }`}
             >
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-              {imageUrl ? (
-                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" disabled={isUploading} />
+              {isUploading ? (
+                <div className="flex flex-col items-center text-blue-400">
+                  <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <span className="text-xs">上传中...</span>
+                </div>
+              ) : imageUrl ? (
+                <div className="relative w-full h-full">
+                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageUrl(null);
+                    }}
+                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
               ) : (
                 <div className="flex flex-col items-center text-slate-500">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mb-2">
@@ -69,6 +114,7 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
                 </div>
               )}
             </div>
+            {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
             
             <Button onClick={handleSubmit} disabled={!content.trim() && !imageUrl} className="bg-pink-600 hover:bg-pink-500 mt-2">
               封存记忆
