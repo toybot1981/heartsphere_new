@@ -41,4 +41,4 @@ logs/
 # 数据库文件
 *.db
 *.sqlite
-*.sqlite3
+*.sqlite3backend/uploads/
