@@ -114,7 +114,10 @@ public class WorldController {
             return ResponseEntity.status(403).build();
         }
 
-        worldRepository.delete(world);
+        // 软删除：标记为已删除
+        world.setIsDeleted(true);
+        world.setDeletedAt(java.time.LocalDateTime.now());
+        worldRepository.save(world);
         return ResponseEntity.noContent().build();
     }
 }

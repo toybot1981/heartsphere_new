@@ -36,4 +36,10 @@ public class World {
     // 冗余字段，用于Spring Data JPA的findByUserId查询
     @Column(name = "user_id", insertable = false, updatable = false)
     private Long userId;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

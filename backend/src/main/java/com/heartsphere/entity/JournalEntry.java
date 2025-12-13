@@ -31,6 +31,9 @@ public class JournalEntry {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(length = 500)
+    private String tags; // 标签（逗号分隔，如：#灵感,#梦境,#工作）
+
     @Column(name = "entry_date")
     private LocalDateTime entryDate;
 

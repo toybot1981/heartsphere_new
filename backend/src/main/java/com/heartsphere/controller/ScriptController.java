@@ -191,7 +191,10 @@ public class ScriptController {
             return ResponseEntity.status(403).build();
         }
 
-        scriptRepository.delete(script);
+        // 软删除：标记为已删除
+        script.setIsDeleted(true);
+        script.setDeletedAt(java.time.LocalDateTime.now());
+        scriptRepository.save(script);
         return ResponseEntity.noContent().build();
     }
 }

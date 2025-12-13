@@ -24,6 +24,7 @@ import { AdminScreen } from './admin/AdminScreen';
 import { LoginModal } from './components/LoginModal';
 import { MobileApp } from './mobile/MobileApp';
 import { WelcomeOverlay } from './components/WelcomeOverlay';
+import { RecycleBinModal } from './components/RecycleBinModal';
 
 const App: React.FC = () => {
   
@@ -118,6 +119,7 @@ const App: React.FC = () => {
     sceneMemories: {}, 
     debugLogs: [],
     showWelcomeOverlay: false,
+    worldStyle: 'anime', // 默认风格为二次元
   };
 
   const [gameState, setGameState] = useState<GameState>(DEFAULT_STATE);
@@ -135,6 +137,7 @@ const App: React.FC = () => {
   
   const [showEraMemory, setShowEraMemory] = useState(false);
   const [memoryScene, setMemoryScene] = useState<WorldScene | null>(null);
+  const [showRecycleBin, setShowRecycleBin] = useState(false);
 
   const [profileNickname, setProfileNickname] = useState('');
 
@@ -187,7 +190,8 @@ const App: React.FC = () => {
             customCharacters: loadedState.customCharacters || {},
             userWorldScenes: loadedState.userWorldScenes || [],
             debugLogs: [], 
-            settings: mergedSettings
+            settings: mergedSettings,
+            worldStyle: loadedState.worldStyle || 'anime'
           }));
           
           geminiService.updateConfig(mergedSettings);
@@ -1464,7 +1468,7 @@ const App: React.FC = () => {
           e.stopPropagation();
           e.preventDefault();
       }
-      if(window.confirm("确定要删除这个时代吗？里面的所有角色和记忆都将消失。")) {
+      if(window.confirm("确定要删除这个时代吗？删除后将移至回收站，可以随时恢复。")) {
           // 1. 先删除本地（立即更新UI）
           setGameState(prev => ({
               ...prev,
@@ -1611,10 +1615,53 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteCharacter = async (character: Character) => {
+      if (!gameState.userProfile || gameState.userProfile.isGuest) {
+          alert('请先登录才能删除角色');
+          return;
+      }
+      
+      if (window.confirm("确定要删除这个角色吗？删除后将移至回收站，可以随时恢复。")) {
+          const sceneId = gameState.selectedSceneId || editingCharacterSceneId;
+          if (!sceneId) {
+              console.error('删除角色失败: 没有场景上下文');
+              return;
+          }
+
+          // 1. 先删除本地（立即更新UI）
+          setGameState(prev => {
+              const customChars = prev.customCharacters[sceneId] || [];
+              return {
+                  ...prev,
+                  customCharacters: {
+                      ...prev.customCharacters,
+                      [sceneId]: customChars.filter(c => c.id !== character.id)
+                  }
+              };
+          });
+
+          // 2. 异步同步到服务器（如果已登录且ID是数字）
+          const token = localStorage.getItem('auth_token');
+          const isNumericId = /^\d+$/.test(character.id);
+          if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+              (async () => {
+                  try {
+                      const charId = parseInt(character.id, 10);
+                      await characterApi.deleteCharacter(charId, token);
+                      console.log('Character deleted from server:', charId);
+                  } catch (error) {
+                      console.error('Failed to delete character from server:', error);
+                      showSyncErrorToast('角色删除');
+                  }
+              })();
+          }
+      }
+  };
+
   const handleDeleteScenario = async (scenarioId: string, e: React.MouseEvent) => {
       e.stopPropagation(); 
       e.preventDefault();
-      if (window.confirm("确定要删除这个剧本吗？")) {
+      if (window.confirm("确定要删除这个剧本吗？删除后将移至回收站，可以随时恢复。")) {
           // Update local state immediately for UI responsiveness
           setGameState(prev => ({
               ...prev,
@@ -1691,7 +1738,7 @@ const App: React.FC = () => {
       }));
   };
 
-  const handleAddJournalEntry = async (title: string, content: string, imageUrl?: string, insight?: string) => {
+  const handleAddJournalEntry = async (title: string, content: string, imageUrl?: string, insight?: string, tags?: string) => {
       // 1. 先保存到本地（立即更新UI）
       const newEntry: JournalEntry = {
           id: `entry_${Date.now()}`,
@@ -1699,7 +1746,8 @@ const App: React.FC = () => {
           content,
           timestamp: Date.now(),
           imageUrl,
-          insight
+          insight,
+          tags
       };
       
       setGameState(prev => ({
@@ -1712,11 +1760,14 @@ const App: React.FC = () => {
       if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
           (async () => {
               try {
-                  const apiRequestData = {
+                  const apiRequestData: any = {
                       title,
                       content,
                       entryDate: new Date().toISOString()
                   };
+                  if (tags) {
+                      apiRequestData.tags = tags;
+                  }
                   
                   const savedEntry = await journalApi.createJournalEntry(apiRequestData, token);
                   
@@ -1752,11 +1803,14 @@ const App: React.FC = () => {
       if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
           (async () => {
               try {
-                  const apiRequestData = {
+                  const apiRequestData: any = {
                       title: updatedEntry.title,
                       content: updatedEntry.content,
                       entryDate: new Date(updatedEntry.timestamp).toISOString()
                   };
+                  if (updatedEntry.tags) {
+                      apiRequestData.tags = updatedEntry.tags;
+                  }
                   
                   await journalApi.updateJournalEntry(updatedEntry.id, apiRequestData, token);
                   console.log('Journal entry synced with server:', updatedEntry.id);
@@ -1928,6 +1982,7 @@ const App: React.FC = () => {
             <LoginModal
               onLoginSuccess={handleLoginSuccess}
               onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
+              initialNickname={gameState.userProfile?.isGuest ? gameState.userProfile.nickname : undefined}
             />
           )}
 
@@ -1960,6 +2015,11 @@ const App: React.FC = () => {
             nickname={gameState.userProfile.nickname} 
             onOpenSettings={() => setShowSettingsModal(true)}
             onSwitchToMobile={handleSwitchToMobile}
+            currentStyle={gameState.worldStyle}
+            onStyleChange={(style) => {
+              setGameState(prev => ({ ...prev, worldStyle: style }));
+              storageService.saveState({ ...gameState, worldStyle: style });
+            }}
           />
       )}
 
@@ -1970,10 +2030,12 @@ const App: React.FC = () => {
              onUpdateEntry={handleUpdateJournalEntry}
              onDeleteEntry={handleDeleteJournalEntry}
              onExplore={handleExploreWithEntry}
+             worldStyle={gameState.worldStyle}
              onChatWithCharacter={handleChatWithCharacterByName}
              onBack={handleEnterNexus}
              onConsultMirror={handleConsultMirror} 
              autoGenerateImage={gameState.settings.autoGenerateJournalImages}
+             userName={gameState.userProfile?.nickname}
           />
       )}
 
@@ -2078,35 +2140,27 @@ const App: React.FC = () => {
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pb-10 scrollbar-hide">
               {getCurrentScenes().map(scene => {
+                 // 判断是否是用户拥有的场景
+                 // 1. 如果ID是 era_数字 格式，说明是从后端获取的用户数据
+                 // 2. 如果在 customScenes 或 userWorldScenes 中，说明是用户的数据
+                 const isEraId = /^era_\d+$/.test(scene.id);
                  const isCustom = gameState.customScenes.some(s => s.id === scene.id);
+                 const isUserWorld = gameState.userWorldScenes.some(s => s.id === scene.id);
+                 const isUserOwned = isEraId || isCustom || isUserWorld;
+                 
                  return (
                     <div key={scene.id} className="relative group">
-                        <SceneCard scene={scene} onSelect={() => handleSceneSelect(scene.id)} />
+                        <SceneCard 
+                            scene={scene} 
+                            onSelect={() => handleSceneSelect(scene.id)}
+                            onEdit={isUserOwned ? (s) => requireAuth(() => {
+                                setEditingScene(s);
+                                setShowEraCreator(true);
+                            }) : undefined}
+                            onDelete={isUserOwned ? (s) => requireAuth(() => handleDeleteEra(s.id)) : undefined}
+                            isUserOwned={isUserOwned}
+                        />
                         
-                        {isCustom && (
-                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none group-hover:pointer-events-auto">
-                                <button 
-                                onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    requireAuth(() => {
-                                        setEditingScene(scene); 
-                                        setShowEraCreator(true);
-                                    });
-                                }}
-                                className="relative p-2 bg-black/60 rounded-full hover:bg-white/20 border border-white/20 text-white z-40 pointer-events-auto"
-                                title="编辑时代"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 pointer-events-none"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
-                                </button>
-                                <button 
-                                onClick={(e) => handleDeleteEra(scene.id, e)}
-                                className="relative p-2 bg-black/60 rounded-full hover:bg-red-500/50 border border-white/20 text-white z-40 pointer-events-auto"
-                                title="删除时代"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 pointer-events-none"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-                                </button>
-                            </div>
-                        )}
                         
                         <button
                             onClick={(e) => openMemoryModal(e, scene)}
@@ -2170,16 +2224,33 @@ const App: React.FC = () => {
                 
                 <h3 className="text-xl font-bold text-gray-400 mb-4">登场人物</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {sceneCharacters.map(char => (
-                        <CharacterCard 
-                          key={char.id} 
-                          character={char} 
-                          customAvatarUrl={gameState.customAvatars[char.id]}
-                          isGenerating={gameState.generatingAvatarId === char.id}
-                          onSelect={handleCharacterSelect}
-                          onGenerate={(c) => requireAuth(() => handleGenerateAvatar(c))}
-                        />
-                    ))}
+                    {sceneCharacters.map(char => {
+                        // 判断是否是用户拥有的角色
+                        // 1. 如果是数字ID，说明是从后端获取的用户数据
+                        // 2. 如果在customCharacters中，说明是用户创建的数据
+                        const customCharsForScene = gameState.customCharacters[currentSceneLocal.id] || [];
+                        const isNumericId = /^\d+$/.test(char.id);
+                        const isInCustomChars = customCharsForScene.some(c => c.id === char.id);
+                        const isUserOwned = isNumericId || isInCustomChars;
+                        
+                        return (
+                            <CharacterCard 
+                              key={char.id} 
+                              character={char} 
+                              customAvatarUrl={gameState.customAvatars[char.id]}
+                              isGenerating={gameState.generatingAvatarId === char.id}
+                              onSelect={handleCharacterSelect}
+                              onGenerate={(c) => requireAuth(() => handleGenerateAvatar(c))}
+                              onEdit={isUserOwned ? (c) => requireAuth(() => {
+                                  setEditingCharacter(c);
+                                  setEditingCharacterSceneId(currentSceneLocal.id);
+                                  setShowCharacterCreator(true);
+                              }) : undefined}
+                              onDelete={isUserOwned ? (c) => requireAuth(() => handleDeleteCharacter(c)) : undefined}
+                              isUserCreated={isUserOwned}
+                            />
+                        );
+                    })}
                 </div>
 
                  <div className="mt-12 mb-20">
@@ -2251,6 +2322,52 @@ const App: React.FC = () => {
           onClose={() => setShowSettingsModal(false)} 
           onLogout={handleLogout}
           onBindAccount={() => { setShowSettingsModal(false); setShowLoginModal(true); }}
+          onOpenRecycleBin={() => setShowRecycleBin(true)}
+        />
+      )}
+
+      {showRecycleBin && gameState.userProfile && !gameState.userProfile.isGuest && (
+        <RecycleBinModal
+          token={localStorage.getItem('auth_token') || ''}
+          onClose={() => setShowRecycleBin(false)}
+          onRestore={async () => {
+            // 恢复后刷新数据
+            if (gameState.userProfile && !gameState.userProfile.isGuest) {
+              const token = localStorage.getItem('auth_token');
+              if (token) {
+                try {
+                  // 重新加载用户数据
+                  const [worlds, eras, characters] = await Promise.all([
+                    worldApi.getAllWorlds(token),
+                    eraApi.getAllEras(token),
+                    characterApi.getAllCharacters(token)
+                  ]);
+                  
+                  // 更新游戏状态
+                  setGameState(prev => ({
+                    ...prev,
+                    userWorldScenes: worlds.map(w => ({
+                      id: `era_${w.id}`,
+                      name: w.name,
+                      description: w.description || '',
+                      imageUrl: '',
+                      characters: []
+                    })),
+                    customScenes: eras.map(e => ({
+                      id: `era_${e.id}`,
+                      name: e.name,
+                      description: e.description || '',
+                      imageUrl: e.imageUrl || '',
+                      characters: []
+                    })),
+                    customCharacters: {} // 需要重新组织角色数据
+                  }));
+                } catch (error) {
+                  console.error('刷新数据失败:', error);
+                }
+              }
+            }
+          }}
         />
       )}
 
@@ -2260,6 +2377,7 @@ const App: React.FC = () => {
              onSave={handleSaveEra}
              onDelete={editingScene ? () => handleDeleteEra(editingScene.id) : undefined}
              onClose={() => { setShowEraCreator(false); setEditingScene(null); }}
+             worldStyle={gameState.worldStyle}
           />
       )}
 
@@ -2273,6 +2391,7 @@ const App: React.FC = () => {
                  setEditingCharacter(null);
                  setEditingCharacterSceneId(null);
              }}
+             worldStyle={gameState.worldStyle}
           />
       )}
 

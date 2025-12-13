@@ -13,6 +13,7 @@ interface SettingsModalProps {
   onClose: () => void;
   onLogout: () => void;
   onBindAccount: () => void;
+  onOpenRecycleBin?: () => void; // 打开回收站
 }
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
@@ -49,7 +50,7 @@ const ConfigSection: React.FC<{ title: string; children: React.ReactNode }> = ({
     </div>
 );
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount, onOpenRecycleBin }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState('');
@@ -219,6 +220,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                         </div>
                         
                         <div className="flex flex-col gap-2">
+                             {gameState.userProfile && !gameState.userProfile.isGuest && onOpenRecycleBin && (
+                                <Button variant="ghost" onClick={() => { onOpenRecycleBin(); onClose(); }} className="text-xs text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-slate-700">
+                                    🗑️ 回收站
+                                </Button>
+                             )}
                              {gameState.userProfile?.isGuest && (
                                 <Button variant="ghost" onClick={onBindAccount} className="text-xs text-pink-400 hover:bg-pink-900/20 hover:text-pink-300 border border-pink-500/30">
                                     绑定账号

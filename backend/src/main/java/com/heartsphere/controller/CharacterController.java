@@ -302,8 +302,11 @@ public class CharacterController {
             return ResponseEntity.status(403).build();
         }
 
-        characterRepository.delete(character);
-        logger.info(String.format("[CharacterController] 角色删除成功: ID=%d, name=%s", id, character.getName()));
+        // 软删除：标记为已删除
+        character.setIsDeleted(true);
+        character.setDeletedAt(java.time.LocalDateTime.now());
+        characterRepository.save(character);
+        logger.info(String.format("[CharacterController] 角色已移至回收站: ID=%d, name=%s", id, character.getName()));
         return ResponseEntity.noContent().build();
     }
 }

@@ -169,7 +169,10 @@ public class EraController {
             return ResponseEntity.status(403).build();
         }
 
-        eraRepository.delete(era);
+        // 软删除：标记为已删除
+        era.setIsDeleted(true);
+        era.setDeletedAt(java.time.LocalDateTime.now());
+        eraRepository.save(era);
         return ResponseEntity.noContent().build();
     }
 }

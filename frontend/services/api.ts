@@ -341,6 +341,173 @@ export const adminApi = {
       });
     },
   },
+
+  // 邀请码管理
+  inviteCodes: {
+    getAll: (token: string) => {
+      return request<Array<{
+        id: number;
+        code: string;
+        isUsed: boolean;
+        usedByUserId: number | null;
+        usedAt: string | null;
+        expiresAt: string;
+        createdByAdminId: number | null;
+        createdAt: string;
+        updatedAt: string;
+      }>>('/admin/system/invite-codes', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    generate: (quantity: number, expiresAt: string, token: string) => {
+      return request<Array<{
+        id: number;
+        code: string;
+        isUsed: boolean;
+        usedByUserId: number | null;
+        usedAt: string | null;
+        expiresAt: string;
+        createdByAdminId: number | null;
+        createdAt: string;
+        updatedAt: string;
+      }>>('/admin/system/invite-codes/generate', {
+        method: 'POST',
+        body: JSON.stringify({ quantity, expiresAt }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+  },
+
+  // 系统配置
+  config: {
+    getInviteCodeRequired: (token: string) => {
+      return request<{ inviteCodeRequired: boolean }>('/admin/system/config/invite-code-required', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    setInviteCodeRequired: (required: boolean, token: string) => {
+      return request<{ inviteCodeRequired: boolean }>('/admin/system/config/invite-code-required', {
+        method: 'PUT',
+        body: JSON.stringify({ inviteCodeRequired: required }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    getWechatConfig: (token: string) => {
+      return request<{ appId: string; appSecret: string; redirectUri: string }>('/admin/system/config/wechat', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    setWechatConfig: (config: { appId?: string; appSecret?: string; redirectUri?: string }, token: string) => {
+      return request<{ appId: string; appSecret: string; redirectUri: string }>('/admin/system/config/wechat', {
+        method: 'PUT',
+        body: JSON.stringify(config),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+  },
+
+  // 系统资源管理
+  resources: {
+    getAll: (category?: string, token: string) => {
+      const url = category ? `/admin/system/resources?category=${category}` : '/admin/system/resources';
+      return request<Array<{
+        id: number;
+        name: string;
+        url: string;
+        category: string;
+        description?: string;
+        prompt?: string;
+        tags?: string;
+        fileSize?: number;
+        mimeType?: string;
+        width?: number;
+        height?: number;
+        createdAt: string;
+      }>>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    getById: (id: number, token: string) => {
+      return request<{
+        id: number;
+        name: string;
+        url: string;
+        category: string;
+        description?: string;
+        prompt?: string;
+        tags?: string;
+      }>(`/admin/system/resources/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    create: (file: File, category: string, name?: string, description?: string, prompt?: string, tags?: string, token?: string) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
+      if (name) formData.append('name', name);
+      if (description) formData.append('description', description);
+      if (prompt) formData.append('prompt', prompt);
+      if (tags) formData.append('tags', tags);
+
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      return request<{
+        id: number;
+        name: string;
+        url: string;
+        category: string;
+      }>('/admin/system/resources', {
+        method: 'POST',
+        body: formData,
+        headers: headers,
+      });
+    },
+    update: (id: number, data: { name?: string; description?: string; prompt?: string; tags?: string; url?: string }, token: string) => {
+      return request<{
+        id: number;
+        name: string;
+        url: string;
+        category: string;
+      }>(`/admin/system/resources/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    delete: (id: number, token: string) => {
+      return request<void>(`/admin/system/resources/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+  },
 };
 
 // 通用请求函数
@@ -492,7 +659,7 @@ export const authApi = {
   },
 
   // 用户注册
-  register: (username: string, email: string, password: string) => {
+  register: (username: string, email: string, password: string, nickname?: string, inviteCode?: string) => {
     return request<{
       token: string;
       type: string;
@@ -512,8 +679,16 @@ export const authApi = {
       }>;
     }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, nickname: nickname || username, inviteCode }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+  },
+
+  // 检查是否需要邀请码
+  isInviteCodeRequired: () => {
+    return request<{ inviteCodeRequired: boolean }>('/auth/invite-code-required');
   },
 
   // 获取当前用户信息
@@ -534,24 +709,37 @@ export const authApi = {
 
 // 微信登录API
 export const wechatApi = {
-  // 微信登录
-  login: (code: string) => {
+  // 获取微信登录二维码URL
+  getQrCodeUrl: () => {
     return request<{
-      token: string;
-      type: string;
-      id: number;
-      username: string;
-      email: string;
-      nickname: string;
-      avatar: string;
-      isFirstLogin?: boolean;
-    }>('/wechat/login', {
-      method: 'POST',
-      body: JSON.stringify({ code }),
-    });
+      qrCodeUrl: string;
+      state: string;
+    }>('/wechat/qr-code');
   },
 
-  // 获取微信AppID
+  // 检查登录状态
+  checkStatus: (state: string) => {
+    return request<{
+      status: 'waiting' | 'scanned' | 'confirmed' | 'expired' | 'error';
+      token?: string;
+      userId?: number;
+      username?: string;
+      nickname?: string;
+      avatar?: string;
+      isFirstLogin?: boolean;
+      worlds?: Array<{
+        id: number;
+        name: string;
+        description: string;
+        userId: number;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+      error?: string;
+    }>(`/wechat/status/${state}`);
+  },
+
+  // 获取微信AppID（兼容旧接口）
   getAppId: () => {
     return request<{ appid: string }>('/wechat/appid');
   },
@@ -769,6 +957,7 @@ export const journalApi = {
     title: string;
     content: string;
     entryDate?: string;
+    tags?: string;
     worldId?: number;
     eraId?: number;
     characterId?: number;
@@ -1277,6 +1466,103 @@ export const tokenStorage = {
 };
 
 // 图片上传API
+// 回收站 API
+export const recycleBinApi = {
+  // 获取回收站数据
+  getRecycleBin: (token: string) => {
+    return request<{
+      characters: Array<any>;
+      worlds: Array<any>;
+      eras: Array<any>;
+      scripts: Array<any>;
+    }>('/recycle-bin', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 恢复角色
+  restoreCharacter: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/characters/${id}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 恢复世界
+  restoreWorld: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/worlds/${id}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 恢复时代
+  restoreEra: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/eras/${id}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 恢复剧本
+  restoreScript: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/scripts/${id}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 永久删除角色
+  permanentlyDeleteCharacter: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/characters/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 永久删除世界
+  permanentlyDeleteWorld: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/worlds/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 永久删除时代
+  permanentlyDeleteEra: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/eras/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 永久删除剧本
+  permanentlyDeleteScript: (id: number, token: string) => {
+    return request<void>(`/recycle-bin/scripts/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
 export const imageApi = {
   // 上传图片文件
   uploadImage: (file: File, category: string = 'general', token?: string) => {
