@@ -4,6 +4,8 @@ import { AppSettings, GameState, AIProvider, WorldScene, Character, CustomScenar
 import { Button } from '../components/Button';
 import { WORLD_SCENES } from '../constants';
 import { adminApi, imageApi } from '../services/api';
+import { ResourcePicker } from '../components/ResourcePicker';
+import { getAllTemplatesForCategory } from '../utils/promptTemplates';
 
 interface AdminScreenProps {
     gameState: GameState;
@@ -83,7 +85,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const [loading, setLoading] = useState(false);
     
     // Navigation
-    const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'settings'>('dashboard');
+    const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources'>('dashboard');
     const [settingsTab, setSettingsTab] = useState<'general' | 'models'>('models');
     
     // CRUD State
@@ -108,6 +110,36 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const [systemWorlds, setSystemWorlds] = useState<any[]>([]);
     const [systemEras, setSystemEras] = useState<any[]>([]);
     const [systemCharacters, setSystemCharacters] = useState<any[]>([]);
+    const [inviteCodes, setInviteCodes] = useState<any[]>([]);
+    const [inviteCodeRequired, setInviteCodeRequired] = useState(false);
+    
+    // 邀请码生成表单
+    const [generateQuantity, setGenerateQuantity] = useState(10);
+    const [generateExpiresAt, setGenerateExpiresAt] = useState('');
+    
+    // 资源管理状态
+    const [resources, setResources] = useState<any[]>([]);
+    const [resourceCategory, setResourceCategory] = useState<string>('all');
+    const [resourceUploading, setResourceUploading] = useState(false);
+    const [newResourceName, setNewResourceName] = useState('');
+    const [newResourceDescription, setNewResourceDescription] = useState('');
+    const [newResourcePrompt, setNewResourcePrompt] = useState('');
+    const [newResourceTags, setNewResourceTags] = useState('');
+    
+    // 资源编辑状态
+    const [editingResource, setEditingResource] = useState<any | null>(null);
+    const [editResourceName, setEditResourceName] = useState('');
+    const [editResourceDescription, setEditResourceDescription] = useState('');
+    const [editResourcePrompt, setEditResourcePrompt] = useState('');
+    const [editResourceTags, setEditResourceTags] = useState('');
+    const [editResourceUrl, setEditResourceUrl] = useState('');
+    const [editResourceUploading, setEditResourceUploading] = useState(false);
+    
+    // 资源选择器状态
+    const [showResourcePicker, setShowResourcePicker] = useState(false);
+    const [resourcePickerCategory, setResourcePickerCategory] = useState<string>('era');
+    const [resourcePickerCallback, setResourcePickerCallback] = useState<((url: string) => void) | null>(null);
+    const [resourcePickerCurrentUrl, setResourcePickerCurrentUrl] = useState<string | undefined>(undefined);
 
     // 检查本地存储的token
     useEffect(() => {
@@ -161,19 +193,24 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         console.log("[AdminScreen] Token存在:", !!token);
         try {
             console.log("[AdminScreen] 开始并行加载系统数据...");
-            const [worlds, eras, characters] = await Promise.all([
+            const [worlds, eras, characters, codes, config] = await Promise.all([
                 adminApi.worlds.getAll(token),
                 adminApi.eras.getAll(token),
-                adminApi.characters.getAll(token)
+                adminApi.characters.getAll(token),
+                adminApi.inviteCodes.getAll(token),
+                adminApi.config.getInviteCodeRequired(token)
             ]);
             console.log("[AdminScreen] 数据加载成功:", {
                 worlds: worlds.length,
                 eras: eras.length,
-                characters: characters.length
+                characters: characters.length,
+                inviteCodes: codes.length
             });
             setSystemWorlds(worlds);
             setSystemEras(eras);
             setSystemCharacters(characters);
+            setInviteCodes(codes);
+            setInviteCodeRequired(config.inviteCodeRequired);
             console.log("[AdminScreen] 系统数据状态已更新");
         } catch (error) {
             console.error('[AdminScreen] 加载系统数据失败:', error);
@@ -182,8 +219,31 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             setSystemWorlds([]);
             setSystemEras([]);
             setSystemCharacters([]);
+            setInviteCodes([]);
         }
     };
+
+    // 加载资源数据
+    const loadResources = async (category?: string) => {
+        if (!adminToken) return;
+        try {
+            const data = category && category !== 'all'
+                ? await adminApi.resources.getAll(category, adminToken)
+                : await adminApi.resources.getAll(undefined, adminToken);
+            setResources(data);
+        } catch (err) {
+            console.error('加载资源失败:', err);
+            setResources([]);
+        }
+    };
+
+    // 当切换到资源管理页面时，自动加载资源
+    useEffect(() => {
+        if (activeSection === 'resources' && adminToken) {
+            loadResources(resourceCategory === 'all' ? undefined : resourceCategory);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeSection, adminToken]);
 
     // --- CRUD Logic Wrappers ---
 
@@ -459,6 +519,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     <AdminSidebarItem label="互动剧本 Stories" icon="📜" active={activeSection === 'scenarios'} onClick={() => {setActiveSection('scenarios'); switchToList();}} />
                     
                     <p className="px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">System</p>
+                    <AdminSidebarItem label="资源管理 Resources" icon="🖼️" active={activeSection === 'resources'} onClick={async () => {
+                        setActiveSection('resources'); 
+                        switchToList();
+                        if (adminToken) {
+                            await loadResources(resourceCategory === 'all' ? undefined : resourceCategory);
+                        }
+                    }} />
+                    <AdminSidebarItem label="邀请码管理 Invite" icon="🎫" active={activeSection === 'invite-codes'} onClick={() => {setActiveSection('invite-codes'); switchToList();}} />
                     <AdminSidebarItem label="全局配置 Config" icon="⚙️" active={activeSection === 'settings'} onClick={() => {setActiveSection('settings'); switchToList();}} />
                 </div>
 
@@ -479,7 +547,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     activeSection === 'dashboard' ? '系统概览' :
                     activeSection === 'eras' ? '时代与场景管理' :
                     activeSection === 'characters' ? 'E-Soul 角色数据库' :
-                    activeSection === 'scenarios' ? '互动剧本库' : '系统全局设置'
+                    activeSection === 'scenarios' ? '互动剧本库' :
+                    activeSection === 'invite-codes' ? '邀请码管理' :
+                    activeSection === 'resources' ? '资源管理' : '系统全局设置'
                 } onBack={onBack} onLogout={handleLogout} />
 
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
@@ -937,6 +1007,678 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                         </>
                     )}
 
+                    {/* --- INVITE CODES MANAGEMENT --- */}
+                    {activeSection === 'invite-codes' && (
+                        <div className="max-w-6xl mx-auto space-y-6">
+                            {/* 邀请码开关 */}
+                            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+                                <h3 className="text-lg font-bold text-slate-100 mb-4">邀请码设置</h3>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-slate-300 mb-1">注册是否需要邀请码</p>
+                                        <p className="text-xs text-slate-500">开启后，用户注册时必须输入有效的邀请码</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={inviteCodeRequired}
+                                            onChange={async (e) => {
+                                                if (!adminToken) return;
+                                                try {
+                                                    await adminApi.config.setInviteCodeRequired(e.target.checked, adminToken);
+                                                    setInviteCodeRequired(e.target.checked);
+                                                } catch (error: any) {
+                                                    alert('设置失败: ' + (error.message || '未知错误'));
+                                                }
+                                            }}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* 生成邀请码 */}
+                            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+                                <h3 className="text-lg font-bold text-slate-100 mb-4">生成邀请码</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <InputGroup label="生成数量">
+                                        <TextInput
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            value={generateQuantity}
+                                            onChange={(e) => setGenerateQuantity(parseInt(e.target.value) || 10)}
+                                        />
+                                    </InputGroup>
+                                    <InputGroup label="过期时间">
+                                        <TextInput
+                                            type="datetime-local"
+                                            value={generateExpiresAt}
+                                            onChange={(e) => setGenerateExpiresAt(e.target.value)}
+                                        />
+                                    </InputGroup>
+                                    <div className="flex items-end">
+                                        <button
+                                            onClick={async () => {
+                                                if (!adminToken) return;
+                                                if (!generateExpiresAt) {
+                                                    alert('请设置过期时间');
+                                                    return;
+                                                }
+                                                try {
+                                                    const codes = await adminApi.inviteCodes.generate(
+                                                        generateQuantity,
+                                                        new Date(generateExpiresAt).toISOString(),
+                                                        adminToken
+                                                    );
+                                                    alert(`成功生成 ${codes.length} 个邀请码`);
+                                                    await loadSystemData(adminToken);
+                                                } catch (error: any) {
+                                                    alert('生成失败: ' + (error.message || '未知错误'));
+                                                }
+                                            }}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                                        >
+                                            生成邀请码
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 邀请码列表 */}
+                            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-bold text-slate-100">邀请码列表</h3>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const availableCodes = inviteCodes
+                                                    .filter(code => !code.isUsed && new Date(code.expiresAt) >= new Date())
+                                                    .map(code => code.code)
+                                                    .join('\n');
+                                                if (availableCodes) {
+                                                    navigator.clipboard.writeText(availableCodes).then(() => {
+                                                        alert('已复制所有可用邀请码到剪贴板');
+                                                    }).catch(() => {
+                                                        alert('复制失败，请手动复制');
+                                                    });
+                                                } else {
+                                                    alert('没有可用的邀请码');
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded transition-colors"
+                                        >
+                                            复制所有可用
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const csvContent = [
+                                                    ['邀请码', '状态', '使用用户', '使用时间', '过期时间', '创建时间'].join(','),
+                                                    ...inviteCodes.map(code => {
+                                                        const isExpired = new Date(code.expiresAt) < new Date();
+                                                        const status = code.isUsed ? '已使用' : isExpired ? '已过期' : '可用';
+                                                        return [
+                                                            code.code,
+                                                            status,
+                                                            code.usedByUserId || '',
+                                                            code.usedAt ? new Date(code.usedAt).toLocaleString('zh-CN') : '',
+                                                            new Date(code.expiresAt).toLocaleString('zh-CN'),
+                                                            new Date(code.createdAt).toLocaleString('zh-CN')
+                                                        ].join(',');
+                                                    })
+                                                ].join('\n');
+                                                
+                                                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                                                const link = document.createElement('a');
+                                                const url = URL.createObjectURL(blob);
+                                                link.setAttribute('href', url);
+                                                link.setAttribute('download', `invite-codes-${new Date().toISOString().split('T')[0]}.csv`);
+                                                link.style.visibility = 'hidden';
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                            }}
+                                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded transition-colors"
+                                        >
+                                            导出 CSV
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const txtContent = inviteCodes
+                                                    .filter(code => !code.isUsed && new Date(code.expiresAt) >= new Date())
+                                                    .map(code => code.code)
+                                                    .join('\n');
+                                                
+                                                if (txtContent) {
+                                                    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+                                                    const link = document.createElement('a');
+                                                    const url = URL.createObjectURL(blob);
+                                                    link.setAttribute('href', url);
+                                                    link.setAttribute('download', `invite-codes-${new Date().toISOString().split('T')[0]}.txt`);
+                                                    link.style.visibility = 'hidden';
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    document.body.removeChild(link);
+                                                } else {
+                                                    alert('没有可用的邀请码');
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold rounded transition-colors"
+                                        >
+                                            导出可用码 (TXT)
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-700">
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">邀请码</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">状态</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">使用用户</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">使用时间</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">过期时间</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">创建时间</th>
+                                                <th className="text-left py-3 px-4 text-slate-400 font-bold uppercase">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {inviteCodes.map((code) => {
+                                                const isExpired = new Date(code.expiresAt) < new Date();
+                                                const status = code.isUsed ? '已使用' : isExpired ? '已过期' : '可用';
+                                                const statusColor = code.isUsed ? 'text-red-400' : isExpired ? 'text-yellow-400' : 'text-green-400';
+                                                return (
+                                                    <tr key={code.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+                                                        <td className="py-3 px-4 font-mono font-bold text-slate-200">
+                                                            <div className="flex items-center gap-2">
+                                                                <span>{code.code}</span>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        navigator.clipboard.writeText(code.code).then(() => {
+                                                                            const btn = e.target as HTMLElement;
+                                                                            if (btn) {
+                                                                                const originalText = btn.textContent;
+                                                                                btn.textContent = '✓';
+                                                                                btn.className = 'text-green-400 hover:text-green-300 text-xs';
+                                                                                setTimeout(() => {
+                                                                                    btn.textContent = originalText;
+                                                                                    btn.className = 'text-slate-400 hover:text-slate-300 text-xs';
+                                                                                }, 1000);
+                                                                            }
+                                                                        }).catch(() => {
+                                                                            alert('复制失败，请手动复制: ' + code.code);
+                                                                        });
+                                                                    }}
+                                                                    className="text-slate-400 hover:text-slate-300 text-xs"
+                                                                    title="复制邀请码"
+                                                                >
+                                                                    📋
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                        <td className={`py-3 px-4 ${statusColor} font-bold`}>{status}</td>
+                                                        <td className="py-3 px-4 text-slate-400">{code.usedByUserId || '-'}</td>
+                                                        <td className="py-3 px-4 text-slate-400">{code.usedAt ? new Date(code.usedAt).toLocaleString('zh-CN') : '-'}</td>
+                                                        <td className={`py-3 px-4 ${isExpired ? 'text-red-400' : 'text-slate-400'}`}>
+                                                            {new Date(code.expiresAt).toLocaleString('zh-CN')}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-500">{new Date(code.createdAt).toLocaleString('zh-CN')}</td>
+                                                        <td className="py-3 px-4">
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(code.code).then(() => {
+                                                                        alert('已复制: ' + code.code);
+                                                                    }).catch(() => {
+                                                                        alert('复制失败，请手动复制: ' + code.code);
+                                                                    });
+                                                                }}
+                                                                className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded transition-colors"
+                                                            >
+                                                                复制
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                    {inviteCodes.length === 0 && (
+                                        <p className="text-center text-slate-500 py-8">暂无邀请码</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- RESOURCES MANAGEMENT --- */}
+                    {activeSection === 'resources' && (
+                        <div className="max-w-7xl mx-auto space-y-6">
+                            {/* 顶部工具栏 */}
+                            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <h2 className="text-xl font-bold text-slate-100">资源管理</h2>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm text-slate-400">分类筛选:</span>
+                                        <select
+                                            value={resourceCategory}
+                                            onChange={async (e) => {
+                                                const category = e.target.value;
+                                                setResourceCategory(category);
+                                                await loadResources(category === 'all' ? undefined : category);
+                                            }}
+                                            className="bg-slate-800 border border-slate-700 rounded-lg py-2 px-4 text-white text-sm focus:border-indigo-500 outline-none"
+                                        >
+                                            <option value="all">全部分类 ({resources.length})</option>
+                                            <option value="avatar">头像</option>
+                                            <option value="character">角色</option>
+                                            <option value="era">时代</option>
+                                            <option value="scenario">剧本</option>
+                                            <option value="journal">日记</option>
+                                            <option value="general">通用</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* 左侧：上传/编辑表单 */}
+                                <div className="lg:col-span-1">
+                                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-lg sticky top-4">
+                                        {editingResource ? (
+                                            <>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                                                        <span>✏️</span> 编辑资源
+                                                    </h3>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingResource(null);
+                                                            setEditResourceName('');
+                                                            setEditResourceDescription('');
+                                                            setEditResourcePrompt('');
+                                                            setEditResourceTags('');
+                                                            setEditResourceUrl('');
+                                                        }}
+                                                        className="text-slate-400 hover:text-white text-sm"
+                                                    >
+                                                        取消
+                                                    </button>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <InputGroup label="资源名称">
+                                                        <TextInput
+                                                            value={editResourceName}
+                                                            onChange={e => setEditResourceName(e.target.value)}
+                                                            placeholder="输入资源名称"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="描述">
+                                                        <TextInput
+                                                            value={editResourceDescription}
+                                                            onChange={e => setEditResourceDescription(e.target.value)}
+                                                            placeholder="输入描述"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="提示词" subLabel="AI生成图片的提示词">
+                                                        <textarea
+                                                            value={editResourcePrompt}
+                                                            onChange={e => setEditResourcePrompt(e.target.value)}
+                                                            placeholder="输入提示词..."
+                                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-white text-sm placeholder-slate-500 focus:border-indigo-500 outline-none resize-none h-24"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="标签">
+                                                        <TextInput
+                                                            value={editResourceTags}
+                                                            onChange={e => setEditResourceTags(e.target.value)}
+                                                            placeholder="例如：古风,唯美,二次元"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="图片URL" subLabel="根据提示词生成图片后，粘贴图片URL">
+                                                        <TextInput
+                                                            value={editResourceUrl}
+                                                            onChange={e => setEditResourceUrl(e.target.value)}
+                                                            placeholder="输入图片URL或上传新图片"
+                                                        />
+                                                    </InputGroup>
+                                                    <div>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (!file || !adminToken || !editingResource) return;
+                                                                setEditResourceUploading(true);
+                                                                try {
+                                                                    const result = await imageApi.uploadImage(file, 'general', adminToken);
+                                                                    if (result && result.url) {
+                                                                        setEditResourceUrl(result.url);
+                                                                        alert('图片上传成功');
+                                                                    } else {
+                                                                        alert('图片上传失败：未返回URL');
+                                                                    }
+                                                                } catch (err: any) {
+                                                                    alert('上传失败: ' + (err.message || '未知错误'));
+                                                                } finally {
+                                                                    setEditResourceUploading(false);
+                                                                }
+                                                            }}
+                                                            className="hidden"
+                                                            id="edit-resource-upload"
+                                                        />
+                                                        <label
+                                                            htmlFor="edit-resource-upload"
+                                                            className={`block w-full text-center px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors cursor-pointer text-sm ${editResourceUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {editResourceUploading ? '上传中...' : '📁 上传新图片'}
+                                                        </label>
+                                                    </div>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!adminToken || !editingResource) return;
+                                                            try {
+                                                                await adminApi.resources.update(
+                                                                    editingResource.id,
+                                                                    {
+                                                                        name: editResourceName,
+                                                                        description: editResourceDescription,
+                                                                        prompt: editResourcePrompt,
+                                                                        tags: editResourceTags,
+                                                                        url: editResourceUrl
+                                                                    },
+                                                                    adminToken
+                                                                );
+                                                                await loadResources(resourceCategory === 'all' ? undefined : resourceCategory);
+                                                                setEditingResource(null);
+                                                                setEditResourceName('');
+                                                                setEditResourceDescription('');
+                                                                setEditResourcePrompt('');
+                                                                setEditResourceTags('');
+                                                                setEditResourceUrl('');
+                                                                alert('资源更新成功');
+                                                            } catch (err: any) {
+                                                                alert('更新失败: ' + (err.message || '未知错误'));
+                                                            }
+                                                        }}
+                                                        className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors text-sm"
+                                                    >
+                                                        保存更改
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+                                                    <span>📤</span> 上传新资源
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    <InputGroup label="分类" subLabel="选择资源分类">
+                                                        <select
+                                                            value={resourceCategory === 'all' ? '' : resourceCategory}
+                                                            onChange={e => setResourceCategory(e.target.value)}
+                                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-white text-sm focus:border-indigo-500 outline-none"
+                                                        >
+                                                            <option value="">选择分类</option>
+                                                            <option value="avatar">头像</option>
+                                                            <option value="character">角色</option>
+                                                            <option value="era">时代</option>
+                                                            <option value="scenario">剧本</option>
+                                                            <option value="journal">日记</option>
+                                                            <option value="general">通用</option>
+                                                        </select>
+                                                    </InputGroup>
+                                                    <InputGroup label="资源名称">
+                                                        <TextInput
+                                                            value={newResourceName}
+                                                            onChange={e => setNewResourceName(e.target.value)}
+                                                            placeholder="输入资源名称"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="描述">
+                                                        <TextInput
+                                                            value={newResourceDescription}
+                                                            onChange={e => setNewResourceDescription(e.target.value)}
+                                                            placeholder="输入描述"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="提示词" subLabel="AI生成图片的提示词">
+                                                        <textarea
+                                                            value={newResourcePrompt}
+                                                            onChange={e => setNewResourcePrompt(e.target.value)}
+                                                            placeholder="输入提示词..."
+                                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-white text-sm placeholder-slate-500 focus:border-indigo-500 outline-none resize-none h-20"
+                                                        />
+                                                        {resourceCategory && resourceCategory !== 'all' && getAllTemplatesForCategory(resourceCategory).length > 0 && (
+                                                            <div className="mt-2 flex gap-2 flex-wrap">
+                                                                {getAllTemplatesForCategory(resourceCategory).slice(0, 3).map((template, idx) => (
+                                                                    <button
+                                                                        key={idx}
+                                                                        onClick={() => setNewResourcePrompt(template.prompt)}
+                                                                        className="text-xs px-2 py-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 rounded border border-indigo-500/30 transition-colors"
+                                                                        title={template.description}
+                                                                    >
+                                                                        {template.name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </InputGroup>
+                                                    <InputGroup label="标签">
+                                                        <TextInput
+                                                            value={newResourceTags}
+                                                            onChange={e => setNewResourceTags(e.target.value)}
+                                                            placeholder="例如：古风,唯美,二次元"
+                                                        />
+                                                    </InputGroup>
+                                                    <div>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (!file || !resourceCategory || resourceCategory === 'all') {
+                                                                    alert('请先选择分类');
+                                                                    return;
+                                                                }
+                                                                if (!adminToken) return;
+                                                                setResourceUploading(true);
+                                                                try {
+                                                                    await adminApi.resources.create(
+                                                                        file,
+                                                                        resourceCategory,
+                                                                        newResourceName || undefined,
+                                                                        newResourceDescription || undefined,
+                                                                        newResourcePrompt || undefined,
+                                                                        newResourceTags || undefined,
+                                                                        adminToken
+                                                                    );
+                                                                    setNewResourceName('');
+                                                                    setNewResourceDescription('');
+                                                                    setNewResourcePrompt('');
+                                                                    setNewResourceTags('');
+                                                                    const data = resourceCategory === 'all' 
+                                                                        ? await adminApi.resources.getAll(undefined, adminToken)
+                                                                        : await adminApi.resources.getAll(resourceCategory, adminToken);
+                                                                    setResources(data);
+                                                                    alert('资源上传成功');
+                                                                } catch (err: any) {
+                                                                    alert('上传失败: ' + (err.message || '未知错误'));
+                                                                } finally {
+                                                                    setResourceUploading(false);
+                                                                }
+                                                            }}
+                                                            className="hidden"
+                                                            id="resource-upload"
+                                                        />
+                                                        <label
+                                                            htmlFor="resource-upload"
+                                                            className={`block w-full text-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-sm ${resourceUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {resourceUploading ? '上传中...' : '📁 选择并上传图片'}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 右侧：资源列表 */}
+                                <div className="lg:col-span-2">
+                                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-lg">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-bold text-slate-100">
+                                                资源列表 
+                                                <span className="text-sm font-normal text-slate-400 ml-2">({resources.length} 个)</span>
+                                            </h3>
+                                        </div>
+                                        
+                                        {resources.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-slate-500 text-sm">暂无资源</p>
+                                                <p className="text-slate-600 text-xs mt-2">请上传新资源或选择其他分类</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                {resources.map((resource) => (
+                                                    <div key={resource.id} className="group bg-slate-800 rounded-lg overflow-hidden border border-slate-700 hover:border-indigo-500/50 transition-all cursor-pointer" onClick={() => {
+                                                        setEditingResource(resource);
+                                                        setEditResourceName(resource.name || '');
+                                                        setEditResourceDescription(resource.description || '');
+                                                        setEditResourcePrompt(resource.prompt || '');
+                                                        setEditResourceTags(resource.tags || '');
+                                                        setEditResourceUrl(resource.url || '');
+                                                    }}>
+                                                        {/* 图片区域 */}
+                                                        <div className="aspect-square bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                                                            <img
+                                                                src={resource.url}
+                                                                alt={resource.name}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%231e293b" width="200" height="200"/%3E%3Ctext fill="%2364758b" x="100" y="100" text-anchor="middle" dy=".3em" font-size="14"%3E占位符%3C/text%3E%3C/svg%3E';
+                                                                }}
+                                                            />
+                                                            {/* 悬浮操作按钮 */}
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 flex-wrap">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setEditingResource(resource);
+                                                                        setEditResourceName(resource.name || '');
+                                                                        setEditResourceDescription(resource.description || '');
+                                                                        setEditResourcePrompt(resource.prompt || '');
+                                                                        setEditResourceTags(resource.tags || '');
+                                                                        setEditResourceUrl(resource.url || '');
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors z-10"
+                                                                    title="编辑资源"
+                                                                >
+                                                                    ✏️ 编辑
+                                                                </button>
+                                                                {resource.prompt && (
+                                                                    <button
+                                                                        onClick={async (e) => {
+                                                                            e.stopPropagation();
+                                                                            try {
+                                                                                await navigator.clipboard.writeText(resource.prompt);
+                                                                                alert('提示词已复制到剪贴板');
+                                                                            } catch (err) {
+                                                                                alert('复制失败');
+                                                                            }
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded transition-colors"
+                                                                        title="复制提示词"
+                                                                    >
+                                                                        📋 复制
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        if (!adminToken) return;
+                                                                        if (confirm('确定要删除这个资源吗？')) {
+                                                                            try {
+                                                                                await adminApi.resources.delete(resource.id, adminToken);
+                                                                                setResources(resources.filter(r => r.id !== resource.id));
+                                                                            } catch (err: any) {
+                                                                                alert('删除失败: ' + (err.message || '未知错误'));
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                                                                    title="删除资源"
+                                                                >
+                                                                    🗑️ 删除
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* 信息区域 */}
+                                                        <div className="p-3 space-y-2">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-sm font-bold text-white truncate" title={resource.name}>
+                                                                        {resource.name}
+                                                                    </p>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <span className="text-xs px-2 py-0.5 bg-indigo-600/20 text-indigo-300 rounded border border-indigo-500/30">
+                                                                            {resource.category}
+                                                                        </span>
+                                                                        {resource.tags && (
+                                                                            <span className="text-xs text-slate-500 truncate" title={resource.tags}>
+                                                                                {resource.tags.split(',').slice(0, 2).join(', ')}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setEditingResource(resource);
+                                                                        setEditResourceName(resource.name || '');
+                                                                        setEditResourceDescription(resource.description || '');
+                                                                        setEditResourcePrompt(resource.prompt || '');
+                                                                        setEditResourceTags(resource.tags || '');
+                                                                        setEditResourceUrl(resource.url || '');
+                                                                    }}
+                                                                    className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors flex-shrink-0"
+                                                                    title="编辑资源"
+                                                                >
+                                                                    ✏️
+                                                                </button>
+                                                            </div>
+                                                            
+                                                            {resource.description && (
+                                                                <p className="text-xs text-slate-400 line-clamp-2" title={resource.description}>
+                                                                    {resource.description}
+                                                                </p>
+                                                            )}
+                                                            
+                                                            {resource.prompt && (
+                                                                <details className="text-xs" onClick={(e) => e.stopPropagation()}>
+                                                                    <summary className="text-indigo-400 hover:text-indigo-300 cursor-pointer">
+                                                                        查看提示词
+                                                                    </summary>
+                                                                    <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700">
+                                                                        <p className="text-slate-300 line-clamp-4 text-xs" title={resource.prompt}>
+                                                                            {resource.prompt}
+                                                                        </p>
+                                                                    </div>
+                                                                </details>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* --- SETTINGS --- */}
                     {activeSection === 'settings' && (
                         <div className="max-w-4xl mx-auto">
@@ -1083,6 +1825,22 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
 
                 </div>
             </div>
+            {showResourcePicker && resourcePickerCallback && (
+                <ResourcePicker
+                    category={resourcePickerCategory as any}
+                    onSelect={(url) => {
+                        resourcePickerCallback(url);
+                        setShowResourcePicker(false);
+                        setResourcePickerCallback(null);
+                    }}
+                    onClose={() => {
+                        setShowResourcePicker(false);
+                        setResourcePickerCallback(null);
+                    }}
+                    currentUrl={resourcePickerCurrentUrl}
+                    token={adminToken || undefined}
+                />
+            )}
         </div>
     );
 };
