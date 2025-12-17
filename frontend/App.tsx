@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { WORLD_SCENES, APP_TITLE } from './constants';
 import { ChatWindow } from './components/ChatWindow';
 import { ScenarioBuilder } from './components/ScenarioBuilder';
@@ -9,7 +9,7 @@ import { SceneCard } from './components/SceneCard';
 import { Character, GameState, Message, CustomScenario, AppSettings, WorldScene, JournalEntry, JournalEcho, Mail, EraMemory, DebugLog } from './types';
 import { geminiService } from './services/gemini';
 import { storageService } from './services/storage';
-import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi } from './services/api';
+import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi, membershipApi } from './services/api';
 import { syncService } from './services/syncService';
 import { EraConstructorModal } from './components/EraConstructorModal';
 import { CharacterConstructorModal } from './components/CharacterConstructorModal';
@@ -20,11 +20,26 @@ import { EraMemoryModal } from './components/EraMemoryModal';
 import { Button } from './components/Button';
 import { DebugConsole } from './components/DebugConsole';
 import { ConnectionSpace } from './components/ConnectionSpace';
-import { AdminScreen } from './admin/AdminScreen';
 import { LoginModal } from './components/LoginModal';
-import { MobileApp } from './mobile/MobileApp';
 import { WelcomeOverlay } from './components/WelcomeOverlay';
 import { RecycleBinModal } from './components/RecycleBinModal';
+import { MembershipModal } from './components/MembershipModal';
+import { GlobalDialogs, showAlert, showConfirm } from './utils/dialog';
+import { InitializationWizard } from './components/InitializationWizard';
+
+// 代码分割：使用动态导入优化大组件
+const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
+const MobileApp = lazy(() => import('./mobile/MobileApp').then(module => ({ default: module.MobileApp })));
+
+// 加载中组件
+const LoadingScreen: React.FC = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+      <p className="text-white text-lg">加载中...</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   
@@ -104,6 +119,7 @@ const App: React.FC = () => {
       autoGenerateStoryScenes: false,
       autoGenerateJournalImages: false,
       debugMode: false,
+      dialogueStyle: 'mobile-chat', // 默认使用即时网聊风格
       textProvider: 'gemini',
       imageProvider: 'gemini',
       videoProvider: 'gemini',
@@ -127,7 +143,7 @@ const App: React.FC = () => {
   
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showEraCreator, setShowEraCreator] = useState(false);
-  const [editingScene, setEditingScene] = useState<WorldScene | null>(null); 
+  const [editingScene, setEditingScene] = useState<WorldScene | null>(null);
   
   const [showCharacterCreator, setShowCharacterCreator] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
@@ -138,8 +154,49 @@ const App: React.FC = () => {
   const [showEraMemory, setShowEraMemory] = useState(false);
   const [memoryScene, setMemoryScene] = useState<WorldScene | null>(null);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
+  const [showMembershipModal, setShowMembershipModal] = useState(false);
+  const [currentMembership, setCurrentMembership] = useState<any>(null);
+  const [showInitializationWizard, setShowInitializationWizard] = useState(false);
+  const [initializationData, setInitializationData] = useState<{ token: string; userId: number; worldId: number } | null>(null);
+  // 标记是否已经处理过初始化向导，防止在 entryPoint 渲染后被错误触发
+  const initializationWizardProcessedRef = useRef(false);
+  
+  // 监听初始化向导状态变化，用于调试
+  useEffect(() => {
+    console.log('[App] 初始化向导状态变化:', {
+      showInitializationWizard,
+      hasInitializationData: !!initializationData,
+      currentScreen: gameState.currentScreen,
+      initializationData: initializationData ? {
+        userId: initializationData.userId,
+        worldId: initializationData.worldId,
+        tokenExists: !!initializationData.token
+      } : null
+    });
+    
+    // 如果初始化向导状态为 true，但没有数据，或者不在正确的页面，自动清理
+    if (showInitializationWizard && (!initializationData || (gameState.currentScreen !== 'entryPoint' && gameState.currentScreen !== 'profileSetup'))) {
+      console.warn('[App] 检测到初始化向导状态不一致，自动清理:', {
+        showInitializationWizard,
+        hasInitializationData: !!initializationData,
+        currentScreen: gameState.currentScreen
+      });
+      setShowInitializationWizard(false);
+      setInitializationData(null);
+      initializationWizardProcessedRef.current = false; // 重置标记
+    }
+    
+    // 如果已经处理过初始化向导，但状态仍然为 true，且不在正确的页面，强制清理
+    if (initializationWizardProcessedRef.current && showInitializationWizard && gameState.currentScreen !== 'entryPoint' && gameState.currentScreen !== 'profileSetup') {
+      console.warn('[App] 检测到初始化向导已处理但仍在显示，强制清理');
+      setShowInitializationWizard(false);
+      setInitializationData(null);
+      initializationWizardProcessedRef.current = false;
+    }
+  }, [showInitializationWizard, initializationData, gameState.currentScreen]);
 
   const [profileNickname, setProfileNickname] = useState('');
+  const [showGuestNicknameModal, setShowGuestNicknameModal] = useState(false);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const pendingActionRef = useRef<() => void>(() => {});
@@ -169,6 +226,7 @@ const App: React.FC = () => {
               autoGenerateAvatars: savedSettings.autoGenerateAvatars ?? DEFAULT_STATE.settings.autoGenerateAvatars,
               autoGenerateStoryScenes: savedSettings.autoGenerateStoryScenes ?? DEFAULT_STATE.settings.autoGenerateStoryScenes,
               autoGenerateJournalImages: savedSettings.autoGenerateJournalImages ?? DEFAULT_STATE.settings.autoGenerateJournalImages,
+              dialogueStyle: savedSettings.dialogueStyle || DEFAULT_STATE.settings.dialogueStyle,
               textProvider: savedSettings.textProvider || DEFAULT_STATE.settings.textProvider,
               imageProvider: savedSettings.imageProvider || DEFAULT_STATE.settings.imageProvider,
               videoProvider: savedSettings.videoProvider || DEFAULT_STATE.settings.videoProvider,
@@ -221,12 +279,19 @@ const App: React.FC = () => {
 
   // Logging hook
   useEffect(() => {
-      geminiService.setLogCallback((log: DebugLog) => {
+      const logCallback = (log: DebugLog) => {
           setGameState((prevGameState: GameState) => ({
               ...prevGameState,
               debugLogs: [...prevGameState.debugLogs, log]
           }));
-      });
+      };
+      
+      geminiService.setLogCallback(logCallback);
+      
+      // 清理函数：移除回调，防止内存泄漏
+      return () => {
+          geminiService.setLogCallback(() => {}); // 使用空函数代替null
+      };
   }, []);
 
   // Responsive adaptation listener
@@ -275,14 +340,14 @@ const App: React.FC = () => {
             const chattedCharIds = Object.keys(gameState.history);
             let candidate: Character | null = null;
             if (chattedCharIds.length > 0) {
-                 const allScenes = [...getCurrentScenes(), ...gameState.customScenes];
+                 const allScenes = [...currentScenes, ...gameState.customScenes];
                  for (const scene of allScenes) {
                      const sceneChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
                      const found = sceneChars.find(c => c.id === chattedCharIds[0]);
                      if (found) { candidate = found; break; }
                  }
             }
-            if (!candidate) candidate = getCurrentScenes()[0].characters[0]; 
+            if (!candidate && currentScenes.length > 0) candidate = currentScenes[0].characters[0]; 
 
             if (candidate) {
                  const letter = await geminiService.generateChronosLetter(candidate, gameState.userProfile!, gameState.journalEntries);
@@ -306,7 +371,7 @@ const App: React.FC = () => {
     checkMail();
   }, [isLoaded, gameState.userProfile]);
 
-  // 当进入entryPoint（我的心域）或sceneSelection（场景选择）时，如果是登录用户，加载并同步时代数据
+  // 当进入entryPoint（我的心域）或sceneSelection（场景选择）时，如果是登录用户，加载并同步场景数据
   useEffect(() => {
     const shouldLoadData = gameState.currentScreen === 'entryPoint' || gameState.currentScreen === 'sceneSelection';
     
@@ -338,11 +403,37 @@ const App: React.FC = () => {
         console.log('[DataLoader] 标志为true但数据为空，重置标志并重新加载');
         hasLoadedEntryPointData.current = false;
       }
+      
+      // 如果已经有 userWorldScenes 数据，说明 handleLoginSuccess 已经加载过了，跳过
+      if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
+        console.log('[DataLoader] 检测到已有数据（可能来自 handleLoginSuccess），跳过加载。数据数量:', gameState.userWorldScenes.length);
+        hasLoadedEntryPointData.current = true;
+        return;
+      }
+      
       const token = localStorage.getItem('auth_token');
       console.log(`[DataLoader ${gameState.currentScreen}] 条件检查通过，token存在:`, !!token);
       
+      if (!token) {
+        console.warn(`[DataLoader ${gameState.currentScreen}] token不存在，可能是登录流程还未完成`);
+        console.warn(`[DataLoader ${gameState.currentScreen}] 等待200ms后重试...`);
+        // 等待一小段时间，可能是登录流程还未完成
+        setTimeout(() => {
+          const retryToken = localStorage.getItem('auth_token');
+          if (retryToken) {
+            console.log(`[DataLoader ${gameState.currentScreen}] 重试后token存在，开始加载数据`);
+            // 通过更新 gameState 来重新触发 useEffect
+            setGameState(prev => ({ ...prev, lastLoginTime: Date.now() }));
+          } else {
+            console.error(`[DataLoader ${gameState.currentScreen}] 重试后token仍不存在，无法加载数据`);
+            console.error(`[DataLoader ${gameState.currentScreen}] 请检查登录流程是否正确完成`);
+          }
+        }, 200);
+        return;
+      }
+      
       if (token) {
-        console.log(`[DataLoader ${gameState.currentScreen}] ========== 开始加载时代数据 ==========`);
+        console.log(`[DataLoader ${gameState.currentScreen}] ========== 开始加载场景数据 ==========`);
         console.log(`[DataLoader ${gameState.currentScreen}] 当前本地数据:`, {
           userWorldScenesCount: gameState.userWorldScenes?.length || 0,
           userWorldScenes: gameState.userWorldScenes
@@ -357,12 +448,15 @@ const App: React.FC = () => {
             console.log(`[DataLoader ${screenName}] 步骤1完成: 获取世界列表成功，数量:`, worlds.length);
             console.log(`[DataLoader ${screenName}] 世界列表详情:`, JSON.stringify(worlds, null, 2));
             
-            console.log(`[DataLoader ${screenName}] 步骤2: 开始获取时代列表...`);
+            console.log(`[DataLoader ${screenName}] 步骤2: 开始获取场景列表...`);
             const eras = await eraApi.getAllEras(token);
-            console.log(`[DataLoader ${screenName}] 步骤2完成: 获取时代列表成功，数量:`, eras.length);
-            console.log(`[DataLoader ${screenName}] 时代列表详情（原始）:`, JSON.stringify(eras, null, 2));
+            console.log(`[DataLoader ${screenName}] 步骤2完成: 获取场景列表成功，数量:`, eras.length);
+            
+            // 同时加载预置场景列表，用于匹配systemEraId
+            // 不再需要加载预置场景列表，systemEraId直接从后端获取
+            console.log(`[DataLoader ${screenName}] 场景列表详情（原始）:`, JSON.stringify(eras, null, 2));
             if (eras.length > 0) {
-              console.log(`[DataLoader ${screenName}] 第一个时代的结构分析:`, {
+              console.log(`[DataLoader ${screenName}] 第一个场景的结构分析:`, {
                 keys: Object.keys(eras[0]),
                 hasWorldId: 'worldId' in eras[0],
                 hasWorld: 'world' in eras[0],
@@ -380,13 +474,13 @@ const App: React.FC = () => {
             // 将后端数据转换为前端需要的WorldScene格式
             const userWorldScenes: WorldScene[] = [];
             
-            console.log(`[DataLoader ${screenName}] 步骤4: 开始按世界分组时代...`);
-            // 按世界分组时代
+            console.log(`[DataLoader ${screenName}] 步骤4: 开始按世界分组场景...`);
+            // 按世界分组场景
             const erasByWorldId = new Map<number, typeof eras[0][]>();
             eras.forEach(era => {
               // 尝试多种方式获取worldId
               const worldId = era.worldId || (era as any).world?.id || (era as any).worldId;
-              console.log(`[DataLoader ${screenName}] 处理时代:`, { 
+              console.log(`[DataLoader ${screenName}] 处理场景:`, { 
                 eraId: era.id, 
                 eraName: era.name, 
                 worldId,
@@ -399,14 +493,14 @@ const App: React.FC = () => {
                 }
                 erasByWorldId.get(worldId)?.push(era);
               } else {
-                console.warn(`[DataLoader ${screenName}] 时代缺少worldId，完整对象:`, JSON.stringify(era, null, 2));
+                console.warn(`[DataLoader ${screenName}] 场景缺少worldId，完整对象:`, JSON.stringify(era, null, 2));
                 console.warn(`[DataLoader ${screenName}] 尝试从world对象获取:`, (era as any).world);
               }
             });
-            console.log(`[DataLoader ${screenName}] 步骤4完成: 时代分组结果:`, Array.from(erasByWorldId.entries()).map(([k, v]) => ({ worldId: k, erasCount: v.length })));
+            console.log(`[DataLoader ${screenName}] 步骤4完成: 场景分组结果:`, Array.from(erasByWorldId.entries()).map(([k, v]) => ({ worldId: k, erasCount: v.length })));
             
-            console.log(`[DataLoader ${screenName}] 步骤5: 开始按时代分组角色...`);
-            // 按时代分组角色
+            console.log(`[DataLoader ${screenName}] 步骤5: 开始按场景分组角色...`);
+            // 按场景分组角色
             const charactersByEraId = new Map<number, typeof characters[0][]>();
             characters.forEach(char => {
               const eraId = char.eraId;
@@ -427,14 +521,16 @@ const App: React.FC = () => {
             worlds.forEach(world => {
               console.log(`[DataLoader ${screenName}] 处理世界:`, { worldId: world.id, worldName: world.name });
               const worldEras = erasByWorldId.get(world.id) || [];
-              console.log(`[DataLoader ${screenName}] 该世界包含`, worldEras.length, '个时代');
+              console.log(`[DataLoader ${screenName}] 该世界包含`, worldEras.length, '个场景');
               
               worldEras.forEach(era => {
                 const eraCharacters = charactersByEraId.get(era.id) || [];
+                // systemEraId直接从后端获取，不需要名称匹配
                 console.log(`[DataLoader ${screenName}] 创建场景:`, { 
                   eraId: era.id, 
                   eraName: era.name, 
-                  charactersCount: eraCharacters.length 
+                  charactersCount: eraCharacters.length,
+                  systemEraId: era.systemEraId
                 });
                 
                 const scene: WorldScene = {
@@ -442,6 +538,7 @@ const App: React.FC = () => {
                   name: era.name,
                   description: era.description,
                   imageUrl: era.imageUrl || '',
+                  systemEraId: era.systemEraId || undefined, // 直接从后端获取
                   characters: eraCharacters.map(char => ({
                     id: char.id.toString(),
                     name: char.name,
@@ -488,7 +585,7 @@ const App: React.FC = () => {
               };
             });
             
-            console.log(`[DataLoader ${screenName}] ========== 时代数据加载并同步完成 ==========`);
+            console.log(`[DataLoader ${screenName}] ========== 场景数据加载并同步完成 ==========`);
             console.log(`[DataLoader ${screenName}] 最终结果: 共`, userWorldScenes.length, '个场景');
             
             // 只有在成功加载数据后才设置标志
@@ -499,7 +596,7 @@ const App: React.FC = () => {
               console.warn(`[DataLoader ${screenName}] 数据加载完成但场景数量为0，不设置标志`);
             }
           } catch (error) {
-            console.error(`[DataLoader ${screenName}] ========== 加载时代数据失败 ==========`);
+            console.error(`[DataLoader ${screenName}] ========== 加载场景数据失败 ==========`);
             console.error(`[DataLoader ${screenName}] 错误详情:`, error);
             if (error instanceof Error) {
               console.error(`[DataLoader ${screenName}] 错误消息:`, error.message);
@@ -543,14 +640,38 @@ const App: React.FC = () => {
 
   // 处理登录成功
   const handleLoginSuccess = async (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]): Promise<void> => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('auth_token');
-    console.log('登录成功:', method, identifier, '首次登录:', isFirstLogin);
+    // 从localStorage获取token（确保token已经保存）
+    let token = localStorage.getItem('auth_token');
+    console.log('[handleLoginSuccess] ========== 开始处理登录成功 ==========');
+    console.log('[handleLoginSuccess] 方法:', method, '标识:', identifier, '首次登录:', isFirstLogin);
+    console.log('[handleLoginSuccess] token存在:', !!token);
+    if (token) {
+      console.log('[handleLoginSuccess] token长度:', token.length, 'token前10个字符:', token.substring(0, 10));
+    }
+    
+    // 如果token不存在，等待一小段时间后重试（可能是异步保存导致的延迟）
+    if (!token) {
+      console.warn('[handleLoginSuccess] token不存在，等待100ms后重试...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      token = localStorage.getItem('auth_token');
+      console.log('[handleLoginSuccess] 重试后token存在:', !!token);
+      if (token) {
+        console.log('[handleLoginSuccess] 重试后token长度:', token.length, 'token前10个字符:', token.substring(0, 10));
+      }
+    }
     
     if (token) {
       try {
+        console.log('[handleLoginSuccess] 准备调用 getCurrentUser，token:', token.substring(0, 20) + '...');
         // 使用token获取完整用户信息
         const userInfo = await authApi.getCurrentUser(token);
+        console.log('[handleLoginSuccess] getCurrentUser 成功，用户信息:', userInfo);
+        
+        // 安全检查：确保 userInfo 和 userInfo.id 存在
+        if (!userInfo || userInfo.id === undefined || userInfo.id === null) {
+          console.error('用户信息无效或缺少ID:', userInfo);
+          throw new Error('无法获取有效的用户信息');
+        }
         
         // 获取日记列表
         console.log('尝试获取日记列表...');
@@ -561,9 +682,9 @@ const App: React.FC = () => {
         const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
         console.log('获取世界列表成功:', remoteWorlds);
         
-        // 获取时代列表
+        // 获取场景列表
         const eras = await eraApi.getAllEras(token);
-        console.log('获取时代列表成功:', eras);
+        console.log('获取场景列表成功:', eras);
         
         // 获取角色列表
         const characters = await characterApi.getAllCharacters(token);
@@ -572,7 +693,7 @@ const App: React.FC = () => {
         // 将后端数据转换为前端需要的WorldScene格式
         const userWorldScenes: WorldScene[] = [];
         
-        // 按世界分组时代
+        // 按世界分组场景
         const erasByWorldId = new Map<number, typeof eras[0][]>();
         eras.forEach(era => {
           // 后端现在直接返回worldId
@@ -583,11 +704,11 @@ const App: React.FC = () => {
             }
             erasByWorldId.get(worldId)?.push(era);
           } else {
-            console.warn('时代数据缺少worldId:', era);
+            console.warn('场景数据缺少worldId:', era);
           }
         });
         
-        // 按时代分组角色
+        // 按场景分组角色
         const charactersByEraId = new Map<number, typeof characters[0][]>();
         characters.forEach(char => {
           // 后端现在直接返回eraId
@@ -610,10 +731,11 @@ const App: React.FC = () => {
             const eraCharacters = charactersByEraId.get(era.id) || [];
             
             const scene: WorldScene = {
-              id: era.id.toString(), // 使用后端返回的时代ID
+              id: era.id.toString(), // 使用后端返回的场景ID
               name: era.name,
               description: era.description,
               imageUrl: era.imageUrl || '',
+              systemEraId: era.systemEraId || undefined, // 从后端获取 systemEraId
               characters: eraCharacters.map(char => ({
                 id: char.id.toString(),
                 name: char.name,
@@ -635,7 +757,7 @@ const App: React.FC = () => {
                 motivations: char.motivations || '',
                 relationships: char.relationships || ''
               })),
-              scenes: [], // 时代实体没有scenes字段，使用空数组
+              scenes: [], // 场景实体没有scenes字段，使用空数组
               worldId: world.id
             };
             
@@ -643,14 +765,20 @@ const App: React.FC = () => {
           });
         });
         
+        // 安全检查：确保 userInfo 和 userInfo.id 存在
+        if (!userInfo || userInfo.id === undefined || userInfo.id === null) {
+          console.error('用户信息无效或缺少ID:', userInfo);
+          throw new Error('无法获取有效的用户信息');
+        }
+        
         // 更新用户信息和日记列表，使用远程加载的世界数据
         setGameState(prev => ({
           ...prev,
           userProfile: {
-            id: userInfo.id.toString(),
-            nickname: userInfo.nickname || userInfo.username,
+            id: String(userInfo.id), // 使用 String() 而不是 toString()，更安全
+            nickname: userInfo.nickname || userInfo.username || '用户',
             avatarUrl: userInfo.avatar || '',
-            email: userInfo.email,
+            email: userInfo.email || '',
             isGuest: false,
             phoneNumber: method === 'password' ? identifier : undefined,
           },
@@ -668,9 +796,84 @@ const App: React.FC = () => {
               ? prev.selectedSceneId 
               : userWorldScenes[0].id)
             : prev.selectedSceneId,
-          showWelcomeOverlay: !!isFirstLogin,
-          lastLoginTime: Date.now()
+          showWelcomeOverlay: false, // 不再显示欢迎界面，改为显示初始化向导
+          lastLoginTime: Date.now(),
+          // 如果是首次登录，确保跳转到 entryPoint 以显示初始化向导
+          // 否则，如果当前在 profileSetup 页面，登录成功后也跳转到 entryPoint
+          currentScreen: (isFirstLogin || prev.currentScreen === 'profileSetup') ? 'entryPoint' : prev.currentScreen
         }));
+        
+        // 如果是首次登录，显示初始化向导
+        if (isFirstLogin && !initializationWizardProcessedRef.current) {
+          console.log('[初始化向导] ========== 开始初始化向导流程 ==========');
+          console.log('[初始化向导] isFirstLogin:', isFirstLogin);
+          console.log('[初始化向导] remoteWorlds:', remoteWorlds);
+          console.log('[初始化向导] userInfo:', userInfo);
+          
+          // 标记已处理，防止重复触发
+          initializationWizardProcessedRef.current = true;
+          
+          // 获取用户的世界ID（从远程世界列表中获取第一个，或者创建一个新的）
+          let userWorldId: number | null = null;
+          if (remoteWorlds && remoteWorlds.length > 0) {
+            userWorldId = remoteWorlds[0].id;
+            console.log('[初始化向导] 从远程世界列表获取 worldId:', userWorldId);
+          } else {
+            console.log('[初始化向导] 远程世界列表为空，尝试创建新世界');
+            // 如果没有世界，需要先创建一个（这应该由后端自动创建，但以防万一）
+            try {
+              const worldName = `${userInfo.nickname || userInfo.username}的世界`;
+              console.log('[初始化向导] 创建世界，名称:', worldName);
+              const newWorld = await worldApi.createWorld(worldName, '', token);
+              userWorldId = newWorld.id;
+              console.log('[初始化向导] 创建世界成功，worldId:', userWorldId);
+            } catch (error) {
+              console.error('[初始化向导] 创建世界失败:', error);
+              showAlert('无法创建世界，请刷新重试');
+              initializationWizardProcessedRef.current = false; // 重置标记
+              return;
+            }
+          }
+          
+          if (userWorldId) {
+            console.log('[初始化向导] 准备设置初始化数据');
+            console.log('[初始化向导] token存在:', !!token);
+            console.log('[初始化向导] userId:', userInfo.id);
+            console.log('[初始化向导] worldId:', userWorldId);
+            
+            const initData = {
+              token: token,
+              userId: userInfo.id,
+              worldId: userWorldId
+            };
+            
+            console.log('[初始化向导] 设置 initializationData:', initData);
+            setInitializationData(initData);
+            
+            // 确保 currentScreen 设置为 'entryPoint'，以便初始化向导能够显示
+            setGameState(prev => ({
+              ...prev,
+              currentScreen: 'entryPoint'
+            }));
+            
+            console.log('[初始化向导] 设置 showInitializationWizard = true');
+            setShowInitializationWizard(true);
+            
+            console.log('[初始化向导] ========== 初始化向导流程完成 ==========');
+          } else {
+            console.error('[初始化向导] worldId 为空，无法显示初始化向导');
+            initializationWizardProcessedRef.current = false; // 重置标记
+          }
+        } else {
+          if (initializationWizardProcessedRef.current) {
+            console.log('[初始化向导] 已经处理过初始化向导，跳过');
+          } else {
+            console.log('[初始化向导] 非首次登录，跳过初始化向导');
+          }
+        }
+        
+        // 标记数据已加载，防止 useEffect 重复加载
+        hasLoadedEntryPointData.current = true;
         
         // 后台异步加载远程世界数据，实现本地优先加载
         const loadRemoteWorldData = async (): Promise<void> => {
@@ -680,7 +883,7 @@ const App: React.FC = () => {
             // 获取世界列表
             const updatedWorlds = await worldApi.getAllWorlds(token);
             
-            // 获取时代列表
+            // 获取场景列表
             const updatedEras = await eraApi.getAllEras(token);
             
             // 获取角色列表
@@ -689,7 +892,7 @@ const App: React.FC = () => {
             // 将后端数据转换为前端需要的WorldScene格式
             const userWorldScenes: WorldScene[] = [];
             
-            // 按世界分组时代
+            // 按世界分组场景
             const erasByWorldId = new Map<number, typeof eras[0][]>();
             eras.forEach(era => {
               // 后端现在直接返回worldId
@@ -700,11 +903,11 @@ const App: React.FC = () => {
                 }
                 erasByWorldId.get(worldId)?.push(era);
               } else {
-                console.warn('时代数据缺少worldId:', era);
+                console.warn('场景数据缺少worldId:', era);
               }
             });
             
-            // 按时代分组角色
+            // 按场景分组角色
             const charactersByEraId = new Map<number, typeof characters[0][]>();
             characters.forEach(char => {
               // 后端现在直接返回eraId
@@ -719,7 +922,7 @@ const App: React.FC = () => {
               }
             });
             
-            // 按世界分组时代
+            // 按世界分组场景
             const updatedErasByWorldId = new Map<number, typeof updatedEras[0][]>();
             updatedEras.forEach(era => {
               const worldId = era.worldId;
@@ -731,7 +934,7 @@ const App: React.FC = () => {
               }
             });
             
-            // 按时代分组角色
+            // 按场景分组角色
             const updatedCharactersByEraId = new Map<number, typeof updatedCharacters[0][]>();
             updatedCharacters.forEach(char => {
               const eraId = char.eraId;
@@ -756,6 +959,7 @@ const App: React.FC = () => {
                   name: era.name,
                   description: era.description,
                   imageUrl: era.imageUrl || '',
+                  systemEraId: era.systemEraId || undefined, // 从后端获取 systemEraId
                   characters: eraCharacters.map(char => ({
                     id: char.id.toString(),
                     name: char.name,
@@ -815,7 +1019,9 @@ const App: React.FC = () => {
             phoneNumber: method === 'password' ? identifier : undefined,
           },
           journalEntries: [],
-          showWelcomeOverlay: !!isFirstLogin
+          showWelcomeOverlay: !!isFirstLogin,
+          // 如果当前在 profileSetup 页面，登录成功后跳转到 entryPoint
+          currentScreen: prev.currentScreen === 'profileSetup' ? 'entryPoint' : prev.currentScreen
         }));
       }
     } else {
@@ -829,8 +1035,54 @@ const App: React.FC = () => {
           isGuest: false,
           phoneNumber: method === 'password' ? identifier : undefined,
         },
-        showWelcomeOverlay: !!isFirstLogin
+        showWelcomeOverlay: false, // 不再显示欢迎界面，改为显示初始化向导
+        // 如果当前在 profileSetup 页面，登录成功后跳转到 entryPoint
+        currentScreen: prev.currentScreen === 'profileSetup' ? 'entryPoint' : prev.currentScreen
       }));
+      
+      // 如果是首次登录，显示初始化向导（这个分支是token存在但其他数据加载失败的情况）
+      if (isFirstLogin && token) {
+        console.log('[初始化向导] 在else分支中检测到首次登录');
+        try {
+          // 先获取用户信息
+          const userInfo = await authApi.getCurrentUser(token);
+          console.log('[初始化向导] 获取用户信息成功:', userInfo);
+          const remoteWorlds = await worldApi.getAllWorlds(token);
+          console.log('[初始化向导] 获取世界列表成功:', remoteWorlds);
+          let userWorldId: number | null = null;
+          if (remoteWorlds && remoteWorlds.length > 0) {
+            userWorldId = remoteWorlds[0].id;
+            console.log('[初始化向导] 从远程世界列表获取 worldId:', userWorldId);
+          } else {
+            console.log('[初始化向导] 远程世界列表为空，尝试创建新世界');
+            try {
+              const worldName = `${userInfo.nickname || userInfo.username}的世界`;
+              const newWorld = await worldApi.createWorld(worldName, '', token);
+              userWorldId = newWorld.id;
+              console.log('[初始化向导] 创建世界成功，worldId:', userWorldId);
+            } catch (error) {
+              console.error('[初始化向导] 创建世界失败:', error);
+              showAlert('无法创建世界，请刷新重试');
+              return;
+            }
+          }
+          
+          if (userWorldId) {
+            console.log('[初始化向导] 设置初始化数据');
+            setInitializationData({
+              token: token,
+              userId: userInfo.id,
+              worldId: userWorldId
+            });
+            setShowInitializationWizard(true);
+            console.log('[初始化向导] 已设置 showInitializationWizard = true');
+          } else {
+            console.error('[初始化向导] worldId 为空，无法显示初始化向导');
+          }
+        } catch (error) {
+          console.error('[初始化向导] 初始化向导失败:', error);
+        }
+      }
     }
     
     setShowLoginModal(false);
@@ -870,10 +1122,10 @@ const App: React.FC = () => {
           const worlds = await worldApi.getAllWorlds(token);
           console.log('获取世界列表成功:', worlds);
           
-          // 获取时代列表
-          console.log('尝试获取时代列表...');
+          // 获取场景列表
+          console.log('尝试获取场景列表...');
           const eras = await eraApi.getAllEras(token);
-          console.log('获取时代列表成功:', eras);
+          console.log('获取场景列表成功:', eras);
           
           // 获取角色列表
           console.log('尝试获取角色列表...');
@@ -883,7 +1135,7 @@ const App: React.FC = () => {
           // 将后端数据转换为前端需要的WorldScene格式
           const userWorldScenes: WorldScene[] = [];
           
-          // 按世界分组时代
+          // 按世界分组场景
           const erasByWorldId = new Map<number, any[]>();
           eras.forEach(era => {
             // 后端现在直接返回worldId
@@ -894,11 +1146,11 @@ const App: React.FC = () => {
               }
               erasByWorldId.get(worldId)?.push(era);
             } else {
-              console.warn('时代数据缺少worldId:', era);
+              console.warn('场景数据缺少worldId:', era);
             }
           });
           
-          // 按时代分组角色
+          // 按场景分组角色
           const charactersByEraId = new Map<number, any[]>();
           characters.forEach(char => {
             // 后端现在直接返回eraId
@@ -921,10 +1173,11 @@ const App: React.FC = () => {
               const eraCharacters = charactersByEraId.get(era.id) || [];
               
               const scene: WorldScene = {
-                id: era.id.toString(), // 使用后端返回的时代ID
+                id: era.id.toString(), // 使用后端返回的场景ID
                 name: era.name,
                 description: era.description,
                 imageUrl: era.imageUrl || '',
+                systemEraId: era.systemEraId || undefined, // 从后端获取 systemEraId
                 characters: eraCharacters.map(char => ({
                   id: char.id.toString(),
                   name: char.name,
@@ -975,13 +1228,19 @@ const App: React.FC = () => {
           
           console.log('转换后的用户世界场景:', userWorldScenes);
           
+          // 安全检查：确保 userInfo 和 userInfo.id 存在
+          if (!userInfo || userInfo.id === undefined || userInfo.id === null) {
+            console.error('用户信息无效或缺少ID:', userInfo);
+            throw new Error('无法获取有效的用户信息');
+          }
+          
           setGameState(prev => ({
             ...prev,
             userProfile: {
-              id: userInfo.id.toString(),
-              nickname: userInfo.nickname || userInfo.username,
+              id: String(userInfo.id), // 使用 String() 而不是 toString()，更安全
+              nickname: userInfo.nickname || userInfo.username || '用户',
               avatarUrl: userInfo.avatar || '',
-              email: userInfo.email,
+              email: userInfo.email || '',
               isGuest: false,
             },
             journalEntries: journalEntries.map(entry => ({
@@ -1087,8 +1346,13 @@ const App: React.FC = () => {
     setGameState(prev => ({ ...prev, currentScreen: 'realWorld' }));
   };
 
-  const handleSceneSelect = (sceneId: string): void => {
-    // 先更新UI状态
+  const handleSceneSelect = useCallback((sceneId: string): void => {
+    console.log('[handleSceneSelect] 选择场景:', sceneId, '当前选中:', gameState.selectedSceneId);
+    performSceneSwitch(sceneId);
+  }, [gameState.selectedSceneId]);
+
+  const performSceneSwitch = (sceneId: string): void => {
+    // 更新UI状态
     setGameState(prev => ({ 
         ...prev, 
         selectedSceneId: sceneId, 
@@ -1098,7 +1362,7 @@ const App: React.FC = () => {
         currentScreen: 'characterSelection' 
     }));
     
-    // 如果是登录用户，异步加载该世界的时代数据
+    // 如果是登录用户，异步加载该世界的场景数据
     const token = localStorage.getItem('auth_token');
     if (token) {
       // 使用setTimeout确保在状态更新后执行
@@ -1116,20 +1380,20 @@ const App: React.FC = () => {
             const worldId = (selectedScene as any)?.worldId;
             
             if (worldId) {
-              console.log(`[handleSceneSelect] 按世界ID加载时代数据: worldId=${worldId}, sceneId=${sceneId}`);
+              console.log(`[handleSceneSelect] 按世界ID加载场景数据: worldId=${worldId}, sceneId=${sceneId}`);
               
               // 异步加载数据
               (async () => {
                 try {
-                  // 按世界ID获取时代列表
+                  // 按世界ID获取场景列表
                   const eras = await eraApi.getErasByWorldId(worldId, token);
-                  console.log(`[handleSceneSelect] 获取到时代数据:`, eras);
+                  console.log(`[handleSceneSelect] 获取到场景数据:`, eras);
                   
                   // 按世界ID获取角色列表
                   const characters = await characterApi.getCharactersByWorldId(worldId, token);
                   console.log(`[handleSceneSelect] 获取到角色数据:`, characters);
                   
-                  // 按时代分组角色
+                  // 按场景分组角色
                   const charactersByEraId = new Map<number, any[]>();
                   characters.forEach(char => {
                     // 后端现在直接返回eraId
@@ -1144,15 +1408,16 @@ const App: React.FC = () => {
                     }
                   });
                   
-                  // 更新该世界的时代和角色数据
+                  // 更新该世界的场景和角色数据
                   setGameState(prevState => {
                     const updatedScenes = (prevState.userWorldScenes || []).map(scene => {
-                      // 找到属于当前世界的场景（时代）
+                      // 找到属于当前世界的场景
                       const era = eras.find(e => e.id.toString() === scene.id);
                       if (era) {
                         const eraCharacters = charactersByEraId.get(era.id) || [];
                         return {
                           ...scene,
+                          systemEraId: era.systemEraId || scene.systemEraId || undefined, // 从后端获取 systemEraId，如果后端没有则保留原有值
                           characters: eraCharacters.map(char => ({
                             id: char.id.toString(),
                             name: char.name,
@@ -1200,7 +1465,7 @@ const App: React.FC = () => {
                       return scene;
                     });
                     
-                    console.log(`[handleSceneSelect] 时代数据更新完成，更新了 ${updatedScenes.length} 个场景`);
+                    console.log(`[handleSceneSelect] 场景数据更新完成，更新了 ${updatedScenes.length} 个场景`);
                     
                     return {
                       ...prevState,
@@ -1208,7 +1473,7 @@ const App: React.FC = () => {
                     };
                   });
                 } catch (error) {
-                  console.error(`[handleSceneSelect] 加载时代数据失败:`, error);
+                  console.error(`[handleSceneSelect] 加载场景数据失败:`, error);
                 }
               })();
             }
@@ -1222,7 +1487,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCharacterSelect = (character: Character): void => {
+
+  const handleCharacterSelect = useCallback((character: Character): void => {
     if (gameState.activeJournalEntryId) {
         const entry = gameState.journalEntries.find(e => e.id === gameState.activeJournalEntryId);
         if (entry) {
@@ -1255,9 +1521,9 @@ const App: React.FC = () => {
         currentScenarioState: undefined,
         currentScreen: 'chat' 
     }));
-  };
+  }, [gameState.activeJournalEntryId, gameState.journalEntries]);
 
-  const handleChatWithCharacterByName = (characterName: string): void => {
+  const handleChatWithCharacterByName = async (characterName: string): Promise<void> => {
     const allScenes = [...WORLD_SCENES, ...gameState.customScenes];
     let foundChar: Character | null = null;
     let foundSceneId: string | null = null;
@@ -1282,11 +1548,11 @@ const App: React.FC = () => {
             currentScreen: 'chat'
         }));
     } else {
-        alert(`无法找到名为 "${characterName}" 的角色。可能该角色所在的时代已被删除。`);
+        showAlert(`无法找到名为 "${characterName}" 的角色。可能该角色所在的场景已被删除。`, '角色未找到', 'warning');
     }
   };
 
-  const handleChatBack = (echo?: JournalEcho) => {
+  const handleChatBack = useCallback((echo?: JournalEcho) => {
     if (echo && gameState.activeJournalEntryId) {
         setGameState(prev => ({
             ...prev,
@@ -1295,9 +1561,12 @@ const App: React.FC = () => {
                 ? { ...entry, echo: echo } 
                 : entry
             ),
-            activeJournalEntryId: null 
+            activeJournalEntryId: null,
+            selectedCharacterId: null, 
+            tempStoryCharacter: null, 
+            selectedScenarioId: null, 
+            currentScreen: 'realWorld'
         }));
-        setGameState(prev => ({ ...prev, selectedCharacterId: null, tempStoryCharacter: null, selectedScenarioId: null, currentScreen: 'realWorld' }));
     } else {
         setGameState(prev => ({ 
             ...prev, 
@@ -1308,15 +1577,15 @@ const App: React.FC = () => {
             currentScreen: 'characterSelection' 
         }));
     }
-  };
+  }, [gameState.activeJournalEntryId]);
 
-  const handleUpdateHistory = (msgs: Message[]) => {
+  const handleUpdateHistory = useCallback((msgs: Message[]) => {
     if (!gameState.selectedCharacterId) return;
     setGameState(prev => ({
       ...prev,
       history: { ...prev.history, [prev.selectedCharacterId!]: msgs }
     }));
-  };
+  }, [gameState.selectedCharacterId]);
 
   const handleGenerateAvatar = async (character: Character) => {
     if (gameState.generatingAvatarId) return;
@@ -1391,8 +1660,8 @@ const App: React.FC = () => {
           if (worlds.length > 0) {
             worldId = worlds[0].id; // 使用第一个世界（通常是默认的"心域"）
           } else {
-            console.error('用户没有世界，无法同步时代');
-            showSyncErrorToast('时代');
+            console.error('用户没有世界，无法同步场景');
+            showSyncErrorToast('场景');
             return;
           }
         }
@@ -1402,8 +1671,8 @@ const App: React.FC = () => {
 
         let savedEra: any;
         if (eraId && isEditing) {
-          // 更新现有时代
-          console.log(`[handleSaveEra] 同步更新时代: eraId=${eraId}, worldId=${worldId}`);
+          // 更新现有场景
+          console.log(`[handleSaveEra] 同步更新场景: eraId=${eraId}, worldId=${worldId}`);
           savedEra = await eraApi.updateEra(eraId, {
             name: newScene.name,
             description: newScene.description,
@@ -1411,10 +1680,11 @@ const App: React.FC = () => {
             endYear: undefined,
             worldId: worldId,
             imageUrl: newScene.imageUrl || undefined,
+            systemEraId: newScene.systemEraId || null,
           }, token);
         } else {
-          // 创建新时代
-          console.log(`[handleSaveEra] 同步创建时代: worldId=${worldId}`);
+          // 创建新场景
+          console.log(`[handleSaveEra] 同步创建场景: worldId=${worldId}`);
           savedEra = await eraApi.createEra({
             name: newScene.name,
             description: newScene.description,
@@ -1422,12 +1692,13 @@ const App: React.FC = () => {
             endYear: undefined,
             worldId: worldId,
             imageUrl: newScene.imageUrl || undefined,
+            systemEraId: newScene.systemEraId || null,
           }, token);
         }
 
         console.log(`[handleSaveEra] 后端同步成功:`, savedEra);
 
-        // 将后端返回的时代转换为WorldScene格式并更新本地状态
+        // 将后端返回的场景转换为WorldScene格式并更新本地状态
         const updatedScene: WorldScene = {
           id: savedEra.id.toString(),
           name: savedEra.name,
@@ -1435,7 +1706,8 @@ const App: React.FC = () => {
           imageUrl: savedEra.imageUrl || newScene.imageUrl || '',
           characters: newScene.characters || [],
           worldId: savedEra.worldId,
-          mainStory: newScene.mainStory
+          mainStory: newScene.mainStory,
+          systemEraId: savedEra.systemEraId || newScene.systemEraId || undefined // 优先使用后端返回的 systemEraId
         };
 
         // 更新本地状态（使用服务器返回的ID）
@@ -1457,79 +1729,98 @@ const App: React.FC = () => {
           };
         });
       } catch (error) {
-        console.error('[handleSaveEra] 同步时代失败:', error);
-        showSyncErrorToast('时代');
+        console.error('[handleSaveEra] 同步场景失败:', error);
+        showSyncErrorToast('场景');
       }
     })();
   };
 
-  const handleDeleteEra = (sceneId: string, e?: React.MouseEvent) => {
+  const handleDeleteEra = async (sceneId: string, e?: React.MouseEvent) => {
       if (e) {
           e.stopPropagation();
           e.preventDefault();
       }
-      if(window.confirm("确定要删除这个时代吗？删除后将移至回收站，可以随时恢复。")) {
-          // 1. 先删除本地（立即更新UI）
-          setGameState(prev => ({
-              ...prev,
-              customScenes: prev.customScenes.filter(s => s.id !== sceneId),
-              userWorldScenes: (prev.userWorldScenes || []).filter(s => s.id !== sceneId),
-              customCharacters: Object.fromEntries(
-                 Object.entries(prev.customCharacters).filter(([id]) => id !== sceneId)
-              )
-          }));
-          setShowEraCreator(false);
-          setEditingScene(null);
+      // 注意：确认对话框已在调用方（SceneCard 或 EraConstructorModal）中处理，这里不再重复显示
+      // 1. 先删除本地（立即更新UI）
+      setGameState(prev => ({
+          ...prev,
+          customScenes: prev.customScenes.filter(s => s.id !== sceneId),
+          userWorldScenes: (prev.userWorldScenes || []).filter(s => s.id !== sceneId),
+          customCharacters: Object.fromEntries(
+             Object.entries(prev.customCharacters).filter(([id]) => id !== sceneId)
+          )
+      }));
+      setShowEraCreator(false);
+      setEditingScene(null);
 
-          // 2. 异步同步到服务器（如果已登录且ID是数字）
-          const token = localStorage.getItem('auth_token');
-          const isNumericId = /^\d+$/.test(sceneId);
-          if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
-              (async () => {
-                  try {
-                      const eraId = parseInt(sceneId, 10);
-                      await eraApi.deleteEra(eraId, token);
-                      console.log('Era deleted from server:', eraId);
-                  } catch (error) {
-                      console.error('Failed to delete era from server:', error);
-                      showSyncErrorToast('时代删除');
-                  }
-              })();
-          }
+      // 2. 异步同步到服务器（如果已登录且ID是数字）
+      const token = localStorage.getItem('auth_token');
+      const isNumericId = /^\d+$/.test(sceneId);
+      if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+          (async () => {
+              try {
+                  const eraId = parseInt(sceneId, 10);
+                  await eraApi.deleteEra(eraId, token);
+                  console.log('Era deleted from server:', eraId);
+              } catch (error) {
+                  console.error('Failed to delete era from server:', error);
+                  showSyncErrorToast('场景删除');
+              }
+          })();
       }
   };
 
   const handleSaveCharacter = async (newCharacter: Character) => {
     console.log("========== [App] 保存角色 ==========");
+    
+    const sceneId = gameState.selectedSceneId || editingCharacterSceneId;
     console.log("[App] 角色信息:", {
       id: newCharacter.id,
+      idType: typeof newCharacter.id,
       name: newCharacter.name,
       role: newCharacter.role,
       bio: newCharacter.bio ? `长度${newCharacter.bio.length}` : "无",
       avatarUrl: newCharacter.avatarUrl ? "存在" : "无",
-      backgroundUrl: newCharacter.backgroundUrl ? "存在" : "无"
+      backgroundUrl: newCharacter.backgroundUrl ? "存在" : "无",
+      sceneId: sceneId
     });
-    
-    const sceneId = gameState.selectedSceneId || editingCharacterSceneId;
-    console.log(`[App] 场景ID: ${sceneId}`);
     
     if (!sceneId) {
         console.error("[App] 保存角色失败: 没有场景上下文");
         return;
     }
     
+    // 检查角色ID的来源
+    const allScenes = [...WORLD_SCENES, ...gameState.customScenes, ...(gameState.userWorldScenes || [])];
+    const currentScene = allScenes.find(s => s.id === sceneId);
+    const existingCharInScene = currentScene?.characters.find(c => c.id === newCharacter.id);
+    const existingCharInCustom = (gameState.customCharacters[sceneId] || []).find(c => c.id === newCharacter.id);
+    const isEditing = !!(existingCharInScene || existingCharInCustom);
+    
+    console.log("[App] 角色来源检查:", {
+      sceneId: sceneId,
+      existingCharInScene: existingCharInScene ? { id: existingCharInScene.id, idType: typeof existingCharInScene.id, name: existingCharInScene.name } : null,
+      existingCharInCustom: existingCharInCustom ? { id: existingCharInCustom.id, idType: typeof existingCharInCustom.id, name: existingCharInCustom.name } : null,
+      newCharacterId: newCharacter.id,
+      newCharacterIdType: typeof newCharacter.id,
+      isEditing: isEditing
+    });
+    
     // 1. 先保存到本地（立即更新UI）
     console.log("[App] 步骤1: 保存到本地状态");
+    
     setGameState(prev => {
         const existingCustomChars = prev.customCharacters[sceneId] || [];
-        const isEditing = existingCustomChars.some(c => c.id === newCharacter.id);
-        console.log(`[App] 场景 ${sceneId} 已有 ${existingCustomChars.length} 个角色，是否编辑: ${isEditing}`);
         
         let newChars: Character[] = [];
         if (isEditing) {
+            // 更新现有角色
+            // 如果角色在 userWorldScenes 中，不需要更新 customCharacters（因为会从后端重新加载）
+            // 只需要更新 customCharacters 中的角色
             newChars = existingCustomChars.map(c => c.id === newCharacter.id ? newCharacter : c);
             console.log(`[App] 更新角色: ${newCharacter.id}`);
         } else {
+            // 添加新角色
             newChars = [...existingCustomChars, newCharacter];
             console.log(`[App] 添加新角色: ${newCharacter.id}`);
         }
@@ -1558,15 +1849,234 @@ const App: React.FC = () => {
         (async () => {
             try {
                 console.log("[App] 开始同步角色到服务器");
-                await syncService.handleLocalDataChange('character', {
+                
+                // 获取当前场景对应的 worldId 和 eraId
+                const allScenes = [...WORLD_SCENES, ...gameState.customScenes, ...(gameState.userWorldScenes || [])];
+                const currentScene = allScenes.find(s => s.id === sceneId);
+                const worldId = currentScene?.worldId || syncService.getWorldIdForSceneId(sceneId);
+                const eraId = sceneId ? (isNaN(parseInt(sceneId)) ? null : parseInt(sceneId)) : null;
+                
+                console.log(`[App] 同步参数: sceneId=${sceneId}, worldId=${worldId}, eraId=${eraId}`);
+                
+                const syncResult = await syncService.handleLocalDataChange('character', {
                     ...newCharacter,
                     description: newCharacter.bio,
                     age: newCharacter.age,
-                    gender: newCharacter.role
+                    gender: newCharacter.role,
+                    worldId: worldId,
+                    eraId: eraId
                 });
+                
+                // 如果创建了新角色，更新本地状态中的角色ID为服务器返回的数字ID
+                if (syncResult && syncResult.id && !isEditing) {
+                    console.log(`[App] 新角色已创建，更新本地ID: ${newCharacter.id} -> ${syncResult.id}`);
+                    setGameState(prev => {
+                        const existingCustomChars = prev.customCharacters[sceneId] || [];
+                        const updatedChars = existingCustomChars.map(c => 
+                            c.id === newCharacter.id 
+                                ? { ...c, id: syncResult.id.toString() }
+                                : c
+                        );
+                        return {
+                            ...prev,
+                            customCharacters: {
+                                ...prev.customCharacters,
+                                [sceneId]: updatedChars
+                            }
+                        };
+                    });
+                }
+                
                 console.log(`[App] 角色同步成功: ID=${newCharacter.id}, name=${newCharacter.name}`);
-            } catch (error) {
+                
+                // 3. 刷新角色列表，更新显示
+                console.log("[App] 步骤3: 刷新角色列表");
+                try {
+                    const updatedCharacters = await characterApi.getAllCharacters(token);
+                    console.log(`[App] 获取到 ${updatedCharacters.length} 个角色`);
+                    
+                    // 重新构建 userWorldScenes，更新角色数据
+                    const worlds = await worldApi.getAllWorlds(token);
+                    const eras = await eraApi.getAllEras(token);
+                    
+                    // 按世界分组场景
+                    const erasByWorldId = new Map<number, typeof eras[0][]>();
+                    eras.forEach(era => {
+                        const worldId = era.worldId;
+                        if (worldId) {
+                            if (!erasByWorldId.has(worldId)) {
+                                erasByWorldId.set(worldId, []);
+                            }
+                            erasByWorldId.get(worldId)?.push(era);
+                        }
+                    });
+                    
+                    // 按场景分组角色
+                    const charactersByEraId = new Map<number, typeof updatedCharacters[0][]>();
+                    updatedCharacters.forEach(char => {
+                        const eraId = char.eraId;
+                        if (eraId) {
+                            if (!charactersByEraId.has(eraId)) {
+                                charactersByEraId.set(eraId, []);
+                            }
+                            charactersByEraId.get(eraId)?.push(char);
+                        }
+                    });
+                    
+                    // 加载预置场景列表，用于匹配systemEraId
+                    let systemEras: Array<{ id: number; name: string }> = [];
+                    try {
+                      systemEras = await eraApi.getSystemEras();
+                    } catch (err) {
+                      console.warn('[App] 获取预置场景列表失败:', err);
+                    }
+                    const eraNameToSystemId = new Map<string, number>();
+                    systemEras.forEach(sysEra => {
+                      eraNameToSystemId.set(sysEra.name, sysEra.id);
+                      // 支持模糊匹配：去除"我的"前缀进行匹配
+                      const nameWithoutPrefix = sysEra.name.replace(/^我的/, '').trim();
+                      if (nameWithoutPrefix && nameWithoutPrefix !== sysEra.name) {
+                        eraNameToSystemId.set(nameWithoutPrefix, sysEra.id);
+                      }
+                      // 支持"XX场景"格式匹配（如"大学场景"匹配"我的大学"）
+                      if (nameWithoutPrefix && !nameWithoutPrefix.endsWith('场景')) {
+                        eraNameToSystemId.set(nameWithoutPrefix + '场景', sysEra.id);
+                      }
+                    });
+                    
+                    // 创建新的 userWorldScenes，保留原有的 mainStory 和 memories
+                    const updatedUserWorldScenes: WorldScene[] = [];
+                    worlds.forEach(world => {
+                        const worldEras = erasByWorldId.get(world.id) || [];
+                        worldEras.forEach(era => {
+                            const eraCharacters = charactersByEraId.get(era.id) || [];
+                            
+                            // 查找原有的场景，保留 mainStory 和 memories
+                            const existingScene = gameState.userWorldScenes.find(s => s.id === era.id.toString());
+                            
+                            // systemEraId直接从后端获取，优先使用原有值
+                            const systemEraId = existingScene?.systemEraId || era.systemEraId || undefined;
+                            console.log(`[App] 刷新角色列表 - 场景:`, {
+                              eraId: era.id,
+                              eraName: era.name,
+                              existingSystemEraId: existingScene?.systemEraId,
+                              backendSystemEraId: era.systemEraId,
+                              finalSystemEraId: systemEraId
+                            });
+                            
+                            const mappedCharacters = eraCharacters.map(char => ({
+                                id: char.id.toString(),
+                                name: char.name,
+                                age: char.age,
+                                role: char.role,
+                                bio: char.bio,
+                                avatarUrl: char.avatarUrl || '',
+                                backgroundUrl: char.backgroundUrl || '',
+                                themeColor: char.themeColor || 'blue-500',
+                                colorAccent: char.colorAccent || '#3b82f6',
+                                firstMessage: char.firstMessage || '',
+                                systemInstruction: char.systemInstruction || '',
+                                voiceName: char.voiceName || 'Aoede',
+                                mbti: char.mbti || 'INFJ',
+                                tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter(tag => tag.trim()) : char.tags) : [],
+                                speechStyle: char.speechStyle || '',
+                                catchphrases: char.catchphrases ? (typeof char.catchphrases === 'string' ? char.catchphrases.split(',').filter(phrase => phrase.trim()) : char.catchphrases) : [],
+                                secrets: char.secrets || '',
+                                motivations: char.motivations || '',
+                                relationships: char.relationships || ''
+                            }));
+                            
+                            const scene: WorldScene = {
+                                id: era.id.toString(),
+                                name: era.name,
+                                description: era.description,
+                                imageUrl: era.imageUrl || '',
+                                systemEraId: systemEraId, // 直接从后端获取
+                                characters: mappedCharacters,
+                                // 保留原有的 mainStory，如果没有则使用第一个角色
+                                mainStory: existingScene?.mainStory || (mappedCharacters.length > 0 ? {
+                                    id: mappedCharacters[0].id,
+                                    name: mappedCharacters[0].name,
+                                    age: mappedCharacters[0].age,
+                                    role: mappedCharacters[0].role || '主角',
+                                    bio: mappedCharacters[0].bio || '',
+                                    avatarUrl: mappedCharacters[0].avatarUrl || '',
+                                    backgroundUrl: mappedCharacters[0].backgroundUrl || '',
+                                    themeColor: mappedCharacters[0].themeColor || 'blue-500',
+                                    colorAccent: mappedCharacters[0].colorAccent || '#3b82f6',
+                                    firstMessage: mappedCharacters[0].firstMessage || '',
+                                    systemInstruction: mappedCharacters[0].systemInstruction || '',
+                                    voiceName: mappedCharacters[0].voiceName || 'Aoede',
+                                    mbti: mappedCharacters[0].mbti || 'INFJ',
+                                    tags: mappedCharacters[0].tags || [],
+                                    speechStyle: mappedCharacters[0].speechStyle || '',
+                                    catchphrases: mappedCharacters[0].catchphrases || [],
+                                    secrets: mappedCharacters[0].secrets || '',
+                                    motivations: mappedCharacters[0].motivations || '',
+                                    relationships: mappedCharacters[0].relationships || ''
+                                } : undefined),
+                                // 保留原有的 memories
+                                memories: existingScene?.memories,
+                                scenes: [],
+                                worldId: world.id
+                            };
+                            updatedUserWorldScenes.push(scene);
+                        });
+                    });
+                    
+                    // 更新游戏状态，同时保留 sceneMemories，并清除已同步到后端的角色（避免重复显示）
+                    setGameState(prev => {
+                        // 收集所有已同步到后端的角色信息（用于去重）
+                        const syncedCharacterIds = new Set<string>();
+                        const syncedCharacterKeys = new Set<string>(); // 使用 name+avatarUrl 作为唯一标识
+                        
+                        updatedUserWorldScenes.forEach(scene => {
+                            scene.characters.forEach(char => {
+                                // 如果角色ID是数字字符串，说明已同步到后端
+                                if (/^\d+$/.test(char.id)) {
+                                    syncedCharacterIds.add(char.id);
+                                }
+                                // 同时记录角色的唯一标识（名称+头像），用于匹配预置角色
+                                const charKey = `${char.name}|${char.avatarUrl || ''}`;
+                                syncedCharacterKeys.add(charKey);
+                            });
+                        });
+                        
+                        // 从 customCharacters 中移除已同步的角色
+                        const cleanedCustomCharacters: Record<string, Character[]> = {};
+                        Object.keys(prev.customCharacters).forEach(sceneId => {
+                            const sceneChars = prev.customCharacters[sceneId] || [];
+                            // 移除已同步的角色：ID是数字且在已同步列表中，或者名称+头像匹配已同步角色
+                            cleanedCustomCharacters[sceneId] = sceneChars.filter(char => {
+                                const isSyncedById = /^\d+$/.test(char.id) && syncedCharacterIds.has(char.id);
+                                const charKey = `${char.name}|${char.avatarUrl || ''}`;
+                                const isSyncedByKey = syncedCharacterKeys.has(charKey);
+                                
+                                if (isSyncedById || isSyncedByKey) {
+                                    console.log(`[App] 从customCharacters中移除已同步的角色: ${char.id} (${char.name})`);
+                                    return false;
+                                }
+                                return true;
+                            });
+                        });
+                        
+                        return {
+                            ...prev,
+                            userWorldScenes: updatedUserWorldScenes,
+                            customCharacters: cleanedCustomCharacters
+                        };
+                    });
+                    
+                    console.log(`[App] 角色列表已刷新，共 ${updatedUserWorldScenes.length} 个场景`);
+                } catch (refreshError) {
+                    console.error("[App] 刷新角色列表失败:", refreshError);
+                    // 刷新失败不影响主流程，只记录错误
+                }
+            } catch (error: any) {
                 console.error(`[App] 角色同步失败: ID=${newCharacter.id}`, error);
+                // 显示详细的错误信息
+                const errorMessage = error.message || '未知错误';
+                showAlert(`角色同步失败: ${errorMessage}`, '同步失败', 'error');
                 showSyncErrorToast('角色');
             }
         })();
@@ -1617,11 +2127,12 @@ const App: React.FC = () => {
 
   const handleDeleteCharacter = async (character: Character) => {
       if (!gameState.userProfile || gameState.userProfile.isGuest) {
-          alert('请先登录才能删除角色');
+          showAlert('请先登录才能删除角色', '需要登录', 'warning');
           return;
       }
       
-      if (window.confirm("确定要删除这个角色吗？删除后将移至回收站，可以随时恢复。")) {
+      const confirmed = await showConfirm("确定要删除这个角色吗？删除后将移至回收站，可以随时恢复。", '删除角色', 'warning');
+      if (confirmed) {
           const sceneId = gameState.selectedSceneId || editingCharacterSceneId;
           if (!sceneId) {
               console.error('删除角色失败: 没有场景上下文');
@@ -1631,12 +2142,24 @@ const App: React.FC = () => {
           // 1. 先删除本地（立即更新UI）
           setGameState(prev => {
               const customChars = prev.customCharacters[sceneId] || [];
+              // 同时更新 userWorldScenes 中的角色列表
+              const updatedUserWorldScenes = prev.userWorldScenes.map(scene => {
+                  if (scene.id === sceneId) {
+                      return {
+                          ...scene,
+                          characters: scene.characters.filter(c => c.id !== character.id)
+                      };
+                  }
+                  return scene;
+              });
+              
               return {
                   ...prev,
                   customCharacters: {
                       ...prev.customCharacters,
                       [sceneId]: customChars.filter(c => c.id !== character.id)
-                  }
+                  },
+                  userWorldScenes: updatedUserWorldScenes
               };
           });
 
@@ -1661,7 +2184,8 @@ const App: React.FC = () => {
   const handleDeleteScenario = async (scenarioId: string, e: React.MouseEvent) => {
       e.stopPropagation(); 
       e.preventDefault();
-      if (window.confirm("确定要删除这个剧本吗？删除后将移至回收站，可以随时恢复。")) {
+      const confirmed = await showConfirm("确定要删除这个剧本吗？删除后将移至回收站，可以随时恢复。", '删除剧本', 'warning');
+      if (confirmed) {
           // Update local state immediately for UI responsiveness
           setGameState(prev => ({
               ...prev,
@@ -1677,7 +2201,7 @@ const App: React.FC = () => {
           } catch (error) {
             console.error('Error deleting scenario from server:', error);
             // Show error message to user
-            alert('剧本删除同步失败，请检查网络连接或稍后重试。');
+            showAlert('剧本删除同步失败，请检查网络连接或稍后重试。', '同步失败', 'error');
           }
       }
   };
@@ -1701,7 +2225,7 @@ const App: React.FC = () => {
           if (firstKey) {
               startNode = scenario.nodes[firstKey];
           } else {
-              alert("错误：该剧本没有有效节点。");
+              showAlert("错误：该剧本没有有效节点。", '错误', 'error');
               return;
           }
       }
@@ -1919,7 +2443,6 @@ const App: React.FC = () => {
   };
 
   const getEditingCharacterScene = (): WorldScene => {
-      const currentScenes = getCurrentScenes();
       if (gameState.selectedSceneId) {
           return currentScenes.find(s => s.id === gameState.selectedSceneId) || currentScenes[0];
       }
@@ -1932,7 +2455,14 @@ const App: React.FC = () => {
   // --- RENDER BLOCK (Must be last) ---  
   
   // 根据用户是否登录，决定使用后端数据还是本地预置数据
-  const getCurrentScenes = () => {
+  // 使用useMemo优化，避免重复计算
+  const currentScenes = useMemo(() => {
+    // 如果正在显示初始化向导，返回空数组，避免显示游客预置场景
+    if (showInitializationWizard) {
+      console.log('[currentScenes] 初始化向导显示中，返回空场景列表');
+      return [];
+    }
+    
     if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes) {
       // 登录用户：使用从后端获取的用户专属场景 + 自定义场景（排除已在userWorldScenes中的）
       const userWorldSceneIds = new Set(gameState.userWorldScenes.map(s => s.id));
@@ -1942,15 +2472,22 @@ const App: React.FC = () => {
       // 游客：使用本地预置场景 + 自定义场景
       return [...WORLD_SCENES, ...gameState.customScenes];
     }
-  };
+  }, [gameState.userProfile, gameState.userWorldScenes, gameState.customScenes, showInitializationWizard]);
+  
+  // 为了保持向后兼容，创建一个函数
+  const getCurrentScenes = useCallback(() => currentScenes, [currentScenes]);
   
   if (isMobileMode) {
-      return <MobileApp onSwitchToPC={handleSwitchToPC} />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <MobileApp onSwitchToPC={handleSwitchToPC} />
+        </Suspense>
+      );
   }
 
   if (!isLoaded) return <div className="h-screen w-screen bg-black flex items-center justify-center text-white">Loading HeartSphere Core...</div>;
   
-  const currentSceneLocal = getCurrentScenes().find(s => s.id === gameState.selectedSceneId);
+  const currentSceneLocal = currentScenes.find(s => s.id === gameState.selectedSceneId);
   
   let sceneCharacters: Character[] = [];
   if (currentSceneLocal) {
@@ -1958,7 +2495,7 @@ const App: React.FC = () => {
       sceneCharacters = [...currentSceneLocal.characters, ...customCharsForScene];
   }
 
-  const allCharacters = getCurrentScenes().reduce((acc, scene) => {
+  const allCharacters = currentScenes.reduce((acc, scene) => {
       const sceneChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
       return [...acc, ...sceneChars];
   }, [] as Character[]);
@@ -1982,7 +2519,13 @@ const App: React.FC = () => {
             <LoginModal
               onLoginSuccess={handleLoginSuccess}
               onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
-              initialNickname={gameState.userProfile?.isGuest ? gameState.userProfile.nickname : undefined}
+              initialNickname={
+                gameState.currentScreen === 'profileSetup' && profileNickname.trim()
+                  ? profileNickname.trim()
+                  : gameState.userProfile?.isGuest 
+                    ? gameState.userProfile.nickname 
+                    : undefined
+              }
             />
           )}
 
@@ -1991,28 +2534,141 @@ const App: React.FC = () => {
             <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
           )}
 
+          {/* 初始化向导 - 只在真正需要时显示，且确保不会覆盖正常页面 */}
+          {(() => {
+            const shouldShowWizard = showInitializationWizard && 
+                                     initializationData && 
+                                     (gameState.currentScreen === 'entryPoint' || gameState.currentScreen === 'profileSetup');
+            
+            if (shouldShowWizard) {
+              console.log('[初始化向导] ========== 渲染初始化向导组件 ==========');
+              console.log('[初始化向导] showInitializationWizard:', showInitializationWizard);
+              console.log('[初始化向导] currentScreen:', gameState.currentScreen);
+              console.log('[初始化向导] initializationData:', initializationData);
+              console.log('[初始化向导] userId:', initializationData.userId);
+              console.log('[初始化向导] worldId:', initializationData.worldId);
+              console.log('[初始化向导] token存在:', !!initializationData.token);
+              return (
+                <InitializationWizard
+                  token={initializationData.token}
+                  userId={initializationData.userId}
+                  worldId={initializationData.worldId}
+                  onComplete={async () => {
+                    console.log('[初始化向导] 完成初始化');
+                    setShowInitializationWizard(false);
+                    setInitializationData(null);
+                    initializationWizardProcessedRef.current = false; // 重置标记
+                    // 重新加载数据 - 触发页面刷新以加载新创建的场景、角色和剧本
+                    window.location.reload();
+                  }}
+                  onCancel={() => {
+                    console.log('[初始化向导] 取消初始化');
+                    setShowInitializationWizard(false);
+                    setInitializationData(null);
+                    initializationWizardProcessedRef.current = false; // 重置标记
+                    showAlert('你可以稍后在设置中完成初始化');
+                  }}
+                />
+              );
+            }
+            return null;
+          })()}
+
+
       {gameState.currentScreen === 'profileSetup' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 p-6">
            <div className="max-w-md w-full text-center space-y-8">
                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Welcome to {APP_TITLE}</h1>
-               <p className="text-gray-400">首先，请告诉我们该如何称呼你。</p>
-               <input 
-                 type="text" 
-                 value={profileNickname} 
-                 onChange={(e) => setProfileNickname(e.target.value)} 
-                 placeholder="输入你的昵称"
-                 className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-center text-lg focus:border-pink-500 outline-none"
-               />
-               <Button fullWidth onClick={handleProfileSubmit} disabled={!profileNickname.trim()}>以访客身份进入</Button>
-               <p className="text-xs text-gray-600 mt-4">你可以在之后绑定手机或微信以保存数据。</p>
+               <p className="text-gray-400">选择你的进入方式</p>
+               <div className="space-y-3">
+                 <Button 
+                   fullWidth 
+                   onClick={() => setShowGuestNicknameModal(true)}
+                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                 >
+                   以访客身份进入
+                 </Button>
+                 <Button 
+                   fullWidth 
+                   variant="secondary" 
+                   onClick={() => setShowLoginModal(true)}
+                   className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                 >
+                   登录账户
+                 </Button>
+               </div>
+               <p className="text-xs text-gray-600 mt-4">访客模式可快速体验，登录账户可同步数据。</p>
            </div>
         </div>
       )}
 
-      {gameState.currentScreen === 'entryPoint' && gameState.userProfile && (
+      {/* 访客昵称输入对话框 */}
+      {showGuestNicknameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">访客体验</h3>
+            <p className="text-sm text-slate-400 mb-6">输入你的昵称，以访客身份进入体验</p>
+            <input
+              type="text"
+              value={profileNickname}
+              onChange={(e) => setProfileNickname(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && profileNickname.trim()) {
+                  handleProfileSubmit();
+                  setShowGuestNicknameModal(false);
+                }
+              }}
+              placeholder="请输入昵称"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  if (profileNickname.trim()) {
+                    handleProfileSubmit();
+                    setShowGuestNicknameModal(false);
+                  }
+                }}
+                disabled={!profileNickname.trim()}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
+              >
+                进入
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowGuestNicknameModal(false);
+                  setProfileNickname('');
+                }}
+                variant="ghost"
+                className="flex-1"
+              >
+                取消
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameState.currentScreen === 'entryPoint' && (() => {
+        // 在 entryPoint 渲染时，如果初始化向导不应该显示，立即清理
+        if (showInitializationWizard && (!initializationData || !initializationWizardProcessedRef.current)) {
+          console.warn('[EntryPoint] 检测到初始化向导状态异常，立即清理');
+          setShowInitializationWizard(false);
+          setInitializationData(null);
+          initializationWizardProcessedRef.current = false;
+        }
+        
+        return (
           <EntryPoint 
-            onNavigate={(screen) => setGameState(prev => ({ ...prev, currentScreen: screen }))} 
-            nickname={gameState.userProfile.nickname} 
+            onNavigate={(screen) => {
+              if (screen === 'admin') {
+                // admin 现在在新页面打开，不需要处理
+                return;
+              }
+              setGameState(prev => ({ ...prev, currentScreen: screen }));
+            }} 
+            nickname={gameState.userProfile?.nickname || ''} 
             onOpenSettings={() => setShowSettingsModal(true)}
             onSwitchToMobile={handleSwitchToMobile}
             currentStyle={gameState.worldStyle}
@@ -2020,8 +2676,24 @@ const App: React.FC = () => {
               setGameState(prev => ({ ...prev, worldStyle: style }));
               storageService.saveState({ ...gameState, worldStyle: style });
             }}
+            onLoginSuccess={handleLoginSuccess}
+            isGuest={gameState.userProfile?.isGuest || !gameState.userProfile}
+            onGuestEnter={(nickname) => {
+              const profile = { 
+                nickname: nickname, 
+                avatarUrl: '',
+                isGuest: true, 
+                id: `guest_${Date.now()}`
+              }; 
+              setGameState(prev => ({
+                ...prev,
+                userProfile: profile,
+                currentScreen: 'entryPoint'
+              }));
+            }}
           />
-      )}
+        );
+      })()}
 
       {gameState.currentScreen === 'realWorld' && (
           <RealWorldScreen 
@@ -2036,6 +2708,7 @@ const App: React.FC = () => {
              onConsultMirror={handleConsultMirror} 
              autoGenerateImage={gameState.settings.autoGenerateJournalImages}
              userName={gameState.userProfile?.nickname}
+             isGuest={gameState.userProfile?.isGuest || !gameState.userProfile}
           />
       )}
 
@@ -2069,12 +2742,14 @@ const App: React.FC = () => {
       )}
 
       {gameState.currentScreen === 'admin' && (
-          <AdminScreen 
-             gameState={gameState}
-             onUpdateGameState={(newState) => setGameState(newState)}
-             onResetWorld={() => storageService.clearMemory()}
-             onBack={handleEnterNexus}
-          />
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminScreen 
+               gameState={gameState}
+               onUpdateGameState={(newState) => setGameState(newState)}
+               onResetWorld={() => storageService.clearMemory()}
+               onBack={handleEnterNexus}
+            />
+          </Suspense>
       )}
 
       {gameState.currentScreen === 'sceneSelection' && (
@@ -2087,7 +2762,7 @@ const App: React.FC = () => {
                   <div>
                     <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">{APP_TITLE}</h2>
                     <p className="text-gray-400 text-sm flex items-center gap-2">
-                        选择一个时代切片进行连接
+                        选择一个场景切片进行连接
                         {gameState.userProfile?.isGuest && <span className="text-[10px] bg-gray-700 px-1 rounded text-gray-300">GUEST MODE</span>}
                     </p>
                   </div>
@@ -2116,7 +2791,7 @@ const App: React.FC = () => {
                         setShowEraCreator(true); 
                       });
                   }} className="text-sm bg-pink-600 hover:bg-pink-500">
-                     + 创造新时代
+                     + 创造新场景
                   </Button>
               </div>
            </div>
@@ -2139,7 +2814,7 @@ const App: React.FC = () => {
            )}
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pb-10 scrollbar-hide">
-              {getCurrentScenes().map(scene => {
+              {currentScenes.map(scene => {
                  // 判断是否是用户拥有的场景
                  // 1. 如果ID是 era_数字 格式，说明是从后端获取的用户数据
                  // 2. 如果在 customScenes 或 userWorldScenes 中，说明是用户的数据
@@ -2302,6 +2977,20 @@ const App: React.FC = () => {
           onUpdateHistory={handleUpdateHistory}
           onUpdateScenarioState={(nodeId) => setGameState(prev => ({ ...prev, currentScenarioState: { ...prev.currentScenarioState!, currentNodeId: nodeId } }))}
           onBack={handleChatBack}
+          participatingCharacters={(() => {
+            // 获取参与剧本的角色列表
+            if (currentScenarioLocal && currentScenarioLocal.participatingCharacters) {
+              const allScenes = [...WORLD_SCENES, ...gameState.customScenes, ...(gameState.userWorldScenes || [])];
+              const scene = allScenes.find(s => s.id === currentScenarioLocal.sceneId);
+              if (scene) {
+                const allChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
+                return currentScenarioLocal.participatingCharacters
+                  .map(charId => allChars.find(c => c.id === charId))
+                  .filter((char): char is Character => char !== undefined);
+              }
+            }
+            return undefined;
+          })()}
         />
       )}
 
@@ -2323,6 +3012,29 @@ const App: React.FC = () => {
           onLogout={handleLogout}
           onBindAccount={() => { setShowSettingsModal(false); setShowLoginModal(true); }}
           onOpenRecycleBin={() => setShowRecycleBin(true)}
+          onOpenMembership={async () => {
+            setShowSettingsModal(false);
+            // 加载当前会员信息
+            try {
+              const token = localStorage.getItem('auth_token');
+              if (token) {
+                const membership = await membershipApi.getCurrent(token);
+                setCurrentMembership(membership);
+              }
+            } catch (error) {
+              console.error('加载会员信息失败:', error);
+            }
+            setShowMembershipModal(true);
+          }}
+        />
+      )}
+
+      {showMembershipModal && gameState.userProfile && !gameState.userProfile.isGuest && (
+        <MembershipModal
+          isOpen={showMembershipModal}
+          onClose={() => setShowMembershipModal(false)}
+          token={localStorage.getItem('auth_token') || ''}
+          currentMembership={currentMembership}
         />
       )}
 
@@ -2420,7 +3132,10 @@ const App: React.FC = () => {
              onClose={() => setGameState(prev => ({...prev, settings: {...prev.settings, debugMode: false}}))}
           />
       )}
-
+      
+      {/* 全局对话框 */}
+      <GlobalDialogs />
+      
     </div>
   );
 };
