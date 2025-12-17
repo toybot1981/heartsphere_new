@@ -2,6 +2,7 @@ package com.heartsphere.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -16,7 +17,11 @@ public class RegisterRequest {
     private String email;
     
     @NotBlank(message = "密码不能为空")
-    @Size(min = 6, max = 50, message = "密码长度必须在6-50个字符之间")
+    @Size(min = 8, max = 50, message = "密码长度必须在8-50个字符之间")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+        message = "密码必须至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)"
+    )
     private String password;
     
     private String nickname; // 昵称（在心域中的称呼）

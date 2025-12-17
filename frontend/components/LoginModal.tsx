@@ -30,6 +30,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
   const [registerEmailVerificationCode, setRegisterEmailVerificationCode] = useState(''); // 邮箱验证码
   const [registerError, setRegisterError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null); // 密码强度
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]); // 密码错误列表
   const [inviteCodeRequired, setInviteCodeRequired] = useState(false); // 是否需要邀请码
   const [emailVerificationRequired, setEmailVerificationRequired] = useState(true); // 是否需要邮箱验证码，默认需要
   const [isSendingCode, setIsSendingCode] = useState(false); // 是否正在发送验证码
@@ -242,6 +244,64 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
       }
   };
 
+  // 验证密码强度
+  const validatePassword = (password: string): { isValid: boolean; errors: string[]; strength: 'weak' | 'medium' | 'strong' | null } => {
+      const errors: string[] = [];
+      
+      if (password.length < 8) {
+          errors.push('密码至少需要8个字符');
+      }
+      
+      if (!/[a-z]/.test(password)) {
+          errors.push('密码必须包含至少一个小写字母');
+      }
+      
+      if (!/[A-Z]/.test(password)) {
+          errors.push('密码必须包含至少一个大写字母');
+      }
+      
+      if (!/\d/.test(password)) {
+          errors.push('密码必须包含至少一个数字');
+      }
+      
+      if (!/[@$!%*?&]/.test(password)) {
+          errors.push('密码必须包含至少一个特殊字符(@$!%*?&)');
+      }
+      
+      // 计算密码强度
+      let strength: 'weak' | 'medium' | 'strong' | null = null;
+      if (errors.length === 0) {
+          // 根据密码长度和复杂度判断强度
+          const hasAllTypes = /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password) && /[@$!%*?&]/.test(password);
+          if (password.length >= 12 && hasAllTypes) {
+              strength = 'strong';
+          } else if (password.length >= 8 && hasAllTypes) {
+              strength = 'medium';
+          } else {
+              strength = 'weak';
+          }
+      }
+      
+      return {
+          isValid: errors.length === 0,
+          errors,
+          strength
+      };
+  };
+
+  // 处理密码输入变化
+  const handlePasswordChange = (password: string) => {
+      setRegisterPassword(password);
+      if (password.length > 0) {
+          const validation = validatePassword(password);
+          setPasswordErrors(validation.errors);
+          setPasswordStrength(validation.strength);
+      } else {
+          setPasswordErrors([]);
+          setPasswordStrength(null);
+      }
+  };
+
   // 处理注册
   const handleRegisterSubmit = async () => {
       if (!registerUsername || !registerEmail || !registerPassword || !registerConfirmPassword) {
@@ -251,6 +311,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
 
       if (!registerNickname.trim()) {
           setRegisterError('请输入昵称（这将作为你在心域中的称呼）');
+          return;
+      }
+
+      // 验证密码强度
+      const passwordValidation = validatePassword(registerPassword);
+      if (!passwordValidation.isValid) {
+          setRegisterError('密码不符合要求：' + passwordValidation.errors.join('，'));
           return;
       }
 
@@ -500,10 +567,64 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                          <input 
                             type="password" 
                             value={registerPassword}
-                            onChange={e => setRegisterPassword(e.target.value)}
-                            placeholder="请输入密码"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all"
+                            onChange={e => handlePasswordChange(e.target.value)}
+                            placeholder="至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)"
+                            className={`w-full bg-slate-800 border rounded-lg py-3 px-4 text-white focus:outline-none transition-all ${
+                                registerPassword.length > 0 
+                                    ? passwordStrength === 'strong' 
+                                        ? 'border-green-500 focus:border-green-400' 
+                                        : passwordStrength === 'medium'
+                                        ? 'border-yellow-500 focus:border-yellow-400'
+                                        : passwordErrors.length > 0
+                                        ? 'border-red-500 focus:border-red-400'
+                                        : 'border-slate-700 focus:border-blue-500'
+                                    : 'border-slate-700 focus:border-blue-500'
+                            }`}
                         />
+                        {/* 密码强度指示器 */}
+                        {registerPassword.length > 0 && (
+                            <div className="space-y-1">
+                                {/* 强度条 */}
+                                <div className="flex gap-1 h-1">
+                                    <div className={`flex-1 rounded ${
+                                        passwordStrength === 'strong' ? 'bg-green-500' :
+                                        passwordStrength === 'medium' ? 'bg-yellow-500' :
+                                        passwordErrors.length > 0 ? 'bg-red-500' : 'bg-slate-600'
+                                    }`}></div>
+                                    <div className={`flex-1 rounded ${
+                                        passwordStrength === 'strong' || passwordStrength === 'medium' ? 
+                                        (passwordStrength === 'strong' ? 'bg-green-500' : 'bg-yellow-500') : 'bg-slate-600'
+                                    }`}></div>
+                                    <div className={`flex-1 rounded ${
+                                        passwordStrength === 'strong' ? 'bg-green-500' : 'bg-slate-600'
+                                    }`}></div>
+                                </div>
+                                {/* 强度文字提示 */}
+                                {passwordStrength && (
+                                    <p className={`text-xs ${
+                                        passwordStrength === 'strong' ? 'text-green-400' :
+                                        passwordStrength === 'medium' ? 'text-yellow-400' : 'text-red-400'
+                                    }`}>
+                                        {passwordStrength === 'strong' ? '✓ 密码强度：强' :
+                                         passwordStrength === 'medium' ? '⚠ 密码强度：中' : '✗ 密码强度：弱'}
+                                    </p>
+                                )}
+                                {/* 错误提示 */}
+                                {passwordErrors.length > 0 && (
+                                    <ul className="text-xs text-red-400 space-y-0.5">
+                                        {passwordErrors.map((error, index) => (
+                                            <li key={index}>• {error}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
+                        {/* 密码要求提示（当密码为空时显示） */}
+                        {registerPassword.length === 0 && (
+                            <p className="text-xs text-slate-500">
+                                密码要求：至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-1">
@@ -512,9 +633,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                             type="password" 
                             value={registerConfirmPassword}
                             onChange={e => setRegisterConfirmPassword(e.target.value)}
-                            placeholder="请再次输入密码"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all"
+                            placeholder="请再次输入密码以确认"
+                            className={`w-full bg-slate-800 border rounded-lg py-3 px-4 text-white focus:outline-none transition-all ${
+                                registerConfirmPassword.length > 0
+                                    ? registerPassword === registerConfirmPassword
+                                        ? 'border-green-500 focus:border-green-400'
+                                        : 'border-red-500 focus:border-red-400'
+                                    : 'border-slate-700 focus:border-blue-500'
+                            }`}
                         />
+                        {/* 密码匹配提示 */}
+                        {registerConfirmPassword.length > 0 && (
+                            <p className={`text-xs ${
+                                registerPassword === registerConfirmPassword ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                                {registerPassword === registerConfirmPassword ? '✓ 密码匹配' : '✗ 密码不匹配'}
+                            </p>
+                        )}
                     </div>
 
                     {inviteCodeRequired && (
