@@ -44,7 +44,7 @@ export const MailboxModal: React.FC<MailboxModalProps> = ({ mails, onClose, onMa
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 flex items-center gap-2">
                     <span>📬</span> 跨时空信箱
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">来自各个时代切片的问候</p>
+                <p className="text-xs text-slate-500 mt-1">来自各个场景切片的问候</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
                 {sortedMails.length === 0 ? (

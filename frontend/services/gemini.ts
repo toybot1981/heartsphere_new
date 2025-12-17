@@ -1,7 +1,53 @@
 
 import { GoogleGenAI, Chat, GenerateContentResponse, Modality, Type } from "@google/genai";
-import { Message, Character, StoryNode, CustomScenario, UserProfile, WorldScene, JournalEcho, JournalEntry, AppSettings, AIProvider, DebugLog } from "../types";
+import { Message, Character, StoryNode, CustomScenario, UserProfile, WorldScene, JournalEcho, JournalEntry, AppSettings, AIProvider, DebugLog, DialogueStyle } from "../types";
 import { createScenarioContext } from "../constants";
+
+// 根据对话风格生成风格指令
+const getDialogueStyleInstruction = (style: DialogueStyle = 'mobile-chat'): string => {
+  switch (style) {
+    case 'mobile-chat':
+      return `\n\n[对话风格：即时网聊]
+- 使用短句，像微信聊天一样自然
+- 可以适当使用 Emoji 表情（😊、😢、🤔、💭 等）
+- 动作描写用 *动作内容* 格式，例如：*轻轻拍了拍你的肩膀*
+- 节奏要快，回复要简洁有力
+- 语气要轻松、亲切，像和朋友聊天
+- 避免冗长的描述，重点突出对话和互动`;
+    
+    case 'visual-novel':
+      return `\n\n[对话风格：沉浸小说]
+- 侧重心理描写和环境渲染
+- 辞藻优美，富有文学性
+- 像读轻小说一样，有代入感和画面感
+- 可以详细描述角色的内心活动、表情、动作
+- 适当描写周围环境，营造氛围
+- 回复可以较长，但要保持节奏感
+- 注重情感表达和细节刻画`;
+    
+    case 'stage-script':
+      return `\n\n[对话风格：剧本独白]
+- 格式严格：动作用 [动作内容] 表示，台词直接说
+- 例如：[缓缓转身] 你来了...
+- 干脆利落，适合作为创作大纲
+- 动作和台词要清晰分离
+- 避免过多的心理描写，重点在动作和对话
+- 风格要简洁、有力，像舞台剧脚本`;
+    
+    case 'poetic':
+      return `\n\n[对话风格：诗意留白]
+- 极简、隐晦、富有哲理
+- 像《主要还是看气质》或《光遇》的风格
+- 用词要精炼，意境要深远
+- 可以适当留白，让读者自己体会
+- 避免直白的表达，多用隐喻和象征
+- 节奏要慢，每个字都要有分量
+- 注重氛围和情感，而非具体情节`;
+    
+    default:
+      return '';
+  }
+};
 
 // Helper to sanitize history for the API
 const formatHistory = (history: Message[]) => {
@@ -47,7 +93,7 @@ export class GeminiService {
   }
 
   // Hook for App.tsx to receive logs
-  setLogCallback(callback: (log: DebugLog) => void) {
+  setLogCallback(callback: ((log: DebugLog) => void) | null) {
       this.logCallback = callback;
   }
 
@@ -105,7 +151,14 @@ export class GeminiService {
   // --- FALLBACK STRATEGY LOGIC ---
 
   private getPrioritizedProviders(modality: 'text' | 'image' | 'video' | 'audio'): AIProvider[] {
-      if (!this.settings) return ['gemini'];
+      if (!this.settings) {
+          // 如果没有设置，尝试所有可能的 providers（包括环境变量中的 Gemini）
+          const allProviders: AIProvider[] = ['gemini', 'openai', 'qwen', 'doubao'];
+          return allProviders.filter(p => {
+              if (p === 'gemini') return true; // Gemini 可能使用环境变量
+              return false; // 其他需要配置
+          });
+      }
 
       let primary: AIProvider = 'gemini';
       switch(modality) {
@@ -115,30 +168,62 @@ export class GeminiService {
           case 'audio': primary = this.settings.audioProvider; break;
       }
 
-      const order: AIProvider[] = [primary];
+      const order: AIProvider[] = [];
+      const added = new Set<AIProvider>();
 
+      // 定义 capabilities
+      const capabilities: Record<AIProvider, string[]> = {
+          'gemini': ['text', 'image', 'video', 'audio'],
+          'openai': ['text'], // Add 'image' if DALL-E logic implemented
+          'qwen': ['text', 'image', 'video'], // Qwen supports text, image, video
+          'doubao': ['text', 'image', 'video'] // Doubao supports text, image, video
+      };
+      
+      // 添加 primary provider（即使没有配置，也先尝试，失败后会 fallback）
+      if (capabilities[primary].includes(modality)) {
+          order.push(primary);
+          added.add(primary);
+      }
+
+      // 添加 fallback providers
       if (this.settings.enableFallback) {
-          // Define capabilities per provider
-          const capabilities: Record<AIProvider, string[]> = {
-              'gemini': ['text', 'image', 'video', 'audio'],
-              'openai': ['text'], // Add 'image' if DALL-E logic implemented
-              'qwen': ['text', 'image', 'video'], // Qwen supports text, image, video
-              'doubao': ['text', 'image', 'video'] // Doubao supports text, image, video
-          };
-          
           const fallbacks: AIProvider[] = ['gemini', 'openai', 'qwen', 'doubao'];
           
           for (const p of fallbacks) {
-              if (p !== primary && capabilities[p].includes(modality)) {
-                  // Only add if API key is present OR if it's Gemini (which might fall back to env)
+              if (!added.has(p) && capabilities[p].includes(modality)) {
+                  // 检查是否有配置的 API key，或者 Gemini 可能使用环境变量
                   const config = this.getConfigForProvider(p);
-                  if ((config && config.apiKey) || (p === 'gemini' && process.env.API_KEY)) {
+                  const hasApiKey = (config && config.apiKey && config.apiKey.trim() !== '') || (p === 'gemini' && process.env.API_KEY);
+                  if (hasApiKey) {
                       order.push(p);
+                      added.add(p);
+                  }
+              }
+          }
+      } else {
+          // 即使没有启用 fallback，也要检查 primary 是否有配置
+          // 如果没有配置，尝试其他可用的
+          const primaryConfig = this.getConfigForProvider(primary);
+          const hasPrimaryKey = (primaryConfig && primaryConfig.apiKey && primaryConfig.apiKey.trim() !== '') || (primary === 'gemini' && process.env.API_KEY);
+          
+          if (!hasPrimaryKey) {
+              // Primary 没有配置，尝试其他可用的
+              const fallbacks: AIProvider[] = ['gemini', 'openai', 'qwen', 'doubao'];
+              for (const p of fallbacks) {
+                  if (!added.has(p) && capabilities[p].includes(modality)) {
+                      const config = this.getConfigForProvider(p);
+                      const hasApiKey = (config && config.apiKey && config.apiKey.trim() !== '') || (p === 'gemini' && process.env.API_KEY);
+                      if (hasApiKey) {
+                          order.push(p);
+                          added.add(p);
+                      }
                   }
               }
           }
       }
-      return order;
+      
+      // 如果没有任何可用的，至少返回 primary（让错误处理来处理）
+      return order.length > 0 ? order : [primary];
   }
 
   private async retry<T>(fn: () => Promise<T>, retries = 2, delay = 1000): Promise<T> {
@@ -169,6 +254,11 @@ export class GeminiService {
 
       if (provider !== 'gemini' && (!config || !effectiveKey)) {
          throw new Error(`Config/Key missing for ${provider}`);
+      }
+      
+      // 对于 Gemini，如果没有配置，也抛出错误（但会被 fallback 捕获）
+      if (provider === 'gemini' && !effectiveKey) {
+         throw new Error(`Gemini API Key is not configured. Please set it in Settings.`);
       }
       
       const modelName = config?.modelName || 'gemini-2.5-flash';
@@ -446,7 +536,7 @@ export class GeminiService {
 
   private async generateText(prompt: string, systemInstruction: string = '', jsonMode: boolean = false): Promise<string> {
       const providers = this.getPrioritizedProviders('text');
-      let lastError = null;
+      let lastError: Error | null = null;
 
       for (const provider of providers) {
           try {
@@ -580,7 +670,12 @@ export class GeminiService {
       }
       // --------------------------------
 
-      const combinedInstruction = `${scenarioContext}\n\n${deepCharacterPrompt}`;
+      // --- 对话风格注入 ---
+      const dialogueStyle = this.settings?.dialogueStyle || 'mobile-chat';
+      const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
+      // --------------------
+
+      const combinedInstruction = `${scenarioContext}\n\n${deepCharacterPrompt}${styleInstruction}`;
 
       const config = this.getConfigForProvider('gemini');
       const modelName = config?.modelName || 'gemini-2.5-flash';
@@ -621,7 +716,7 @@ export class GeminiService {
   ): Promise<AsyncIterable<GenerateContentResponse>> {
     
     const providers = this.getPrioritizedProviders('text');
-    let lastError = null;
+    let lastError: Error | null = null;
 
     for (const provider of providers) {
         try {
@@ -647,7 +742,12 @@ export class GeminiService {
                 if (character.secrets) deepCharacterPrompt += `\nSecrets: ${character.secrets}`;
                 // -----------------------------------------------------------------------
 
-                const combinedInstruction = `${scenarioContext}\n\n${deepCharacterPrompt}`;
+                // --- 对话风格注入 ---
+                const dialogueStyle = this.settings?.dialogueStyle || 'mobile-chat';
+                const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
+                // --------------------
+
+                const combinedInstruction = `${scenarioContext}\n\n${deepCharacterPrompt}${styleInstruction}`;
                 
                 const messages = formatOpenAIHistory(history, combinedInstruction);
                 messages.push({ role: 'user', content: userMessage });
@@ -723,6 +823,123 @@ export class GeminiService {
     }, 2, 3000);
   }
 
+  async generateMainStory(eraName: string, eraDescription: string, characters: Array<{name: string, role: string, bio: string}>, optionalPrompt?: string): Promise<{
+    name: string;
+    role: string;
+    bio: string;
+    firstMessage: string;
+    themeColor: string;
+    colorAccent: string;
+    age?: number;
+    voiceName?: string;
+    tags?: string;
+    speechStyle?: string;
+    motivations?: string;
+  } | null> {
+    // 使用 fallback 机制，尝试所有可用的 providers
+    const providers = this.getPrioritizedProviders('text');
+    
+    // 调试信息：打印可用的 providers 和配置状态
+    console.log('[generateMainStory] 可用的 providers:', providers);
+    if (this.settings) {
+      console.log('[generateMainStory] Settings:', {
+        textProvider: this.settings.textProvider,
+        enableFallback: this.settings.enableFallback,
+        geminiConfig: { hasKey: !!(this.settings.geminiConfig?.apiKey?.trim()) },
+        openaiConfig: { hasKey: !!(this.settings.openaiConfig?.apiKey?.trim()) },
+        qwenConfig: { hasKey: !!(this.settings.qwenConfig?.apiKey?.trim()), apiKeyLength: this.settings.qwenConfig?.apiKey?.length || 0 },
+        doubaoConfig: { hasKey: !!(this.settings.doubaoConfig?.apiKey?.trim()) }
+      });
+    } else {
+      console.warn('[generateMainStory] Settings 未初始化！');
+    }
+    
+    let lastError: Error | null = null;
+
+    for (const provider of providers) {
+      try {
+        return await this.retry(async () => {
+          try {
+            const charactersInfo = characters.map(c => `- ${c.name} (${c.role}): ${c.bio || '无简介'}`).join('\n');
+            const userPrompt = optionalPrompt 
+              ? `场景: "${eraName}"\n场景描述: ${eraDescription}\n\n预设角色:\n${charactersInfo}\n\n额外要求: ${optionalPrompt}\n\n请为这个场景生成一个完整的主线剧情序章。`
+              : `场景: "${eraName}"\n场景描述: ${eraDescription}\n\n预设角色:\n${charactersInfo}\n\n请为这个场景生成一个完整的主线剧情序章。`;
+
+            const systemPrompt = `You are a creative narrative director for an interactive story game. Create a main story prologue (主线剧情序章) for a scene/era.
+
+The prologue should:
+- Hook the player with an immersive opening scene
+- Set the atmosphere and tone
+- Introduce a key event or choice point
+- Be engaging and draw the player into the story
+
+Output JSON only with these properties:
+- name: Story title (e.g., "未完成的春日合奏", "霓虹下的忒修斯")
+- role: "叙事者" or "剧情向导"
+- bio: Brief story description (2-3 sentences)
+- firstMessage: Opening message (序幕) - should be immersive, set the scene, include an event or hook. Format: 【序幕：标题】\\n\\n[详细描述]\\n\\n[突发事件或选择提示]
+- themeColor: Tailwind color class (e.g., "indigo-500", "cyan-500")
+- colorAccent: Hex color (e.g., "#6366f1", "#06b6d4")
+- age: Number (narrator age, usually 20-30)
+- voiceName: Voice name (e.g., "Fenrir", "Charon")
+- tags: Comma-separated tags (e.g., "Narrator,Story,Adventure")
+- speechStyle: Description of narrative style (e.g., "紧张，快节奏，冷硬派" or "温柔，诗意，充满希望")
+- motivations: What drives the story forward
+
+The content MUST be in Chinese. The story should be engaging, with clear character involvement and meaningful choices.`;
+
+            const responseText = await this.executeTextGeneration(provider, userPrompt, systemPrompt, true);
+            
+            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const details = JSON.parse(jsonStr);
+
+            return {
+              name: details.name || `${eraName}的主线剧情`,
+              role: details.role || '叙事者',
+              bio: details.bio || '',
+              firstMessage: details.firstMessage || '',
+              themeColor: details.themeColor || 'indigo-500',
+              colorAccent: details.colorAccent || '#6366f1',
+              age: details.age || 25,
+              voiceName: details.voiceName || 'Fenrir',
+              tags: details.tags || 'Narrator,Story',
+              speechStyle: details.speechStyle || '',
+              motivations: details.motivations || ''
+            };
+          } catch (e) {
+            this.log('generateMainStory', 'error', e);
+            throw e;
+          }
+        }, 2, 3000);
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        const errorMsg = error?.message || String(e);
+        console.warn(`[generateMainStory] Provider ${provider} failed: ${errorMsg}, trying next...`);
+        lastError = error;
+        this.log('generateMainStory', 'fallback_error', { provider, error: errorMsg });
+        
+        // 如果是配置缺失的错误，继续尝试下一个
+        if (errorMsg.includes('not configured') || errorMsg.includes('missing') || errorMsg.includes('Key')) {
+          continue;
+        }
+        
+        // 其他错误也继续尝试
+        continue;
+      }
+    }
+    
+    // 构建更友好的错误信息
+    if (lastError) {
+      const errorMsg = lastError instanceof Error ? lastError.message : String(lastError);
+      if (errorMsg.includes('not configured') || errorMsg.includes('missing') || errorMsg.includes('Key')) {
+        throw new Error("所有 AI 模型都未配置 API Key。请在设置中配置至少一个模型的 API Key（Gemini、OpenAI、Qwen 或 Doubao）。");
+      }
+      throw new Error(`所有 AI 模型都失败了：${errorMsg}`);
+    }
+    
+    throw new Error("所有 AI 模型都失败了，请检查配置");
+  }
+
   async generateScenarioFromPrompt(prompt: string): Promise<CustomScenario | null> {
       return this.retry(async () => {
         try {
@@ -781,35 +998,56 @@ export class GeminiService {
   }
 
   // --- Prompt Constructors (Cost Saving) ---
-  constructEraCoverPrompt(name: string, description: string): string {
-      return `A beautiful, high-quality vertical anime world illustration for a world named "${name}". The theme is: "${description}". Style: Modern Chinese Anime (Manhua), cinematic lighting, vibrant, epic feel.`;
+  constructEraCoverPrompt(name: string, description: string, worldStyle?: string): string {
+      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), cinematic lighting, vibrant, epic feel.';
+      return `A beautiful, high-quality vertical world illustration for a world named "${name}". The theme is: "${description}". ${styleSuffix}`;
   }
 
-  constructCharacterAvatarPrompt(name: string, role: string, bio: string, themeColor: string): string {
-      return `High-quality vertical anime character portrait of ${name}. Role: ${role}. Description: ${bio}. Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes. Centered character, abstract background matching theme color ${themeColor}.`;
+  constructCharacterAvatarPrompt(name: string, role: string, bio: string, themeColor: string, worldStyle?: string): string {
+      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes.';
+      return `High-quality vertical character portrait of ${name}. Role: ${role}. Description: ${bio}. ${styleSuffix} Centered character, abstract background matching theme color ${themeColor}.`;
   }
 
-  constructCharacterBackgroundPrompt(name: string, bio: string, eraName: string): string {
-      return `Atmospheric anime background scene for the world of "${eraName}". It should match the personality of a character named ${name}, described as: "${bio}". Style: Modern Chinese Anime (Manhua), high quality, cinematic lighting.`;
+  constructCharacterBackgroundPrompt(name: string, bio: string, eraName: string, worldStyle?: string): string {
+      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), high quality, cinematic lighting.';
+      return `Atmospheric background scene for the world of "${eraName}". It should match the personality of a character named ${name}, described as: "${bio}". ${styleSuffix}`;
   }
 
-  constructUserAvatarPrompt(nickname: string): string {
-      return `Profile avatar for a user named "${nickname}". Style: Modern Anime, Cyberpunk, or Dreamy Digital Art. High quality, centered face or symbol.`;
+  constructUserAvatarPrompt(nickname: string, worldStyle?: string): string {
+      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Anime, Cyberpunk, or Dreamy Digital Art.';
+      return `Profile avatar for a user named "${nickname}". ${styleSuffix} High quality, centered face or symbol.`;
   }
 
-  constructMoodPrompt(content: string): string {
-      return `Abstract, artistic, high-quality illustration representing this emotion/thought: "${content.substring(0, 100)}...". Style: Ethereal, Dreamlike, Digital Art, vibrant colors, expressive brushstrokes.`;
+  constructMoodPrompt(content: string, worldStyle?: string): string {
+      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Ethereal, Dreamlike, Digital Art, vibrant colors, expressive brushstrokes.';
+      return `Abstract, artistic, high-quality illustration representing this emotion/thought: "${content.substring(0, 100)}...". ${styleSuffix}`;
+  }
+
+  // Helper method to get style prompt suffix
+  private getStylePromptSuffix(worldStyle: string): string {
+      // Import WORLD_STYLE_DESCRIPTIONS dynamically or use a switch
+      const styleMap: Record<string, string> = {
+          'anime': 'Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes, expressive emotions, cinematic lighting.',
+          'realistic': 'Style: Photorealistic, highly detailed, realistic lighting and textures, professional photography quality.',
+          'cyberpunk': 'Style: Cyberpunk, neon lights, futuristic technology, dark aesthetic, Blade Runner inspired, high-tech low-life atmosphere.',
+          'fantasy': 'Style: Fantasy art, magical elements, epic scenes, mystical atmosphere, high fantasy aesthetic, detailed world-building.',
+          'steampunk': 'Style: Steampunk, Victorian era aesthetics, brass and copper machinery, gears and cogs, retro-futuristic technology.',
+          'minimalist': 'Style: Minimalist, clean lines, elegant simplicity, modern design, ample white space, refined aesthetics.',
+          'watercolor': 'Style: Watercolor painting, soft brushstrokes, dreamy color gradients, artistic and ethereal, flowing pigments.',
+          'oil-painting': 'Style: Oil painting, classical art, rich brushstrokes and texture, Renaissance or Baroque inspired, artistic depth.'
+      };
+      return styleMap[worldStyle] || styleMap['anime'];
   }
 
   // --- Avatar Gen Wrapper (Legacy/Direct) ---
-  async generateCharacterImage(character: Character): Promise<string | null> {
-      const prompt = this.constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor);
+  async generateCharacterImage(character: Character, worldStyle?: string): Promise<string | null> {
+      const prompt = this.constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
       return this.generateImageFromPrompt(prompt, '3:4');
   }
 
   // --- User Avatar Gen ---
-  async generateUserAvatar(nickname: string): Promise<string | null> {
-      const prompt = this.constructUserAvatarPrompt(nickname);
+  async generateUserAvatar(nickname: string, worldStyle?: string): Promise<string | null> {
+      const prompt = this.constructUserAvatarPrompt(nickname, worldStyle);
       return this.generateImageFromPrompt(prompt, '1:1');
   }
 
@@ -856,18 +1094,57 @@ export class GeminiService {
     node: StoryNode, 
     history: Message[], 
     choiceText: string | null,
-    userProfile: UserProfile | null
+    userProfile: UserProfile | null,
+    participatingCharacters?: Character[] // 参与剧本的角色列表
   ): Promise<AsyncIterable<GenerateContentResponse>> {
       
       const scenarioContext = createScenarioContext(userProfile);
+      
+      // 构建角色信息字符串
+      let characterInfo = '';
+      if (participatingCharacters && participatingCharacters.length > 0) {
+          characterInfo = '\n\n参与角色信息：\n';
+          participatingCharacters.forEach(char => {
+              characterInfo += `- ${char.name}（${char.role}）：${char.bio || '暂无描述'}\n`;
+              if (char.mbti) characterInfo += `  MBTI: ${char.mbti}\n`;
+              if (char.tags && char.tags.length > 0) characterInfo += `  标签: ${char.tags.join(', ')}\n`;
+              if (char.speechStyle) characterInfo += `  说话风格: ${char.speechStyle}\n`;
+          });
+          characterInfo += '\n故事应主要围绕这些角色展开，确保他们的性格、背景和关系在故事中得到体现。';
+      }
+      
+      // 如果节点指定了聚焦角色，添加额外提示
+      let focusCharacterInfo = '';
+      if (node.focusCharacterId && participatingCharacters) {
+          const focusChar = participatingCharacters.find(c => c.id === node.focusCharacterId);
+          if (focusChar) {
+              focusCharacterInfo = `\n\n本场景主要聚焦于角色：${focusChar.name}。请确保故事围绕${focusChar.name}展开，突出其性格特点和背景故事。`;
+          }
+      }
+      
+      // 检查当前节点是否有选项
+      const hasOptions = node.options && node.options.length > 0;
+      const optionsHint = hasOptions 
+        ? `\n\nIMPORTANT: This scene has user choices available. You should ONLY narrate the current scene outcome based on the prompt. DO NOT continue to the next scene or generate content for subsequent nodes. Stop after narrating the current scene and wait for the user to make a choice.`
+        : `\n\nThis scene has no user choices, so this is the end of this branch of the story.`;
+      
       const prompt = `
       CURRENT SCENE: "${node.title}"
       SCENE PROMPT: "${node.prompt}"
       USER CHOICE: "${choiceText || 'Scene Start'}"
+      ${characterInfo}
+      ${focusCharacterInfo}
       
       Narrate the story outcome based on the prompt and user choice. 
       Be immersive and descriptive.
+      ${participatingCharacters && participatingCharacters.length > 0 ? 'Focus on the participating characters and their interactions.' : ''}
+      ${optionsHint}
       `;
+
+      // --- 对话风格注入 ---
+      const dialogueStyle = this.settings?.dialogueStyle || 'mobile-chat';
+      const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
+      // --------------------
 
       const narratorChar: Character = {
           id: 'narrator_temp',
@@ -876,7 +1153,7 @@ export class GeminiService {
           age: 0,
           bio: 'System Narrator',
           avatarUrl: '', backgroundUrl: '', themeColor: '', colorAccent: '', firstMessage: '', voiceName: '',
-          systemInstruction: `You are the interactive story narrator. ${scenarioContext}`
+          systemInstruction: `You are the interactive story narrator. ${scenarioContext}${characterInfo ? `\n\n${characterInfo}` : ''}${styleInstruction}`
       };
 
       let historyForGen = history;
@@ -923,8 +1200,8 @@ export class GeminiService {
       }
   }
 
-  async generateMoodImage(text: string): Promise<string | null> {
-      const prompt = `Abstract, artistic, high-quality illustration representing this emotion/thought: "${text}". Style: Ethereal, Dreamlike, Digital Art, vibrant colors, expressive brushstrokes.`;
+  async generateMoodImage(text: string, worldStyle?: string): Promise<string | null> {
+      const prompt = this.constructMoodPrompt(text, worldStyle);
       return this.generateImageFromPrompt(prompt, '16:9');
   }
 
@@ -980,6 +1257,98 @@ export class GeminiService {
         }
         return null;
     });
+  }
+
+  // --- Daily Greeting Generation ---
+  async generateDailyGreeting(recentEntries: JournalEntry[], userName?: string): Promise<{greeting: string, question: string} | null> {
+    console.log("========== [GeminiService] 生成每日问候 ==========");
+    console.log(`[GeminiService] 最近日记数量: ${recentEntries.length}, 用户名: ${userName || '未提供'}`);
+    
+    const providers = this.getPrioritizedProviders('text');
+    let lastError: Error | null = null;
+
+    for (const provider of providers) {
+        try {
+            const config = this.getConfigForProvider(provider);
+            const effectiveKey = config?.apiKey || (provider === 'gemini' ? process.env.API_KEY : '');
+            
+            if (!config || !effectiveKey) {
+                if (providers.length === 1) throw new Error(`${provider} API Key missing.`);
+                continue;
+            }
+
+            this.log('generateDailyGreeting', 'attempt', { provider }, config.modelName || 'default');
+
+            // 构建提示词
+            let prompt = '';
+            let systemInstruction = '';
+
+            // 构建最近日记上下文
+            let recentEntriesContext = '';
+            if (recentEntries.length > 0) {
+                recentEntriesContext = recentEntries.slice(-3).map((entry, index) => 
+                    `日记${index + 1}（${new Date(entry.timestamp).toLocaleDateString()}）：\n标题：${entry.title}\n内容：${entry.content.substring(0, 300)}${entry.content.length > 300 ? '...' : ''}`
+                ).join('\n\n');
+            } else {
+                recentEntriesContext = '暂无日记记录';
+            }
+
+            // 使用新的提示词模板
+            systemInstruction = `You are a gentle, philosophical AI companion in the "HeartSphere" world.
+Your goal is to greet the user and ask a deep, thought-provoking question to help them start journaling.
+
+Context:
+- User Name: ${userName || '旅人'}
+- Recent Journal Entries (if any): 
+${recentEntriesContext}
+
+Instructions:
+1. Write a short, warm greeting (1 sentence). If they haven't written in a while, welcome them back gently.
+2. Write a single, insightful question (prompt) based on their recent themes (e.g., if they were sad, ask about healing; if happy, ask about gratitude).
+3. If no entries, ask a universal question about their current state or dreams.
+4. Output strictly in JSON format: { "greeting": "...", "prompt": "..." }
+5. Language: Chinese. Tone: Poetic, empathetic, calm.`;
+
+            prompt = '请生成问候和问题。';
+
+            const responseText = await this.executeTextGeneration(provider, prompt, systemInstruction, true);
+            
+            // 解析JSON响应
+            const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const result = JSON.parse(jsonStr);
+            
+            console.log("[GeminiService] 问候生成成功:", {
+                greetingLength: result.greeting?.length || 0,
+                questionLength: result.question?.length || 0
+            });
+            
+            this.log('generateDailyGreeting', 'success', { 
+                hasGreeting: !!result.greeting, 
+                hasQuestion: !!result.question 
+            }, config.modelName || 'default', provider);
+            
+            return {
+                greeting: result.greeting || '你好，今天想记录些什么呢？',
+                question: result.prompt || result.question || '今天有什么让你印象深刻的事吗？'
+            };
+        } catch (e) {
+            console.warn(`generateDailyGreeting failed on ${provider}`, e);
+            this.log('generateDailyGreeting', 'error_fallback', { provider, error: e });
+            lastError = e;
+            continue;
+        }
+    }
+    
+    // 如果所有provider都失败，返回默认问候
+    console.warn("[GeminiService] 所有provider失败，使用默认问候");
+    return {
+        greeting: recentEntries.length === 0 
+            ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+            : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
+        question: recentEntries.length === 0
+            ? '今天有什么让你印象深刻的事吗？'
+            : '今天想记录些什么新的想法呢？'
+    };
   }
 }
 

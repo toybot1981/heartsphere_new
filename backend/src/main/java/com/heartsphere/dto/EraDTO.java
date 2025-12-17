@@ -16,6 +16,7 @@ public class EraDTO {
     private Integer startYear;
     private Integer endYear;
     private String imageUrl;
+    private Long systemEraId;
     private Long worldId;
     private Long userId;
     private LocalDateTime createdAt;

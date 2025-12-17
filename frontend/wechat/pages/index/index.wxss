@@ -1,0 +1,13 @@
+/* pages/index/index.wxml */
+.container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+.loading {
+  color: #ffffff;
+  font-size: 32rpx;
+}

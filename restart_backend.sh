@@ -17,3 +17,5 @@ mvn clean compile -q
 echo "正在启动后端服务..."
 mvn spring-boot:run
 
+
+

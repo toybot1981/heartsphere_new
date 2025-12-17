@@ -16,3 +16,5 @@ public interface SystemCharacterRepository extends JpaRepository<SystemCharacter
     List<SystemCharacter> findAllActiveOrdered();
 }
 
+
+

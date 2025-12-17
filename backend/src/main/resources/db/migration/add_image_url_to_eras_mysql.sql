@@ -17,3 +17,5 @@ ADD COLUMN image_url TEXT COMMENT '时代封面图片链接';
 --   AND TABLE_NAME = 'eras' 
 --   AND COLUMN_NAME = 'image_url';
 
+
+

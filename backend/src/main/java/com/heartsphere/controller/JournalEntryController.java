@@ -46,12 +46,35 @@ public class JournalEntryController {
     @Autowired
     private CharacterRepository characterRepository;
 
-    // 获取当前用户的所有记录
+    // 获取当前用户的所有记录（支持搜索和标签筛选）
     @GetMapping
-    public ResponseEntity<List<JournalEntryDTO>> getAllJournalEntries() {
+    public ResponseEntity<List<JournalEntryDTO>> getAllJournalEntries(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tag) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // 检查 principal 是否是 UserDetailsImpl 类型
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<JournalEntry> journalEntries = journalEntryRepository.findByUser_Id(userDetails.getId());
+        
+        List<JournalEntry> journalEntries;
+        if (search != null && !search.trim().isEmpty()) {
+            // 搜索功能
+            journalEntries = journalEntryRepository.searchByKeyword(userDetails.getId(), search.trim());
+        } else if (tag != null && !tag.trim().isEmpty()) {
+            // 按标签筛选
+            journalEntries = journalEntryRepository.findByTag(userDetails.getId(), tag.trim());
+        } else {
+            // 获取所有记录
+            journalEntries = journalEntryRepository.findByUser_Id(userDetails.getId());
+        }
+        
         List<JournalEntryDTO> journalEntryDTOs = journalEntries.stream()
             .map(DTOMapper::toJournalEntryDTO)
             .collect(Collectors.toList());
@@ -62,6 +85,15 @@ public class JournalEntryController {
     @GetMapping("/{id}")
     public ResponseEntity<JournalEntryDTO> getJournalEntryById(@PathVariable String id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // 检查 principal 是否是 UserDetailsImpl 类型
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         JournalEntry journalEntry = journalEntryRepository.findById(id)
@@ -81,6 +113,15 @@ public class JournalEntryController {
         System.out.println("Received createJournalEntry request with map: " + journalEntryMap);
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || authentication.getPrincipal() == null) {
+                return ResponseEntity.status(401).build();
+            }
+            
+            // 检查 principal 是否是 UserDetailsImpl 类型
+            if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+                return ResponseEntity.status(401).build();
+            }
+            
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             System.out.println("User authenticated: " + userDetails.getUsername());
 
@@ -167,6 +208,12 @@ public class JournalEntryController {
                 journalEntry.setCharacter(character);
             }
             
+            // 处理标签
+            Object tagsObj = journalEntryMap.get("tags");
+            if (tagsObj != null) {
+                journalEntry.setTags(tagsObj instanceof String ? (String) tagsObj : tagsObj.toString());
+            }
+            
             System.out.println("JournalEntry object created: " + journalEntry);
             
             // 保存journalEntry
@@ -185,6 +232,15 @@ public class JournalEntryController {
     @PutMapping("/{id}")
     public ResponseEntity<JournalEntryDTO> updateJournalEntry(@PathVariable String id, @RequestBody JournalEntryDTO journalEntryDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // 检查 principal 是否是 UserDetailsImpl 类型
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         JournalEntry journalEntry = journalEntryRepository.findById(id)
@@ -197,6 +253,7 @@ public class JournalEntryController {
 
         journalEntry.setTitle(journalEntryDTO.getTitle());
         journalEntry.setContent(journalEntryDTO.getContent());
+        journalEntry.setTags(journalEntryDTO.getTags());
         journalEntry.setEntryDate(journalEntryDTO.getEntryDate());
 
         // 更新关联的世界、时代、角色
@@ -241,6 +298,15 @@ public class JournalEntryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJournalEntry(@PathVariable String id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // 检查 principal 是否是 UserDetailsImpl 类型
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         JournalEntry journalEntry = journalEntryRepository.findById(id)

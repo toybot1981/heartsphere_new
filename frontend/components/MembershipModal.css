@@ -1,0 +1,399 @@
+/* 会员弹窗样式 */
+.membership-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.membership-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.membership-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.membership-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* 当前会员状态卡片 */
+.current-membership-card {
+  margin: 20px 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+}
+
+.membership-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  font-size: 14px;
+}
+
+.membership-info div {
+  color: #666;
+}
+
+.membership-info strong {
+  color: #333;
+  margin-right: 8px;
+}
+
+/* 标签页 */
+.membership-tabs {
+  display: flex;
+  gap: 10px;
+  padding: 20px 30px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.membership-tabs button {
+  padding: 10px 20px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.membership-tabs button:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.membership-tabs button.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* 计划网格 */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 30px;
+}
+
+.plan-card {
+  border: 2px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 25px;
+  position: relative;
+  background: white;
+  transition: all 0.3s;
+}
+
+.plan-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+}
+
+.plan-card.premium {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+}
+
+.best-value-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #999;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.plan-header {
+  margin-bottom: 20px;
+}
+
+.plan-header h3 {
+  margin: 0 0 15px 0;
+  font-size: 20px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diamond-icon {
+  font-size: 16px;
+}
+
+.plan-price {
+  margin-top: 10px;
+}
+
+.price-main {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.price-monthly {
+  font-size: 14px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.plan-features {
+  margin: 20px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+}
+
+.plan-features div {
+  margin: 8px 0;
+}
+
+.feature-points {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.plan-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 20px;
+}
+
+.plan-button:hover {
+  background: #555;
+  transform: translateY(-2px);
+}
+
+.plan-button.premium {
+  background: #667eea;
+}
+
+.plan-button.premium:hover {
+  background: #764ba2;
+}
+
+/* 支付弹窗 */
+.payment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.payment-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  padding: 30px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.payment-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.payment-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.payment-modal-header h2 span {
+  color: #667eea;
+  font-size: 24px;
+}
+
+.payment-content {
+  text-align: center;
+}
+
+.membership-preview {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-label {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.preview-price {
+  font-size: 18px;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.qr-code-section {
+  margin: 30px 0;
+}
+
+.qr-code-placeholder {
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 40px;
+  margin-bottom: 20px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-code-text {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.agreement-text {
+  font-size: 12px;
+  color: #999;
+  text-decoration: underline;
+  margin-top: 10px;
+}
+
+.agree-pay-button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 15px;
+}
+
+.agree-pay-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.payment-hint {
+  font-size: 14px;
+  color: #666;
+  margin-top: 15px;
+}
+
+.payment-icons {
+  margin-left: 10px;
+  font-size: 18px;
+}
+
+.payment-type-selector {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.payment-type-selector button {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.payment-type-selector button:hover {
+  border-color: #667eea;
+}
+
+.payment-type-selector button.active {
+  border-color: #667eea;
+  background: #f0f4ff;
+  color: #667eea;
+}
+
+.agreement-footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+}
+
+.payment-loading {
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+

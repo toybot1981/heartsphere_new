@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CustomScenario, StoryNode, StoryOption } from '../types';
 import { Button } from './Button';
 import { geminiService } from '../services/gemini';
+import { showAlert } from '../utils/dialog';
 
 interface ScenarioBuilderProps {
   initialScenario?: CustomScenario | null;
@@ -94,7 +95,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({ initialScenari
       } else if (e?.message?.includes('API config missing')) {
           errorMsg = "未配置 API Key。请前往设置 > AI 模型，输入您选择的模型的 API Key。";
       }
-      alert(errorMsg);
+      showAlert(errorMsg, '生成失败', 'error');
     } finally {
       setIsMagicLoading(false);
     }

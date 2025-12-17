@@ -11,7 +11,7 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 // For built-in scenes, we'll use default mappings
 // For custom scenes, we'll need to store mappings when they are created
 export const SCENE_WORLD_MAPPING: { [sceneId: string]: number } = {
-  'university_era': 1,  // 大学时代
+  'university_era': 1,  // 大学场景
   'cyberpunk_city': 2,  // 赛博都市
   'clinic': 3           // 心域诊所
 };
@@ -356,8 +356,9 @@ export const syncService = {
 
   /**
    * Handle local data changes and sync to server immediately
+   * Returns the created/updated data if applicable
    */
-  handleLocalDataChange: async (dataType: 'journal' | 'scene' | 'character' | 'scenario', data: any): Promise<void> => {
+  handleLocalDataChange: async (dataType: 'journal' | 'scene' | 'character' | 'scenario', data: any): Promise<any> => {
     if (!navigator.onLine) {
       console.log('Offline, will sync when online');
       return;
@@ -402,33 +403,70 @@ export const syncService = {
           }
           break;
         case 'character':
-          if (data.id) {
-            // Update existing character
-            await characterApi.updateCharacter(
-              parseInt(data.id),
-              {
-                name: data.name,
-                description: data.description,
-                age: data.age,
-                gender: data.gender || data.role, // Use gender if available, otherwise role
-                worldId: 1, // Default world ID
-                eraId: 1 // Default era ID
-              },
-              token
-            );
+          // 检查角色ID是否是数字（数据库ID）
+          const characterId = data.id ? (typeof data.id === 'string' ? parseInt(data.id) : data.id) : null;
+          const isNumericId = characterId !== null && !isNaN(characterId) && characterId > 0;
+          
+          console.log(`[syncService] 角色同步 - ID解析:`, {
+            originalId: data.id,
+            originalIdType: typeof data.id,
+            parsedId: characterId,
+            isNumericId: isNumericId,
+            characterName: data.name
+          });
+          
+          // 准备角色数据
+          const characterData = {
+            name: data.name,
+            description: data.description || data.bio || '',
+            age: data.age,
+            gender: data.gender || data.role || '',
+            role: data.role,
+            bio: data.bio || data.description || '',
+            avatarUrl: data.avatarUrl,
+            backgroundUrl: data.backgroundUrl,
+            themeColor: data.themeColor,
+            colorAccent: data.colorAccent,
+            firstMessage: data.firstMessage,
+            systemInstruction: data.systemInstruction,
+            voiceName: data.voiceName,
+            mbti: data.mbti,
+            tags: data.tags ? (typeof data.tags === 'string' ? data.tags : (Array.isArray(data.tags) ? data.tags.join(',') : null)) : null,
+            speechStyle: data.speechStyle,
+            catchphrases: data.catchphrases ? (typeof data.catchphrases === 'string' ? data.catchphrases : (Array.isArray(data.catchphrases) ? data.catchphrases.join(',') : null)) : null,
+            secrets: data.secrets,
+            motivations: data.motivations,
+            relationships: data.relationships,
+            worldId: data.worldId || 1,
+            eraId: data.eraId || null
+          };
+          
+          if (isNumericId) {
+            // 更新现有角色（只更新属于当前用户的角色）
+            try {
+              await characterApi.updateCharacter(characterId, characterData, token);
+              console.log(`[syncService] 角色更新成功: ID=${characterId}`);
+            } catch (error: any) {
+              // 更新失败，给出明确的错误提示
+              const errorMsg = error.message || '';
+              let errorReason = '未知错误';
+              
+              if (errorMsg.includes('403') || errorMsg.includes('权限拒绝')) {
+                errorReason = '该角色不属于当前用户，无法更新。请确保您正在编辑自己的角色。';
+              } else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+                errorReason = '角色不存在或已被删除。';
+              } else {
+                errorReason = errorMsg || '更新失败，请稍后重试。';
+              }
+              
+              console.error(`[syncService] 角色更新失败: ID=${characterId}, 原因: ${errorReason}`);
+              throw new Error(`角色更新失败: ${errorReason}`);
+            }
           } else {
-            // Create new character
-            await characterApi.createCharacter(
-              {
-                name: data.name,
-                description: data.description,
-                age: data.age,
-                gender: data.gender || data.role, // Use gender if available, otherwise role
-                worldId: 1, // Default world ID
-                eraId: 1 // Default era ID
-              },
-              token
-            );
+            // 创建新角色（非数字ID表示是新创建的角色）
+            const createdCharacter = await characterApi.createCharacter(characterData, token);
+            console.log(`[syncService] 新角色创建成功: ID=${createdCharacter.id}`);
+            return createdCharacter; // 返回创建的角色信息，包含服务器生成的ID
           }
           break;
         case 'scenario':

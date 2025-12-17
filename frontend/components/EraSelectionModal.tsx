@@ -15,7 +15,7 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({ persona, o
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-2xl font-bold text-white">
-              选择时代: <span className="text-purple-400">{persona.name}</span>
+              选择场景: <span className="text-purple-400">{persona.name}</span>
             </h3>
             <p className="text-sm text-gray-400">你想与哪个时期的TA相遇？</p>
           </div>

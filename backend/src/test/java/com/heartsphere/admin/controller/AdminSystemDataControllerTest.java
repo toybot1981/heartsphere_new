@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heartsphere.admin.dto.SystemCharacterDTO;
 import com.heartsphere.admin.dto.SystemEraDTO;
 import com.heartsphere.admin.dto.SystemWorldDTO;
+import com.heartsphere.admin.dto.InviteCodeDTO;
+import com.heartsphere.admin.dto.GenerateInviteCodeRequest;
 import com.heartsphere.admin.entity.SystemAdmin;
 import com.heartsphere.admin.repository.SystemAdminRepository;
 import com.heartsphere.admin.service.AdminAuthService;
@@ -22,6 +24,7 @@ import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -194,6 +197,85 @@ public class AdminSystemDataControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    // ========== InviteCode Tests ==========
+    @Test
+    public void testGenerateInviteCodes() throws Exception {
+        GenerateInviteCodeRequest request = new GenerateInviteCodeRequest();
+        request.setQuantity(5);
+        request.setExpiresAt(java.time.LocalDateTime.now().plusDays(30));
+
+        mockMvc.perform(post("/api/admin/system/invite-codes/generate")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(5))
+                .andExpect(jsonPath("$[0].code").exists())
+                .andExpect(jsonPath("$[0].isUsed").value(false));
+    }
+
+    @Test
+    public void testGetAllInviteCodes() throws Exception {
+        // 先生成一些邀请码
+        GenerateInviteCodeRequest request = new GenerateInviteCodeRequest();
+        request.setQuantity(3);
+        request.setExpiresAt(java.time.LocalDateTime.now().plusDays(30));
+        
+        mockMvc.perform(post("/api/admin/system/invite-codes/generate")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // 获取所有邀请码
+        mockMvc.perform(get("/api/admin/system/invite-codes")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(greaterThanOrEqualTo(3)));
+    }
+
+    @Test
+    public void testGetInviteCodeRequired() throws Exception {
+        mockMvc.perform(get("/api/admin/system/config/invite-code-required")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inviteCodeRequired").exists())
+                .andExpect(jsonPath("$.inviteCodeRequired").isBoolean());
+    }
+
+    @Test
+    public void testSetInviteCodeRequired() throws Exception {
+        Map<String, Boolean> request = new HashMap<>();
+        request.put("inviteCodeRequired", true);
+
+        mockMvc.perform(put("/api/admin/system/config/invite-code-required")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inviteCodeRequired").value(true));
+
+        // 验证设置是否生效
+        mockMvc.perform(get("/api/admin/system/config/invite-code-required")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inviteCodeRequired").value(true));
+    }
+
+    @Test
+    public void testSetInviteCodeRequiredWithInvalidRequest() throws Exception {
+        Map<String, String> request = new HashMap<>();
+        request.put("invalid", "value");
+
+        mockMvc.perform(put("/api/admin/system/config/invite-code-required")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     // ========== Authentication Tests ==========

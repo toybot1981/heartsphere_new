@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { JournalEntry } from '../types';
 import { Button } from '../components/Button';
 import { geminiService } from '../services/gemini';
+import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/journalTemplates';
 
 interface MobileRealWorldProps {
   entries: JournalEntry[];
-  onAddEntry: (title: string, content: string, imageUrl?: string, insight?: string) => void;
+  onAddEntry: (title: string, content: string, imageUrl?: string, insight?: string, tags?: string) => void;
   onUpdateEntry: (entry: JournalEntry) => void;
   onDeleteEntry: (id: string) => void;
   onExplore: (entry: JournalEntry) => void;
   onConsultMirror: (content: string, recentContext: string[]) => Promise<string | null>;
   autoGenerateImage: boolean;
   onSwitchToPC: () => void;
+  userName?: string;
 }
 
 export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({ 
-    entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onConsultMirror, autoGenerateImage, onSwitchToPC 
+    entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onConsultMirror, autoGenerateImage, onSwitchToPC, userName 
 }) => {
   const [view, setView] = useState<'list' | 'detail' | 'edit'>('list');
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -23,13 +25,26 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   // Editor State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [newTags, setNewTags] = useState<string[]>([]); // 标签数组
+  const [tagInput, setTagInput] = useState(''); // 标签输入框
   const [isGenerating, setIsGenerating] = useState(false);
   const [insight, setInsight] = useState<string | null>(null);
+  
+  // Daily Greeting State
+  const [dailyGreeting, setDailyGreeting] = useState<{greeting: string, question?: string, prompt?: string} | null>(null);
+  const [isLoadingGreeting, setIsLoadingGreeting] = useState(false);
+  
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const startNew = () => {
       setSelectedEntry(null);
       setTitle('');
       setContent('');
+      setNewTags([]);
+      setTagInput('');
       setInsight(null);
       setView('edit');
   };
@@ -38,6 +53,8 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
       setSelectedEntry(entry);
       setTitle(entry.title);
       setContent(entry.content);
+      setNewTags(entry.tags ? entry.tags.split(',').map(t => t.trim()).filter(Boolean) : []);
+      setTagInput('');
       setInsight(entry.insight || null);
       setView('detail');
   };
@@ -45,13 +62,117 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   const startEdit = () => {
       setView('edit');
   };
+  
+  // Load daily greeting on mount and when entries change
+  useEffect(() => {
+      const loadDailyGreeting = async () => {
+          setIsLoadingGreeting(true);
+          try {
+              console.log("[MobileRealWorld] 开始生成每日问候");
+              const recentEntries = entries.slice(-3);
+              const greeting = await geminiService.generateDailyGreeting(recentEntries, userName);
+              if (greeting) {
+                  setDailyGreeting(greeting);
+                  console.log("[MobileRealWorld] 每日问候生成成功");
+              }
+          } catch (error) {
+              console.error("[MobileRealWorld] 生成每日问候失败:", error);
+              // 使用默认问候
+              setDailyGreeting({
+                  greeting: entries.length === 0 
+                      ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+                      : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
+                  question: entries.length === 0
+                      ? '今天有什么让你印象深刻的事吗？'
+                      : '今天想记录些什么新的想法呢？'
+              });
+          } finally {
+              setIsLoadingGreeting(false);
+          }
+      };
+
+      loadDailyGreeting();
+  }, [entries.length, userName]); // 只在条目数量变化时重新生成
+  
+  // Handle clicking on greeting question to fill editor
+  const handleGreetingQuestionClick = () => {
+      if (!dailyGreeting) return;
+      const questionText = dailyGreeting.prompt || dailyGreeting.question || '';
+      setContent(questionText);
+      if (view !== 'edit') {
+          setView('edit');
+          setSelectedEntry(null);
+          setTitle('');
+          setNewTags([]);
+          setTagInput('');
+          setInsight(null);
+      }
+  };
+  
+  // Tag management functions
+  const handleTagInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      const tag = tagInput.trim().startsWith('#') ? tagInput.trim() : `#${tagInput.trim()}`;
+      if (!newTags.includes(tag)) {
+        setNewTags([...newTags, tag]);
+        setTagInput('');
+      }
+    } else if (e.key === 'Backspace' && tagInput === '' && newTags.length > 0) {
+      setNewTags(newTags.slice(0, -1));
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setNewTags(newTags.filter(t => t !== tag));
+  };
+  
+  const applyTemplate = (templateId: string) => {
+    const template = getTemplateById(templateId);
+    if (template) {
+      setTitle(template.title);
+      setContent(template.content);
+      setNewTags(template.tags.split(',').map(t => t.trim()).filter(Boolean));
+      setShowTemplates(false);
+    }
+  };
+  
+  // Get all unique tags from entries
+  const getAllTags = (): string[] => {
+    const tagSet = new Set<string>();
+    entries.forEach(entry => {
+      if (entry.tags) {
+        entry.tags.split(',').forEach(tag => {
+          const trimmed = tag.trim();
+          if (trimmed) tagSet.add(trimmed);
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
+  };
+  
+  // Filter entries based on search and tag
+  const filteredEntries = entries.filter(entry => {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = entry.title.toLowerCase().includes(query);
+      const matchesContent = entry.content.toLowerCase().includes(query);
+      const matchesTags = entry.tags?.toLowerCase().includes(query);
+      if (!matchesTitle && !matchesContent && !matchesTags) return false;
+    }
+    if (selectedTag) {
+      if (!entry.tags || !entry.tags.includes(selectedTag)) return false;
+    }
+    return true;
+  });
 
   const handleSave = async () => {
       if (!title.trim() || !content.trim()) return;
 
       if (selectedEntry && view === 'edit' && selectedEntry.id) {
           // Update
-          const updated = { ...selectedEntry, title, content, insight: insight || undefined };
+          const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
+          const updated = { ...selectedEntry, title, content, insight: insight || undefined, tags: tagsString };
           onUpdateEntry(updated);
           setSelectedEntry(updated);
           setView('detail');
@@ -65,7 +186,8 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
               } catch(e) {}
               setIsGenerating(false);
           }
-          onAddEntry(title, content, img, insight || undefined);
+          const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
+          onAddEntry(title, content, img, insight || undefined, tagsString);
           setView('list');
       }
   };
@@ -97,15 +219,96 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                   <button onClick={startNew} className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white flex items-center justify-center shadow-lg font-bold text-2xl active:scale-95 transition-transform">+</button>
               </div>
 
+              {/* Search Bar */}
+              <div className="mb-4">
+                  <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="检索记忆/#标签"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm"
+                  />
+              </div>
+
+              {/* Tag Filter Pills */}
+              {getAllTags().length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-2">
+                      {getAllTags().map(tag => (
+                          <button
+                              key={tag}
+                              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                                  selectedTag === tag
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                              }`}
+                          >
+                              {tag}
+                          </button>
+                      ))}
+                  </div>
+              )}
+
+              {/* Daily Greeting */}
+              {dailyGreeting && (
+                  <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950/30 border border-indigo-500/20">
+                      <div className="flex items-center gap-2 mb-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                          Daily Resonance
+                      </div>
+                      <h2 className="text-base font-bold text-white/90 mb-1">
+                          {dailyGreeting.greeting || "你好，旅人。"}
+                      </h2>
+                      <div className="flex items-center justify-between">
+                          <p className="text-indigo-200/70 text-sm italic flex-1">
+                              "{dailyGreeting.prompt || dailyGreeting.question || "今天的风带给你什么感觉？"}"
+                          </p>
+                          <button 
+                            onClick={handleGreetingQuestionClick}
+                            className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white p-2 rounded-lg transition-all ml-2"
+                            title="回应"
+                          >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                          </button>
+                      </div>
+                  </div>
+              )}
+
               <div className="space-y-4">
-                  {entries.length === 0 && <p className="text-center text-slate-600 mt-10">还没有日记，写一篇吧。</p>}
-                  {entries.sort((a,b) => b.timestamp - a.timestamp).map(entry => (
+                  {filteredEntries.length === 0 && (
+                      <p className="text-center text-slate-600 mt-10">
+                          {searchQuery || selectedTag ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
+                      </p>
+                  )}
+                  {filteredEntries.sort((a,b) => b.timestamp - a.timestamp).map(entry => (
                       <div key={entry.id} onClick={() => openEntry(entry)} className="bg-slate-900 rounded-xl p-4 border border-slate-800 active:bg-slate-800">
                           <div className="flex justify-between items-start mb-2">
                               <h3 className="text-white font-bold truncate flex-1">{entry.title}</h3>
                               <span className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleDateString()}</span>
                           </div>
                           <p className="text-slate-400 text-sm line-clamp-2">{entry.content}</p>
+                          {entry.tags && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                  {entry.tags.split(',').map((tag, idx) => {
+                                      const trimmedTag = tag.trim();
+                                      if (!trimmedTag) return null;
+                                      return (
+                                          <span
+                                              key={idx}
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedTag(trimmedTag);
+                                              }}
+                                              className="text-[10px] px-2 py-0.5 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30"
+                                          >
+                                              {trimmedTag}
+                                          </span>
+                                      );
+                                  })}
+                              </div>
+                          )}
                           {entry.imageUrl && <div className="mt-3 h-24 w-full rounded-lg bg-cover bg-center opacity-80" style={{backgroundImage: `url(${entry.imageUrl})`}} />}
                       </div>
                   ))}
@@ -128,6 +331,27 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                       <img src={selectedEntry.imageUrl} className="w-full rounded-xl mb-6 shadow-lg" alt="Mind Projection" />
                   )}
                   <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedEntry.content}</p>
+                  
+                  {selectedEntry.tags && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                          {selectedEntry.tags.split(',').map((tag, idx) => {
+                              const trimmedTag = tag.trim();
+                              if (!trimmedTag) return null;
+                              return (
+                                  <span
+                                      key={idx}
+                                      onClick={() => {
+                                          setSelectedTag(trimmedTag);
+                                          setView('list');
+                                      }}
+                                      className="text-xs px-2 py-1 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30"
+                                  >
+                                      {trimmedTag}
+                                  </span>
+                              );
+                          })}
+                      </div>
+                  )}
                   
                   {selectedEntry.insight && (
                       <div className="mt-6 p-4 bg-cyan-900/20 border-l-2 border-cyan-500 rounded-r-lg">
@@ -157,7 +381,35 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                     {isGenerating ? '...' : '保存'}
                 </button>
            </div>
-           <div className="flex-1 p-4 flex flex-col gap-4">
+           <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+               {/* 模板选择 */}
+               <div className="flex items-center gap-2 mb-2">
+                   <button
+                       onClick={() => setShowTemplates(!showTemplates)}
+                       className="text-xs flex items-center gap-1 text-indigo-400 border border-indigo-800 rounded-full px-3 py-1 bg-indigo-900/10"
+                   >
+                       <span>📝</span> 模板
+                   </button>
+               </div>
+               
+               {showTemplates && (
+                   <div className="bg-slate-900 rounded-lg p-3 border border-slate-700 mb-2">
+                       <div className="text-xs text-slate-400 mb-2 font-bold">选择模板</div>
+                       <div className="grid grid-cols-2 gap-2">
+                           {getAllTemplates().slice(0, 4).map(template => (
+                               <button
+                                   key={template.id}
+                                   onClick={() => applyTemplate(template.id)}
+                                   className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                               >
+                                   <div className="text-xs font-bold text-white mb-1">{template.icon} {template.name}</div>
+                                   <div className="text-[10px] text-slate-400">{template.description}</div>
+                               </button>
+                           ))}
+                       </div>
+                   </div>
+               )}
+               
                <input 
                  value={title} 
                  onChange={e => setTitle(e.target.value)} 
@@ -168,8 +420,39 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                  value={content} 
                  onChange={e => setContent(e.target.value)} 
                  placeholder="写下你的想法..." 
-                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-600 outline-none resize-none leading-relaxed" 
+                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-600 outline-none resize-none leading-relaxed min-h-[200px]" 
                />
+               
+               {/* Tags Section */}
+               <div className="space-y-2">
+                   <div className="text-xs text-slate-400 font-bold">标签</div>
+                   {newTags.length > 0 && (
+                       <div className="flex flex-wrap gap-2 mb-2">
+                           {newTags.map((tag, idx) => (
+                               <span
+                                   key={idx}
+                                   className="text-xs px-2 py-1 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 flex items-center gap-1"
+                               >
+                                   {tag}
+                                   <button
+                                       onClick={() => removeTag(tag)}
+                                       className="text-indigo-400 hover:text-white"
+                                   >
+                                       ×
+                                   </button>
+                               </span>
+                           ))}
+                       </div>
+                   )}
+                   <input
+                       type="text"
+                       value={tagInput}
+                       onChange={(e) => setTagInput(e.target.value)}
+                       onKeyDown={handleTagInputKeyDown}
+                       placeholder="添加标签(Enter)..."
+                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                   />
+               </div>
                
                {insight && (
                    <div className="p-3 bg-cyan-900/20 rounded border border-cyan-900 text-cyan-200 text-xs">
@@ -177,7 +460,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                    </div>
                )}
 
-               <div className="flex justify-end">
+               <div className="flex justify-end gap-2">
                    <button onClick={handleMirror} className="text-xs flex items-center gap-1 text-cyan-400 border border-cyan-800 rounded-full px-3 py-1 bg-cyan-900/10">
                        <span>🔮</span> 本我镜像分析
                    </button>

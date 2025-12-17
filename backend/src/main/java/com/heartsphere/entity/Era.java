@@ -30,6 +30,9 @@ public class Era {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "system_era_id")
+    private Long systemEraId;
+
     @ManyToOne
     @JoinColumn(name = "world_id", nullable = false)
     private World world;

@@ -68,7 +68,7 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
         {/* Left Side: Memory Creator */}
         <div className="w-full md:w-1/3 bg-slate-950/50 p-6 flex flex-col border-r border-slate-800">
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-white mb-1">时代记忆</h3>
+            <h3 className="text-xl font-bold text-white mb-1">场景记忆</h3>
             <p className="text-sm text-slate-400">在 <span className="text-pink-400 font-bold">{scene.name}</span> 留下的印记</p>
           </div>
 
@@ -76,7 +76,7 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="写下关于这个时代的回忆、故事，或者对它的印象..."
+              placeholder="写下关于这个场景的回忆、故事，或者对它的印象..."
               className="w-full h-32 bg-slate-800/50 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:border-pink-500 outline-none resize-none text-sm"
             />
             
@@ -125,7 +125,7 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
-            返回时代
+            返回场景
           </button>
         </div>
 

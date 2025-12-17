@@ -1,12 +1,20 @@
 package com.heartsphere.config;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Web MVC配置
@@ -17,6 +25,30 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Value("${app.image.storage.local.path:./uploads/images}")
     private String localStoragePath;
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.getFactory().configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, false);
+        // 注册 Java 8 时间模块
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        // 禁用将日期写为时间戳，使用 ISO-8601 格式
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        return mapper;
+    }
+
+    @Override
+    public void configureMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
+        // 确保字符串消息转换器使用UTF-8编码
+        StringHttpMessageConverter stringConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
+        converters.add(0, stringConverter);
+        
+        // 配置 JSON 消息转换器，不转义非 ASCII 字符
+        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
+        jsonConverter.setObjectMapper(objectMapper());
+        converters.add(0, jsonConverter);
+    }
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {

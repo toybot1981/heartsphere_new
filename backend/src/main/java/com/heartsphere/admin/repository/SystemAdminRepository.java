@@ -14,3 +14,5 @@ public interface SystemAdminRepository extends JpaRepository<SystemAdmin, Long> 
     boolean existsByEmail(String email);
 }
 
+
+

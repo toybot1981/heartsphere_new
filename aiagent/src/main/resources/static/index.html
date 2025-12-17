@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent 测试平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            min-height: 500px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 对话界面样式 */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .agent-selector {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .agent-selector select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* 多模态测试样式 */
+        .modal-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .modal-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            min-height: 100px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .result-audio {
+            margin-top: 10px;
+        }
+
+        .result-video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* 工作流测试样式 */
+        .workflow-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .workflow-type {
+            margin-bottom: 20px;
+        }
+
+        .workflow-type label {
+            display: block;
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .workflow-type select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .workflow-input {
+            margin-bottom: 15px;
+        }
+
+        .workflow-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .step-result {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Agent 测试平台</h1>
+            <p>基于 Spring AI Alibaba 的智能 Agent 测试</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('chat')">💬 对话测试</button>
+            <button class="tab" onclick="switchTab('multimodal')">🎨 多模态测试</button>
+            <button class="tab" onclick="switchTab('workflow')">⚙️ 工作流测试</button>
+            <button class="tab" onclick="switchTab('amap')">🗺️ 高德地图测试</button>
+        </div>
+
+        <!-- 对话测试 -->
+        <div id="chat-tab" class="tab-content active">
+            <div class="chat-container">
+                <div class="agent-selector">
+                    <label>选择 Agent:</label>
+                    <select id="agentSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                    <button class="btn" onclick="loadAgents()">刷新</button>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div style="text-align: center; color: #999; padding: 40px;">
+                        👋 选择一个 Agent 开始对话
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        placeholder="输入消息..." 
+                        onkeypress="handleKeyPress(event)"
+                        disabled
+                    >
+                    <button id="sendButton" onclick="sendMessage()" disabled>发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 多模态测试 -->
+        <div id="multimodal-tab" class="tab-content">
+            <!-- 图片生成 -->
+            <div class="modal-section">
+                <h3>🖼️ 图片生成</h3>
+                <div class="form-group">
+                    <label>提示词 (Prompt):</label>
+                    <textarea id="imagePrompt" placeholder="例如：一只可爱的小猫坐在窗台上"></textarea>
+                </div>
+                <button class="btn" onclick="generateImage()">生成图片</button>
+                <div id="imageResult" class="result-box" style="display: none;">
+                    <div class="loading"></div> 正在生成图片...
+                </div>
+            </div>
+
+            <!-- 文本转语音 -->
+            <div class="modal-section">
+                <h3>🔊 文本转语音 (TTS)</h3>
+                <div class="form-group">
+                    <label>文本内容:</label>
+                    <textarea id="ttsText" placeholder="输入要转换为语音的文本"></textarea>
+                </div>
+                <button class="btn" onclick="textToSpeech()">转换为语音</button>
+                <div id="ttsResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 语音转文本 -->
+            <div class="modal-section">
+                <h3>🎤 语音转文本 (STT)</h3>
+                <div class="form-group">
+                    <label>上传音频文件:</label>
+                    <input type="file" id="audioFile" accept="audio/*">
+                </div>
+                <button class="btn" onclick="speechToText()">转换为文本</button>
+                <div id="sttResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 视频生成 -->
+            <div class="modal-section">
+                <h3>🎬 视频生成</h3>
+                <div class="form-group">
+                    <label>提示词 (Prompt):</label>
+                    <textarea id="videoPrompt" placeholder="例如：一只小狗在草地上奔跑"></textarea>
+                </div>
+                <button class="btn" onclick="generateVideo()">生成视频</button>
+                <div id="videoResult" class="result-box" style="display: none;">
+                    <div class="loading"></div> 正在生成视频...
+                </div>
+            </div>
+        </div>
+
+        <!-- 高德地图测试 -->
+        <div id="amap-tab" class="tab-content">
+            <!-- 地理编码 -->
+            <div class="modal-section">
+                <h3>📍 地理编码（地址转坐标）</h3>
+                <div class="form-group">
+                    <label>地址:</label>
+                    <input type="text" id="geocodeAddress" placeholder="例如：北京市朝阳区">
+                </div>
+                <div class="form-group">
+                    <label>城市（可选）:</label>
+                    <input type="text" id="geocodeCity" placeholder="例如：北京">
+                </div>
+                <button class="btn" onclick="testGeocode()">查询坐标</button>
+                <div id="geocodeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 逆地理编码 -->
+            <div class="modal-section">
+                <h3>📍 逆地理编码（坐标转地址）</h3>
+                <div class="form-group">
+                    <label>经度:</label>
+                    <input type="text" id="reverseLng" placeholder="例如：116.397128">
+                </div>
+                <div class="form-group">
+                    <label>纬度:</label>
+                    <input type="text" id="reverseLat" placeholder="例如：39.916527">
+                </div>
+                <button class="btn" onclick="testReverseGeocode()">查询地址</button>
+                <div id="reverseGeocodeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 路径规划 -->
+            <div class="modal-section">
+                <h3>🚗 路径规划</h3>
+                <div class="form-group">
+                    <label>起点坐标（经度,纬度）:</label>
+                    <input type="text" id="routeOrigin" placeholder="例如：116.397128,39.916527">
+                </div>
+                <div class="form-group">
+                    <label>终点坐标（经度,纬度）:</label>
+                    <input type="text" id="routeDestination" placeholder="例如：116.407526,39.904030">
+                </div>
+                <div class="form-group">
+                    <label>策略:</label>
+                    <select id="routeStrategy">
+                        <option value="0">速度优先</option>
+                        <option value="1">费用优先</option>
+                        <option value="2">距离优先</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="testRoutePlanning()">规划路径</button>
+                <div id="routeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- POI 搜索 -->
+            <div class="modal-section">
+                <h3>🔍 POI 搜索</h3>
+                <div class="form-group">
+                    <label>关键词:</label>
+                    <input type="text" id="poiKeywords" placeholder="例如：餐厅">
+                </div>
+                <div class="form-group">
+                    <label>城市（可选）:</label>
+                    <input type="text" id="poiCity" placeholder="例如：北京">
+                </div>
+                <div class="form-group">
+                    <label>类型（可选）:</label>
+                    <input type="text" id="poiTypes" placeholder="例如：餐饮服务">
+                </div>
+                <button class="btn" onclick="testPOISearch()">搜索 POI</button>
+                <div id="poiResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 天气查询 -->
+            <div class="modal-section">
+                <h3>🌤️ 天气查询</h3>
+                <div class="form-group">
+                    <label>城市:</label>
+                    <input type="text" id="weatherCity" placeholder="例如：北京">
+                </div>
+                <button class="btn" onclick="testWeather()">查询天气</button>
+                <div id="weatherResult" class="result-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- 高德地图测试 -->
+        <div id="amap-tab" class="tab-content">
+            <!-- 地理编码 -->
+            <div class="modal-section">
+                <h3>📍 地理编码（地址转坐标）</h3>
+                <div class="form-group">
+                    <label>地址:</label>
+                    <input type="text" id="geocodeAddress" placeholder="例如：北京市朝阳区">
+                </div>
+                <div class="form-group">
+                    <label>城市（可选）:</label>
+                    <input type="text" id="geocodeCity" placeholder="例如：北京">
+                </div>
+                <button class="btn" onclick="testGeocode()">查询坐标</button>
+                <div id="geocodeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 逆地理编码 -->
+            <div class="modal-section">
+                <h3>📍 逆地理编码（坐标转地址）</h3>
+                <div class="form-group">
+                    <label>经度:</label>
+                    <input type="text" id="reverseLng" placeholder="例如：116.397128">
+                </div>
+                <div class="form-group">
+                    <label>纬度:</label>
+                    <input type="text" id="reverseLat" placeholder="例如：39.916527">
+                </div>
+                <button class="btn" onclick="testReverseGeocode()">查询地址</button>
+                <div id="reverseGeocodeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 路径规划 -->
+            <div class="modal-section">
+                <h3>🚗 路径规划</h3>
+                <div class="form-group">
+                    <label>起点坐标（经度,纬度）:</label>
+                    <input type="text" id="routeOrigin" placeholder="例如：116.397128,39.916527">
+                </div>
+                <div class="form-group">
+                    <label>终点坐标（经度,纬度）:</label>
+                    <input type="text" id="routeDestination" placeholder="例如：116.407526,39.904030">
+                </div>
+                <div class="form-group">
+                    <label>策略:</label>
+                    <select id="routeStrategy">
+                        <option value="0">速度优先</option>
+                        <option value="1">费用优先</option>
+                        <option value="2">距离优先</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="testRoutePlanning()">规划路径</button>
+                <div id="routeResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- POI 搜索 -->
+            <div class="modal-section">
+                <h3>🔍 POI 搜索</h3>
+                <div class="form-group">
+                    <label>关键词:</label>
+                    <input type="text" id="poiKeywords" placeholder="例如：餐厅">
+                </div>
+                <div class="form-group">
+                    <label>城市（可选）:</label>
+                    <input type="text" id="poiCity" placeholder="例如：北京">
+                </div>
+                <div class="form-group">
+                    <label>类型（可选）:</label>
+                    <input type="text" id="poiTypes" placeholder="例如：餐饮服务">
+                </div>
+                <button class="btn" onclick="testPOISearch()">搜索 POI</button>
+                <div id="poiResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- 天气查询 -->
+            <div class="modal-section">
+                <h3>🌤️ 天气查询</h3>
+                <div class="form-group">
+                    <label>城市:</label>
+                    <input type="text" id="weatherCity" placeholder="例如：北京">
+                </div>
+                <button class="btn" onclick="testWeather()">查询天气</button>
+                <div id="weatherResult" class="result-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- 工作流测试 -->
+        <div id="workflow-tab" class="tab-content">
+            <div class="workflow-section">
+                <div class="workflow-type">
+                    <label>选择 Agent:</label>
+                    <select id="workflowAgentSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="workflow-type">
+                    <label>工作流类型:</label>
+                    <select id="workflowType">
+                        <option value="sequential">顺序工作流 (Sequential)</option>
+                        <option value="parallel">并行工作流 (Parallel)</option>
+                        <option value="routing">路由工作流 (Routing)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>输入数据 (JSON 格式):</label>
+                    <textarea id="workflowInput" placeholder='{"input": "测试数据"}'>{}</textarea>
+                </div>
+
+                <button class="btn" onclick="executeWorkflow()">执行工作流</button>
+                
+                <div id="workflowResult" class="workflow-result" style="display: none;">
+                    <h4>执行结果:</h4>
+                    <div id="workflowResultContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8082/api';
+        let currentAgentId = '';
+
+        // 页面加载
+        window.onload = function() {
+            loadAgents();
+            loadWorkflowAgents();
+        };
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 显示选中的标签
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 加载 Agent 列表
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_BASE}/agents`);
+                const agents = await response.json();
+                
+                const select = document.getElementById('agentSelect');
+                select.innerHTML = '<option value="">请选择 Agent...</option>';
+                
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent.id;
+                    option.textContent = `${agent.name} (${agent.id})`;
+                    select.appendChild(option);
+                });
+                
+                if (agents.length > 0) {
+                    select.disabled = false;
+                    document.getElementById('messageInput').disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                }
+            } catch (error) {
+                console.error('加载 Agent 列表失败:', error);
+            }
+        }
+
+        // 加载工作流 Agent 列表
+        async function loadWorkflowAgents() {
+            try {
+                const response = await fetch(`${API_BASE}/agents`);
+                const agents = await response.json();
+                
+                const select = document.getElementById('workflowAgentSelect');
+                select.innerHTML = '<option value="">请选择 Agent...</option>';
+                
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent.id;
+                    option.textContent = `${agent.name} (${agent.id})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载 Agent 列表失败:', error);
+            }
+        }
+
+        // Agent 选择变化
+        document.getElementById('agentSelect').addEventListener('change', function(e) {
+            currentAgentId = e.target.value;
+            if (currentAgentId) {
+                clearMessages();
+                addSystemMessage(`已切换到 Agent: ${e.target.options[e.target.selectedIndex].textContent}`);
+            }
+        });
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !currentAgentId) return;
+            
+            input.value = '';
+            addMessage('user', message);
+            
+            const loadingId = addMessage('assistant', '<div class="loading"></div> 正在思考...', true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/agents/${currentAgentId}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input: message })
+                });
+                
+                const data = await response.json();
+                removeMessage(loadingId);
+                
+                if (data.success) {
+                    const result = data.result;
+                    const results = result.results || [];
+                    
+                    if (results.length > 0) {
+                        const output = results[0].output || {};
+                        const text = output.text || '没有返回内容';
+                        const usage = result.metadata?.usage || {};
+                        addMessage('assistant', text, false, usage);
+                    } else {
+                        addMessage('assistant', '❌ 没有收到回复', true);
+                    }
+                } else {
+                    addMessage('assistant', `❌ 错误: ${data.error || '未知错误'}`, true);
+                }
+            } catch (error) {
+                removeMessage(loadingId);
+                addMessage('assistant', `❌ 请求失败: ${error.message}`, true);
+            }
+        }
+
+        // 添加消息
+        function addMessage(role, content, isError = false, usage = null) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const emptyState = messagesDiv.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.id = `msg-${Date.now()}-${Math.random()}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            if (isError) contentDiv.classList.add('error-message');
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            return messageDiv.id;
+        }
+
+        function addSystemMessage(message) {
+            addMessage('assistant', `ℹ️ ${message}`, false);
+        }
+
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) message.remove();
+        }
+
+        function clearMessages() {
+            document.getElementById('chatMessages').innerHTML = '';
+        }
+
+        // 生成图片
+        async function generateImage() {
+            const prompt = document.getElementById('imagePrompt').value.trim();
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const resultDiv = document.getElementById('imageResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在生成图片...';
+
+            try {
+                const response = await fetch(`${API_BASE}/multimodal/image/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, options: {} })
+                });
+
+                const data = await response.json();
+                if (data.success && data.imageUrl) {
+                    resultDiv.innerHTML = `
+                        <strong>生成成功！</strong>
+                        <img src="${data.imageUrl}" alt="生成的图片" class="result-image">
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 生成失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 文本转语音
+        async function textToSpeech() {
+            const text = document.getElementById('ttsText').value.trim();
+            if (!text) {
+                alert('请输入文本内容');
+                return;
+            }
+
+            const resultDiv = document.getElementById('ttsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在转换...';
+
+            try {
+                const response = await fetch(`${API_BASE}/multimodal/audio/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, options: {} })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    resultDiv.innerHTML = `
+                        <strong>转换成功！</strong>
+                        <audio controls class="result-audio">
+                            <source src="${url}" type="audio/wav">
+                        </audio>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 转换失败</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 语音转文本
+        async function speechToText() {
+            const fileInput = document.getElementById('audioFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('请选择音频文件');
+                return;
+            }
+
+            const resultDiv = document.getElementById('sttResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在转换...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('model', 'paraformer-v2');
+
+                const response = await fetch(`${API_BASE}/multimodal/audio/stt`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <strong>转换成功！</strong>
+                        <p>${data.text}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 转换失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 生成视频
+        async function generateVideo() {
+            const prompt = document.getElementById('videoPrompt').value.trim();
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const resultDiv = document.getElementById('videoResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在生成视频...';
+
+            try {
+                const response = await fetch(`${API_BASE}/multimodal/video/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, options: {} })
+                });
+
+                const data = await response.json();
+                if (data.success && data.videoUrl) {
+                    resultDiv.innerHTML = `
+                        <strong>生成成功！</strong>
+                        <video controls class="result-video">
+                            <source src="${data.videoUrl}" type="video/mp4">
+                        </video>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 生成失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 高德地图测试函数
+        async function testGeocode() {
+            const address = document.getElementById('geocodeAddress').value.trim();
+            if (!address) {
+                alert('请输入地址');
+                return;
+            }
+            
+            const city = document.getElementById('geocodeCity').value.trim();
+            const resultDiv = document.getElementById('geocodeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/geocode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address, city: city || null })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const geocodes = data.data?.geocodes || [];
+                    if (geocodes.length > 0) {
+                        const location = geocodes[0].location;
+                        resultDiv.innerHTML = `
+                            <strong>查询成功！</strong><br>
+                            <strong>坐标:</strong> ${location}<br>
+                            <strong>详细地址:</strong> ${geocodes[0].formatted_address || address}
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到结果</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testReverseGeocode() {
+            const lng = document.getElementById('reverseLng').value.trim();
+            const lat = document.getElementById('reverseLat').value.trim();
+            if (!lng || !lat) {
+                alert('请输入经纬度');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('reverseGeocodeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/reverse-geocode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ longitude: lng, latitude: lat })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const regeocode = data.data?.regeocode || {};
+                    resultDiv.innerHTML = `
+                        <strong>查询成功！</strong><br>
+                        <strong>地址:</strong> ${regeocode.formatted_address || '未知'}<br>
+                        <strong>省份:</strong> ${regeocode.addressComponent?.province || ''}<br>
+                        <strong>城市:</strong> ${regeocode.addressComponent?.city || ''}<br>
+                        <strong>区县:</strong> ${regeocode.addressComponent?.district || ''}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testRoutePlanning() {
+            const origin = document.getElementById('routeOrigin').value.trim();
+            const destination = document.getElementById('routeDestination').value.trim();
+            const strategy = document.getElementById('routeStrategy').value;
+            
+            if (!origin || !destination) {
+                alert('请输入起点和终点坐标');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('routeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在规划路径...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/route`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ origin, destination, strategy })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const route = data.data?.route || {};
+                    const paths = route.paths || [];
+                    if (paths.length > 0) {
+                        const path = paths[0];
+                        resultDiv.innerHTML = `
+                            <strong>路径规划成功！</strong><br>
+                            <strong>距离:</strong> ${(path.distance / 1000).toFixed(2)} 公里<br>
+                            <strong>预计时间:</strong> ${Math.round(path.duration / 60)} 分钟<br>
+                            <strong>收费:</strong> ${path.tolls || 0} 元<br>
+                            <strong>策略:</strong> ${strategy === '0' ? '速度优先' : strategy === '1' ? '费用优先' : '距离优先'}
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到路径</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 规划失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPOISearch() {
+            const keywords = document.getElementById('poiKeywords').value.trim();
+            if (!keywords) {
+                alert('请输入关键词');
+                return;
+            }
+            
+            const city = document.getElementById('poiCity').value.trim();
+            const types = document.getElementById('poiTypes').value.trim();
+            const resultDiv = document.getElementById('poiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在搜索...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/poi/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        keywords, 
+                        city: city || null, 
+                        types: types || null,
+                        page: 1,
+                        offset: 10
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const pois = data.data?.pois || [];
+                    if (pois.length > 0) {
+                        let html = `<strong>找到 ${pois.length} 个结果:</strong><br>`;
+                        pois.slice(0, 5).forEach(poi => {
+                            html += `
+                                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                                    <strong>${poi.name}</strong><br>
+                                    <small>地址: ${poi.address || '未知'}</small><br>
+                                    <small>坐标: ${poi.location || '未知'}</small>
+                                </div>
+                            `;
+                        });
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到结果</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 搜索失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testWeather() {
+            const city = document.getElementById('weatherCity').value.trim();
+            if (!city) {
+                alert('请输入城市名称');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('weatherResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/weather`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const lives = data.data?.lives || [];
+                    if (lives.length > 0) {
+                        const weather = lives[0];
+                        resultDiv.innerHTML = `
+                            <strong>${weather.city} 天气</strong><br>
+                            <strong>天气:</strong> ${weather.weather}<br>
+                            <strong>温度:</strong> ${weather.temperature}°C<br>
+                            <strong>风向:</strong> ${weather.winddirection}<br>
+                            <strong>风力:</strong> ${weather.windpower}级<br>
+                            <strong>湿度:</strong> ${weather.humidity}%
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到天气信息</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 高德地图测试函数
+        async function testGeocode() {
+            const address = document.getElementById('geocodeAddress').value.trim();
+            if (!address) {
+                alert('请输入地址');
+                return;
+            }
+            
+            const city = document.getElementById('geocodeCity').value.trim();
+            const resultDiv = document.getElementById('geocodeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/geocode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address, city: city || null })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const geocodes = data.data?.geocodes || [];
+                    if (geocodes.length > 0) {
+                        const location = geocodes[0].location;
+                        resultDiv.innerHTML = `
+                            <strong>查询成功！</strong><br>
+                            <strong>坐标:</strong> ${location}<br>
+                            <strong>详细地址:</strong> ${geocodes[0].formatted_address || address}
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到结果</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testReverseGeocode() {
+            const lng = document.getElementById('reverseLng').value.trim();
+            const lat = document.getElementById('reverseLat').value.trim();
+            if (!lng || !lat) {
+                alert('请输入经纬度');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('reverseGeocodeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/reverse-geocode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ longitude: lng, latitude: lat })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const regeocode = data.data?.regeocode || {};
+                    resultDiv.innerHTML = `
+                        <strong>查询成功！</strong><br>
+                        <strong>地址:</strong> ${regeocode.formatted_address || '未知'}<br>
+                        <strong>省份:</strong> ${regeocode.addressComponent?.province || ''}<br>
+                        <strong>城市:</strong> ${regeocode.addressComponent?.city || ''}<br>
+                        <strong>区县:</strong> ${regeocode.addressComponent?.district || ''}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testRoutePlanning() {
+            const origin = document.getElementById('routeOrigin').value.trim();
+            const destination = document.getElementById('routeDestination').value.trim();
+            const strategy = document.getElementById('routeStrategy').value;
+            
+            if (!origin || !destination) {
+                alert('请输入起点和终点坐标');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('routeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在规划路径...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/route`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ origin, destination, strategy })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const route = data.data?.route || {};
+                    const paths = route.paths || [];
+                    if (paths.length > 0) {
+                        const path = paths[0];
+                        resultDiv.innerHTML = `
+                            <strong>路径规划成功！</strong><br>
+                            <strong>距离:</strong> ${(path.distance / 1000).toFixed(2)} 公里<br>
+                            <strong>预计时间:</strong> ${Math.round(path.duration / 60)} 分钟<br>
+                            <strong>收费:</strong> ${path.tolls || 0} 元<br>
+                            <strong>策略:</strong> ${strategy === '0' ? '速度优先' : strategy === '1' ? '费用优先' : '距离优先'}
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到路径</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 规划失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPOISearch() {
+            const keywords = document.getElementById('poiKeywords').value.trim();
+            if (!keywords) {
+                alert('请输入关键词');
+                return;
+            }
+            
+            const city = document.getElementById('poiCity').value.trim();
+            const types = document.getElementById('poiTypes').value.trim();
+            const resultDiv = document.getElementById('poiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在搜索...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/poi/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        keywords, 
+                        city: city || null, 
+                        types: types || null,
+                        page: 1,
+                        offset: 10
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const pois = data.data?.pois || [];
+                    if (pois.length > 0) {
+                        let html = `<strong>找到 ${pois.length} 个结果:</strong><br>`;
+                        pois.slice(0, 5).forEach(poi => {
+                            html += `
+                                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                                    <strong>${poi.name}</strong><br>
+                                    <small>地址: ${poi.address || '未知'}</small><br>
+                                    <small>坐标: ${poi.location || '未知'}</small>
+                                </div>
+                            `;
+                        });
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到结果</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 搜索失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testWeather() {
+            const city = document.getElementById('weatherCity').value.trim();
+            if (!city) {
+                alert('请输入城市名称');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('weatherResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"></div> 正在查询...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/amap/weather`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    const lives = data.data?.lives || [];
+                    if (lives.length > 0) {
+                        const weather = lives[0];
+                        resultDiv.innerHTML = `
+                            <strong>${weather.city} 天气</strong><br>
+                            <strong>天气:</strong> ${weather.weather}<br>
+                            <strong>温度:</strong> ${weather.temperature}°C<br>
+                            <strong>风向:</strong> ${weather.winddirection}<br>
+                            <strong>风力:</strong> ${weather.windpower}级<br>
+                            <strong>湿度:</strong> ${weather.humidity}%
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error-message">未找到天气信息</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">❌ 查询失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 执行工作流
+        async function executeWorkflow() {
+            const agentId = document.getElementById('workflowAgentSelect').value;
+            const workflowType = document.getElementById('workflowType').value;
+            const inputText = document.getElementById('workflowInput').value.trim();
+
+            if (!agentId) {
+                alert('请选择 Agent');
+                return;
+            }
+
+            let input;
+            try {
+                input = JSON.parse(inputText || '{}');
+            } catch (e) {
+                alert('输入数据格式错误，请输入有效的 JSON');
+                return;
+            }
+
+            const resultDiv = document.getElementById('workflowResult');
+            const contentDiv = document.getElementById('workflowResultContent');
+            resultDiv.style.display = 'block';
+            contentDiv.innerHTML = '<div class="loading"></div> 正在执行工作流...';
+
+            try {
+                const response = await fetch(`${API_BASE}/workflows/${workflowType}/${agentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input })
+                });
+
+                const data = await response.json();
+                if (data.success && data.result) {
+                    const result = data.result;
+                    let html = `
+                        <div style="margin-bottom: 15px;">
+                            <strong>工作流类型:</strong> ${result.workflowType}<br>
+                            <strong>执行状态:</strong> ${result.success ? '✅ 成功' : '❌ 失败'}<br>
+                            ${result.error ? `<strong>错误:</strong> ${result.error}<br>` : ''}
+                        </div>
+                    `;
+
+                    if (result.stepResults && Object.keys(result.stepResults).length > 0) {
+                        html += '<strong>步骤结果:</strong><br>';
+                        for (const [stepId, stepResult] of Object.entries(result.stepResults)) {
+                            html += `
+                                <div class="step-result">
+                                    <strong>${stepId}:</strong> ${JSON.stringify(stepResult, null, 2)}
+                                </div>
+                            `;
+                        }
+                    }
+
+                    if (result.finalResult) {
+                        html += `
+                            <div style="margin-top: 15px;">
+                                <strong>最终结果:</strong>
+                                <pre style="background: #f0f0f0; padding: 10px; border-radius: 5px; overflow-x: auto;">
+${JSON.stringify(result.finalResult, null, 2)}
+                                </pre>
+                            </div>
+                        `;
+                    }
+
+                    contentDiv.innerHTML = html;
+                } else {
+                    contentDiv.innerHTML = `<div class="error-message">❌ 执行失败: ${data.error || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="error-message">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

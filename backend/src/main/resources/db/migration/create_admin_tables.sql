@@ -82,3 +82,5 @@ CREATE TABLE IF NOT EXISTS `system_characters` (
   CONSTRAINT `fk_system_character_era` FOREIGN KEY (`system_era_id`) REFERENCES `system_eras` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统预设角色表';
 
+
+

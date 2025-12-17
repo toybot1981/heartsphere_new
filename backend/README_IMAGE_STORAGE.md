@@ -127,3 +127,5 @@ await imageApi.deleteImage(imageUrl, token);
 4. **URL访问**：上传后的图片可通过返回的URL直接访问
 5. **生产环境**：建议使用云存储（OSS/S3）而不是本地存储
 
+
+

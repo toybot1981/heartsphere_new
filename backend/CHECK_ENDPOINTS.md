@@ -36,3 +36,5 @@
 2. @RestController 和 @RequestMapping 注解是否正确
 3. Spring Boot 是否扫描到了这个包
 
+
+

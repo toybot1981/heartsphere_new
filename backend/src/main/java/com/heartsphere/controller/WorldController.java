@@ -33,14 +33,40 @@ public class WorldController {
     public ResponseEntity<List<WorldDTO>> getAllWorlds() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            // 检查认证信息是否存在
+            if (authentication == null || authentication.getPrincipal() == null) {
+                java.util.logging.Logger.getLogger(WorldController.class.getName())
+                    .warning("getAllWorlds: authentication is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // 检查是否是匿名用户
+            if (authentication.getPrincipal() instanceof String && 
+                authentication.getPrincipal().equals("anonymousUser")) {
+                java.util.logging.Logger.getLogger(WorldController.class.getName())
+                    .warning("getAllWorlds: anonymous user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            
             // 使用新添加的findByUserId方法查询用户的世界
             List<World> userWorlds = worldRepository.findByUserId(userDetails.getId());
             List<WorldDTO> worldDTOs = userWorlds.stream()
                 .map(DTOMapper::toWorldDTO)
                 .collect(Collectors.toList());
             return ResponseEntity.ok(worldDTOs);
+        } catch (ClassCastException e) {
+            // 认证信息类型不匹配
+            java.util.logging.Logger.getLogger(WorldController.class.getName())
+                .warning("getAllWorlds: ClassCastException - " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
+            // 记录错误日志
+            java.util.logging.Logger.getLogger(WorldController.class.getName())
+                .severe("getAllWorlds: Exception - " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

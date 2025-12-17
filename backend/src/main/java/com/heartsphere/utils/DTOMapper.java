@@ -24,18 +24,19 @@ public class DTOMapper {
     
     public static EraDTO toEraDTO(Era era) {
         if (era == null) return null;
-        return new EraDTO(
-            era.getId(),
-            era.getName(),
-            era.getDescription(),
-            era.getStartYear(),
-            era.getEndYear(),
-            era.getImageUrl(),
-            era.getWorld() != null ? era.getWorld().getId() : null,
-            era.getUser() != null ? era.getUser().getId() : null,
-            era.getCreatedAt(),
-            era.getUpdatedAt()
-        );
+        EraDTO dto = new EraDTO();
+        dto.setId(era.getId());
+        dto.setName(era.getName());
+        dto.setDescription(era.getDescription());
+        dto.setStartYear(era.getStartYear());
+        dto.setEndYear(era.getEndYear());
+        dto.setImageUrl(era.getImageUrl());
+        dto.setSystemEraId(era.getSystemEraId());
+        dto.setWorldId(era.getWorld() != null ? era.getWorld().getId() : null);
+        dto.setUserId(era.getUser() != null ? era.getUser().getId() : null);
+        dto.setCreatedAt(era.getCreatedAt());
+        dto.setUpdatedAt(era.getUpdatedAt());
+        return dto;
     }
     
     public static CharacterDTO toCharacterDTO(Character character) {
@@ -87,19 +88,20 @@ public class DTOMapper {
     
     public static JournalEntryDTO toJournalEntryDTO(JournalEntry entry) {
         if (entry == null) return null;
-        return new JournalEntryDTO(
-            entry.getId(),
-            entry.getTitle(),
-            entry.getContent(),
-            entry.getEntryDate(),
-            entry.getTimestamp(),
-            entry.getWorld() != null ? entry.getWorld().getId() : null,
-            entry.getEra() != null ? entry.getEra().getId() : null,
-            entry.getCharacter() != null ? entry.getCharacter().getId() : null,
-            entry.getUser() != null ? entry.getUser().getId() : null,
-            entry.getCreatedAt(),
-            entry.getUpdatedAt()
-        );
+        JournalEntryDTO dto = new JournalEntryDTO();
+        dto.setId(entry.getId());
+        dto.setTitle(entry.getTitle());
+        dto.setContent(entry.getContent());
+        dto.setTags(entry.getTags());
+        dto.setEntryDate(entry.getEntryDate());
+        dto.setTimestamp(entry.getTimestamp());
+        dto.setWorldId(entry.getWorld() != null ? entry.getWorld().getId() : null);
+        dto.setEraId(entry.getEra() != null ? entry.getEra().getId() : null);
+        dto.setCharacterId(entry.getCharacter() != null ? entry.getCharacter().getId() : null);
+        dto.setUserId(entry.getUser() != null ? entry.getUser().getId() : null);
+        dto.setCreatedAt(entry.getCreatedAt());
+        dto.setUpdatedAt(entry.getUpdatedAt());
+        return dto;
     }
     
     public static ScriptDTO toScriptDTO(Script script) {

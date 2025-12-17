@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅游出行助手 - Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #151520;
+            --bg-tertiary: #1e1e2e;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00d4ff;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #2a2a3a;
+            --shadow-glow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 30px;
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.assistant {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+        }
+        
+        .message.assistant .message-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .message.assistant .message-content.thinking {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            gap: 5px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.7; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-area {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .input-container input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .input-container input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+        
+        .input-container button {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: var(--bg-primary);
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .input-container button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .suggestion {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+        
+        .suggestion:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+        }
+        
+        .welcome-message h2 {
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+        }
+        
+        .welcome-message p {
+            margin-bottom: 10px;
+        }
+        
+        .example-queries {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .example-query {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .example-query:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+        
+        .example-query::before {
+            content: "💡 ";
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✈️ 旅游出行助手</h1>
+        <p>智能对话式助手 · 多 Agent 协同 · 一站式旅游服务</p>
+    </div>
+    
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="welcome-message">
+                <h2>👋 欢迎使用旅游出行助手</h2>
+                <p>我可以帮您：</p>
+                <div class="example-queries">
+                    <div class="example-query" onclick="sendMessage('帮我查询从北京到上海的航班，日期是12月25日')">
+                        查询从北京到上海的航班，日期是12月25日
+                    </div>
+                    <div class="example-query" onclick="sendMessage('我想在北京找一家4星级酒店，12月25日入住，28日退房，2个人')">
+                        我想在北京找一家4星级酒店，12月25日入住，28日退房，2个人
+                    </div>
+                    <div class="example-query" onclick="sendMessage('帮我规划一个3天的北京旅游行程，预算中等，主要想看看景点')">
+                        帮我规划一个3天的北京旅游行程，预算中等，主要想看看景点
+                    </div>
+                    <div class="example-query" onclick="sendMessage('我想预订刚才查询的CA1234航班，乘客是张三，身份证123456789012345678')">
+                        我想预订刚才查询的CA1234航班，乘客是张三，身份证123456789012345678
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="输入您的问题，例如：查询航班、预订酒店、规划行程..."
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button id="sendButton" onclick="sendMessage()">发送</button>
+            </div>
+            <div class="suggestions">
+                <span class="suggestion" onclick="sendMessage('查询航班')">查询航班</span>
+                <span class="suggestion" onclick="sendMessage('查询酒店')">查询酒店</span>
+                <span class="suggestion" onclick="sendMessage('规划行程')">规划行程</span>
+                <span class="suggestion" onclick="sendMessage('预订机票')">预订机票</span>
+                <span class="suggestion" onclick="sendMessage('预订酒店')">预订酒店</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8082/api/travel/chat';
+        const userId = 'user_' + Date.now();
+        let messageHistory = [];
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        function sendMessage(messageText) {
+            const input = document.getElementById('messageInput');
+            const message = messageText || input.value.trim();
+            
+            if (!message) return;
+            
+            // 清空输入框
+            input.value = '';
+            
+            // 添加用户消息
+            addMessage('user', message);
+            
+            // 添加思考中的消息
+            const thinkingId = addMessage('assistant', '', true);
+            
+            // 发送请求
+            fetch(`${API_BASE}/message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: message,
+                    userId: userId,
+                    history: messageHistory
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 移除思考中的消息
+                removeMessage(thinkingId);
+                
+                if (data.success) {
+                    // 添加助手回复
+                    addMessage('assistant', data.message);
+                    
+                    // 更新历史
+                    messageHistory.push({ role: 'user', content: message });
+                    messageHistory.push({ role: 'assistant', content: data.message });
+                } else {
+                    addMessage('assistant', '抱歉，处理您的请求时出现了错误：' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                removeMessage(thinkingId);
+                addMessage('assistant', '请求失败：' + error.message);
+            });
+        }
+        
+        function addMessage(role, content, isThinking = false) {
+            const messagesDiv = document.getElementById('messages');
+            
+            // 移除欢迎消息
+            const welcomeMsg = messagesDiv.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            const messageId = 'msg_' + Date.now() + '_' + Math.random();
+            messageDiv.id = messageId;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            if (isThinking) {
+                contentDiv.classList.add('thinking');
+                contentDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            } else {
+                contentDiv.textContent = content;
+            }
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            // 滚动到底部
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            return messageId;
+        }
+        
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+

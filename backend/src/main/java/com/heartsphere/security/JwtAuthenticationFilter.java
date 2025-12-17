@@ -28,21 +28,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 1. 从请求头中提取JWT令牌
             String jwt = parseJwt(request);
             
-            // 2. 验证令牌
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                // 3. 从令牌中获取用户名
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+            if (jwt != null) {
+                logger.debug("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
                 
-                // 4. 加载用户信息
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                
-                // 5. 创建认证对象
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
-                // 6. 将认证对象设置到SecurityContextHolder中
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                // 2. 验证令牌
+                if (jwtUtils.validateJwtToken(jwt)) {
+                    logger.debug("JWT token is valid");
+                    
+                    // 3. 从令牌中获取用户名
+                    String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                    logger.debug("Extracted username from token: " + username);
+                    
+                    // 4. 加载用户信息
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    
+                    // 5. 创建认证对象
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    // 6. 将认证对象设置到SecurityContextHolder中
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.debug("Authentication set in SecurityContext for user: " + username);
+                } else {
+                    logger.warn("JWT token validation failed");
+                }
+            } else {
+                logger.debug("No JWT token found in request headers");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: " + e.getMessage(), e);

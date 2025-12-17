@@ -30,12 +30,12 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
   }));
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-black via-purple-900/20 to-black flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-black/95 via-purple-900/80 to-black/95 flex items-center justify-center overflow-hidden">
       {/* 粒子背景 */}
       {showParticles && particles.map((particle) => (
         <div
           key={particle.id}
-          className="absolute rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 opacity-70 animate-pulse"
+          className="absolute rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 opacity-50 animate-pulse"
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
@@ -47,7 +47,7 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
       ))}
 
       {/* 网格背景 */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.1)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.15)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
 
       {/* 中心内容 */}
       <div className="relative z-10 text-center max-w-2xl px-4">
@@ -91,8 +91,8 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
       </div>
 
       {/* 动态光效 */}
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-0 right-1/2 transform translate-x-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/2 transform translate-x-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
     </div>
   );
 };

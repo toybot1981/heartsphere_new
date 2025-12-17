@@ -2,12 +2,18 @@ package com.heartsphere.admin.service;
 
 import com.heartsphere.admin.dto.SystemCharacterDTO;
 import com.heartsphere.admin.dto.SystemEraDTO;
+import com.heartsphere.admin.dto.SystemMainStoryDTO;
+import com.heartsphere.admin.dto.SystemScriptDTO;
 import com.heartsphere.admin.dto.SystemWorldDTO;
 import com.heartsphere.admin.entity.SystemCharacter;
 import com.heartsphere.admin.entity.SystemEra;
+import com.heartsphere.admin.entity.SystemMainStory;
+import com.heartsphere.admin.entity.SystemScript;
 import com.heartsphere.admin.entity.SystemWorld;
 import com.heartsphere.admin.repository.SystemCharacterRepository;
 import com.heartsphere.admin.repository.SystemEraRepository;
+import com.heartsphere.admin.repository.SystemMainStoryRepository;
+import com.heartsphere.admin.repository.SystemScriptRepository;
 import com.heartsphere.admin.repository.SystemWorldRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,6 +36,12 @@ public class SystemDataService {
 
     @Autowired
     private SystemCharacterRepository characterRepository;
+
+    @Autowired
+    private SystemScriptRepository scriptRepository;
+
+    @Autowired
+    private SystemMainStoryRepository mainStoryRepository;
 
     // ========== SystemWorld CRUD ==========
     public List<SystemWorldDTO> getAllWorlds() {
@@ -261,6 +273,143 @@ public class SystemDataService {
         }
     }
 
+    // ========== SystemScript CRUD ==========
+    public List<SystemScriptDTO> getAllScripts() {
+        return scriptRepository.findAllActiveOrdered().stream()
+                .map(this::toScriptDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<SystemScriptDTO> getScriptsByEraId(Long eraId) {
+        return scriptRepository.findByEraIdAndIsActiveTrue(eraId).stream()
+                .map(this::toScriptDTO)
+                .collect(Collectors.toList());
+    }
+
+    public SystemScriptDTO getScriptById(Long id) {
+        SystemScript script = scriptRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("系统剧本不存在: " + id));
+        return toScriptDTO(script);
+    }
+
+    // ========== SystemMainStory CRUD ==========
+    public List<SystemMainStoryDTO> getAllMainStories() {
+        return mainStoryRepository.findByIsActiveTrueOrderBySortOrderAsc().stream()
+                .map(this::toMainStoryDTO)
+                .collect(Collectors.toList());
+    }
+
+    public SystemMainStoryDTO getMainStoryById(Long id) {
+        SystemMainStory story = mainStoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("系统主线剧情不存在: " + id));
+        return toMainStoryDTO(story);
+    }
+
+    public SystemMainStoryDTO getMainStoryByEraId(Long eraId) {
+        return mainStoryRepository.findBySystemEraIdAndIsActiveTrue(eraId)
+                .map(this::toMainStoryDTO)
+                .orElse(null);
+    }
+
+    @Transactional
+    public SystemMainStoryDTO createMainStory(SystemMainStoryDTO dto) {
+        logger.info(String.format("========== [SystemDataService] 创建系统主线剧情 ========== eraId: %d", dto.getSystemEraId()));
+        
+        // 检查该场景是否已有主线剧情
+        mainStoryRepository.findBySystemEraIdAndIsActiveTrue(dto.getSystemEraId())
+                .ifPresent(existing -> {
+                    throw new RuntimeException("该场景已存在主线剧情，请先删除或更新现有剧情");
+                });
+        
+        SystemEra era = eraRepository.findById(dto.getSystemEraId())
+                .orElseThrow(() -> new RuntimeException("系统场景不存在: " + dto.getSystemEraId()));
+        
+        SystemMainStory story = new SystemMainStory();
+        story.setSystemEra(era);
+        story.setName(dto.getName());
+        story.setAge(dto.getAge());
+        story.setRole(dto.getRole() != null ? dto.getRole() : "叙事者");
+        story.setBio(dto.getBio());
+        story.setAvatarUrl(dto.getAvatarUrl());
+        story.setBackgroundUrl(dto.getBackgroundUrl());
+        story.setThemeColor(dto.getThemeColor());
+        story.setColorAccent(dto.getColorAccent());
+        story.setFirstMessage(dto.getFirstMessage());
+        story.setSystemInstruction(dto.getSystemInstruction());
+        story.setVoiceName(dto.getVoiceName());
+        story.setTags(dto.getTags());
+        story.setSpeechStyle(dto.getSpeechStyle());
+        story.setCatchphrases(dto.getCatchphrases());
+        story.setSecrets(dto.getSecrets());
+        story.setMotivations(dto.getMotivations());
+        story.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+        story.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
+        
+        story = mainStoryRepository.save(story);
+        logger.info(String.format("[SystemDataService] 系统主线剧情创建成功: ID=%d, name=%s", story.getId(), story.getName()));
+        return toMainStoryDTO(story);
+    }
+
+    @Transactional
+    public SystemMainStoryDTO updateMainStory(Long id, SystemMainStoryDTO dto) {
+        logger.info(String.format("========== [SystemDataService] 更新系统主线剧情 ========== ID: %d", id));
+        
+        SystemMainStory story = mainStoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("系统主线剧情不存在: " + id));
+        
+        if (dto.getSystemEraId() != null && !story.getSystemEra().getId().equals(dto.getSystemEraId())) {
+            // 检查新场景是否已有主线剧情
+            mainStoryRepository.findBySystemEraIdAndIsActiveTrue(dto.getSystemEraId())
+                    .ifPresent(existing -> {
+                        if (!existing.getId().equals(id)) {
+                            throw new RuntimeException("目标场景已存在主线剧情");
+                        }
+                    });
+            
+            SystemEra era = eraRepository.findById(dto.getSystemEraId())
+                    .orElseThrow(() -> new RuntimeException("系统场景不存在: " + dto.getSystemEraId()));
+            story.setSystemEra(era);
+        }
+        
+        if (dto.getName() != null) story.setName(dto.getName());
+        if (dto.getAge() != null) story.setAge(dto.getAge());
+        if (dto.getRole() != null) story.setRole(dto.getRole());
+        if (dto.getBio() != null) story.setBio(dto.getBio());
+        if (dto.getAvatarUrl() != null) story.setAvatarUrl(dto.getAvatarUrl());
+        if (dto.getBackgroundUrl() != null) story.setBackgroundUrl(dto.getBackgroundUrl());
+        if (dto.getThemeColor() != null) story.setThemeColor(dto.getThemeColor());
+        if (dto.getColorAccent() != null) story.setColorAccent(dto.getColorAccent());
+        if (dto.getFirstMessage() != null) story.setFirstMessage(dto.getFirstMessage());
+        if (dto.getSystemInstruction() != null) story.setSystemInstruction(dto.getSystemInstruction());
+        if (dto.getVoiceName() != null) story.setVoiceName(dto.getVoiceName());
+        if (dto.getTags() != null) story.setTags(dto.getTags());
+        if (dto.getSpeechStyle() != null) story.setSpeechStyle(dto.getSpeechStyle());
+        if (dto.getCatchphrases() != null) story.setCatchphrases(dto.getCatchphrases());
+        if (dto.getSecrets() != null) story.setSecrets(dto.getSecrets());
+        if (dto.getMotivations() != null) story.setMotivations(dto.getMotivations());
+        if (dto.getIsActive() != null) story.setIsActive(dto.getIsActive());
+        if (dto.getSortOrder() != null) story.setSortOrder(dto.getSortOrder());
+        
+        story = mainStoryRepository.save(story);
+        logger.info(String.format("[SystemDataService] 系统主线剧情更新成功: ID=%d, name=%s", story.getId(), story.getName()));
+        return toMainStoryDTO(story);
+    }
+
+    @Transactional
+    public void deleteMainStory(Long id) {
+        logger.info(String.format("========== [SystemDataService] 删除系统主线剧情 ========== ID: %d", id));
+        SystemMainStory story = mainStoryRepository.findById(id)
+                .orElse(null);
+        if (story != null) {
+            logger.info(String.format("[SystemDataService] 找到系统主线剧情: ID=%d, name=%s", id, story.getName()));
+            mainStoryRepository.deleteById(id);
+            logger.info(String.format("[SystemDataService] 系统主线剧情删除成功: ID=%d, name=%s", id, story.getName()));
+        } else {
+            logger.warning(String.format("[SystemDataService] 系统主线剧情不存在，无法删除: ID=%d", id));
+            throw new RuntimeException("系统主线剧情不存在: " + id);
+        }
+    }
+
     // ========== DTO转换方法 ==========
     private SystemWorldDTO toWorldDTO(SystemWorld world) {
         return new SystemWorldDTO(
@@ -286,6 +435,24 @@ public class SystemDataService {
                 era.getSortOrder(),
                 era.getCreatedAt(),
                 era.getUpdatedAt()
+        );
+    }
+
+    private SystemScriptDTO toScriptDTO(SystemScript script) {
+        return new SystemScriptDTO(
+                script.getId(),
+                script.getTitle(),
+                script.getDescription(),
+                script.getContent(),
+                script.getSceneCount(),
+                script.getSystemEra() != null ? script.getSystemEra().getId() : null,
+                script.getSystemEra() != null ? script.getSystemEra().getName() : null,
+                script.getCharacterIds(),
+                script.getTags(),
+                script.getIsActive(),
+                script.getSortOrder(),
+                script.getCreatedAt(),
+                script.getUpdatedAt()
         );
     }
 
@@ -318,6 +485,32 @@ public class SystemDataService {
                 character.getCreatedAt(),
                 character.getUpdatedAt()
         );
+    }
+
+    private SystemMainStoryDTO toMainStoryDTO(SystemMainStory story) {
+        SystemMainStoryDTO dto = new SystemMainStoryDTO();
+        dto.setId(story.getId());
+        dto.setSystemEraId(story.getSystemEra() != null ? story.getSystemEra().getId() : null);
+        dto.setSystemEraName(story.getSystemEra() != null ? story.getSystemEra().getName() : null);
+        dto.setName(story.getName());
+        dto.setAge(story.getAge());
+        dto.setRole(story.getRole());
+        dto.setBio(story.getBio());
+        dto.setAvatarUrl(story.getAvatarUrl());
+        dto.setBackgroundUrl(story.getBackgroundUrl());
+        dto.setThemeColor(story.getThemeColor());
+        dto.setColorAccent(story.getColorAccent());
+        dto.setFirstMessage(story.getFirstMessage());
+        dto.setSystemInstruction(story.getSystemInstruction());
+        dto.setVoiceName(story.getVoiceName());
+        dto.setTags(story.getTags());
+        dto.setSpeechStyle(story.getSpeechStyle());
+        dto.setCatchphrases(story.getCatchphrases());
+        dto.setSecrets(story.getSecrets());
+        dto.setMotivations(story.getMotivations());
+        dto.setIsActive(story.getIsActive());
+        dto.setSortOrder(story.getSortOrder());
+        return dto;
     }
 }
 

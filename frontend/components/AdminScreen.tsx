@@ -4,6 +4,7 @@ import { AppSettings, GameState, AIProvider, WorldScene, Character, CustomScenar
 import { Button } from './Button';
 import { WORLD_SCENES } from '../constants';
 import { characterApi } from '../services/api';
+import { showConfirm } from '../utils/dialog';
 
 interface AdminScreenProps {
     gameState: GameState;
@@ -125,7 +126,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
 
         const newScene: WorldScene = {
             id: finalId,
-            name: formData.name || '未命名时代',
+            name: formData.name || '未命名场景',
             description: formData.description || '',
             imageUrl: formData.imageUrl || 'https://picsum.photos/seed/default/800/1200',
             characters: formData.characters || [],
@@ -146,8 +147,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         switchToList();
     };
 
-    const deleteEra = (id: string) => {
-        if (window.confirm('删除此时代将同时删除其下属的所有自定义角色。确定继续吗？')) {
+    const deleteEra = async (id: string) => {
+        const confirmed = await showConfirm('删除此场景将同时删除其下属的所有自定义角色。确定继续吗？', '删除场景', 'warning');
+        if (confirmed) {
             const updatedScenes = gameState.customScenes.filter(s => s.id !== id);
             const updatedChars = { ...gameState.customCharacters };
             delete updatedChars[id];
@@ -214,7 +216,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     };
 
     const deleteCharacter = async (charId: string) => {
-        if (!window.confirm('确定删除此角色吗？(内置角色无法被物理删除，只能删除其自定义副本)')) return;
+        const confirmed = await showConfirm('确定删除此角色吗？(内置角色无法被物理删除，只能删除其自定义副本)', '删除角色', 'warning');
+        if (!confirmed) return;
         let updatedCustomChars = { ...gameState.customCharacters };
         Object.keys(updatedCustomChars).forEach(sId => {
             updatedCustomChars[sId] = updatedCustomChars[sId].filter(c => c.id !== charId);
@@ -258,8 +261,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         switchToList();
     };
 
-    const deleteScenario = (id: string) => {
-        if (!window.confirm('确定删除此剧本吗？')) return;
+    const deleteScenario = async (id: string) => {
+        const confirmed = await showConfirm('确定删除此剧本吗？', '删除剧本', 'warning');
+        if (!confirmed) return;
         const updatedScenarios = gameState.customScenarios.filter(s => s.id !== id);
         onUpdateGameState({ ...gameState, customScenarios: updatedScenarios });
     };
@@ -346,7 +350,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     <AdminSidebarItem label="概览 Dashboard" icon="📊" active={activeSection === 'dashboard'} onClick={() => {setActiveSection('dashboard'); switchToList();}} />
                     
                     <p className="px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Content</p>
-                    <AdminSidebarItem label="时代管理 Scenes" icon="🌍" active={activeSection === 'eras'} onClick={() => {setActiveSection('eras'); switchToList();}} />
+                    <AdminSidebarItem label="场景管理 Scenes" icon="🌍" active={activeSection === 'eras'} onClick={() => {setActiveSection('eras'); switchToList();}} />
                     <AdminSidebarItem label="角色管理 E-Souls" icon="👥" active={activeSection === 'characters'} onClick={() => {setActiveSection('characters'); switchToList();}} />
                     <AdminSidebarItem label="互动剧本 Stories" icon="📜" active={activeSection === 'scenarios'} onClick={() => {setActiveSection('scenarios'); switchToList();}} />
                     
@@ -369,7 +373,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             <div className="flex-1 flex flex-col min-w-0">
                 <AdminHeader title={
                     activeSection === 'dashboard' ? '系统概览' :
-                    activeSection === 'eras' ? '时代与场景管理' :
+                    activeSection === 'eras' ? '场景管理' :
                     activeSection === 'characters' ? 'E-Soul 角色数据库' :
                     activeSection === 'scenarios' ? '互动剧本库' : '系统全局设置'
                 } onBack={onBack} />
@@ -413,7 +417,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
                                         <p className="text-slate-400 text-sm">管理世界观和场景。编辑内置场景会自动创建自定义副本。</p>
-                                        <Button onClick={switchToCreate} className="bg-indigo-600 hover:bg-indigo-500 text-sm">+ 新增时代</Button>
+                                        <Button onClick={switchToCreate} className="bg-indigo-600 hover:bg-indigo-500 text-sm">+ 新增场景</Button>
                                     </div>
                                     <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                                         <table className="w-full text-left">
@@ -458,8 +462,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             )}
                             {(viewMode === 'create' || viewMode === 'edit') && (
                                 <div className="max-w-2xl mx-auto bg-slate-900 p-8 rounded-xl border border-slate-800">
-                                    <h3 className="text-xl font-bold text-white mb-6">{viewMode === 'create' ? '新建时代' : '编辑时代'}</h3>
-                                    <InputGroup label="时代名称">
+                                    <h3 className="text-xl font-bold text-white mb-6">{viewMode === 'create' ? '新建场景' : '编辑场景'}</h3>
+                                    <InputGroup label="场景名称">
                                         <TextInput value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
                                     </InputGroup>
                                     <InputGroup label="背景简介">
@@ -470,7 +474,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     </InputGroup>
                                     <div className="flex justify-end gap-3 mt-8">
                                         <Button variant="ghost" onClick={switchToList}>取消</Button>
-                                        <Button onClick={saveEra} className="bg-indigo-600">保存时代</Button>
+                                        <Button onClick={saveEra} className="bg-indigo-600">保存场景</Button>
                                     </div>
                                 </div>
                             )}
@@ -483,7 +487,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             {viewMode === 'list' && (
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <p className="text-slate-400 text-sm">管理所有时代的登场角色。</p>
+                                        <p className="text-slate-400 text-sm">管理所有场景的登场角色。</p>
                                         <Button onClick={switchToCreate} className="bg-indigo-600 hover:bg-indigo-500 text-sm">+ 新增角色</Button>
                                     </div>
                                     <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
@@ -493,7 +497,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                     <th className="p-4">头像</th>
                                                     <th className="p-4">姓名</th>
                                                     <th className="p-4">角色定位</th>
-                                                    <th className="p-4">所属时代</th>
+                                                    <th className="p-4">所属场景</th>
                                                     <th className="p-4 text-right">操作</th>
                                                 </tr>
                                             </thead>
@@ -540,7 +544,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                             <InputGroup label="角色定位 (Role)">
                                                 <TextInput value={formData.role || ''} onChange={e => setFormData({...formData, role: e.target.value})} />
                                             </InputGroup>
-                                            <InputGroup label="所属时代 (Scene)">
+                                            <InputGroup label="所属场景 (Scene)">
                                                 <select 
                                                     value={formData.targetSceneId || ''} 
                                                     onChange={e => setFormData({...formData, targetSceneId: e.target.value})}
@@ -598,7 +602,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                             <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
                                                 <tr>
                                                     <th className="p-4">标题</th>
-                                                    <th className="p-4">对应时代</th>
+                                                    <th className="p-4">对应场景</th>
                                                     <th className="p-4">作者</th>
                                                     <th className="p-4">节点数</th>
                                                     <th className="p-4 text-right">操作</th>
@@ -640,7 +644,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                         <InputGroup label="剧本标题">
                                             <TextInput value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
                                         </InputGroup>
-                                        <InputGroup label="所属时代 (Scene)">
+                                        <InputGroup label="所属场景 (Scene)">
                                             <select 
                                                 value={formData.sceneId || ''} 
                                                 onChange={e => setFormData({...formData, sceneId: e.target.value})}

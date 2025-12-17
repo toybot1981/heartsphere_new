@@ -4,6 +4,7 @@ import { Character, Message, CustomScenario, AppSettings, StoryNode, UserProfile
 import { geminiService } from '../services/gemini';
 import { GenerateContentResponse } from '@google/genai';
 import { Button } from './Button';
+import { showAlert } from '../utils/dialog';
 
 // --- Audio Decoding Helpers (Raw PCM) ---
 function decode(base64: string) {
@@ -78,11 +79,12 @@ interface ChatWindowProps {
   activeJournalEntryId: string | null; 
   onUpdateHistory: (msgs: Message[]) => void;
   onUpdateScenarioState?: (nodeId: string) => void;
-  onBack: (echo?: JournalEcho) => void; 
+  onBack: (echo?: JournalEcho) => void;
+  participatingCharacters?: Character[]; // 参与剧本的角色列表
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ 
-  character, customScenario, history, scenarioState, settings, userProfile, activeJournalEntryId, onUpdateHistory, onUpdateScenarioState, onBack 
+  character, customScenario, history, scenarioState, settings, userProfile, activeJournalEntryId, onUpdateHistory, onUpdateScenarioState, onBack, participatingCharacters 
 }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -214,7 +216,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setIsPlayingAudio(true);
     } catch (e) {
       console.error("Audio playback failed", e);
-      alert("语音播放失败，请检查网络或稍后重试");
+      showAlert("语音播放失败，请检查网络或稍后重试", "错误", "error");
     } finally {
       setAudioLoadingId(null);
     }
@@ -240,8 +242,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
        onUpdateHistory(currentHistory);
     }
 
+    // 使用传入的参与角色信息，如果没有则尝试从 customScenario 中获取
+    const charsToUse = participatingCharacters && participatingCharacters.length > 0 
+        ? participatingCharacters 
+        : undefined;
+
     try {
-       const stream = await geminiService.generateStoryBeatStream(node, currentHistory, choiceText, userProfile);
+       const stream = await geminiService.generateStoryBeatStream(node, currentHistory, choiceText, userProfile, charsToUse);
        let fullResponseText = '';
        let firstChunk = true;
        for await (const chunk of stream) {
@@ -258,7 +265,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
            onUpdateHistory(currentHistory);
          }
        }
-       if (onUpdateScenarioState) onUpdateScenarioState(node.id);
+       
+       // 更新场景状态到当前节点
+       if (onUpdateScenarioState) {
+         onUpdateScenarioState(node.id);
+       }
+       
+       // 重要：如果当前节点有选项，应该停下来等待用户选择，而不是自动继续
+       // 节点处理完成，等待用户选择（如果有选项的话）
+       // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
+       
     } catch (e) {
         console.error("Scenario generation failed", e);
         onUpdateHistory([...currentHistory, {id: tempBotId, role: 'model', text: "【系统错误：剧本生成失败，请稍后重试】", timestamp: Date.now()}]);

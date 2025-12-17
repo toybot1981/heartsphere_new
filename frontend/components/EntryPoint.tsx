@@ -1,33 +1,62 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from './Button';
+import { WorldStyle, WORLD_STYLE_DESCRIPTIONS } from '../types';
+import { LoginModal } from './LoginModal';
 
 interface EntryPointProps {
   onNavigate: (screen: 'realWorld' | 'sceneSelection' | 'admin') => void;
   onOpenSettings: () => void;
   nickname: string;
   onSwitchToMobile: () => void;
+  currentStyle: WorldStyle;
+  onStyleChange: (style: WorldStyle) => void;
+  onLoginSuccess?: (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => void;
+  isGuest?: boolean;
+  onGuestEnter?: (nickname: string) => void;
 }
 
-export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettings, nickname, onSwitchToMobile }) => {
+export const EntryPoint: React.FC<EntryPointProps> = ({ 
+  onNavigate, 
+  onOpenSettings, 
+  nickname, 
+  onSwitchToMobile,
+  currentStyle,
+  onStyleChange,
+  onLoginSuccess,
+  isGuest = false,
+  onGuestEnter
+}) => {
+  const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showGuestInput, setShowGuestInput] = useState(false);
+  const [guestNickname, setGuestNickname] = useState('');
+  
+  const styles: WorldStyle[] = ['anime', 'realistic', 'cyberpunk', 'fantasy', 'steampunk', 'minimalist', 'watercolor', 'oil-painting'];
+
+  const handleGuestSubmit = () => {
+    if (!guestNickname.trim()) return;
+    if (onGuestEnter) {
+      onGuestEnter(guestNickname.trim());
+      setShowGuestInput(false);
+      setGuestNickname('');
+    }
+  };
+  
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 bg-black overflow-hidden">
+    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 bg-slate-950 overflow-hidden">
       {/* Background Effect */}
       <div className="absolute inset-0 z-0">
-        <img 
-            src="https://picsum.photos/seed/nexus_point/1920/1080" 
-            className="w-full h-full object-cover opacity-40 scale-105 animate-[pulse_10s_ease-in-out_infinite]" 
-            alt="Nexus Background" 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-black/40 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-slate-900/50 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5" />
       </div>
 
       {/* Admin Access (Top Left) */}
       <div className="absolute top-6 left-6 z-20">
         <button
-          onClick={() => onNavigate('admin')}
-          className="p-3 text-slate-600 hover:text-red-400 bg-transparent hover:bg-black/40 rounded-full transition-all opacity-30 hover:opacity-100 group"
+          onClick={() => window.open('/admin.html', '_blank')}
+          className="p-3 text-slate-400 hover:text-red-400 bg-slate-900/30 hover:bg-slate-800/50 rounded-full transition-all opacity-50 hover:opacity-100 group backdrop-blur-sm"
           title="系统管理 System Admin"
         >
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -36,11 +65,70 @@ export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettin
         </button>
       </div>
 
-      {/* Mobile Switch (Top Right - Left of Settings) */}
-      <div className="absolute top-6 right-20 z-20 mr-2">
+      {/* Top Right Buttons Container */}
+      <div className="absolute top-6 right-6 z-20 flex items-center gap-3">
+        {/* Style Selector Button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowStyleSelector(!showStyleSelector)}
+            className="p-3 text-slate-200 hover:text-white bg-slate-800/50 hover:bg-slate-700/60 backdrop-blur-md rounded-full transition-all border border-white/20 hover:border-white/40 shadow-lg hover:scale-105 flex items-center gap-2 px-4"
+            title="世界风格 World Style"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+            </svg>
+            <span className="text-sm font-bold hidden sm:inline">{WORLD_STYLE_DESCRIPTIONS[currentStyle].name}</span>
+          </button>
+          
+          {/* Style Selector Dropdown */}
+          {showStyleSelector && (
+            <div className="absolute top-full right-0 mt-2 w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-4 z-30 animate-fade-in">
+              <div className="text-xs text-slate-400 mb-3 font-bold uppercase tracking-wider">选择世界风格</div>
+              <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto custom-scrollbar">
+                {styles.map((style) => {
+                  const styleInfo = WORLD_STYLE_DESCRIPTIONS[style];
+                  const isSelected = currentStyle === style;
+                  return (
+                    <button
+                      key={style}
+                      onClick={() => {
+                        onStyleChange(style);
+                        setShowStyleSelector(false);
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all text-left group ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-500/20 shadow-lg shadow-indigo-500/20'
+                          : 'border-slate-700 hover:border-slate-600 bg-slate-800/50 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`font-bold text-sm ${isSelected ? 'text-indigo-300' : 'text-white'}`}>
+                          {styleInfo.name}
+                        </span>
+                        {isSelected && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-indigo-400">
+                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                        {styleInfo.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-700 text-xs text-slate-500 text-center">
+                风格将影响所有AI生成的内容
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Switch Button */}
         <button
           onClick={onSwitchToMobile}
-          className="p-3 text-slate-300 hover:text-white bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full transition-all border border-white/10 hover:border-white/30 shadow-lg hover:scale-105 flex items-center gap-2 px-4"
+          className="p-3 text-slate-200 hover:text-white bg-slate-800/50 hover:bg-slate-700/60 backdrop-blur-md rounded-full transition-all border border-white/20 hover:border-white/40 shadow-lg hover:scale-105 flex items-center gap-2 px-4"
           title="切换手机版 Switch to Mobile"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -48,10 +136,8 @@ export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettin
           </svg>
           <span className="text-sm font-bold hidden sm:inline">手机版 Mobile</span>
         </button>
-      </div>
 
-      {/* Settings Button (Top Right) */}
-      <div className="absolute top-6 right-6 z-20">
+        {/* Settings Button */}
         <button
           onClick={onOpenSettings}
           className="p-3 text-slate-300 hover:text-white bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full transition-all border border-white/10 hover:border-white/30 shadow-lg hover:rotate-90"
@@ -70,7 +156,7 @@ export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettin
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
             HEARTSPHERE
             </h1>
-            <p className="text-sm md:text-base text-indigo-200/70 tracking-[0.5em] uppercase font-light">
+            <p className="text-sm md:text-base text-indigo-300/80 tracking-[0.5em] uppercase font-light">
             Digital Soul Interface
             </p>
         </div>
@@ -78,12 +164,84 @@ export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettin
         <div className="w-16 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
 
         <div className="space-y-2">
+            {isGuest ? (
+              <>
+                <p className="text-xl text-white font-medium">欢迎，{nickname || '访客'}</p>
+                <p className="text-sm text-slate-300">
+                  以游客身份体验，或登录账户同步数据
+                </p>
+              </>
+            ) : (
+              <>
             <p className="text-xl text-white font-medium">欢迎回来，{nickname}</p>
             <p className="text-sm text-slate-400">
                 系统已就绪，等待神经链接... 
                 <span className="block sm:inline opacity-60 text-xs ml-0 sm:ml-2">System Ready. Waiting for Neural Link...</span>
             </p>
+              </>
+            )}
         </div>
+
+        {/* 登录/游客入口 - 仅在没有昵称时显示（访客已登录后不显示） */}
+        {!nickname && (
+          <div className="flex gap-3 mt-4">
+            {onLoginSuccess && (
+              <Button
+                onClick={() => setShowLoginModal(true)}
+                className="px-6 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-full"
+              >
+                登录账户
+              </Button>
+            )}
+            {onGuestEnter && (
+              <Button
+                onClick={() => setShowGuestInput(true)}
+                variant="secondary"
+                className="px-6 py-2 text-sm border-white/20 hover:bg-white/10 rounded-full"
+              >
+                游客体验
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* 游客昵称输入弹窗 */}
+        {showGuestInput && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-4">游客体验</h3>
+              <p className="text-sm text-slate-400 mb-6">输入你的昵称，以游客身份进入体验</p>
+              <input
+                type="text"
+                value={guestNickname}
+                onChange={(e) => setGuestNickname(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleGuestSubmit()}
+                placeholder="请输入昵称"
+                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-4"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleGuestSubmit}
+                  disabled={!guestNickname.trim()}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  进入
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowGuestInput(false);
+                    setGuestNickname('');
+                  }}
+                  variant="ghost"
+                  className="flex-1"
+                >
+                  取消
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4 mt-8">
             <Button 
@@ -107,10 +265,22 @@ export const EntryPoint: React.FC<EntryPointProps> = ({ onNavigate, onOpenSettin
                 </div>
             </Button>
         </div>
+
+        {/* 登录弹窗 */}
+        {showLoginModal && onLoginSuccess && (
+          <LoginModal
+            onLoginSuccess={(method, identifier, isFirstLogin, worlds) => {
+              onLoginSuccess(method, identifier, isFirstLogin, worlds);
+              setShowLoginModal(false);
+            }}
+            onCancel={() => setShowLoginModal(false)}
+            initialNickname={isGuest ? nickname : undefined}
+          />
+        )}
       </div>
 
       {/* Footer Decoration */}
-      <div className="absolute bottom-8 text-[10px] text-white/20 tracking-widest font-mono">
+      <div className="absolute bottom-8 text-[10px] text-white/30 tracking-widest font-mono">
         SYSTEM VERSION 2.5.0 // CONNECTED // 已连接
       </div>
     </div>

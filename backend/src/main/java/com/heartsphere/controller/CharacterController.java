@@ -11,6 +11,8 @@ import com.heartsphere.repository.WorldRepository;
 import com.heartsphere.repository.EraRepository;
 import com.heartsphere.security.UserDetailsImpl;
 import com.heartsphere.utils.DTOMapper;
+import com.heartsphere.exception.ResourceNotFoundException;
+import com.heartsphere.exception.ForbiddenException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -68,16 +70,11 @@ public class CharacterController {
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
 
         Character character = characterRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.warning(String.format("[CharacterController] 角色不存在: ID=%d", id));
-                    return new RuntimeException("Character not found with id: " + id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Character", id));
 
         // 确保用户只能访问自己的角色
         if (!character.getUser().getId().equals(userDetails.getId())) {
-            logger.warning(String.format("[CharacterController] 权限拒绝: 用户 %d 尝试访问角色 %d (属于用户 %d)", 
-                userDetails.getId(), id, character.getUser().getId()));
-            return ResponseEntity.status(403).build();
+            throw new ForbiddenException("无权访问该角色");
         }
 
         logger.info(String.format("[CharacterController] 成功获取角色: ID=%d, 名称=%s", id, character.getName()));
@@ -132,22 +129,14 @@ public class CharacterController {
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
 
         User user = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> {
-                    logger.severe(String.format("[CharacterController] 用户不存在: ID=%d", userDetails.getId()));
-                    return new RuntimeException("User not found with id: " + userDetails.getId());
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("用户", userDetails.getId()));
 
         World world = worldRepository.findById(characterDTO.getWorldId())
-                .orElseThrow(() -> {
-                    logger.warning(String.format("[CharacterController] 世界不存在: ID=%d", characterDTO.getWorldId()));
-                    return new RuntimeException("World not found with id: " + characterDTO.getWorldId());
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("世界", characterDTO.getWorldId()));
 
         // 确保世界属于当前用户
         if (!world.getUser().getId().equals(userDetails.getId())) {
-            logger.warning(String.format("[CharacterController] 权限拒绝: 用户 %d 尝试在世界 %d 创建角色 (世界属于用户 %d)", 
-                userDetails.getId(), characterDTO.getWorldId(), world.getUser().getId()));
-            return ResponseEntity.status(403).build();
+            throw new ForbiddenException("无权在该世界创建角色");
         }
         
         logger.info(String.format("[CharacterController] 验证通过: 世界 %d 属于用户 %d", world.getId(), userDetails.getId()));
@@ -182,15 +171,10 @@ public class CharacterController {
         if (characterDTO.getEraId() != null) {
             logger.info(String.format("[CharacterController] 关联时代: eraId=%d", characterDTO.getEraId()));
             Era era = eraRepository.findById(characterDTO.getEraId())
-                    .orElseThrow(() -> {
-                        logger.warning(String.format("[CharacterController] 时代不存在: ID=%d", characterDTO.getEraId()));
-                        return new RuntimeException("Era not found with id: " + characterDTO.getEraId());
-                    });
+                    .orElseThrow(() -> new ResourceNotFoundException("时代", characterDTO.getEraId()));
             // 确保时代属于当前用户
             if (!era.getUser().getId().equals(userDetails.getId())) {
-                logger.warning(String.format("[CharacterController] 权限拒绝: 用户 %d 尝试关联时代 %d (时代属于用户 %d)", 
-                    userDetails.getId(), characterDTO.getEraId(), era.getUser().getId()));
-                return ResponseEntity.status(403).build();
+                throw new ForbiddenException("无权关联该时代");
             }
             character.setEra(era);
             logger.info(String.format("[CharacterController] 时代关联成功: eraId=%d, eraName=%s", era.getId(), era.getName()));
@@ -220,10 +204,10 @@ public class CharacterController {
 
         // 确保用户只能更新自己的角色
         if (!character.getUser().getId().equals(userDetails.getId())) {
-            logger.warning(String.format("[CharacterController] 权限拒绝: 用户 %d 尝试更新角色 %d (角色属于用户 %d)", 
-                userDetails.getId(), id, character.getUser().getId()));
-            return ResponseEntity.status(403).build();
+            throw new ForbiddenException("无权更新该角色");
         }
+        
+        logger.info(String.format("[CharacterController] 权限验证通过: 用户 %d 可以更新角色 %d", userDetails.getId(), id));
         
         logger.info(String.format("[CharacterController] 原角色信息: name=%s, role=%s", character.getName(), character.getRole()));
 
@@ -251,9 +235,9 @@ public class CharacterController {
         // 如果worldId改变，更新world关联
         if (characterDTO.getWorldId() != null && !characterDTO.getWorldId().equals(character.getWorld().getId())) {
             World world = worldRepository.findById(characterDTO.getWorldId())
-                    .orElseThrow(() -> new RuntimeException("World not found with id: " + characterDTO.getWorldId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("世界", characterDTO.getWorldId()));
             if (!world.getUser().getId().equals(userDetails.getId())) {
-                return ResponseEntity.status(403).build();
+                throw new ForbiddenException("无权使用该世界");
             }
             character.setWorld(world);
         }
@@ -262,9 +246,9 @@ public class CharacterController {
         if (characterDTO.getEraId() != null) {
             if (character.getEra() == null || !characterDTO.getEraId().equals(character.getEra().getId())) {
                 Era era = eraRepository.findById(characterDTO.getEraId())
-                        .orElseThrow(() -> new RuntimeException("Era not found with id: " + characterDTO.getEraId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("时代", characterDTO.getEraId()));
                 if (!era.getUser().getId().equals(userDetails.getId())) {
-                    return ResponseEntity.status(403).build();
+                    throw new ForbiddenException("无权使用该时代");
                 }
                 character.setEra(era);
             }
@@ -287,19 +271,11 @@ public class CharacterController {
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
 
         Character character = characterRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.warning(String.format("[CharacterController] 角色不存在: ID=%d", id));
-                    return new RuntimeException("Character not found with id: " + id);
-                });
-
-        logger.info(String.format("[CharacterController] 找到角色: ID=%d, name=%s, 属于用户 %d", 
-            character.getId(), character.getName(), character.getUser().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("角色", id));
 
         // 确保用户只能删除自己的角色
         if (!character.getUser().getId().equals(userDetails.getId())) {
-            logger.warning(String.format("[CharacterController] 权限拒绝: 用户 %d 尝试删除角色 %d (角色属于用户 %d)", 
-                userDetails.getId(), id, character.getUser().getId()));
-            return ResponseEntity.status(403).build();
+            throw new ForbiddenException("无权删除该角色");
         }
 
         // 软删除：标记为已删除

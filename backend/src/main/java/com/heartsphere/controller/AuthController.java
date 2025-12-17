@@ -1,6 +1,5 @@
 package com.heartsphere.controller;
 
-import com.heartsphere.dto.AuthResponse;
 import com.heartsphere.dto.LoginRequest;
 import com.heartsphere.dto.RegisterRequest;
 import com.heartsphere.dto.WorldDTO;
@@ -15,6 +14,7 @@ import com.heartsphere.service.InitializationService;
 import com.heartsphere.utils.JwtUtils;
 import com.heartsphere.utils.DTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +22,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import com.heartsphere.exception.ResourceNotFoundException;
+import com.heartsphere.exception.UnauthorizedException;
+import com.heartsphere.exception.BusinessException;
+import com.heartsphere.dto.ApiResponse;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -49,8 +54,21 @@ public class AuthController {
     @Autowired
     WorldRepository worldRepository;
 
+    @Autowired
+    com.heartsphere.admin.service.InviteCodeService inviteCodeService;
+
+    @Autowired
+    com.heartsphere.admin.service.SystemConfigService systemConfigService;
+
+    @Autowired
+    com.heartsphere.service.EmailService emailService;
+
+    @Autowired
+    com.heartsphere.service.EmailVerificationCodeService emailVerificationCodeService;
+
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> authenticateUser(
+            @Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -59,14 +77,22 @@ public class AuthController {
             String jwt = jwtUtils.generateJwtToken(authentication);
 
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new ResourceNotFoundException("用户", null));
 
             // 查询用户的世界，若为空则初始化，再次查询以返回最新数据
             List<World> userWorlds = worldRepository.findByUserId(user.getId());
             boolean isFirstLogin = userWorlds.isEmpty();
             if (isFirstLogin) {
-                initializationService.initializeUserData(user);
-                userWorlds = worldRepository.findByUserId(user.getId());
+                try {
+                    initializationService.initializeUserData(user);
+                    userWorlds = worldRepository.findByUserId(user.getId());
+                } catch (Exception e) {
+                    // 初始化失败不影响登录，记录日志即可
+                    java.util.logging.Logger.getLogger(AuthController.class.getName())
+                        .warning("用户数据初始化失败: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
             // 返回登录响应，包含首次登录标识
@@ -78,42 +104,101 @@ public class AuthController {
             resp.put("nickname", user.getNickname());
             resp.put("avatar", user.getAvatar()); // 允许为 null
             resp.put("isFirstLogin", isFirstLogin);
-            // 转换为DTO列表
-            List<WorldDTO> worldDTOs = userWorlds.stream()
-                .map(DTOMapper::toWorldDTO)
-                .collect(Collectors.toList());
-            resp.put("worlds", worldDTOs); // 可直接返回初始化后的世界列表，方便前端首屏展示
-            return ResponseEntity.ok(resp);
-        } catch (Exception e) {
-            // 捕获所有认证异常，返回具体的错误信息
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "用户名或密码错误"));
+            
+            // 转换为DTO列表，确保没有循环引用
+            // 手动构建简单的DTO，将 LocalDateTime 转换为字符串
+            List<Map<String, Object>> worldDTOs = new java.util.ArrayList<>();
+            for (World world : userWorlds) {
+                try {
+                    Map<String, Object> worldMap = new HashMap<>();
+                    worldMap.put("id", world.getId());
+                    worldMap.put("name", world.getName());
+                    worldMap.put("description", world.getDescription());
+                    worldMap.put("userId", world.getUserId());
+                    // 将 LocalDateTime 转换为字符串
+                    worldMap.put("createdAt", world.getCreatedAt() != null ? world.getCreatedAt().toString() : null);
+                    worldMap.put("updatedAt", world.getUpdatedAt() != null ? world.getUpdatedAt().toString() : null);
+                    worldDTOs.add(worldMap);
+                } catch (Exception e) {
+                    // 跳过有问题的世界
+                    java.util.logging.Logger.getLogger(AuthController.class.getName())
+                        .warning("世界序列化失败: " + e.getMessage());
+                }
+            }
+            resp.put("worlds", worldDTOs);
+            
+            return ResponseEntity.ok(ApiResponse.success("登录成功", resp));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            // 认证异常（用户名或密码错误）
+            throw new UnauthorizedException("用户名或密码错误");
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> registerUser(
+            @Valid @RequestBody RegisterRequest registerRequest) {
+        // 检查是否需要邀请码
+        boolean inviteCodeRequired = systemConfigService.isInviteCodeRequired();
+        if (inviteCodeRequired) {
+            if (registerRequest.getInviteCode() == null || registerRequest.getInviteCode().trim().isEmpty()) {
+                throw new BusinessException("邀请码是必需的");
+            }
+            // 验证邀请码（但不核销，等用户创建成功后再核销）
+            try {
+                inviteCodeService.validateInviteCode(registerRequest.getInviteCode().trim());
+            } catch (RuntimeException e) {
+                throw new BusinessException(e.getMessage());
+            }
+        }
+
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "Username is already taken!"));
+            throw new BusinessException("用户名已被使用");
         }
 
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "Email is already in use!"));
+            throw new BusinessException("邮箱已被使用");
+        }
+
+        // 检查是否需要邮箱验证码
+        boolean emailVerificationRequired = systemConfigService.isEmailVerificationRequired();
+        if (emailVerificationRequired) {
+            // 验证邮箱验证码
+            if (registerRequest.getEmailVerificationCode() == null || 
+                registerRequest.getEmailVerificationCode().trim().isEmpty()) {
+                throw new BusinessException("邮箱验证码不能为空");
+            }
+            
+            boolean codeValid = emailVerificationCodeService.verifyCode(
+                registerRequest.getEmail(), 
+                registerRequest.getEmailVerificationCode().trim()
+            );
+            if (!codeValid) {
+                throw new BusinessException("邮箱验证码错误或已过期");
+            }
         }
 
         User user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(encoder.encode(registerRequest.getPassword()));
-        user.setNickname(registerRequest.getUsername());
+        // 如果提供了nickname则使用，否则使用username作为默认值
+        user.setNickname(registerRequest.getNickname() != null && !registerRequest.getNickname().trim().isEmpty() 
+            ? registerRequest.getNickname().trim() 
+            : registerRequest.getUsername());
         user.setIsEnabled(true); // 确保用户是启用状态
 
         userRepository.save(user);
+
+        // 如果使用了邀请码，核销它
+        if (inviteCodeRequired && registerRequest.getInviteCode() != null) {
+            try {
+                inviteCodeService.useInviteCode(registerRequest.getInviteCode().trim(), user.getId());
+            } catch (RuntimeException e) {
+                // 如果核销失败，记录日志但不影响注册流程（因为已经验证过了）
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("邀请码核销失败: " + e.getMessage());
+            }
+        }
         
         // 初始化用户数据（世界、时代、角色）
         initializationService.initializeUserData(user);
@@ -143,22 +228,59 @@ public class AuthController {
         resp.put("isFirstLogin", isFirstLogin);
         resp.put("worlds", worldDTOs);
 
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(ApiResponse.success("注册成功", resp));
+    }
+
+    @GetMapping("/invite-code-required")
+    public ResponseEntity<Map<String, Object>> isInviteCodeRequired() {
+        boolean required = systemConfigService.isInviteCodeRequired();
+        return ResponseEntity.ok(Map.of("inviteCodeRequired", required));
+    }
+
+    @GetMapping("/email-verification-required")
+    public ResponseEntity<Map<String, Object>> isEmailVerificationRequired() {
+        boolean required = systemConfigService.isEmailVerificationRequired();
+        return ResponseEntity.ok(Map.of("emailVerificationRequired", required));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<ApiResponse<Object>> getCurrentUser(Authentication authentication) {
         try {
+            // 检查认证信息是否存在
+            if (authentication == null || authentication.getPrincipal() == null) {
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("getCurrentUser: authentication is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未授权：请重新登录"));
+            }
+            
+            // 检查是否是匿名用户
+            if (authentication.getPrincipal() instanceof String && 
+                authentication.getPrincipal().equals("anonymousUser")) {
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("getCurrentUser: anonymous user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未授权：请重新登录"));
+            }
+            
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             User user = userRepository.findByUsername(userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("用户", null));
 
-            return ResponseEntity.ok(DTOMapper.toUserDTO(user));
+            return ResponseEntity.ok(ApiResponse.success(DTOMapper.toUserDTO(user)));
+        } catch (ClassCastException e) {
+            // 认证信息类型不匹配
+            java.util.logging.Logger.getLogger(AuthController.class.getName())
+                .warning("getCurrentUser: ClassCastException - " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("未授权：请重新登录"));
         } catch (Exception e) {
-            // 捕获所有异常，返回具体的错误信息
-            return ResponseEntity
-                    .status(401)
-                    .body(Map.of("message", "Invalid authentication token"));
+            // 记录错误日志
+            java.util.logging.Logger.getLogger(AuthController.class.getName())
+                .severe("getCurrentUser: Exception - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("服务器内部错误"));
         }
     }
 }

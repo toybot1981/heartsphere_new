@@ -54,6 +54,8 @@ export interface StoryNode {
   prompt: string;
   backgroundHint?: string;
   options: StoryOption[];
+  characterIds?: string[]; // 该节点涉及的角色ID列表
+  focusCharacterId?: string; // 该节点主要聚焦的角色ID
 }
 
 export interface CustomScenario {
@@ -64,6 +66,7 @@ export interface CustomScenario {
   nodes: Record<string, StoryNode>;
   startNodeId: string;
   author: string;
+  participatingCharacters?: string[]; // 参与该剧本的角色ID列表
 }
 
 export interface EraMemory {
@@ -83,9 +86,65 @@ export interface WorldScene {
   memories?: EraMemory[]; // Personal memories specific to this era
   scenes?: any[]; // Scenes for this era
   worldId?: number; // Associated world ID
+  systemEraId?: number; // 关联的系统预置场景ID（如果是从预置场景创建的）
 }
 
 export type AIProvider = 'gemini' | 'openai' | 'qwen' | 'doubao';
+
+// 对话风格类型
+export type DialogueStyle = 
+  | 'mobile-chat'      // 📱 即时网聊
+  | 'visual-novel'     // 📖 沉浸小说
+  | 'stage-script'     // 🎭 剧本独白
+  | 'poetic';          // 📜 诗意留白
+
+
+// 世界风格类型
+export type WorldStyle = 'anime' | 'realistic' | 'cyberpunk' | 'fantasy' | 'steampunk' | 'minimalist' | 'watercolor' | 'oil-painting';
+
+// 风格描述映射
+export const WORLD_STYLE_DESCRIPTIONS: Record<WorldStyle, { name: string; description: string; promptSuffix: string }> = {
+  anime: {
+    name: '二次元',
+    description: '现代中国动漫风格，充满活力的色彩和细腻的表情',
+    promptSuffix: 'Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes, expressive emotions, cinematic lighting.'
+  },
+  realistic: {
+    name: '写实风格',
+    description: '高度写实的照片级渲染，真实的光影和质感',
+    promptSuffix: 'Style: Photorealistic, highly detailed, realistic lighting and textures, professional photography quality.'
+  },
+  cyberpunk: {
+    name: '赛博朋克',
+    description: '赛博朋克未来主义，霓虹灯、科技感、暗黑美学',
+    promptSuffix: 'Style: Cyberpunk, neon lights, futuristic technology, dark aesthetic, Blade Runner inspired, high-tech low-life atmosphere.'
+  },
+  fantasy: {
+    name: '奇幻风格',
+    description: '魔幻世界，魔法元素，史诗般的场景',
+    promptSuffix: 'Style: Fantasy art, magical elements, epic scenes, mystical atmosphere, high fantasy aesthetic, detailed world-building.'
+  },
+  steampunk: {
+    name: '蒸汽朋克',
+    description: '维多利亚场景与蒸汽机械的完美结合',
+    promptSuffix: 'Style: Steampunk, Victorian era aesthetics, brass and copper machinery, gears and cogs, retro-futuristic technology.'
+  },
+  minimalist: {
+    name: '极简主义',
+    description: '简洁优雅，留白艺术，现代设计',
+    promptSuffix: 'Style: Minimalist, clean lines, elegant simplicity, modern design, ample white space, refined aesthetics.'
+  },
+  'watercolor': {
+    name: '水彩画风',
+    description: '柔和的水彩笔触，梦幻的色彩渐变',
+    promptSuffix: 'Style: Watercolor painting, soft brushstrokes, dreamy color gradients, artistic and ethereal, flowing pigments.'
+  },
+  'oil-painting': {
+    name: '油画风格',
+    description: '古典油画质感，丰富的笔触和层次',
+    promptSuffix: 'Style: Oil painting, classical art, rich brushstrokes and texture, Renaissance or Baroque inspired, artistic depth.'
+  }
+};
 
 export interface ModelConfig {
   apiKey: string;
@@ -100,6 +159,7 @@ export interface AppSettings {
   autoGenerateStoryScenes: boolean;
   autoGenerateJournalImages: boolean; // New setting for journal
   debugMode: boolean; 
+  dialogueStyle?: DialogueStyle; // 对话风格配置
   
   // Modality Routing Settings
   textProvider: AIProvider;
@@ -138,6 +198,7 @@ export interface JournalEntry {
   imageUrl?: string; // Mind Projection
   echo?: JournalEcho; // Echoes of Wisdom
   insight?: string; // Mirror of Truth (本我镜像)
+  tags?: string; // 标签（逗号分隔，如：#灵感,#梦境,#工作）
 }
 
 export interface Mail {
@@ -197,4 +258,5 @@ export interface GameState {
   
   debugLogs: DebugLog[]; // Store runtime logs
   showWelcomeOverlay: boolean; // 是否显示首次登录欢迎蒙层
+  worldStyle: WorldStyle; // 当前世界风格设定
 }

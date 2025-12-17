@@ -13,6 +13,7 @@ public class JournalEntryDTO {
     private String id;
     private String title;
     private String content;
+    private String tags;
     private LocalDateTime entryDate;
     private Long timestamp;
     private Long worldId;

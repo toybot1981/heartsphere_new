@@ -97,9 +97,20 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                              <div 
                                 key={scen.id}
                                 onClick={() => onPlayScenario(scen)}
-                                className="bg-gray-900 border border-gray-800 rounded-xl p-4 active:scale-[0.98] transition-transform"
+                                className={`rounded-xl p-4 active:scale-[0.98] transition-transform ${
+                                    scen.id.startsWith('system_script_') 
+                                        ? 'bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30' 
+                                        : 'bg-gray-900 border border-gray-800'
+                                }`}
                             >
-                                <h4 className="text-indigo-200 font-bold mb-1">{scen.title}</h4>
+                                <div className="flex items-start justify-between mb-1">
+                                    <h4 className="text-indigo-200 font-bold flex-1">{scen.title}</h4>
+                                    {scen.id.startsWith('system_script_') && (
+                                        <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 ml-2">
+                                            预设
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-xs text-gray-500 line-clamp-2">{scen.description}</p>
                                 <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-800">
                                     <span className="text-[10px] text-gray-600">By {scen.author}</span>

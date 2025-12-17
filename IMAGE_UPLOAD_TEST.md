@@ -123,3 +123,5 @@ A: 可能原因：
 - 本地存储：`backend/uploads/images/{category}/{year}/{month}/{uuid}.{ext}`
 - 访问URL：`http://localhost:8081/api/images/{category}/{year}/{month}/{uuid}.{ext}`
 
+
+

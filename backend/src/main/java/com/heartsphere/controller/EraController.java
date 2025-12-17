@@ -32,10 +32,29 @@ public class EraController {
     @Autowired
     private WorldRepository worldRepository;
 
+    // 获取指定世界的所有时代（必须在 /{id} 之前）
+    @GetMapping("/world/{worldId}")
+    public ResponseEntity<List<EraDTO>> getErasByWorldId(@PathVariable Long worldId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        // 直接获取当前用户在指定世界中的时代
+        List<Era> eras = eraRepository.findByWorld_IdAndUser_Id(worldId, userDetails.getId());
+        List<EraDTO> eraDTOs = eras.stream()
+            .map(DTOMapper::toEraDTO)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(eraDTOs);
+    }
+
     // 获取当前用户的所有时代
     @GetMapping
     public ResponseEntity<List<EraDTO>> getAllEras() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<Era> eras = eraRepository.findByUser_Id(userDetails.getId());
         List<EraDTO> eraDTOs = eras.stream()
@@ -44,10 +63,13 @@ public class EraController {
         return ResponseEntity.ok(eraDTOs);
     }
 
-    // 获取指定ID的时代
+    // 获取指定ID的时代（必须放在最后，作为通用路径变量）
     @GetMapping("/{id}")
     public ResponseEntity<EraDTO> getEraById(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Era era = eraRepository.findById(id)
@@ -69,23 +91,13 @@ public class EraController {
         return ResponseEntity.ok(DTOMapper.toEraDTO(era));
     }
 
-    // 获取指定世界的所有时代
-    @GetMapping("/world/{worldId}")
-    public ResponseEntity<List<EraDTO>> getErasByWorldId(@PathVariable Long worldId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        // 直接获取当前用户在指定世界中的时代
-        List<Era> eras = eraRepository.findByWorld_IdAndUser_Id(worldId, userDetails.getId());
-        List<EraDTO> eraDTOs = eras.stream()
-            .map(DTOMapper::toEraDTO)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(eraDTOs);
-    }
-
     // 创建新时代
     @PostMapping
     public ResponseEntity<EraDTO> createEra(@RequestBody EraDTO eraDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         User user = userRepository.findById(userDetails.getId())
@@ -105,6 +117,7 @@ public class EraController {
         era.setStartYear(eraDTO.getStartYear());
         era.setEndYear(eraDTO.getEndYear());
         era.setImageUrl(eraDTO.getImageUrl());
+        era.setSystemEraId(eraDTO.getSystemEraId());
         era.setWorld(world);
         era.setUser(user);
 
@@ -116,6 +129,9 @@ public class EraController {
     @PutMapping("/{id}")
     public ResponseEntity<EraDTO> updateEra(@PathVariable Long id, @RequestBody EraDTO eraDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Era era = eraRepository.findById(id)
@@ -139,6 +155,7 @@ public class EraController {
         era.setStartYear(eraDTO.getStartYear());
         era.setEndYear(eraDTO.getEndYear());
         era.setImageUrl(eraDTO.getImageUrl());
+        era.setSystemEraId(eraDTO.getSystemEraId());
 
         // 如果worldId改变，更新world关联
         if (eraDTO.getWorldId() != null && !eraDTO.getWorldId().equals(era.getWorld().getId())) {
@@ -159,6 +176,9 @@ public class EraController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEra(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Era era = eraRepository.findById(id)

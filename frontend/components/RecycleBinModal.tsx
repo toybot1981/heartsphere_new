@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { recycleBinApi } from '../services/api';
 import { Button } from './Button';
+import { showAlert, showConfirm } from '../utils/dialog';
 
 interface RecycleBinModalProps {
   token: string;
@@ -29,7 +30,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
       setRecycleBin(data);
     } catch (error) {
       console.error('加载回收站失败:', error);
-      alert('加载回收站失败');
+      showAlert('加载回收站失败', '错误', 'error');
     } finally {
       setLoading(false);
     }
@@ -51,19 +52,20 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
           await recycleBinApi.restoreScript(id, token);
           break;
       }
-      alert('恢复成功');
+      showAlert('恢复成功', '操作成功', 'success');
       await loadRecycleBin();
       if (onRestore) {
         onRestore();
       }
     } catch (error) {
       console.error('恢复失败:', error);
-      alert('恢复失败');
+      showAlert('恢复失败', '操作失败', 'error');
     }
   };
 
   const handlePermanentlyDelete = async (type: 'characters' | 'worlds' | 'eras' | 'scripts', id: number, name: string) => {
-    if (!confirm(`确定要永久删除 "${name}" 吗？此操作不可恢复！`)) {
+    const confirmed = await showConfirm(`确定要永久删除 "${name}" 吗？此操作不可恢复！`, '永久删除', 'danger');
+    if (!confirmed) {
       return;
     }
 
@@ -82,11 +84,11 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
           await recycleBinApi.permanentlyDeleteScript(id, token);
           break;
       }
-      alert('永久删除成功');
+      showAlert('永久删除成功', '操作成功', 'success');
       await loadRecycleBin();
     } catch (error) {
       console.error('永久删除失败:', error);
-      alert('永久删除失败');
+      showAlert('永久删除失败', '操作失败', 'error');
     }
   };
 
@@ -140,7 +142,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
           {[
             { key: 'characters' as const, label: '角色', count: recycleBin?.characters.length || 0 },
             { key: 'worlds' as const, label: '世界', count: recycleBin?.worlds.length || 0 },
-            { key: 'eras' as const, label: '时代', count: recycleBin?.eras.length || 0 },
+            { key: 'eras' as const, label: '场景', count: recycleBin?.eras.length || 0 },
             { key: 'scripts' as const, label: '剧本', count: recycleBin?.scripts.length || 0 },
           ].map((tab) => (
             <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CustomScenario, StoryNode, StoryOption } from '../types';
 import { Button } from '../components/Button';
 import { geminiService } from '../services/gemini';
+import { showAlert, showConfirm } from '../utils/dialog';
 
 interface MobileScenarioBuilderProps {
   initialScenario?: CustomScenario | null;
@@ -66,10 +67,11 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
 
   const deleteNode = (nodeId: string) => {
       if (nodeId === 'start') {
-          alert("无法删除起始节点");
+          showAlert("无法删除起始节点", "提示", "warning");
           return;
       }
-      if (confirm("确定删除此节点吗？")) {
+      const confirmed = await showConfirm("确定删除此节点吗？", "删除节点", "warning");
+      if (confirmed) {
           const newNodes = { ...nodes };
           delete newNodes[nodeId];
           setNodes(newNodes);
@@ -110,7 +112,7 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
         setActiveTab('nodes');
       }
     } catch (e) {
-      alert("生成失败，请重试。");
+      showAlert("生成失败，请重试。", "错误", "error");
     } finally {
       setIsMagicLoading(false);
     }

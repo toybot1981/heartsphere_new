@@ -1,9 +1,10 @@
 
 import React, { useRef, useState } from 'react';
-import { AppSettings, GameState, AIProvider, UserProfile } from '../types';
+import { AppSettings, GameState, AIProvider, UserProfile, DialogueStyle } from '../types';
 import { Button } from './Button';
 import { storageService } from '../services/storage';
 import { geminiService } from '../services/gemini';
+import { showAlert, showConfirm } from '../utils/dialog';
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -14,6 +15,7 @@ interface SettingsModalProps {
   onLogout: () => void;
   onBindAccount: () => void;
   onOpenRecycleBin?: () => void; // 打开回收站
+  onOpenMembership?: () => void; // 打开会员管理
 }
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
@@ -50,7 +52,7 @@ const ConfigSection: React.FC<{ title: string; children: React.ReactNode }> = ({
     </div>
 );
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount, onOpenRecycleBin }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount, onOpenRecycleBin, onOpenMembership }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState('');
@@ -60,7 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
     // We use the current in-memory state for export, which is the most up-to-date
     const data = storageService.exportBackup(gameState);
     if (!data) {
-        alert("没有可备份的数据！");
+        showAlert("没有可备份的数据！", "提示", "warning");
         return;
     }
     
@@ -86,12 +88,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Confirm before overwriting
-    if (!window.confirm("警告：恢复备份将覆盖当前的日记、角色和进度。确定要继续吗？")) {
+    const confirmed = await showConfirm("警告：恢复备份将覆盖当前的日记、角色和进度。确定要继续吗？", "恢复备份", "warning");
+    if (!confirmed) {
         // Reset input so change event can fire again if they choose same file later
         e.target.value = '';
         return;
@@ -104,10 +107,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
             setBackupMsg('正在恢复...');
             const success = await storageService.restoreBackup(content);
             if (success) {
-                alert("记忆核心恢复成功！系统将重新启动。");
+                showAlert("记忆核心恢复成功！系统将重新启动。", "恢复成功", "success");
                 window.location.reload();
             } else {
-                alert("恢复失败：文件格式错误或已损坏。");
+                showAlert("恢复失败：文件格式错误或已损坏。", "恢复失败", "error");
                 setBackupMsg('');
             }
         }
@@ -132,9 +135,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
       const prompt = geminiService.constructUserAvatarPrompt(gameState.userProfile.nickname);
       try {
           await navigator.clipboard.writeText(prompt);
-          alert("头像提示词已复制！");
+          showAlert("头像提示词已复制！", "提示", "success");
       } catch (e) {
-          alert("复制失败: " + prompt);
+          showAlert("复制失败: " + prompt, "错误", "error");
       }
   };
 
@@ -157,7 +160,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-6 shrink-0">
             <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400">
             系统设置
@@ -187,7 +190,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
             </button>
         </div>
         
-        <div className="overflow-y-auto pr-2 custom-scrollbar space-y-4">
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 min-h-0">
             {/* GENERAL TAB */}
             {activeTab === 'general' && (
                 <div className="space-y-4">
@@ -220,6 +223,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                         </div>
                         
                         <div className="flex flex-col gap-2">
+                             {gameState.userProfile && !gameState.userProfile.isGuest && onOpenMembership && (
+                                <Button variant="ghost" onClick={() => { onOpenMembership(); onClose(); }} className="text-xs text-yellow-400 hover:bg-yellow-900/20 hover:text-yellow-300 border border-yellow-500/30">
+                                    💎 会员管理
+                                </Button>
+                             )}
                              {gameState.userProfile && !gameState.userProfile.isGuest && onOpenRecycleBin && (
                                 <Button variant="ghost" onClick={() => { onOpenRecycleBin(); onClose(); }} className="text-xs text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-slate-700">
                                     🗑️ 回收站
@@ -235,6 +243,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                              </Button>
                         </div>
                     </div>
+
 
                     <Toggle 
                         label="自动生成首页形象"
@@ -260,6 +269,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                         enabled={settings.debugMode}
                         onChange={(enabled) => onSettingsChange({ ...settings, debugMode: enabled })}
                     />
+
+                    {/* 对话风格配置 */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 space-y-2">
+                        <label className="font-bold text-white text-sm">对话风格</label>
+                        <p className="text-xs text-gray-400">选择 AI 角色的回复风格，影响回复长度、语气和格式。</p>
+                        <select 
+                            value={settings.dialogueStyle || 'mobile-chat'}
+                            onChange={(e) => onSettingsChange({ ...settings, dialogueStyle: e.target.value as DialogueStyle })}
+                            className="w-full bg-gray-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-pink-500 outline-none mt-1"
+                        >
+                            <option value="mobile-chat">📱 即时网聊 (Mobile Chat)</option>
+                            <option value="visual-novel">📖 沉浸小说 (Visual Novel)</option>
+                            <option value="stage-script">🎭 剧本独白 (Stage Script)</option>
+                            <option value="poetic">📜 诗意留白 (Poetic)</option>
+                        </select>
+                        <div className="mt-2 p-2 bg-gray-900/50 rounded text-xs text-gray-400">
+                            {(!settings.dialogueStyle || settings.dialogueStyle === 'mobile-chat') && (
+                                <p>短句、Emoji、动作用 *action*，像微信聊天，快节奏。</p>
+                            )}
+                            {settings.dialogueStyle === 'visual-novel' && (
+                                <p>侧重心理描写、环境渲染，辞藻优美，更有代入感，像读轻小说。</p>
+                            )}
+                            {settings.dialogueStyle === 'stage-script' && (
+                                <p>格式严格，[动作] 台词，干脆利落，适合以此为大纲进行二次创作。</p>
+                            )}
+                            {settings.dialogueStyle === 'poetic' && (
+                                <p>极简、隐晦、富有哲理，像《主要还是看气质》或《光遇》的风格。</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -486,9 +525,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                                     </select>
                                 </div>
                             </div>
-                        </div>
+                    </div>
 
-                        <Toggle 
+                    <Toggle
                             label="自动降级 (Auto Fallback)" 
                             description="如果首选模型调用失败（如配额耗尽），自动尝试其他已配置的提供商。"
                             enabled={settings.enableFallback}
