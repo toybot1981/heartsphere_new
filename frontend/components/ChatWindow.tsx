@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Character, Message, CustomScenario, AppSettings, StoryNode, UserProfile, JournalEcho } from '../types';
+import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho } from '../types';
 import { geminiService } from '../services/gemini';
 import { GenerateContentResponse } from '@google/genai';
 import { Button } from './Button';
@@ -41,28 +41,34 @@ async function decodeAudioData(
 const RichTextRenderer: React.FC<{ text: string, colorAccent: string }> = ({ text, colorAccent }) => {
     const parts = text.split(/(\*[^*]+\*|\([^)]+\))/g);
 
+    // 过滤掉空字符串，然后渲染，确保每个元素都有唯一的 key
+    const validParts = parts
+        .map((part, index) => ({ part, index }))
+        .filter(({ part }) => part.trim() !== '');
+
     return (
         <span className="whitespace-pre-wrap">
-            {parts.map((part, index) => {
+            {validParts.map(({ part, index }) => {
+                // 使用原始索引确保 key 的唯一性和稳定性
+                const uniqueKey = `rich-text-${index}`;
+                
                 if (part.startsWith('*') && part.endsWith('*')) {
                     // Action: Italic, slightly faded
                     return (
-                        <span key={index} className="italic opacity-70 text-sm mx-1 block my-1" style={{ color: '#e5e7eb' }}>
+                        <span key={uniqueKey} className="italic opacity-70 text-sm mx-1 block my-1" style={{ color: '#e5e7eb' }}>
                             {part.slice(1, -1)}
                         </span>
                     );
                 } else if (part.startsWith('(') && part.endsWith(')')) {
                     // Thought/Inner Monologue: Smaller, distinct color
                     return (
-                        <span key={index} className="block text-xs my-1 font-serif opacity-80 tracking-wide" style={{ color: `${colorAccent}cc` }}>
+                        <span key={uniqueKey} className="block text-xs my-1 font-serif opacity-80 tracking-wide" style={{ color: `${colorAccent}cc` }}>
                             {part}
                         </span>
                     );
-                } else if (part.trim() === '') {
-                    return null;
                 } else {
                     // Standard dialogue
-                    return <span key={index}>{part}</span>;
+                    return <span key={uniqueKey}>{part}</span>;
                 }
             })}
         </span>
@@ -86,6 +92,21 @@ interface ChatWindowProps {
 export const ChatWindow: React.FC<ChatWindowProps> = ({ 
   character, customScenario, history, scenarioState, settings, userProfile, activeJournalEntryId, onUpdateHistory, onUpdateScenarioState, onBack, participatingCharacters 
 }) => {
+  console.log('========================================');
+  console.log('[ChatWindow] 🚀 组件被渲染/更新:', {
+    hasCharacter: !!character,
+    characterId: character?.id,
+    characterName: character?.name,
+    hasCustomScenario: !!customScenario,
+    customScenarioId: customScenario?.id,
+    customScenarioTitle: customScenario?.title,
+    hasScenarioState: !!scenarioState,
+    scenarioStateValue: scenarioState,
+    historyLength: history?.length || 0,
+    timestamp: Date.now()
+  });
+  console.log('========================================');
+  
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(character?.backgroundUrl || null);
@@ -110,6 +131,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Determine mode
   const isStoryMode = !!customScenario || character?.id.startsWith('story_');
   const isScenarioMode = !!customScenario; // Specifically for Node-based scenarios
+  
+  console.log('[ChatWindow] 模式判断:', {
+    isStoryMode,
+    isScenarioMode,
+    characterIdStartsWithStory: character?.id?.startsWith('story_')
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,11 +156,45 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     if (!character) return;
 
+    console.log('[ChatWindow] 初始化检查:', {
+      historyLength: history.length,
+      hasCustomScenario: !!customScenario,
+      hasScenarioState: !!scenarioState,
+      scenarioStateValue: scenarioState,
+      customScenarioStartNodeId: customScenario?.startNodeId,
+      customScenarioNodes: customScenario ? Object.keys(customScenario.nodes || {}) : []
+    });
+
     if (history.length === 0) {
-      if (customScenario && onUpdateScenarioState && scenarioState) {
-          // Scenario Mode: Trigger first node
-          const startNode = customScenario.nodes[scenarioState.currentNodeId];
-          handleScenarioTransition(startNode, null);
+      if (customScenario && onUpdateScenarioState) {
+          // Scenario Mode: 确保 scenarioState 已初始化
+          let targetNodeId = scenarioState?.currentNodeId;
+          
+          // 如果 scenarioState 未初始化或 currentNodeId 无效，使用 startNodeId
+          if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
+            targetNodeId = customScenario.startNodeId;
+            console.log('[ChatWindow] 使用 startNodeId 初始化 scenarioState:', targetNodeId);
+            
+            // 更新 scenarioState
+            if (onUpdateScenarioState) {
+              onUpdateScenarioState(targetNodeId);
+            }
+          }
+          
+          const startNode = customScenario.nodes[targetNodeId];
+          if (startNode) {
+            console.log('[ChatWindow] 触发第一个节点:', {
+              nodeId: startNode.id,
+              nodeTitle: startNode.title,
+              hasOptions: !!startNode.options && startNode.options.length > 0
+            });
+            handleScenarioTransition(startNode, null);
+          } else {
+            console.error('[ChatWindow] 找不到起始节点:', {
+              targetNodeId,
+              availableNodes: Object.keys(customScenario.nodes)
+            });
+          }
       } else if (!isStoryMode) {
         // Normal Mode
         onUpdateHistory([{ id: 'init', role: 'model', text: character.firstMessage, timestamp: Date.now() }]);
@@ -266,10 +327,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
          }
        }
        
-       // 更新场景状态到当前节点
-       if (onUpdateScenarioState) {
-         onUpdateScenarioState(node.id);
-       }
+      // 更新场景状态到当前节点
+      if (onUpdateScenarioState) {
+        console.log('[ChatWindow] 调用 onUpdateScenarioState 更新节点:', {
+          newNodeId: node.id,
+          nodeTitle: node.title,
+          hasOptions: !!node.options && node.options.length > 0
+        });
+        onUpdateScenarioState(node.id);
+      } else {
+        console.warn('[ChatWindow] onUpdateScenarioState 未定义，无法更新状态');
+      }
        
        // 重要：如果当前节点有选项，应该停下来等待用户选择，而不是自动继续
        // 节点处理完成，等待用户选择（如果有选项的话）
@@ -284,13 +352,94 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleOptionClick = (optionId: string) => {
-      if (!customScenario || !scenarioState) return;
-      const currentNode = customScenario.nodes[scenarioState.currentNodeId];
-      const option = currentNode.options.find(o => o.id === optionId);
-      if (option && option.nextNodeId) {
-          const nextNode = customScenario.nodes[option.nextNodeId];
-          if (nextNode) handleScenarioTransition(nextNode, option.text);
+      console.log('========================================');
+      console.log('[ChatWindow] 🟢🟢🟢 handleOptionClick 被调用:', { 
+        optionId, 
+        customScenario: !!customScenario, 
+        scenarioState,
+        isLoading,
+        timestamp: Date.now(),
+        callStack: new Error().stack
+      });
+      console.log('========================================');
+      
+      // 如果正在加载，阻止处理
+      if (isLoading) {
+          console.warn('[ChatWindow] handleOptionClick 被阻止 - 正在加载中');
+          return;
       }
+      
+      if (!customScenario || !scenarioState) {
+          console.error('[ChatWindow] ❌ 缺少 customScenario 或 scenarioState:', {
+            hasCustomScenario: !!customScenario,
+            hasScenarioState: !!scenarioState,
+            scenarioStateValue: scenarioState
+          });
+          return;
+      }
+      
+      const currentNodeId = scenarioState.currentNodeId;
+      if (!currentNodeId) {
+          console.error('[ChatWindow] ❌ scenarioState.currentNodeId 为空');
+          return;
+      }
+      
+      const currentNode = customScenario.nodes[currentNodeId];
+      if (!currentNode) {
+          console.error('[ChatWindow] ❌ 找不到当前节点:', {
+            currentNodeId,
+            availableNodes: Object.keys(customScenario.nodes),
+            nodesData: customScenario.nodes
+          });
+          return;
+      }
+      
+      console.log('[ChatWindow] 📍 当前节点信息:', {
+        nodeId: currentNode.id,
+        nodeTitle: currentNode.title,
+        optionsCount: currentNode.options?.length || 0,
+        options: currentNode.options?.map(o => ({ id: o.id, text: o.text, nextNodeId: o.nextNodeId }))
+      });
+      
+      const option = currentNode.options.find(o => o.id === optionId);
+      if (!option) {
+          console.error('[ChatWindow] ❌ 找不到选项:', {
+            optionId,
+            availableOptions: currentNode.options.map(o => ({ id: o.id, text: o.text }))
+          });
+          return;
+      }
+      
+      console.log('[ChatWindow] ✅ 找到选项:', { 
+        optionId, 
+        text: option.text, 
+        nextNodeId: option.nextNodeId,
+        optionData: option
+      });
+      
+      if (!option.nextNodeId) {
+          console.warn('[ChatWindow] ⚠️ 选项没有 nextNodeId（故事可能结束）:', option);
+          return;
+      }
+      
+      const nextNode = customScenario.nodes[option.nextNodeId];
+      if (!nextNode) {
+          console.error('[ChatWindow] ❌ 找不到下一个节点:', {
+            nextNodeId: option.nextNodeId,
+            availableNodes: Object.keys(customScenario.nodes),
+            allNodeIds: Object.keys(customScenario.nodes)
+          });
+          return;
+      }
+      
+      console.log('[ChatWindow] 🚀 准备跳转到节点:', {
+        nextNodeId: nextNode.id,
+        nextNodeTitle: nextNode.title,
+        choiceText: option.text || optionId
+      });
+      
+      // 调用场景转换
+      handleScenarioTransition(nextNode, option.text || optionId);
   };
 
   const handleSend = async () => {
@@ -360,27 +509,263 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
   
   const renderChoices = () => {
-    if (!customScenario || !scenarioState || isLoading) return null;
-    const currentNode = customScenario.nodes[scenarioState.currentNodeId];
-    if (history.length > 0 && history[history.length-1].role === 'user') return null;
-    if (!currentNode || currentNode.options.length === 0) return null;
+    console.log('========================================');
+    console.log('[ChatWindow] 🎯 renderChoices 函数被调用!');
+    console.log('[ChatWindow] renderChoices 参数检查:', {
+      hasCustomScenario: !!customScenario,
+      hasScenarioState: !!scenarioState,
+      isLoading,
+      scenarioStateValue: scenarioState,
+      customScenarioNodes: customScenario ? Object.keys(customScenario.nodes || {}) : [],
+      customScenarioStartNodeId: customScenario?.startNodeId,
+      customScenarioId: customScenario?.id,
+      customScenarioTitle: customScenario?.title
+    });
+    console.log('========================================');
+
+    if (!customScenario || !scenarioState || isLoading) {
+      console.log('[ChatWindow] renderChoices 返回 null - 缺少必要数据或正在加载');
+      return null;
+    }
+
+    const currentNodeId = scenarioState.currentNodeId;
+    if (!currentNodeId) {
+      console.warn('[ChatWindow] renderChoices - scenarioState.currentNodeId 为空');
+      return null;
+    }
+
+    const currentNode = customScenario.nodes[currentNodeId];
+    if (!currentNode) {
+      console.warn('[ChatWindow] renderChoices - 找不到当前节点:', {
+        currentNodeId,
+        availableNodes: Object.keys(customScenario.nodes),
+        nodesData: customScenario.nodes
+      });
+      return null;
+    }
+
+    // 检查 options 是否存在且是数组
+    if (!currentNode.options) {
+      console.warn('[ChatWindow] renderChoices - 节点没有 options 字段:', {
+        nodeId: currentNode.id,
+        nodeTitle: currentNode.title,
+        nodeData: currentNode
+      });
+      return null;
+    }
+
+    if (!Array.isArray(currentNode.options)) {
+      console.warn('[ChatWindow] renderChoices - options 不是数组:', {
+        nodeId: currentNode.id,
+        optionsType: typeof currentNode.options,
+        optionsValue: currentNode.options
+      });
+      return null;
+    }
+
+    if (currentNode.options.length === 0) {
+      console.log('[ChatWindow] renderChoices - 节点没有选项（这是正常的，表示故事结束）');
+      return null;
+    }
+
+    // 验证每个选项的结构，并确保每个选项都有唯一的 id
+    const validOptions = currentNode.options
+      .map((opt, index) => {
+        // 如果选项没有 id，生成一个唯一的 id
+        if (!opt || typeof opt !== 'object') {
+          console.warn('[ChatWindow] renderChoices - 发现无效选项:', opt);
+          return null;
+        }
+        if (!opt.id) {
+          console.warn('[ChatWindow] renderChoices - 选项缺少 id，生成临时 id:', { opt, index });
+          return { ...opt, id: `temp-option-${currentNode.id}-${index}` };
+        }
+        return opt;
+      })
+      .filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+
+    if (validOptions.length === 0) {
+      console.warn('[ChatWindow] renderChoices - 没有有效的选项');
+      return null;
+    }
+
+    // 调试日志
+    console.log('[ChatWindow] ✅ 渲染选择按钮:', {
+      currentNodeId: currentNode.id,
+      currentNodeTitle: currentNode.title,
+      optionsCount: validOptions.length,
+      options: validOptions.map(opt => ({ id: opt.id, text: opt.text || '(无文本)', nextNodeId: opt.nextNodeId }))
+    });
+
+    console.log('[ChatWindow] 🎨 准备渲染按钮容器，validOptions 数量:', validOptions.length);
 
     return (
-        <div className={`flex flex-wrap gap-3 justify-center mt-4 animate-fade-in ${isCinematic ? 'mb-10' : ''}`}>
-            {currentNode.options.map(opt => (
+        <div 
+          className={`flex flex-wrap gap-3 justify-center mt-4 animate-fade-in ${isCinematic ? 'mb-10' : ''}`}
+          style={{ 
+            zIndex: 999, // 提高 z-index 确保按钮容器在最上层
+            position: 'relative',
+            pointerEvents: 'auto', // 确保容器可以接收事件
+            backgroundColor: 'rgba(255, 0, 0, 0.1)' // 临时添加背景色用于调试
+          }}
+          onClick={(e) => {
+            console.log('[ChatWindow] 📦 按钮容器 onClick 事件:', {
+              target: e.target,
+              currentTarget: e.currentTarget,
+              timestamp: Date.now()
+            });
+          }}
+          onMouseEnter={() => {
+            console.log('[ChatWindow] 🖱️ 鼠标进入按钮容器');
+          }}
+          onMouseEnter={() => {
+            console.log('[ChatWindow] 🖱️ 鼠标进入按钮容器');
+          }}
+        >
+            {validOptions.map((opt, index) => {
+              console.log('[ChatWindow] 🔘 正在渲染按钮:', {
+                index,
+                optionId: opt.id,
+                buttonText: opt.text || opt.id || '选择'
+              });
+              // 确保文本存在，提供 fallback
+              const buttonText = opt.text || opt.id || '选择';
+              
+              // 检查按钮是否应该被禁用
+              const isButtonDisabled = isLoading;
+              
+              // 确保 key 的唯一性：使用 opt.id，如果不存在则使用 index
+              const uniqueKey = opt.id || `option-${index}`;
+              
+              console.log('[ChatWindow] 🔘 渲染按钮详情:', {
+                index,
+                optionId: opt.id,
+                uniqueKey,
+                buttonText,
+                isDisabled: isButtonDisabled,
+                isLoading,
+                nextNodeId: opt.nextNodeId,
+                willRender: true
+              });
+              
+              return (
                 <button
-                  key={opt.id}
-                  onClick={() => handleOptionClick(opt.id)}
+                  key={uniqueKey}
+                  id={`choice-button-${uniqueKey}`}
+                  data-option-id={opt.id}
+                  data-index={index}
+                  onClick={(e) => {
+                    console.log('[ChatWindow] 🔵🔵🔵 onClick 事件触发:', {
+                      optionId: opt.id,
+                      uniqueKey,
+                      buttonText,
+                      isLoading,
+                      isButtonDisabled,
+                      timestamp: Date.now(),
+                      eventType: e.type,
+                      target: e.target,
+                      currentTarget: e.currentTarget
+                    });
+                    
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 如果正在加载，阻止点击
+                    if (isLoading) {
+                      console.warn('[ChatWindow] ⚠️ 按钮点击被阻止 - 正在加载中');
+                      return;
+                    }
+                    
+                    if (isButtonDisabled) {
+                      console.warn('[ChatWindow] ⚠️ 按钮点击被阻止 - 按钮被禁用');
+                      return;
+                    }
+                    
+                    console.log('[ChatWindow] ✅ 准备调用 handleOptionClick');
+                    
+                    // 调用处理函数（handleScenarioTransition 内部会设置 loading 状态）
+                    try {
+                      console.log('[ChatWindow] 🚀 调用 handleOptionClick，参数:', opt.id);
+                      const result = handleOptionClick(opt.id);
+                      console.log('[ChatWindow] handleOptionClick 返回:', result);
+                    } catch (error) {
+                      console.error('[ChatWindow] ❌ 处理选项点击时出错:', {
+                        error,
+                        errorMessage: error instanceof Error ? error.message : String(error),
+                        errorStack: error instanceof Error ? error.stack : undefined,
+                        optionId: opt.id
+                      });
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    console.log('[ChatWindow] 🖱️ onMouseDown 事件:', {
+                      optionId: opt.id,
+                      button: e.button,
+                      timestamp: Date.now()
+                    });
+                  }}
+                  onMouseUp={(e) => {
+                    console.log('[ChatWindow] 🖱️ onMouseUp 事件:', {
+                      optionId: opt.id,
+                      button: e.button,
+                      timestamp: Date.now()
+                    });
+                  }}
+                  onTouchStart={(e) => {
+                    console.log('[ChatWindow] 📱 onTouchStart 事件:', {
+                      optionId: opt.id,
+                      touches: e.touches.length,
+                      timestamp: Date.now()
+                    });
+                  }}
+                  onTouchEnd={(e) => {
+                    console.log('[ChatWindow] 📱 onTouchEnd 事件:', {
+                      optionId: opt.id,
+                      touches: e.touches.length,
+                      timestamp: Date.now()
+                    });
+                  }}
                   className="bg-indigo-600/80 backdrop-blur-md hover:bg-indigo-500 text-white px-6 py-3 rounded-xl shadow-lg border border-indigo-400/50 transition-all active:scale-95"
+                  style={{
+                    // 添加内联样式作为 fallback，确保按钮可见
+                    backgroundColor: isButtonDisabled ? 'rgba(79, 70, 229, 0.4)' : 'rgba(79, 70, 229, 0.8)',
+                    color: '#ffffff',
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(99, 102, 241, 0.5)',
+                    cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
+                    zIndex: 999, // 提高 z-index 确保按钮在最上层
+                    position: 'relative',
+                    minWidth: '120px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    opacity: isButtonDisabled ? 0.6 : 1,
+                    pointerEvents: isButtonDisabled ? 'none' : 'auto',
+                    // 确保按钮可以接收点击事件
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                  disabled={isButtonDisabled}
+                  aria-label={`选择: ${buttonText}`}
                 >
-                    {opt.text}
+                    {buttonText}
                 </button>
-            ))}
+              );
+            })}
         </div>
     );
   };
   
-  if (!character) return null;
+  if (!character) {
+    console.warn('[ChatWindow] ⚠️ character 为空，组件不渲染');
+    return null;
+  }
+
+  console.log('[ChatWindow] ✅ character 存在，准备渲染组件:', {
+    characterId: character.id,
+    characterName: character.name
+  });
 
   const backgroundImage = isStoryMode && sceneImageUrl ? sceneImageUrl : character.backgroundUrl;
 
@@ -464,8 +849,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   <p className="text-indigo-300 font-bold text-lg animate-pulse">正在生成故事...</p>
               </div>
           )}
-          {history.map((msg) => (
-              <div key={msg.id} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${isCinematic && msg.role === 'user' ? 'opacity-0 h-0 overflow-hidden' : ''}`}> 
+          {history.map((msg, index) => (
+              <div key={`msg-${msg.id}-${index}`} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${isCinematic && msg.role === 'user' ? 'opacity-0 h-0 overflow-hidden' : ''}`}> 
                 <div 
                   className={`
                     max-w-[85%] sm:max-w-[70%] rounded-2xl overflow-hidden backdrop-blur-md shadow-lg text-sm sm:text-base leading-relaxed 
@@ -505,17 +890,43 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="px-4 sm:px-8 mt-2 max-w-4xl mx-auto w-full pb-6 min-h-[80px]">
-            {isScenarioMode ? (
-                renderChoices()
-            ) : (
-                /* Input Area - Hidden in Cinematic Mode */
-                !isCinematic && (
+        <div 
+          className="px-4 sm:px-8 mt-2 max-w-4xl mx-auto w-full pb-6 min-h-[80px]"
+          style={{ 
+            zIndex: 1000, // 提高 z-index
+            position: 'relative',
+            pointerEvents: 'auto'
+          }}
+        >
+            {(() => {
+              console.log('[ChatWindow] 🔍 检查渲染模式:', {
+                isScenarioMode,
+                hasCustomScenario: !!customScenario,
+                customScenarioId: customScenario?.id,
+                willRenderChoices: isScenarioMode
+              });
+              
+              if (isScenarioMode) {
+                console.log('[ChatWindow] 🎯 isScenarioMode 为 true，准备调用 renderChoices');
+                const choices = renderChoices();
+                console.log('[ChatWindow] 🎯 renderChoices 返回:', {
+                  hasContent: !!choices,
+                  isNull: choices === null,
+                  isUndefined: choices === undefined,
+                  type: typeof choices
+                });
+                return choices;
+              } else {
+                console.log('[ChatWindow] 📝 isScenarioMode 为 false，渲染输入框');
+                return null;
+              }
+            })()}
+            
+            {!isScenarioMode && !isCinematic && (
                 <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
                    <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="输入你的消息..." className="flex-1 bg-transparent border-none text-white placeholder-white/40 focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base" rows={1} disabled={isLoading} />
                    <Button onClick={handleSend} disabled={isLoading || !input.trim()} className="ml-2 !rounded-xl !px-6 !py-2 shadow-lg" style={{ backgroundColor: character.colorAccent }}>发送</Button>
                 </div>
-                )
             )}
         </div>
       </div>

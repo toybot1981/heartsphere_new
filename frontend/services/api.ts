@@ -616,15 +616,15 @@ export const adminApi = {
         },
       });
     },
-    getEvernoteConfig: (token: string) => {
-      return request<{ consumerKey: string; consumerSecret: string; sandbox: boolean }>('/admin/system/config/evernote', {
+    getNotionConfig: (token: string) => {
+      return request<{ clientId: string; clientSecret: string; redirectUri: string; syncButtonEnabled: boolean }>('/admin/system/config/notion', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
     },
-    setEvernoteConfig: (config: { consumerKey?: string; consumerSecret?: string; sandbox?: boolean }, token: string) => {
-      return request<{ consumerKey: string; consumerSecret: string; sandbox: boolean }>('/admin/system/config/evernote', {
+    setNotionConfig: (config: { clientId?: string; clientSecret?: string; redirectUri?: string; syncButtonEnabled?: boolean }, token: string) => {
+      return request<{ clientId: string; clientSecret: string; redirectUri: string; syncButtonEnabled: boolean }>('/admin/system/config/notion', {
         method: 'PUT',
         body: JSON.stringify(config),
         headers: {
@@ -2093,6 +2093,7 @@ export const scriptApi = {
     return request<Array<{
       id: number;
       title: string;
+      description: string | null;
       content: string;
       sceneCount: number;
       worldId: number;
@@ -2111,6 +2112,7 @@ export const scriptApi = {
     return request<Array<{
       id: number;
       title: string;
+      description: string | null;
       content: string;
       sceneCount: number;
       worldId: number;
@@ -2129,6 +2131,7 @@ export const scriptApi = {
     return request<Array<{
       id: number;
       title: string;
+      description: string | null;
       content: string;
       sceneCount: number;
       worldId: number;
@@ -2145,6 +2148,7 @@ export const scriptApi = {
   // 创建剧本
   createScript: (data: {
     title: string;
+    description?: string | null;
     content: string;
     sceneCount?: number;
     worldId: number;
@@ -2153,6 +2157,7 @@ export const scriptApi = {
     return request<{
       id: number;
       title: string;
+      description: string | null;
       content: string;
       sceneCount: number;
       worldId: number;
@@ -2171,6 +2176,7 @@ export const scriptApi = {
   // 更新剧本
   updateScript: (id: number, data: {
     title: string;
+    description?: string | null;
     content: string;
     sceneCount?: number;
     worldId: number;
@@ -2179,6 +2185,7 @@ export const scriptApi = {
     return request<{
       id: number;
       title: string;
+      description: string | null;
       content: string;
       sceneCount: number;
       worldId: number;
@@ -2423,15 +2430,30 @@ export const resourceApi = {
 
 // 笔记同步相关API
 export const noteSyncApi = {
-  // 获取印象笔记授权URL
-  getEvernoteAuthUrl: (callbackUrl: string, token: string) => {
+  // 获取 Notion 授权URL
+  getNotionAuthUrl: (callbackUrl: string, token: string) => {
     return request<{
       authorizationUrl: string;
       state: string;
-    }>(`/notes/evernote/authorize?callbackUrl=${encodeURIComponent(callbackUrl)}`, {
+    }>(`/notes/notion/authorize?callbackUrl=${encodeURIComponent(callbackUrl)}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  },
+
+  // 更新 Notion 数据库 ID
+  updateNotionDatabaseId: (databaseId: string, token: string) => {
+    return request<{
+      databaseId: string;
+      message: string;
+    }>('/notes/syncs/notion/database-id', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ databaseId }),
     });
   },
 
@@ -2645,7 +2667,402 @@ export const imageApi = {
 };
 
 // 系统预设剧本API（普通用户访问）
+// 系统预置主线剧情API（公开接口，不需要认证）
+// 客户端预置主线剧情API（公开接口，不需要认证）
+export const presetMainStoryApi = {
+  // 获取所有系统预设主线剧情
+  getAll: () => {
+    return request<Array<{
+      id: number;
+      name: string;
+      description?: string; // 保留以兼容旧数据
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      systemEraId: number;
+      eraName: string | null;
+      characterId: number | null;
+      characterName: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      isActive: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/preset-main-stories', {
+      method: 'GET',
+    });
+  },
+
+  // 根据场景ID获取系统预设主线剧情
+  getByEraId: async (eraId: number) => {
+    try {
+      const result = await request<{
+        id: number;
+        name: string;
+        description?: string; // 保留以兼容旧数据
+        age: number | null;
+        role: string | null;
+        bio: string | null;
+        systemEraId: number;
+        eraName: string | null;
+        characterId: number | null;
+        characterName: string | null;
+        firstMessage: string | null;
+        systemInstruction: string | null;
+        avatarUrl: string | null;
+        backgroundUrl: string | null;
+        themeColor: string | null;
+        colorAccent: string | null;
+        voiceName: string | null;
+        tags: string | null;
+        speechStyle: string | null;
+        catchphrases: string | null;
+        secrets: string | null;
+        motivations: string | null;
+        isActive: boolean;
+        sortOrder: number;
+        createdAt: string;
+        updatedAt: string;
+      }>(`/preset-main-stories/era/${eraId}`, {
+        method: 'GET',
+      });
+      return result;
+    } catch (error: any) {
+      // 如果是 404，返回 null（表示该场景没有主线剧情）
+      if (error?.message?.includes('404') || error?.message?.includes('not found') || error?.message?.includes('Not Found')) {
+        console.log(`[presetMainStoryApi] 场景 ${eraId} 没有预置主线剧情（404）`);
+        return null;
+      }
+      // 其他错误重新抛出
+      throw error;
+    }
+  },
+
+  // 根据ID获取系统预设主线剧情
+  getById: (id: number) => {
+    return request<{
+      id: number;
+      name: string;
+      description?: string; // 保留以兼容旧数据
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      systemEraId: number;
+      eraName: string | null;
+      characterId: number | null;
+      characterName: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      isActive: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/preset-main-stories/${id}`, {
+      method: 'GET',
+    });
+  },
+};
+
+// 用户主线剧情API（需要用户认证）
+export const userMainStoryApi = {
+  // 获取当前用户的所有主线剧情
+  getAll: (token: string) => {
+    return request<Array<{
+      id: number;
+      name: string;
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      userId: number;
+      eraId: number;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/user-main-stories', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 根据场景ID获取当前用户的主线剧情
+  getByEraId: (eraId: number, token: string) => {
+    return request<{
+      id: number;
+      name: string;
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      userId: number;
+      eraId: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/user-main-stories/era/${eraId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 根据ID获取主线剧情
+  getById: (id: number, token: string) => {
+    return request<{
+      id: number;
+      name: string;
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      userId: number;
+      eraId: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/user-main-stories/${id}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 创建主线剧情
+  create: (data: {
+    systemMainStoryId?: number; // 系统预置主线剧情ID（优先使用）
+    eraId: number; // 用户场景ID
+    name?: string; // 可选：自定义名称（如果提供会覆盖预置数据的名称）
+  }, token: string) => {
+    // 只传递必要的字段：systemMainStoryId 和 eraId
+    const cleanData: {
+      systemMainStoryId?: number;
+      eraId: number;
+      name?: string;
+    } = {
+      eraId: data.eraId,
+    };
+    
+    // 如果提供了 systemMainStoryId，添加到请求中
+    if (data.systemMainStoryId) {
+      cleanData.systemMainStoryId = data.systemMainStoryId;
+    }
+    
+    // 如果提供了自定义名称，添加到请求中
+    if (data.name) {
+      cleanData.name = data.name;
+    }
+    
+    console.log('[API] userMainStoryApi.create - 发送数据（仅ID）:', cleanData);
+    return request<{
+      id: number;
+      name: string;
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      userId: number;
+      eraId: number;
+      createdAt: string;
+      updatedAt: string;
+    }>('/user-main-stories', {
+      method: 'POST',
+      body: JSON.stringify(cleanData),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // 更新主线剧情
+  update: (id: number, data: {
+    name?: string;
+    age?: number;
+    role?: string;
+    bio?: string;
+    avatarUrl?: string;
+    backgroundUrl?: string;
+    themeColor?: string;
+    colorAccent?: string;
+    firstMessage?: string;
+    systemInstruction?: string;
+    voiceName?: string;
+    tags?: string;
+    speechStyle?: string;
+    catchphrases?: string;
+    secrets?: string;
+    motivations?: string;
+  }, token: string) => {
+    // 明确过滤掉不需要的字段（双重保护）
+    const { description, mbti, relationships, ...cleanData } = data as any;
+    return request<{
+      id: number;
+      name: string;
+      age: number | null;
+      role: string | null;
+      bio: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      voiceName: string | null;
+      tags: string | null;
+      speechStyle: string | null;
+      catchphrases: string | null;
+      secrets: string | null;
+      motivations: string | null;
+      userId: number;
+      eraId: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/user-main-stories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cleanData),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // 删除主线剧情
+  delete: (id: number, token: string) => {
+    return request<void>(`/user-main-stories/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
+// 管理后台系统数据API（需要管理员认证，保留给管理后台使用）
+export const systemMainStoryApi = {
+  // 获取所有系统预设主线剧情（管理后台接口）
+  getAll: (token: string) => {
+    return request<Array<{
+      id: number;
+      name: string;
+      description: string;
+      systemEraId: number;
+      eraName: string | null;
+      characterId: number | null;
+      characterName: string | null;
+      firstMessage: string | null;
+      systemInstruction: string | null;
+      avatarUrl: string | null;
+      backgroundUrl: string | null;
+      themeColor: string | null;
+      colorAccent: string | null;
+      isActive: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/system/main-stories', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
 export const systemScriptApi = {
+  // 获取所有系统预设剧本（管理后台接口）
+  getAll: (token: string) => {
+    return request<Array<{
+      id: number;
+      title: string;
+      description: string;
+      content: string;
+      sceneCount: number;
+      systemEraId: number | null;
+      eraName: string | null;
+      characterIds: string;
+      tags: string | null;
+      isActive: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/system/scripts', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
+// 客户端预置剧本API（公开接口，不需要认证）
+export const presetScriptApi = {
   // 获取所有系统预设剧本
   getAll: () => {
     return request<Array<{
@@ -2662,7 +3079,7 @@ export const systemScriptApi = {
       sortOrder: number;
       createdAt: string;
       updatedAt: string;
-    }>>('/system/scripts', {
+    }>>('/preset-scripts', {
       method: 'GET',
     });
   },
@@ -2683,7 +3100,7 @@ export const systemScriptApi = {
       sortOrder: number;
       createdAt: string;
       updatedAt: string;
-    }>>(`/system/scripts/era/${eraId}`, {
+    }>>(`/preset-scripts/era/${eraId}`, {
       method: 'GET',
     });
   },
@@ -2704,7 +3121,7 @@ export const systemScriptApi = {
       sortOrder: number;
       createdAt: string;
       updatedAt: string;
-    }>(`/system/scripts/${id}`, {
+    }>(`/preset-scripts/${id}`, {
       method: 'GET',
     });
   },
