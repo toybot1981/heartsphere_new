@@ -30,7 +30,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   children,
   initialState = DEFAULT_GAME_STATE
 }) => {
-  const [state, dispatch] = useReducer(gameStateReducer, initialState);
+  // 在初始化时检查是否有 token，如果有则直接设置为 entryPoint，避免闪烁
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+  const initialScreen = hasToken ? 'entryPoint' : initialState.currentScreen;
+  const [state, dispatch] = useReducer(gameStateReducer, {
+    ...initialState,
+    currentScreen: initialScreen
+  });
   const stateRef = useRef(state);
 
   // 保持ref同步

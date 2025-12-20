@@ -262,6 +262,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getEmailConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getWechatPayConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getAlipayConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getGuideConfigLink(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -278,9 +282,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const emailConfigData = results[5].status === 'fulfilled' && results[5].value ? results[5].value : null;
             const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
             const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
-            const plans = results[8].status === 'fulfilled' ? results[8].value : [];
-            const scripts = results[9].status === 'fulfilled' ? results[9].value : [];
-            const mainStories = results[10].status === 'fulfilled' ? results[10].value : [];
+            const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
+            const wechatPayConfigData = results[9].status === 'fulfilled' && results[9].value ? results[9].value : null;
+            const alipayConfigData = results[10].status === 'fulfilled' && results[10].value ? results[10].value : null;
+            const guideLinkData = results[11].status === 'fulfilled' && results[11].value ? results[11].value : null;
+            const plans = results[12].status === 'fulfilled' ? results[12].value : [];
+            const scripts = results[13].status === 'fulfilled' ? results[13].value : [];
+            const mainStories = results[14].status === 'fulfilled' ? results[14].value : [];
             
             console.log("[AdminScreen] 邮箱验证配置加载结果:", {
                 emailVerificationConfig,
@@ -347,6 +355,40 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 });
             } else {
                 console.log("[AdminScreen] 未加载到 Notion 配置，使用默认值");
+            }
+            if (wechatConfigData) {
+                console.log("[AdminScreen] 加载微信配置:", wechatConfigData);
+                setWechatConfig({
+                    appId: wechatConfigData.appId || '',
+                    appSecret: wechatConfigData.appSecret === '******' ? '' : (wechatConfigData.appSecret || ''), // 如果是******则保持为空，表示已保存但未显示
+                    redirectUri: wechatConfigData.redirectUri || 'http://localhost:8081/api/wechat/callback'
+                });
+            }
+            if (wechatPayConfigData) {
+                console.log("[AdminScreen] 加载微信支付配置:", wechatPayConfigData);
+                setWechatPayConfig({
+                    appId: wechatPayConfigData.appId || '',
+                    mchId: wechatPayConfigData.mchId || '',
+                    apiKey: wechatPayConfigData.apiKey === '******' ? '' : (wechatPayConfigData.apiKey || ''),
+                    apiV3Key: wechatPayConfigData.apiV3Key === '******' ? '' : (wechatPayConfigData.apiV3Key || ''),
+                    certPath: wechatPayConfigData.certPath || '',
+                    notifyUrl: wechatPayConfigData.notifyUrl || ''
+                });
+            }
+            if (alipayConfigData) {
+                console.log("[AdminScreen] 加载支付宝配置:", alipayConfigData);
+                setAlipayConfig({
+                    appId: alipayConfigData.appId || '',
+                    privateKey: alipayConfigData.privateKey === '******' ? '' : (alipayConfigData.privateKey || ''),
+                    publicKey: alipayConfigData.publicKey || '',
+                    gatewayUrl: alipayConfigData.gatewayUrl || 'https://openapi.alipay.com/gateway.do',
+                    notifyUrl: alipayConfigData.notifyUrl || '',
+                    returnUrl: alipayConfigData.returnUrl || ''
+                });
+            }
+            if (guideLinkData) {
+                console.log("[AdminScreen] 加载引导配置链接:", guideLinkData);
+                setGuideConfigLink(guideLinkData.link || '');
             }
             console.log("[AdminScreen] 系统数据状态已更新，邀请码数量:", inviteCodesArray.length);
         } catch (error: any) {
