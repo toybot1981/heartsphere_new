@@ -50,9 +50,6 @@ public class SystemConfigService {
     private static final String ALIPAY_NOTIFY_URL_KEY = "alipay_notify_url";
     private static final String ALIPAY_RETURN_URL_KEY = "alipay_return_url";
     private static final String ALIPAY_GATEWAY_URL_KEY = "alipay_gateway_url";
-    
-    // 引导配置链接
-    private static final String GUIDE_CONFIG_LINK_KEY = "guide_config_link";
 
     /**
      * 获取邀请码是否必需

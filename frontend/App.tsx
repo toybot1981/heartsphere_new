@@ -1849,37 +1849,6 @@ const AppContent: React.FC = () => {
         />
       )}
       
-      {/* 临时保留：角色列表和剧本分支部分，将在后续步骤中迁移到 CharacterSelectionScreen */}
-      {false && gameState.currentScreen === 'characterSelection' && currentSceneLocal && (
-         <div className="h-full flex flex-col p-8 bg-gray-900">
-             <div className="flex justify-between items-center mb-6">
-                 <div className="flex items-center gap-4">
-                     <Button variant="ghost" onClick={() => dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })} className="!p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                     </Button>
-                     <h2 className="text-3xl font-bold text-white">{currentSceneLocal.name}</h2>
-                 </div>
-                 <div className="flex gap-2">
-                     <Button onClick={() => { 
-                         requireAuth(() => {
-                            setEditingCharacter(null); 
-                            setEditingCharacterSceneId(currentSceneLocal.id); 
-                            setShowCharacterCreator(true);
-                         });
-                     }} className="text-sm">
-                        + 新增角色
-                     </Button>
-                 </div>
-             </div>
-             
-             <div 
-                 ref={characterSelectionScrollRef} 
-                 className="flex-1 overflow-y-auto pr-4 custom-scrollbar"
-                 style={{ scrollBehavior: 'auto', willChange: 'scroll-position' }}
-             >
-                {/* 主线故事部分已迁移到 CharacterSelectionScreen */}
-                
-                <h3 className="text-xl font-bold text-gray-400 mb-4">登场人物</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {sceneCharacters.map(char => {
                         // 判断是否是用户拥有的角色

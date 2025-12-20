@@ -35,7 +35,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
-    const [settingsTab, setSettingsTab] = useState<'general' | 'models' | 'third-party'>('models');
+    const [settingsTab, setSettingsTab] = useState<'general' | 'models'>('models');
     
     // CRUD State
     const [viewMode, setViewMode] = useState<'list' | 'edit' | 'create'>('list');
@@ -92,40 +92,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         syncButtonEnabled: false // 默认不显示笔记同步按钮
     });
     const [isLoadingNotionConfig, setIsLoadingNotionConfig] = useState(false);
-    
-    // 微信配置状态
-    const [wechatConfig, setWechatConfig] = useState({
-        appId: '',
-        appSecret: '',
-        redirectUri: 'http://localhost:8081/api/wechat/callback'
-    });
-    const [isLoadingWechatConfig, setIsLoadingWechatConfig] = useState(false);
-    
-    // 微信支付配置状态
-    const [wechatPayConfig, setWechatPayConfig] = useState({
-        appId: '',
-        mchId: '',
-        apiKey: '',
-        apiV3Key: '',
-        certPath: '',
-        notifyUrl: ''
-    });
-    const [isLoadingWechatPayConfig, setIsLoadingWechatPayConfig] = useState(false);
-    
-    // 支付宝配置状态
-    const [alipayConfig, setAlipayConfig] = useState({
-        appId: '',
-        privateKey: '',
-        publicKey: '',
-        gatewayUrl: 'https://openapi.alipay.com/gateway.do',
-        notifyUrl: '',
-        returnUrl: ''
-    });
-    const [isLoadingAlipayConfig, setIsLoadingAlipayConfig] = useState(false);
-    
-    // 引导配置链接
-    const [guideConfigLink, setGuideConfigLink] = useState('');
-    const [isLoadingGuideLink, setIsLoadingGuideLink] = useState(false);
     
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
@@ -262,10 +228,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getEmailConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getWechatPayConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getAlipayConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getGuideConfigLink(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -282,13 +244,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const emailConfigData = results[5].status === 'fulfilled' && results[5].value ? results[5].value : null;
             const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
             const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
-            const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
-            const wechatPayConfigData = results[9].status === 'fulfilled' && results[9].value ? results[9].value : null;
-            const alipayConfigData = results[10].status === 'fulfilled' && results[10].value ? results[10].value : null;
-            const guideLinkData = results[11].status === 'fulfilled' && results[11].value ? results[11].value : null;
-            const plans = results[12].status === 'fulfilled' ? results[12].value : [];
-            const scripts = results[13].status === 'fulfilled' ? results[13].value : [];
-            const mainStories = results[14].status === 'fulfilled' ? results[14].value : [];
+            const plans = results[8].status === 'fulfilled' ? results[8].value : [];
+            const scripts = results[9].status === 'fulfilled' ? results[9].value : [];
+            const mainStories = results[10].status === 'fulfilled' ? results[10].value : [];
             
             console.log("[AdminScreen] 邮箱验证配置加载结果:", {
                 emailVerificationConfig,
@@ -352,14 +310,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     clientSecret: notionConfigData.clientSecret || '',
                     redirectUri: notionConfigData.redirectUri || 'http://localhost:8081/api/notes/notion/callback',
                     syncButtonEnabled: notionConfigData.syncButtonEnabled !== undefined ? notionConfigData.syncButtonEnabled : false
-                });
-            }
-            if (wechatConfigData) {
-                console.log("[AdminScreen] 加载微信配置:", wechatConfigData);
-                setWechatConfig({
-                    appId: wechatConfigData.appId || '',
-                    appSecret: wechatConfigData.appSecret === '******' ? '' : (wechatConfigData.appSecret || ''), // 如果是******则保持为空，表示已保存但未显示
-                    redirectUri: wechatConfigData.redirectUri || 'http://localhost:8081/api/wechat/callback'
                 });
             } else {
                 console.log("[AdminScreen] 未加载到 Notion 配置，使用默认值");
@@ -3035,7 +2985,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             <div className="flex border-b border-slate-700 mb-6">
                                 <button onClick={() => setSettingsTab('models')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'models' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>AI 模型接入</button>
                                 <button onClick={() => setSettingsTab('general')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'general' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>通用与策略</button>
-                                <button onClick={() => setSettingsTab('third-party')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'third-party' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>第三方登录与支付</button>
                             </div>
 
                             {settingsTab === 'models' && (
@@ -3178,9 +3127,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     <ConfigSection title="微信开放平台 (WeChat Open Platform)">
                                         <div className="space-y-4">
                                             <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                                <p className="text-xs text-slate-400 mb-3">
-                                                    用于微信扫码登录功能。需要在微信开放平台创建网站应用并获取 AppID 和 AppSecret。
-                                                </p>
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <p className="text-xs text-slate-400">
+                                                        用于微信扫码登录功能。需要在微信开放平台创建网站应用并获取 AppID 和 AppSecret。
+                                                    </p>
+                                                    <a 
+                                                        href="https://open.weixin.qq.com/" 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="ml-2 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                                                    >
+                                                        <span>🔗</span>
+                                                        申请 AppID
+                                                    </a>
+                                                </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <InputGroup label="AppID">
                                                         <TextInput 
@@ -3237,6 +3197,234 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                         className="bg-indigo-600 hover:bg-indigo-700"
                                                     >
                                                         {isLoadingWechatConfig ? '保存中...' : '保存配置'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ConfigSection>
+
+                                    {/* 微信支付配置 */}
+                                    <ConfigSection title="微信支付 (WeChat Pay)">
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                                <p className="text-xs text-slate-400 mb-3">
+                                                    配置微信支付相关参数。需要在微信支付商户平台获取相关信息。
+                                                </p>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <InputGroup label="AppID">
+                                                        <TextInput 
+                                                            value={wechatPayConfig.appId} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, appId: e.target.value})} 
+                                                            placeholder="微信支付 AppID"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="商户号 (MchID)">
+                                                        <TextInput 
+                                                            value={wechatPayConfig.mchId} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, mchId: e.target.value})} 
+                                                            placeholder="商户号"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="API Key">
+                                                        <TextInput 
+                                                            type="password" 
+                                                            value={wechatPayConfig.apiKey} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, apiKey: e.target.value})} 
+                                                            placeholder="API Key（已加密显示）"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="API V3 Key">
+                                                        <TextInput 
+                                                            type="password" 
+                                                            value={wechatPayConfig.apiV3Key} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, apiV3Key: e.target.value})} 
+                                                            placeholder="API V3 Key（已加密显示）"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="证书路径 (Cert Path)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={wechatPayConfig.certPath} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, certPath: e.target.value})} 
+                                                            placeholder="/path/to/cert.pem"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="支付通知地址 (Notify URL)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={wechatPayConfig.notifyUrl} 
+                                                            onChange={e => setWechatPayConfig({...wechatPayConfig, notifyUrl: e.target.value})} 
+                                                            placeholder="http://yourdomain.com/api/payment/wechat/notify"
+                                                        />
+                                                    </InputGroup>
+                                                </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (!adminToken) return;
+                                                            setIsLoadingWechatPayConfig(true);
+                                                            try {
+                                                                const configToSave: { appId?: string; mchId?: string; apiKey?: string; apiV3Key?: string; certPath?: string; notifyUrl?: string } = {
+                                                                    appId: wechatPayConfig.appId,
+                                                                    mchId: wechatPayConfig.mchId,
+                                                                    certPath: wechatPayConfig.certPath,
+                                                                    notifyUrl: wechatPayConfig.notifyUrl
+                                                                };
+                                                                // 只有非空时才更新密钥
+                                                                if (wechatPayConfig.apiKey && wechatPayConfig.apiKey.trim() !== '' && wechatPayConfig.apiKey !== '******') {
+                                                                    configToSave.apiKey = wechatPayConfig.apiKey;
+                                                                }
+                                                                if (wechatPayConfig.apiV3Key && wechatPayConfig.apiV3Key.trim() !== '' && wechatPayConfig.apiV3Key !== '******') {
+                                                                    configToSave.apiV3Key = wechatPayConfig.apiV3Key;
+                                                                }
+                                                                await adminApi.config.setWechatPayConfig(configToSave, adminToken);
+                                                                showAlert('保存成功', '微信支付配置已保存', 'success');
+                                                                // 保存成功后，清空密钥输入框
+                                                                setWechatPayConfig({...wechatPayConfig, apiKey: '', apiV3Key: ''});
+                                                            } catch (err: any) {
+                                                                console.error('保存微信支付配置失败:', err);
+                                                                showAlert('保存失败', err.message || '未知错误', 'error');
+                                                            } finally {
+                                                                setIsLoadingWechatPayConfig(false);
+                                                            }
+                                                        }}
+                                                        disabled={isLoadingWechatPayConfig}
+                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                    >
+                                                        {isLoadingWechatPayConfig ? '保存中...' : '保存配置'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ConfigSection>
+
+                                    {/* 支付宝配置 */}
+                                    <ConfigSection title="支付宝 (Alipay)">
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                                <p className="text-xs text-slate-400 mb-3">
+                                                    配置支付宝支付相关参数。需要在支付宝开放平台获取相关信息。
+                                                </p>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <InputGroup label="AppID">
+                                                        <TextInput 
+                                                            value={alipayConfig.appId} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, appId: e.target.value})} 
+                                                            placeholder="支付宝 AppID"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="应用私钥 (Private Key)" className="md:col-span-2">
+                                                        <TextArea 
+                                                            value={alipayConfig.privateKey} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, privateKey: e.target.value})} 
+                                                            placeholder="应用私钥（已加密显示）"
+                                                            rows={4}
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="支付宝公钥 (Public Key)" className="md:col-span-2">
+                                                        <TextArea 
+                                                            value={alipayConfig.publicKey} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, publicKey: e.target.value})} 
+                                                            placeholder="支付宝公钥"
+                                                            rows={4}
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="网关地址 (Gateway URL)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={alipayConfig.gatewayUrl} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, gatewayUrl: e.target.value})} 
+                                                            placeholder="https://openapi.alipay.com/gateway.do"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="异步通知地址 (Notify URL)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={alipayConfig.notifyUrl} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, notifyUrl: e.target.value})} 
+                                                            placeholder="http://yourdomain.com/api/payment/alipay/notify"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="同步返回地址 (Return URL)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={alipayConfig.returnUrl} 
+                                                            onChange={e => setAlipayConfig({...alipayConfig, returnUrl: e.target.value})} 
+                                                            placeholder="http://yourdomain.com/api/payment/alipay/return"
+                                                        />
+                                                    </InputGroup>
+                                                </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (!adminToken) return;
+                                                            setIsLoadingAlipayConfig(true);
+                                                            try {
+                                                                const configToSave: { appId?: string; privateKey?: string; publicKey?: string; gatewayUrl?: string; notifyUrl?: string; returnUrl?: string } = {
+                                                                    appId: alipayConfig.appId,
+                                                                    publicKey: alipayConfig.publicKey,
+                                                                    gatewayUrl: alipayConfig.gatewayUrl,
+                                                                    notifyUrl: alipayConfig.notifyUrl,
+                                                                    returnUrl: alipayConfig.returnUrl
+                                                                };
+                                                                // 只有非空时才更新私钥
+                                                                if (alipayConfig.privateKey && alipayConfig.privateKey.trim() !== '' && alipayConfig.privateKey !== '******') {
+                                                                    configToSave.privateKey = alipayConfig.privateKey;
+                                                                }
+                                                                await adminApi.config.setAlipayConfig(configToSave, adminToken);
+                                                                showAlert('保存成功', '支付宝配置已保存', 'success');
+                                                                // 保存成功后，清空私钥输入框
+                                                                setAlipayConfig({...alipayConfig, privateKey: ''});
+                                                            } catch (err: any) {
+                                                                console.error('保存支付宝配置失败:', err);
+                                                                showAlert('保存失败', err.message || '未知错误', 'error');
+                                                            } finally {
+                                                                setIsLoadingAlipayConfig(false);
+                                                            }
+                                                        }}
+                                                        disabled={isLoadingAlipayConfig}
+                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                    >
+                                                        {isLoadingAlipayConfig ? '保存中...' : '保存配置'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ConfigSection>
+
+                                    {/* 引导配置链接 */}
+                                    <ConfigSection title="引导配置链接 (Guide Configuration Link)">
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                                <p className="text-xs text-slate-400 mb-3">
+                                                    配置引导链接，用于在配置页面显示帮助文档或教程链接。
+                                                </p>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <InputGroup label="引导链接 (Guide Link)">
+                                                        <TextInput 
+                                                            value={guideConfigLink} 
+                                                            onChange={e => setGuideConfigLink(e.target.value)} 
+                                                            placeholder="https://example.com/guide"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            配置帮助文档或教程的链接地址
+                                                        </p>
+                                                    </InputGroup>
+                                                </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (!adminToken) return;
+                                                            setIsLoadingGuideLink(true);
+                                                            try {
+                                                                await adminApi.config.setGuideConfigLink(guideConfigLink, adminToken);
+                                                                showAlert('保存成功', '引导配置链接已保存', 'success');
+                                                            } catch (err: any) {
+                                                                console.error('保存引导配置链接失败:', err);
+                                                                showAlert('保存失败', err.message || '未知错误', 'error');
+                                                            } finally {
+                                                                setIsLoadingGuideLink(false);
+                                                            }
+                                                        }}
+                                                        disabled={isLoadingGuideLink}
+                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                    >
+                                                        {isLoadingGuideLink ? '保存中...' : '保存配置'}
                                                     </Button>
                                                 </div>
                                             </div>
