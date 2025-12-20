@@ -7,5 +7,6 @@ export { MainStoriesManagement } from './MainStoriesManagement';
 export { ScenarioNodeFlow } from './ScenarioNodeFlow';
 export { InviteCodesManagement } from './InviteCodesManagement';
 export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
+export { EmailConfigManagement } from './EmailConfigManagement';
 
 
