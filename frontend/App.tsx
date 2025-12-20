@@ -117,15 +117,57 @@ const AppContent: React.FC = () => {
     }
   }, [gameState, dispatch]); 
   
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showEraCreator, setShowEraCreator] = useState(false);
+  // 使用 Modal 状态管理 Hook
+  const {
+    showSettingsModal,
+    showEraCreator,
+    showCharacterCreator,
+    showMainStoryEditor,
+    showMailbox,
+    showEraMemory,
+    showRecycleBin,
+    showMembershipModal,
+    showLoginModal,
+    showInitializationWizard,
+    setShowSettingsModal,
+    setShowEraCreator,
+    setShowCharacterCreator,
+    setShowMainStoryEditor,
+    setShowMailbox,
+    setShowEraMemory,
+    setShowRecycleBin,
+    setShowMembershipModal,
+    setShowLoginModal,
+    setShowInitializationWizard,
+    openSettingsModal,
+    closeSettingsModal,
+    openEraCreator,
+    closeEraCreator,
+    openCharacterCreator,
+    closeCharacterCreator,
+    openMainStoryEditor,
+    closeMainStoryEditor,
+    openMailbox,
+    closeMailbox,
+    openEraMemory,
+    closeEraMemory,
+    openRecycleBin,
+    closeRecycleBin,
+    openMembershipModal,
+    closeMembershipModal,
+    openLoginModal,
+    closeLoginModal,
+    openInitializationWizard,
+    closeInitializationWizard,
+  } = useModalState();
+  
   const [editingScene, setEditingScene] = useState<WorldScene | null>(null);
   
   // 使用 Handler Hooks
   const { handleSaveEra: handleSaveEraHook, handleDeleteEra: handleDeleteEraHook } = useEraHandlers(
     editingScene,
     () => {
-      setShowEraCreator(false);
+      closeEraCreator();
       setEditingScene(null);
     }
   );
@@ -152,8 +194,6 @@ const AppContent: React.FC = () => {
     handleExploreWithEntry: handleExploreWithEntryHook,
   } = useNavigationHandlers();
   
-  const [showCharacterCreator, setShowCharacterCreator] = useState(false);
-  const [showMainStoryEditor, setShowMainStoryEditor] = useState(false);
   const [editingMainStory, setEditingMainStory] = useState<Character | null>(null);
   const [editingMainStorySceneId, setEditingMainStorySceneId] = useState<string | null>(null);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
@@ -164,7 +204,7 @@ const AppContent: React.FC = () => {
     editingCharacterSceneId,
     editingMainStory,
     () => {
-      setShowCharacterCreator(false);
+      closeCharacterCreator();
       setEditingCharacter(null);
       setEditingCharacterSceneId(null);
       setEditingMainStory(null);
@@ -172,14 +212,8 @@ const AppContent: React.FC = () => {
     }
   );
 
-  const [showMailbox, setShowMailbox] = useState(false);
-  
-  const [showEraMemory, setShowEraMemory] = useState(false);
   const [memoryScene, setMemoryScene] = useState<WorldScene | null>(null);
-  const [showRecycleBin, setShowRecycleBin] = useState(false);
-  const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [currentMembership, setCurrentMembership] = useState<any>(null);
-  const [showInitializationWizard, setShowInitializationWizard] = useState(false);
   const [initializationData, setInitializationData] = useState<{ token: string; userId: number; worldId: number } | null>(null);
   // 标记是否已经处理过初始化向导，防止在 entryPoint 渲染后被错误触发
   const initializationWizardProcessedRef = useRef(false);
