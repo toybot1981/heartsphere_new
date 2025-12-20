@@ -156,21 +156,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
       // 订阅计划管理状态（从 useAdminData hook 获取）
 
     // Token 检查和过期处理已由 useAdminAuth hook 处理
-      // 如果需要本地版本，使用 checkAndHandleTokenErrorLocal
-      const checkAndHandleTokenErrorLocal = (error: any): boolean => {
-        const errorMessage = error?.message || '';
-        if (errorMessage.includes('未授权') || 
-            errorMessage.includes('token') || 
-            errorMessage.includes('Token') || 
-            errorMessage.includes('JWT') ||
-            errorMessage.includes('无效的管理员token')) {
-            console.warn('[AdminScreen] 检测到 token 验证失败，清除认证状态');
-            handleLogout();
-            showAlert('登录已过期，请重新登录', '登录过期', 'warning');
-            return true;
-        }
-        return false;
-    };
 
     // loadSystemData 现在由 hooks 处理，这里保留一个包装函数用于向后兼容
     const loadSystemData = async (token: string) => {
