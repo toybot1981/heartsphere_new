@@ -935,6 +935,11 @@ const AppContent: React.FC = () => {
           if (newSelectedSceneId !== gameState.selectedSceneId) {
             dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: newSelectedSceneId });
           }
+          
+          // 登录成功后，确保停留在 entryPoint 页面（而不是回到欢迎页面）
+          if (gameState.currentScreen === 'profileSetup' || gameState.currentScreen === 'welcome' || !gameState.currentScreen) {
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+          }
         } catch (err: any) {
           console.error('自动登录或获取日记失败:', err.message || err);
           // token无效，清除

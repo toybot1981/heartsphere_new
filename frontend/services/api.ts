@@ -652,6 +652,57 @@ export const adminApi = {
         },
       });
     },
+    getWechatPayConfig: (token: string) => {
+      return request<{ appId: string; mchId: string; apiKey: string; apiV3Key: string; certPath: string; notifyUrl: string }>('/admin/system/config/wechat-pay', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    setWechatPayConfig: (config: { appId?: string; mchId?: string; apiKey?: string; apiV3Key?: string; certPath?: string; notifyUrl?: string }, token: string) => {
+      return request<{ appId: string; mchId: string; apiKey: string; apiV3Key: string; certPath: string; notifyUrl: string }>('/admin/system/config/wechat-pay', {
+        method: 'PUT',
+        body: JSON.stringify(config),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    getAlipayConfig: (token: string) => {
+      return request<{ appId: string; privateKey: string; publicKey: string; gatewayUrl: string; notifyUrl: string; returnUrl: string }>('/admin/system/config/alipay', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    setAlipayConfig: (config: { appId?: string; privateKey?: string; publicKey?: string; gatewayUrl?: string; notifyUrl?: string; returnUrl?: string }, token: string) => {
+      return request<{ appId: string; privateKey: string; publicKey: string; gatewayUrl: string; notifyUrl: string; returnUrl: string }>('/admin/system/config/alipay', {
+        method: 'PUT',
+        body: JSON.stringify(config),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    getGuideConfigLink: (token: string) => {
+      return request<{ link: string }>('/admin/system/config/guide-link', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    setGuideConfigLink: (link: string, token: string) => {
+      return request<{ link: string }>('/admin/system/config/guide-link', {
+        method: 'PUT',
+        body: JSON.stringify({ link }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
   },
 
   // 系统资源管理

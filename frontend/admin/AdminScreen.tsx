@@ -2985,6 +2985,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             <div className="flex border-b border-slate-700 mb-6">
                                 <button onClick={() => setSettingsTab('models')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'models' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>AI 模型接入</button>
                                 <button onClick={() => setSettingsTab('general')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'general' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>通用与策略</button>
+                                <button onClick={() => setSettingsTab('third-party')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'third-party' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>第三方登录与支付</button>
                             </div>
 
                             {settingsTab === 'models' && (
