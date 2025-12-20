@@ -123,10 +123,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     });
     const [isLoadingAlipayConfig, setIsLoadingAlipayConfig] = useState(false);
     
-    // 引导配置链接
-    const [guideConfigLink, setGuideConfigLink] = useState('');
-    const [isLoadingGuideLink, setIsLoadingGuideLink] = useState(false);
-    
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
     const [generateExpiresAt, setGenerateExpiresAt] = useState('');
@@ -265,7 +261,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getWechatPayConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getAlipayConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getGuideConfigLink(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -285,10 +280,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
             const wechatPayConfigData = results[9].status === 'fulfilled' && results[9].value ? results[9].value : null;
             const alipayConfigData = results[10].status === 'fulfilled' && results[10].value ? results[10].value : null;
-            const guideLinkData = results[11].status === 'fulfilled' && results[11].value ? results[11].value : null;
-            const plans = results[12].status === 'fulfilled' ? results[12].value : [];
-            const scripts = results[13].status === 'fulfilled' ? results[13].value : [];
-            const mainStories = results[14].status === 'fulfilled' ? results[14].value : [];
+            const plans = results[11].status === 'fulfilled' ? results[11].value : [];
+            const scripts = results[12].status === 'fulfilled' ? results[12].value : [];
+            const mainStories = results[13].status === 'fulfilled' ? results[13].value : [];
             
             console.log("[AdminScreen] 邮箱验证配置加载结果:", {
                 emailVerificationConfig,
@@ -385,10 +379,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     notifyUrl: alipayConfigData.notifyUrl || '',
                     returnUrl: alipayConfigData.returnUrl || ''
                 });
-            }
-            if (guideLinkData) {
-                console.log("[AdminScreen] 加载引导配置链接:", guideLinkData);
-                setGuideConfigLink(guideLinkData.link || '');
             }
             console.log("[AdminScreen] 系统数据状态已更新，邀请码数量:", inviteCodesArray.length);
         } catch (error: any) {
@@ -3284,9 +3274,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     <ConfigSection title="微信支付 (WeChat Pay)">
                                         <div className="space-y-4">
                                             <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                                <p className="text-xs text-slate-400 mb-3">
-                                                    配置微信支付相关参数。需要在微信支付商户平台获取相关信息。
-                                                </p>
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <p className="text-xs text-slate-400">
+                                                        配置微信支付相关参数。需要在微信支付商户平台获取相关信息。
+                                                    </p>
+                                                    <a 
+                                                        href="https://pay.weixin.qq.com/" 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="ml-2 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                                                    >
+                                                        <span>🔗</span>
+                                                        申请商户号
+                                                    </a>
+                                                </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <InputGroup label="AppID">
                                                         <TextInput 
@@ -3377,9 +3378,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     <ConfigSection title="支付宝 (Alipay)">
                                         <div className="space-y-4">
                                             <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                                <p className="text-xs text-slate-400 mb-3">
-                                                    配置支付宝支付相关参数。需要在支付宝开放平台获取相关信息。
-                                                </p>
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <p className="text-xs text-slate-400">
+                                                        配置支付宝支付相关参数。需要在支付宝开放平台获取相关信息。
+                                                    </p>
+                                                    <a 
+                                                        href="https://open.alipay.com/" 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="ml-2 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                                                    >
+                                                        <span>🔗</span>
+                                                        申请 AppID
+                                                    </a>
+                                                </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <InputGroup label="AppID">
                                                         <TextInput 
@@ -3458,50 +3470,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                         className="bg-indigo-600 hover:bg-indigo-700"
                                                     >
                                                         {isLoadingAlipayConfig ? '保存中...' : '保存配置'}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </ConfigSection>
-
-                                    {/* 引导配置链接 */}
-                                    <ConfigSection title="引导配置链接 (Guide Configuration Link)">
-                                        <div className="space-y-4">
-                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                                <p className="text-xs text-slate-400 mb-3">
-                                                    配置引导链接，用于在配置页面显示帮助文档或教程链接。
-                                                </p>
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    <InputGroup label="引导链接 (Guide Link)">
-                                                        <TextInput 
-                                                            value={guideConfigLink} 
-                                                            onChange={e => setGuideConfigLink(e.target.value)} 
-                                                            placeholder="https://example.com/guide"
-                                                        />
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            配置帮助文档或教程的链接地址
-                                                        </p>
-                                                    </InputGroup>
-                                                </div>
-                                                <div className="mt-4 flex justify-end">
-                                                    <Button
-                                                        onClick={async () => {
-                                                            if (!adminToken) return;
-                                                            setIsLoadingGuideLink(true);
-                                                            try {
-                                                                await adminApi.config.setGuideConfigLink(guideConfigLink, adminToken);
-                                                                showAlert('保存成功', '引导配置链接已保存', 'success');
-                                                            } catch (err: any) {
-                                                                console.error('保存引导配置链接失败:', err);
-                                                                showAlert('保存失败', err.message || '未知错误', 'error');
-                                                            } finally {
-                                                                setIsLoadingGuideLink(false);
-                                                            }
-                                                        }}
-                                                        disabled={isLoadingGuideLink}
-                                                        className="bg-indigo-600 hover:bg-indigo-700"
-                                                    >
-                                                        {isLoadingGuideLink ? '保存中...' : '保存配置'}
                                                     </Button>
                                                 </div>
                                             </div>
