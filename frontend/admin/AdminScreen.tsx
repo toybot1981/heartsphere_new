@@ -35,7 +35,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
-    const [settingsTab, setSettingsTab] = useState<'general' | 'models'>('models');
+    const [settingsTab, setSettingsTab] = useState<'general' | 'models' | 'third-party'>('models');
     
     // CRUD State
     const [viewMode, setViewMode] = useState<'list' | 'edit' | 'create'>('list');
@@ -92,6 +92,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         syncButtonEnabled: false // 默认不显示笔记同步按钮
     });
     const [isLoadingNotionConfig, setIsLoadingNotionConfig] = useState(false);
+    
+    // 微信配置状态
+    const [wechatConfig, setWechatConfig] = useState({
+        appId: '',
+        appSecret: '',
+        redirectUri: 'http://localhost:8081/api/wechat/callback'
+    });
+    const [isLoadingWechatConfig, setIsLoadingWechatConfig] = useState(false);
     
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
@@ -228,6 +236,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getEmailConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -244,9 +253,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const emailConfigData = results[5].status === 'fulfilled' && results[5].value ? results[5].value : null;
             const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
             const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
-            const plans = results[8].status === 'fulfilled' ? results[8].value : [];
-            const scripts = results[9].status === 'fulfilled' ? results[9].value : [];
-            const mainStories = results[10].status === 'fulfilled' ? results[10].value : [];
+            const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
+            const plans = results[9].status === 'fulfilled' ? results[9].value : [];
+            const scripts = results[10].status === 'fulfilled' ? results[10].value : [];
+            const mainStories = results[11].status === 'fulfilled' ? results[11].value : [];
             
             console.log("[AdminScreen] 邮箱验证配置加载结果:", {
                 emailVerificationConfig,
@@ -310,6 +320,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     clientSecret: notionConfigData.clientSecret || '',
                     redirectUri: notionConfigData.redirectUri || 'http://localhost:8081/api/notes/notion/callback',
                     syncButtonEnabled: notionConfigData.syncButtonEnabled !== undefined ? notionConfigData.syncButtonEnabled : false
+                });
+            }
+            if (wechatConfigData) {
+                console.log("[AdminScreen] 加载微信配置:", wechatConfigData);
+                setWechatConfig({
+                    appId: wechatConfigData.appId || '',
+                    appSecret: wechatConfigData.appSecret === '******' ? '' : (wechatConfigData.appSecret || ''), // 如果是******则保持为空，表示已保存但未显示
+                    redirectUri: wechatConfigData.redirectUri || 'http://localhost:8081/api/wechat/callback'
                 });
             } else {
                 console.log("[AdminScreen] 未加载到 Notion 配置，使用默认值");
@@ -2985,6 +3003,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             <div className="flex border-b border-slate-700 mb-6">
                                 <button onClick={() => setSettingsTab('models')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'models' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>AI 模型接入</button>
                                 <button onClick={() => setSettingsTab('general')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'general' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>通用与策略</button>
+                                <button onClick={() => setSettingsTab('third-party')} className={`pb-3 px-4 text-sm font-bold ${settingsTab === 'third-party' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-white'}`}>第三方登录与支付</button>
                             </div>
 
                             {settingsTab === 'models' && (
@@ -3118,6 +3137,79 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                             </InputGroup>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {settingsTab === 'third-party' && (
+                                <div className="space-y-8">
+                                    {/* 微信开放平台配置 */}
+                                    <ConfigSection title="微信开放平台 (WeChat Open Platform)">
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                                <p className="text-xs text-slate-400 mb-3">
+                                                    用于微信扫码登录功能。需要在微信开放平台创建网站应用并获取 AppID 和 AppSecret。
+                                                </p>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <InputGroup label="AppID">
+                                                        <TextInput 
+                                                            value={wechatConfig.appId} 
+                                                            onChange={e => setWechatConfig({...wechatConfig, appId: e.target.value})} 
+                                                            placeholder="wx1234567890abcdef"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="AppSecret">
+                                                        <TextInput 
+                                                            type="password" 
+                                                            value={wechatConfig.appSecret} 
+                                                            onChange={e => setWechatConfig({...wechatConfig, appSecret: e.target.value})} 
+                                                            placeholder="输入 AppSecret（已加密显示）"
+                                                        />
+                                                    </InputGroup>
+                                                    <InputGroup label="回调地址 (Redirect URI)" className="md:col-span-2">
+                                                        <TextInput 
+                                                            value={wechatConfig.redirectUri} 
+                                                            onChange={e => setWechatConfig({...wechatConfig, redirectUri: e.target.value})} 
+                                                            placeholder="http://localhost:8081/api/wechat/callback"
+                                                        />
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            在微信开放平台配置的回调地址，需要与后台接口路径一致
+                                                        </p>
+                                                    </InputGroup>
+                                                </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (!adminToken) return;
+                                                            setIsLoadingWechatConfig(true);
+                                                            try {
+                                                                const configToSave: { appId?: string; appSecret?: string; redirectUri?: string } = {
+                                                                    appId: wechatConfig.appId,
+                                                                    redirectUri: wechatConfig.redirectUri
+                                                                };
+                                                                // 只有非空时才更新 AppSecret
+                                                                if (wechatConfig.appSecret && wechatConfig.appSecret.trim() !== '') {
+                                                                    configToSave.appSecret = wechatConfig.appSecret;
+                                                                }
+                                                                await adminApi.config.setWechatConfig(configToSave, adminToken);
+                                                                showAlert('保存成功', '微信配置已保存', 'success');
+                                                                // 保存成功后，清空 AppSecret 输入框（因为后端返回的是******）
+                                                                setWechatConfig({...wechatConfig, appSecret: ''});
+                                                            } catch (err: any) {
+                                                                console.error('保存微信配置失败:', err);
+                                                                showAlert('保存失败', err.message || '未知错误', 'error');
+                                                            } finally {
+                                                                setIsLoadingWechatConfig(false);
+                                                            }
+                                                        }}
+                                                        disabled={isLoadingWechatConfig}
+                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                    >
+                                                        {isLoadingWechatConfig ? '保存中...' : '保存配置'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ConfigSection>
                                 </div>
                             )}
                         </div>

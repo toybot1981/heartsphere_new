@@ -359,7 +359,7 @@ public class AdminSystemDataController {
           validateAdmin(authHeader);
           Map<String, Object> config = new HashMap<>();
           config.put("appId", systemConfigService.getWechatAppId() != null ? systemConfigService.getWechatAppId() : "");
-          config.put("appSecret", systemConfigService.getWechatAppSecret() != null ? systemConfigService.getWechatAppSecret() : "");
+          config.put("appSecret", systemConfigService.getWechatAppSecret() != null ? "******" : ""); // 密码不返回明文
           config.put("redirectUri", systemConfigService.getWechatRedirectUri());
           return ResponseEntity.ok(config);
       }
@@ -376,8 +376,8 @@ public class AdminSystemDataController {
           if (appId != null) {
               systemConfigService.setWechatAppId(appId);
           }
-          if (appSecret != null) {
-              systemConfigService.setWechatAppSecret(appSecret);
+          if (appSecret != null && !appSecret.isEmpty()) {
+              systemConfigService.setWechatAppSecret(appSecret); // 只有非空才更新
           }
           if (redirectUri != null) {
               systemConfigService.setWechatRedirectUri(redirectUri);
@@ -385,7 +385,7 @@ public class AdminSystemDataController {
           
           Map<String, Object> response = new HashMap<>();
           response.put("appId", systemConfigService.getWechatAppId() != null ? systemConfigService.getWechatAppId() : "");
-          response.put("appSecret", systemConfigService.getWechatAppSecret() != null ? systemConfigService.getWechatAppSecret() : "");
+          response.put("appSecret", "******"); // 密码不返回明文
           response.put("redirectUri", systemConfigService.getWechatRedirectUri());
           return ResponseEntity.ok(response);
       }

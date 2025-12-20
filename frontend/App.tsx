@@ -51,6 +51,7 @@ import { useMailHandlers } from './hooks/useMailHandlers';
 import { useMirrorHandlers } from './hooks/useMirrorHandlers';
 import { checkIsMobile } from './utils/deviceDetection';
 import { SceneSelectionScreen } from './components/screens/SceneSelectionScreen';
+import { CharacterSelectionScreen } from './components/screens/CharacterSelectionScreen';
 
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
