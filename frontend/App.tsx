@@ -52,6 +52,7 @@ import { useMirrorHandlers } from './hooks/useMirrorHandlers';
 import { checkIsMobile } from './utils/deviceDetection';
 import { SceneSelectionScreen } from './components/screens/SceneSelectionScreen';
 import { CharacterSelectionScreen } from './components/screens/CharacterSelectionScreen';
+import { ProfileSetupScreen } from './components/screens/ProfileSetupScreen';
 
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
@@ -216,9 +217,6 @@ const AppContent: React.FC = () => {
       initializationWizardProcessedRef.current = false;
     }
   }, [showInitializationWizard, initializationData, gameState.currentScreen]);
-
-  const [profileNickname, setProfileNickname] = useState('');
-  const [showGuestNicknameModal, setShowGuestNicknameModal] = useState(false);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const pendingActionRef = useRef<() => void>(() => {});
@@ -1025,10 +1023,9 @@ const AppContent: React.FC = () => {
     // loadGameData();
   };
 
-  const handleProfileSubmit = (): void => {
-    if(!profileNickname.trim()) return;
+  const handleGuestEnter = (nickname: string): void => {
     const profile = { 
-        nickname: profileNickname, 
+        nickname: nickname, 
         avatarUrl: '',
         isGuest: true, 
         id: `guest_${Date.now()}`
@@ -1409,11 +1406,9 @@ const AppContent: React.FC = () => {
               onLoginSuccess={handleLoginSuccess}
               onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
               initialNickname={
-                gameState.currentScreen === 'profileSetup' && profileNickname.trim()
-                  ? profileNickname.trim()
-                  : gameState.userProfile?.isGuest 
-                    ? gameState.userProfile.nickname 
-                    : undefined
+                gameState.userProfile?.isGuest 
+                  ? gameState.userProfile.nickname 
+                  : undefined
               }
             />
           )}
@@ -1593,78 +1588,10 @@ const AppContent: React.FC = () => {
 
 
       {gameState.currentScreen === 'profileSetup' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 p-6">
-           <div className="max-w-md w-full text-center space-y-8">
-               <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Welcome to {APP_TITLE}</h1>
-               <p className="text-gray-400">选择你的进入方式</p>
-               <div className="space-y-3">
-                 <Button 
-                   fullWidth 
-                   onClick={() => setShowGuestNicknameModal(true)}
-                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
-                 >
-                   以访客身份进入
-                 </Button>
-                 <Button 
-                   fullWidth 
-                   variant="secondary" 
-                   onClick={() => setShowLoginModal(true)}
-                   className="bg-indigo-600 hover:bg-indigo-500 text-white"
-                 >
-                   登录账户
-                 </Button>
-               </div>
-               <p className="text-xs text-gray-600 mt-4">访客模式可快速体验，登录账户可同步数据。</p>
-           </div>
-        </div>
-      )}
-
-      {/* 访客昵称输入对话框 */}
-      {showGuestNicknameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">访客体验</h3>
-            <p className="text-sm text-slate-400 mb-6">输入你的昵称，以访客身份进入体验</p>
-            <input
-              type="text"
-              value={profileNickname}
-              onChange={(e) => setProfileNickname(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && profileNickname.trim()) {
-                  handleProfileSubmit();
-                  setShowGuestNicknameModal(false);
-                }
-              }}
-              placeholder="请输入昵称"
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-4"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <Button
-                onClick={() => {
-                  if (profileNickname.trim()) {
-                    handleProfileSubmit();
-                    setShowGuestNicknameModal(false);
-                  }
-                }}
-                disabled={!profileNickname.trim()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
-              >
-                进入
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowGuestNicknameModal(false);
-                  setProfileNickname('');
-                }}
-                variant="ghost"
-                className="flex-1"
-              >
-                取消
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ProfileSetupScreen
+          onGuestEnter={handleGuestEnter}
+          onLogin={() => setShowLoginModal(true)}
+        />
       )}
 
       {gameState.currentScreen === 'entryPoint' && (() => {
