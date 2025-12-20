@@ -93,6 +93,40 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     });
     const [isLoadingNotionConfig, setIsLoadingNotionConfig] = useState(false);
     
+    // 微信配置状态
+    const [wechatConfig, setWechatConfig] = useState({
+        appId: '',
+        appSecret: '',
+        redirectUri: 'http://localhost:8081/api/wechat/callback'
+    });
+    const [isLoadingWechatConfig, setIsLoadingWechatConfig] = useState(false);
+    
+    // 微信支付配置状态
+    const [wechatPayConfig, setWechatPayConfig] = useState({
+        appId: '',
+        mchId: '',
+        apiKey: '',
+        apiV3Key: '',
+        certPath: '',
+        notifyUrl: ''
+    });
+    const [isLoadingWechatPayConfig, setIsLoadingWechatPayConfig] = useState(false);
+    
+    // 支付宝配置状态
+    const [alipayConfig, setAlipayConfig] = useState({
+        appId: '',
+        privateKey: '',
+        publicKey: '',
+        gatewayUrl: 'https://openapi.alipay.com/gateway.do',
+        notifyUrl: '',
+        returnUrl: ''
+    });
+    const [isLoadingAlipayConfig, setIsLoadingAlipayConfig] = useState(false);
+    
+    // 引导配置链接
+    const [guideConfigLink, setGuideConfigLink] = useState('');
+    const [isLoadingGuideLink, setIsLoadingGuideLink] = useState(false);
+    
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
     const [generateExpiresAt, setGenerateExpiresAt] = useState('');

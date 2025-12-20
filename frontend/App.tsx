@@ -936,8 +936,9 @@ const AppContent: React.FC = () => {
             dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: newSelectedSceneId });
           }
           
-          // 登录成功后，确保停留在 entryPoint 页面（而不是回到欢迎页面）
-          if (gameState.currentScreen === 'profileSetup' || gameState.currentScreen === 'welcome' || !gameState.currentScreen) {
+          // 登录成功后，确保停留在 entryPoint 页面（而不是回到欢迎页面或其他页面）
+          // 如果当前在 profileSetup 或没有设置页面，则跳转到 entryPoint
+          if (gameState.currentScreen === 'profileSetup' || !gameState.currentScreen) {
             dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
           }
         } catch (err: any) {

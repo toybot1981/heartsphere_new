@@ -68,9 +68,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         type: 'BATCH_UPDATE',
         payload: {
           ...loadedState,
-          // 如果用户已登录，确保停留在 entryPoint，而不是回到欢迎页面或其他页面
+          // 如果用户已登录，确保停留在 entryPoint，而不是回到 profileSetup 或其他页面
           currentScreen: loadedState.userProfile 
-            ? (loadedState.currentScreen === 'welcome' || loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen 
+            ? (loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen 
                 ? 'entryPoint' 
                 : loadedState.currentScreen)
             : 'profileSetup',
