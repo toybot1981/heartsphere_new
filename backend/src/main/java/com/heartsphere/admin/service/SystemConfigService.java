@@ -2,12 +2,17 @@ package com.heartsphere.admin.service;
 
 import com.heartsphere.admin.entity.SystemConfig;
 import com.heartsphere.admin.repository.SystemConfigRepository;
+import com.heartsphere.admin.util.ConfigKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.logging.Logger;
 
+/**
+ * 系统配置服务
+ * 提供统一的配置管理接口，支持String和Boolean类型的配置
+ */
 @Service
 public class SystemConfigService {
 
@@ -16,49 +21,109 @@ public class SystemConfigService {
     @Autowired
     private SystemConfigRepository configRepository;
 
-    private static final String INVITE_CODE_REQUIRED_KEY = "invite_code_required";
-    private static final String EMAIL_VERIFICATION_REQUIRED_KEY = "email_verification_required";
-    private static final String WECHAT_APP_ID_KEY = "wechat_app_id";
-    private static final String WECHAT_APP_SECRET_KEY = "wechat_app_secret";
-    private static final String WECHAT_REDIRECT_URI_KEY = "wechat_redirect_uri";
+    // ========== 通用配置方法 ==========
     
-    // 邮件配置键
-    private static final String EMAIL_HOST_KEY = "email_host";
-    private static final String EMAIL_PORT_KEY = "email_port";
-    private static final String EMAIL_USERNAME_KEY = "email_username";
-    private static final String EMAIL_PASSWORD_KEY = "email_password";
-    private static final String EMAIL_FROM_KEY = "email_from";
+    /**
+     * 获取配置值（String类型）
+     */
+    public String getConfigValue(ConfigKey configKey) {
+        String value = configRepository.findByConfigKey(configKey.getKey())
+                .map(SystemConfig::getConfigValue)
+                .orElse(configKey.getDefaultValue());
+        
+        // 对于有默认值且当前值为空的情况，返回默认值
+        if ((value == null || value.isEmpty()) && configKey.getDefaultValue() != null) {
+            return configKey.getDefaultValue();
+        }
+        return value;
+    }
     
-    // Notion 配置键
-    private static final String NOTION_CLIENT_ID_KEY = "notion_client_id";
-    private static final String NOTION_CLIENT_SECRET_KEY = "notion_client_secret";
-    private static final String NOTION_REDIRECT_URI_KEY = "notion_redirect_uri";
-    private static final String NOTION_SYNC_BUTTON_ENABLED_KEY = "notion_sync_button_enabled";
+    /**
+     * 获取配置值（Boolean类型）
+     */
+    public boolean getBooleanConfigValue(ConfigKey configKey) {
+        return configRepository.findByConfigKey(configKey.getKey())
+                .map(config -> Boolean.parseBoolean(config.getConfigValue()))
+                .orElse(configKey.getDefaultValue() != null && Boolean.parseBoolean(configKey.getDefaultValue()));
+    }
     
-    // 微信支付配置键
-    private static final String WECHAT_PAY_APP_ID_KEY = "wechat_pay_app_id";
-    private static final String WECHAT_PAY_MCH_ID_KEY = "wechat_pay_mch_id";
-    private static final String WECHAT_PAY_API_KEY_KEY = "wechat_pay_api_key";
-    private static final String WECHAT_PAY_API_V3_KEY_KEY = "wechat_pay_api_v3_key";
-    private static final String WECHAT_PAY_CERT_PATH_KEY = "wechat_pay_cert_path";
-    private static final String WECHAT_PAY_NOTIFY_URL_KEY = "wechat_pay_notify_url";
+    /**
+     * 设置配置值
+     */
+    @Transactional
+    public void setConfigValue(ConfigKey configKey, String value) {
+        logger.info(String.format("设置配置: %s = %s", configKey.getKey(), value != null ? "***" : "null"));
+        SystemConfig config = configRepository.findByConfigKey(configKey.getKey())
+                .orElseGet(() -> {
+                    SystemConfig newConfig = new SystemConfig();
+                    newConfig.setConfigKey(configKey.getKey());
+                    newConfig.setDescription(configKey.getDescription());
+                    return newConfig;
+                });
+        config.setConfigValue(value != null ? value : "");
+        configRepository.save(config);
+        logger.info(String.format("配置已设置: %s", configKey.getKey()));
+    }
     
-    // 支付宝支付配置键
-    private static final String ALIPAY_APP_ID_KEY = "alipay_app_id";
-    private static final String ALIPAY_PRIVATE_KEY_KEY = "alipay_private_key";
-    private static final String ALIPAY_PUBLIC_KEY_KEY = "alipay_public_key";
-    private static final String ALIPAY_NOTIFY_URL_KEY = "alipay_notify_url";
-    private static final String ALIPAY_RETURN_URL_KEY = "alipay_return_url";
-    private static final String ALIPAY_GATEWAY_URL_KEY = "alipay_gateway_url";
-    private static final String GUIDE_CONFIG_LINK_KEY = "guide_config_link";
+    /**
+     * 设置配置值（Boolean类型）
+     */
+    @Transactional
+    public void setBooleanConfigValue(ConfigKey configKey, boolean value) {
+        logger.info(String.format("设置配置: %s = %s", configKey.getKey(), value));
+        SystemConfig config = configRepository.findByConfigKey(configKey.getKey())
+                .orElseGet(() -> {
+                    SystemConfig newConfig = new SystemConfig();
+                    newConfig.setConfigKey(configKey.getKey());
+                    newConfig.setDescription(configKey.getDescription());
+                    return newConfig;
+                });
+        config.setConfigValue(String.valueOf(value));
+        configRepository.save(config);
+        logger.info(String.format("配置已设置: %s = %s", configKey.getKey(), value));
+    }
+    
+    /**
+     * 通用的getConfigValue方法（兼容旧接口）
+     */
+    public String getConfigValue(String key) {
+        ConfigKey configKey = ConfigKey.findByKey(key);
+        if (configKey != null) {
+            return getConfigValue(configKey);
+        }
+        return configRepository.findByConfigKey(key)
+                .map(SystemConfig::getConfigValue)
+                .orElse(null);
+    }
+    
+    /**
+     * 通用的setConfigValue方法（兼容旧接口）
+     */
+    @Transactional
+    public void setConfigValue(String key, String value, String description) {
+        ConfigKey configKey = ConfigKey.findByKey(key);
+        if (configKey != null) {
+            setConfigValue(configKey, value);
+        } else {
+            SystemConfig config = configRepository.findByConfigKey(key)
+                    .orElseGet(() -> {
+                        SystemConfig newConfig = new SystemConfig();
+                        newConfig.setConfigKey(key);
+                        newConfig.setDescription(description);
+                        return newConfig;
+                    });
+            config.setConfigValue(value);
+            configRepository.save(config);
+        }
+    }
 
+    // ========== 注册相关配置 ==========
+    
     /**
      * 获取邀请码是否必需
      */
     public boolean isInviteCodeRequired() {
-        return configRepository.findByConfigKey(INVITE_CODE_REQUIRED_KEY)
-                .map(config -> Boolean.parseBoolean(config.getConfigValue()))
-                .orElse(false); // 默认不需要邀请码
+        return getBooleanConfigValue(ConfigKey.INVITE_CODE_REQUIRED);
     }
 
     /**
@@ -66,26 +131,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setInviteCodeRequired(boolean required) {
-        logger.info(String.format("设置邀请码开关: %s", required));
-        SystemConfig config = configRepository.findByConfigKey(INVITE_CODE_REQUIRED_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(INVITE_CODE_REQUIRED_KEY);
-                    newConfig.setDescription("注册是否需要邀请码");
-                    return newConfig;
-                });
-        config.setConfigValue(String.valueOf(required));
-        configRepository.save(config);
-        logger.info(String.format("邀请码开关已设置为: %s", required));
+        setBooleanConfigValue(ConfigKey.INVITE_CODE_REQUIRED, required);
     }
 
     /**
      * 获取邮箱验证是否必需
      */
     public boolean isEmailVerificationRequired() {
-        return configRepository.findByConfigKey(EMAIL_VERIFICATION_REQUIRED_KEY)
-                .map(config -> Boolean.parseBoolean(config.getConfigValue()))
-                .orElse(true); // 默认需要邮箱验证
+        return getBooleanConfigValue(ConfigKey.EMAIL_VERIFICATION_REQUIRED);
     }
 
     /**
@@ -93,26 +146,16 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailVerificationRequired(boolean required) {
-        logger.info(String.format("设置邮箱验证开关: %s", required));
-        SystemConfig config = configRepository.findByConfigKey(EMAIL_VERIFICATION_REQUIRED_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(EMAIL_VERIFICATION_REQUIRED_KEY);
-                    newConfig.setDescription("注册是否需要邮箱验证码");
-                    return newConfig;
-                });
-        config.setConfigValue(String.valueOf(required));
-        configRepository.save(config);
-        logger.info(String.format("邮箱验证开关已设置为: %s", required));
+        setBooleanConfigValue(ConfigKey.EMAIL_VERIFICATION_REQUIRED, required);
     }
 
+    // ========== 微信OAuth配置 ==========
+    
     /**
      * 获取微信AppID
      */
     public String getWechatAppId() {
-        return configRepository.findByConfigKey(WECHAT_APP_ID_KEY)
-                .map(SystemConfig::getConfigValue)
-                .orElse(null);
+        return getConfigValue(ConfigKey.WECHAT_APP_ID);
     }
 
     /**
@@ -120,26 +163,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatAppId(String appId) {
-        logger.info("设置微信AppID");
-        SystemConfig config = configRepository.findByConfigKey(WECHAT_APP_ID_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(WECHAT_APP_ID_KEY);
-                    newConfig.setDescription("微信开放平台网站应用的AppID");
-                    return newConfig;
-                });
-        config.setConfigValue(appId != null ? appId : "");
-        configRepository.save(config);
-        logger.info("微信AppID已设置");
+        setConfigValue(ConfigKey.WECHAT_APP_ID, appId);
     }
 
     /**
      * 获取微信AppSecret
      */
     public String getWechatAppSecret() {
-        return configRepository.findByConfigKey(WECHAT_APP_SECRET_KEY)
-                .map(SystemConfig::getConfigValue)
-                .orElse(null);
+        return getConfigValue(ConfigKey.WECHAT_APP_SECRET);
     }
 
     /**
@@ -147,26 +178,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatAppSecret(String appSecret) {
-        logger.info("设置微信AppSecret");
-        SystemConfig config = configRepository.findByConfigKey(WECHAT_APP_SECRET_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(WECHAT_APP_SECRET_KEY);
-                    newConfig.setDescription("微信开放平台网站应用的AppSecret");
-                    return newConfig;
-                });
-        config.setConfigValue(appSecret != null ? appSecret : "");
-        configRepository.save(config);
-        logger.info("微信AppSecret已设置");
+        setConfigValue(ConfigKey.WECHAT_APP_SECRET, appSecret);
     }
 
     /**
      * 获取微信回调地址
      */
     public String getWechatRedirectUri() {
-        return configRepository.findByConfigKey(WECHAT_REDIRECT_URI_KEY)
-                .map(SystemConfig::getConfigValue)
-                .orElse("http://localhost:8081/api/wechat/callback");
+        return getConfigValue(ConfigKey.WECHAT_REDIRECT_URI);
     }
 
     /**
@@ -174,49 +193,16 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatRedirectUri(String redirectUri) {
-        logger.info("设置微信回调地址: " + redirectUri);
-        SystemConfig config = configRepository.findByConfigKey(WECHAT_REDIRECT_URI_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(WECHAT_REDIRECT_URI_KEY);
-                    newConfig.setDescription("微信OAuth回调地址");
-                    return newConfig;
-                });
-        config.setConfigValue(redirectUri != null ? redirectUri : "http://localhost:8081/api/wechat/callback");
-        configRepository.save(config);
-        logger.info("微信回调地址已设置");
+        setConfigValue(ConfigKey.WECHAT_REDIRECT_URI, redirectUri);
     }
 
-    /**
-     * 获取配置值
-     */
-    public String getConfigValue(String key) {
-        return configRepository.findByConfigKey(key)
-                .map(SystemConfig::getConfigValue)
-                .orElse(null);
-    }
-
-    /**
-     * 设置配置值
-     */
-    @Transactional
-    public void setConfigValue(String key, String value, String description) {
-        SystemConfig config = configRepository.findByConfigKey(key)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(key);
-                    newConfig.setDescription(description);
-                    return newConfig;
-                });
-        config.setConfigValue(value);
-        configRepository.save(config);
-    }
-
+    // ========== 邮件配置 ==========
+    
     /**
      * 获取邮件服务器地址
      */
     public String getEmailHost() {
-        return getConfigValue(EMAIL_HOST_KEY);
+        return getConfigValue(ConfigKey.EMAIL_HOST);
     }
 
     /**
@@ -224,14 +210,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailHost(String host) {
-        setConfigValue(EMAIL_HOST_KEY, host, "邮件服务器地址（SMTP）");
+        setConfigValue(ConfigKey.EMAIL_HOST, host);
     }
 
     /**
      * 获取邮件服务器端口
      */
     public String getEmailPort() {
-        return getConfigValue(EMAIL_PORT_KEY);
+        return getConfigValue(ConfigKey.EMAIL_PORT);
     }
 
     /**
@@ -239,14 +225,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailPort(String port) {
-        setConfigValue(EMAIL_PORT_KEY, port, "邮件服务器端口");
+        setConfigValue(ConfigKey.EMAIL_PORT, port);
     }
 
     /**
      * 获取邮件用户名
      */
     public String getEmailUsername() {
-        return getConfigValue(EMAIL_USERNAME_KEY);
+        return getConfigValue(ConfigKey.EMAIL_USERNAME);
     }
 
     /**
@@ -254,14 +240,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailUsername(String username) {
-        setConfigValue(EMAIL_USERNAME_KEY, username, "邮件服务器用户名（通常是邮箱地址）");
+        setConfigValue(ConfigKey.EMAIL_USERNAME, username);
     }
 
     /**
      * 获取邮件密码
      */
     public String getEmailPassword() {
-        return getConfigValue(EMAIL_PASSWORD_KEY);
+        return getConfigValue(ConfigKey.EMAIL_PASSWORD);
     }
 
     /**
@@ -269,15 +255,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailPassword(String password) {
-        setConfigValue(EMAIL_PASSWORD_KEY, password, "邮件服务器密码或授权码");
+        setConfigValue(ConfigKey.EMAIL_PASSWORD, password);
     }
 
     /**
      * 获取发件人邮箱
      */
     public String getEmailFrom() {
-        String from = getConfigValue(EMAIL_FROM_KEY);
-        return from != null && !from.isEmpty() ? from : "tongyexin@163.com";
+        return getConfigValue(ConfigKey.EMAIL_FROM);
     }
 
     /**
@@ -285,14 +270,16 @@ public class SystemConfigService {
      */
     @Transactional
     public void setEmailFrom(String from) {
-        setConfigValue(EMAIL_FROM_KEY, from, "发件人邮箱地址");
+        setConfigValue(ConfigKey.EMAIL_FROM, from);
     }
 
+    // ========== Notion配置 ==========
+    
     /**
      * 获取 Notion Client ID
      */
     public String getNotionClientId() {
-        return getConfigValue(NOTION_CLIENT_ID_KEY);
+        return getConfigValue(ConfigKey.NOTION_CLIENT_ID);
     }
 
     /**
@@ -300,14 +287,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setNotionClientId(String clientId) {
-        setConfigValue(NOTION_CLIENT_ID_KEY, clientId, "Notion Client ID");
+        setConfigValue(ConfigKey.NOTION_CLIENT_ID, clientId);
     }
 
     /**
      * 获取 Notion Client Secret
      */
     public String getNotionClientSecret() {
-        return getConfigValue(NOTION_CLIENT_SECRET_KEY);
+        return getConfigValue(ConfigKey.NOTION_CLIENT_SECRET);
     }
 
     /**
@@ -315,14 +302,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setNotionClientSecret(String clientSecret) {
-        setConfigValue(NOTION_CLIENT_SECRET_KEY, clientSecret, "Notion Client Secret");
+        setConfigValue(ConfigKey.NOTION_CLIENT_SECRET, clientSecret);
     }
 
     /**
      * 获取 Notion 回调地址
      */
     public String getNotionRedirectUri() {
-        return getConfigValue(NOTION_REDIRECT_URI_KEY);
+        return getConfigValue(ConfigKey.NOTION_REDIRECT_URI);
     }
 
     /**
@@ -330,16 +317,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setNotionRedirectUri(String redirectUri) {
-        setConfigValue(NOTION_REDIRECT_URI_KEY, redirectUri, "Notion 回调地址");
+        setConfigValue(ConfigKey.NOTION_REDIRECT_URI, redirectUri);
     }
 
     /**
      * 获取笔记同步按钮是否显示
      */
     public boolean isNotionSyncButtonEnabled() {
-        return configRepository.findByConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY)
-                .map(config -> Boolean.parseBoolean(config.getConfigValue()))
-                .orElse(false); // 默认不显示笔记同步按钮
+        return getBooleanConfigValue(ConfigKey.NOTION_SYNC_BUTTON_ENABLED);
     }
 
     /**
@@ -347,17 +332,7 @@ public class SystemConfigService {
      */
     @Transactional
     public void setNotionSyncButtonEnabled(boolean enabled) {
-        logger.info(String.format("设置笔记同步按钮显示: %s", enabled));
-        SystemConfig config = configRepository.findByConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY)
-                .orElseGet(() -> {
-                    SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY);
-                    newConfig.setDescription("是否显示笔记同步按钮");
-                    return newConfig;
-                });
-        config.setConfigValue(String.valueOf(enabled));
-        configRepository.save(config);
-        logger.info(String.format("笔记同步按钮显示已设置为: %s", enabled));
+        setBooleanConfigValue(ConfigKey.NOTION_SYNC_BUTTON_ENABLED, enabled);
     }
 
     // ========== 微信支付配置 ==========
@@ -366,7 +341,7 @@ public class SystemConfigService {
      * 获取微信支付AppID
      */
     public String getWechatPayAppId() {
-        return getConfigValue(WECHAT_PAY_APP_ID_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_APP_ID);
     }
 
     /**
@@ -374,14 +349,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayAppId(String appId) {
-        setConfigValue(WECHAT_PAY_APP_ID_KEY, appId, "微信支付AppID（商户号对应的AppID）");
+        setConfigValue(ConfigKey.WECHAT_PAY_APP_ID, appId);
     }
 
     /**
      * 获取微信支付商户号
      */
     public String getWechatPayMchId() {
-        return getConfigValue(WECHAT_PAY_MCH_ID_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_MCH_ID);
     }
 
     /**
@@ -389,14 +364,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayMchId(String mchId) {
-        setConfigValue(WECHAT_PAY_MCH_ID_KEY, mchId, "微信支付商户号（MchId）");
+        setConfigValue(ConfigKey.WECHAT_PAY_MCH_ID, mchId);
     }
 
     /**
      * 获取微信支付API密钥
      */
     public String getWechatPayApiKey() {
-        return getConfigValue(WECHAT_PAY_API_KEY_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_API_KEY);
     }
 
     /**
@@ -404,14 +379,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayApiKey(String apiKey) {
-        setConfigValue(WECHAT_PAY_API_KEY_KEY, apiKey, "微信支付API密钥（用于签名）");
+        setConfigValue(ConfigKey.WECHAT_PAY_API_KEY, apiKey);
     }
 
     /**
      * 获取微信支付API v3密钥
      */
     public String getWechatPayApiV3Key() {
-        return getConfigValue(WECHAT_PAY_API_V3_KEY_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_API_V3_KEY);
     }
 
     /**
@@ -419,14 +394,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayApiV3Key(String apiV3Key) {
-        setConfigValue(WECHAT_PAY_API_V3_KEY_KEY, apiV3Key, "微信支付API v3密钥");
+        setConfigValue(ConfigKey.WECHAT_PAY_API_V3_KEY, apiV3Key);
     }
 
     /**
      * 获取微信支付证书路径
      */
     public String getWechatPayCertPath() {
-        return getConfigValue(WECHAT_PAY_CERT_PATH_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_CERT_PATH);
     }
 
     /**
@@ -434,14 +409,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayCertPath(String certPath) {
-        setConfigValue(WECHAT_PAY_CERT_PATH_KEY, certPath, "微信支付证书路径（可选）");
+        setConfigValue(ConfigKey.WECHAT_PAY_CERT_PATH, certPath);
     }
 
     /**
      * 获取微信支付回调地址
      */
     public String getWechatPayNotifyUrl() {
-        return getConfigValue(WECHAT_PAY_NOTIFY_URL_KEY);
+        return getConfigValue(ConfigKey.WECHAT_PAY_NOTIFY_URL);
     }
 
     /**
@@ -449,7 +424,7 @@ public class SystemConfigService {
      */
     @Transactional
     public void setWechatPayNotifyUrl(String notifyUrl) {
-        setConfigValue(WECHAT_PAY_NOTIFY_URL_KEY, notifyUrl, "微信支付回调通知地址");
+        setConfigValue(ConfigKey.WECHAT_PAY_NOTIFY_URL, notifyUrl);
     }
 
     // ========== 支付宝支付配置 ==========
@@ -458,7 +433,7 @@ public class SystemConfigService {
      * 获取支付宝AppID
      */
     public String getAlipayAppId() {
-        return getConfigValue(ALIPAY_APP_ID_KEY);
+        return getConfigValue(ConfigKey.ALIPAY_APP_ID);
     }
 
     /**
@@ -466,14 +441,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayAppId(String appId) {
-        setConfigValue(ALIPAY_APP_ID_KEY, appId, "支付宝应用AppID");
+        setConfigValue(ConfigKey.ALIPAY_APP_ID, appId);
     }
 
     /**
      * 获取支付宝应用私钥
      */
     public String getAlipayPrivateKey() {
-        return getConfigValue(ALIPAY_PRIVATE_KEY_KEY);
+        return getConfigValue(ConfigKey.ALIPAY_PRIVATE_KEY);
     }
 
     /**
@@ -481,14 +456,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayPrivateKey(String privateKey) {
-        setConfigValue(ALIPAY_PRIVATE_KEY_KEY, privateKey, "支付宝应用私钥（RSA2）");
+        setConfigValue(ConfigKey.ALIPAY_PRIVATE_KEY, privateKey);
     }
 
     /**
      * 获取支付宝公钥
      */
     public String getAlipayPublicKey() {
-        return getConfigValue(ALIPAY_PUBLIC_KEY_KEY);
+        return getConfigValue(ConfigKey.ALIPAY_PUBLIC_KEY);
     }
 
     /**
@@ -496,14 +471,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayPublicKey(String publicKey) {
-        setConfigValue(ALIPAY_PUBLIC_KEY_KEY, publicKey, "支付宝公钥（用于验签）");
+        setConfigValue(ConfigKey.ALIPAY_PUBLIC_KEY, publicKey);
     }
 
     /**
      * 获取支付宝回调地址
      */
     public String getAlipayNotifyUrl() {
-        return getConfigValue(ALIPAY_NOTIFY_URL_KEY);
+        return getConfigValue(ConfigKey.ALIPAY_NOTIFY_URL);
     }
 
     /**
@@ -511,14 +486,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayNotifyUrl(String notifyUrl) {
-        setConfigValue(ALIPAY_NOTIFY_URL_KEY, notifyUrl, "支付宝异步回调通知地址");
+        setConfigValue(ConfigKey.ALIPAY_NOTIFY_URL, notifyUrl);
     }
 
     /**
      * 获取支付宝同步返回地址
      */
     public String getAlipayReturnUrl() {
-        return getConfigValue(ALIPAY_RETURN_URL_KEY);
+        return getConfigValue(ConfigKey.ALIPAY_RETURN_URL);
     }
 
     /**
@@ -526,15 +501,14 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayReturnUrl(String returnUrl) {
-        setConfigValue(ALIPAY_RETURN_URL_KEY, returnUrl, "支付宝同步返回地址");
+        setConfigValue(ConfigKey.ALIPAY_RETURN_URL, returnUrl);
     }
 
     /**
      * 获取支付宝网关地址
      */
     public String getAlipayGatewayUrl() {
-        String url = getConfigValue(ALIPAY_GATEWAY_URL_KEY);
-        return url != null && !url.isEmpty() ? url : "https://openapi.alipay.com/gateway.do";
+        return getConfigValue(ConfigKey.ALIPAY_GATEWAY_URL);
     }
 
     /**
@@ -542,15 +516,16 @@ public class SystemConfigService {
      */
     @Transactional
     public void setAlipayGatewayUrl(String gatewayUrl) {
-        setConfigValue(ALIPAY_GATEWAY_URL_KEY, gatewayUrl, "支付宝网关地址（默认：https://openapi.alipay.com/gateway.do）");
+        setConfigValue(ConfigKey.ALIPAY_GATEWAY_URL, gatewayUrl);
     }
 
-    // ========== Guide Config Link ==========
+    // ========== 其他配置 ==========
+    
     /**
      * 获取引导配置链接
      */
     public String getGuideConfigLink() {
-        return getConfigValue(GUIDE_CONFIG_LINK_KEY);
+        return getConfigValue(ConfigKey.GUIDE_CONFIG_LINK);
     }
 
     /**
@@ -558,7 +533,6 @@ public class SystemConfigService {
      */
     @Transactional
     public void setGuideConfigLink(String link) {
-        setConfigValue(GUIDE_CONFIG_LINK_KEY, link, "引导配置链接");
+        setConfigValue(ConfigKey.GUIDE_CONFIG_LINK, link);
     }
 }
-
