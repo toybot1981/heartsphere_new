@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { WorldStyle, WORLD_STYLE_DESCRIPTIONS } from '../types';
 import { LoginModal } from './LoginModal';
+import { Footer } from './Footer';
 
 interface EntryPointProps {
   onNavigate: (screen: 'realWorld' | 'sceneSelection' | 'admin') => void;
@@ -44,7 +45,7 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
   };
   
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 bg-slate-950 overflow-hidden">
+    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 pb-24 bg-slate-950 overflow-hidden">
       {/* Background Effect */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
@@ -279,8 +280,13 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
         )}
       </div>
 
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <Footer />
+      </div>
+      
       {/* Footer Decoration */}
-      <div className="absolute bottom-8 text-[10px] text-white/30 tracking-widest font-mono">
+      <div className="absolute bottom-20 text-[10px] text-white/30 tracking-widest font-mono">
         SYSTEM VERSION 2.5.0 // CONNECTED // 已连接
       </div>
     </div>

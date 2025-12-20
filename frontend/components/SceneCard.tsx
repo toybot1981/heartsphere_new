@@ -33,7 +33,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
       className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-400/50"
     >
       <div className="absolute inset-0 bg-gray-900">
-        {scene.imageUrl ? (
+        {scene.imageUrl && scene.imageUrl.trim() ? (
           <img 
             src={scene.imageUrl} 
             alt={scene.name}

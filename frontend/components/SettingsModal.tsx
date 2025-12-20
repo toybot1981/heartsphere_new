@@ -264,6 +264,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                         onChange={(enabled) => onSettingsChange({ ...settings, autoGenerateJournalImages: enabled })}
                     />
                     <Toggle 
+                        label="显示笔记同步按钮"
+                        description="开启后，在日记页面显示笔记同步按钮，可以将日记同步到 Notion 等外部平台。"
+                        enabled={settings.showNoteSync ?? false}
+                        onChange={(enabled) => onSettingsChange({ ...settings, showNoteSync: enabled })}
+                    />
+                    <Toggle 
                         label="开发者调试模式"
                         description="在屏幕底部显示实时 AI 请求/响应日志。"
                         enabled={settings.debugMode}

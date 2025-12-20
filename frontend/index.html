@@ -27,6 +27,27 @@
         -webkit-user-select: text;
       }
 
+      /* Select and option styling for dark theme */
+      select {
+        color: #ffffff !important;
+        background-color: #111827 !important;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+      select::-ms-expand {
+        display: none;
+      }
+      select option {
+        color: #ffffff !important;
+        background-color: #111827 !important;
+        padding: 8px;
+      }
+      select:focus option:checked {
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+      }
+
       /* Custom Scrollbar for chat */
       .scrollbar-hide::-webkit-scrollbar {
           display: none;

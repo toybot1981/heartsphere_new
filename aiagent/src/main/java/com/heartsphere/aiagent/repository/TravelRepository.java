@@ -26,3 +26,6 @@ public interface TravelRepository extends JpaRepository<TravelEntity, Long> {
 
 
 
+
+
+

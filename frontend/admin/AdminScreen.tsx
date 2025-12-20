@@ -84,13 +84,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const [isLoadingEmailConfig, setIsLoadingEmailConfig] = useState(false);
     const [showAuthCodeGuide, setShowAuthCodeGuide] = useState(false);
     
-    // 印象笔记配置状态
-    const [evernoteConfig, setEvernoteConfig] = useState({
-        consumerKey: 'heartsphere',
-        consumerSecret: '',
-        sandbox: true
+    // Notion 配置状态
+    const [notionConfig, setNotionConfig] = useState({
+        clientId: '',
+        clientSecret: '',
+        redirectUri: 'http://localhost:8081/api/notes/notion/callback',
+        syncButtonEnabled: false // 默认不显示笔记同步按钮
     });
-    const [isLoadingEvernoteConfig, setIsLoadingEvernoteConfig] = useState(false);
+    const [isLoadingNotionConfig, setIsLoadingNotionConfig] = useState(false);
     
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
@@ -120,6 +121,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const [editResourceTags, setEditResourceTags] = useState('');
     const [editResourceUrl, setEditResourceUrl] = useState('');
     const [editResourceUploading, setEditResourceUploading] = useState(false);
+    
+    // 资源匹配更新状态
+    const [isMatchingResources, setIsMatchingResources] = useState(false);
     
     // 资源选择器状态
     const [showResourcePicker, setShowResourcePicker] = useState(false);
@@ -223,7 +227,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getInviteCodeRequired(token),
                 adminApi.config.getEmailConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getEvernoteConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -239,7 +243,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const config = results[4].status === 'fulfilled' ? results[4].value : { inviteCodeRequired: false };
             const emailConfigData = results[5].status === 'fulfilled' && results[5].value ? results[5].value : null;
             const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
-            const evernoteConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
+            const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
             const plans = results[8].status === 'fulfilled' ? results[8].value : [];
             const scripts = results[9].status === 'fulfilled' ? results[9].value : [];
             const mainStories = results[10].status === 'fulfilled' ? results[10].value : [];
@@ -299,15 +303,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     from: emailConfigData.from || (emailType === 'qq' ? 'heartsphere@qq.com' : 'tongyexin@163.com')
                 });
             }
-            if (evernoteConfigData) {
-                console.log("[AdminScreen] 加载印象笔记配置:", evernoteConfigData);
-                setEvernoteConfig({
-                    consumerKey: evernoteConfigData.consumerKey || 'heartsphere',
-                    consumerSecret: evernoteConfigData.consumerSecret || '',
-                    sandbox: evernoteConfigData.sandbox !== undefined ? evernoteConfigData.sandbox : true
+            if (notionConfigData) {
+                console.log("[AdminScreen] 加载 Notion 配置:", notionConfigData);
+                setNotionConfig({
+                    clientId: notionConfigData.clientId || '',
+                    clientSecret: notionConfigData.clientSecret || '',
+                    redirectUri: notionConfigData.redirectUri || 'http://localhost:8081/api/notes/notion/callback',
+                    syncButtonEnabled: notionConfigData.syncButtonEnabled !== undefined ? notionConfigData.syncButtonEnabled : false
                 });
             } else {
-                console.log("[AdminScreen] 未加载到印象笔记配置，使用默认值");
+                console.log("[AdminScreen] 未加载到 Notion 配置，使用默认值");
             }
             console.log("[AdminScreen] 系统数据状态已更新，邀请码数量:", inviteCodesArray.length);
         } catch (error: any) {
@@ -347,12 +352,82 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         }
     };
 
+    // 匹配并更新资源
+    const handleMatchAndUpdateResources = async () => {
+        if (!adminToken) {
+            showAlert('请先登录', '未登录', 'warning');
+            return;
+        }
+
+        const confirmed = await showConfirm(
+            '确定要执行一键更新吗？\n\n这将根据资源名称自动匹配并更新所有预置场景和角色的图片。',
+            '一键更新资源',
+            'warning'
+        );
+
+        if (!confirmed) return;
+
+        setIsMatchingResources(true);
+        try {
+            const result = await adminApi.resources.matchAndUpdate(adminToken);
+            
+            // 构建详细的结果消息
+            let message = `更新完成！\n\n`;
+            message += `场景匹配: ${result.eraMatchedCount}/${result.totalEras}\n`;
+            message += `角色头像匹配: ${result.characterAvatarMatchedCount}/${result.totalCharacters}\n`;
+            message += `角色背景匹配: ${result.characterBackgroundMatchedCount}/${result.totalCharacters}\n\n`;
+
+            if (result.eraMatched.length > 0) {
+                message += `✓ 场景匹配成功:\n${result.eraMatched.slice(0, 5).join('\n')}`;
+                if (result.eraMatched.length > 5) {
+                    message += `\n... 还有 ${result.eraMatched.length - 5} 个`;
+                }
+                message += '\n\n';
+            }
+
+            if (result.characterMatched.length > 0) {
+                message += `✓ 角色匹配成功:\n${result.characterMatched.slice(0, 5).join('\n')}`;
+                if (result.characterMatched.length > 5) {
+                    message += `\n... 还有 ${result.characterMatched.length - 5} 个`;
+                }
+                message += '\n\n';
+            }
+
+            if (result.eraNotFound.length > 0) {
+                message += `⚠ 未找到匹配资源的场景:\n${result.eraNotFound.slice(0, 3).join('\n')}`;
+                if (result.eraNotFound.length > 3) {
+                    message += `\n... 还有 ${result.eraNotFound.length - 3} 个`;
+                }
+                message += '\n\n';
+            }
+
+            if (result.characterNotFound.length > 0) {
+                message += `⚠ 未找到匹配资源的角色:\n${result.characterNotFound.slice(0, 3).join('\n')}`;
+                if (result.characterNotFound.length > 3) {
+                    message += `\n... 还有 ${result.characterNotFound.length - 3} 个`;
+                }
+            }
+
+            showAlert(message, '更新完成', 'success');
+            
+            // 重新加载场景和角色数据
+            if (activeSection === 'eras' || activeSection === 'characters') {
+                loadSystemData(adminToken);
+            }
+        } catch (err: any) {
+            console.error('匹配更新资源失败:', err);
+            showAlert('更新失败: ' + (err.message || '未知错误'), '更新失败', 'error');
+        } finally {
+            setIsMatchingResources(false);
+        }
+    };
+
     // 加载预置剧本数据（只加载系统预设的剧本）
     const loadScenariosData = async (token: string) => {
         console.log("========== [AdminScreen] 加载预置剧本数据 ==========");
         try {
             // 只加载系统预设的剧本，不需要 token（公开 API）
-            const scripts = await systemScriptApi.getAll();
+            const scripts = await systemScriptApi.getAll(adminToken);
             console.log("[AdminScreen] 预置剧本数据加载结果:", {
                 scripts: Array.isArray(scripts) ? scripts.length : 0
             });
@@ -382,7 +457,18 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     // --- CRUD Logic Wrappers ---
 
     const switchToCreate = () => {
-        setFormData({});
+        // 初始化空的节点结构，方便用户添加节点内容
+        setFormData({
+            nodes: JSON.stringify({
+                start: {
+                    id: 'start',
+                    title: '开始',
+                    content: '这是故事的开始...',
+                    choices: []
+                }
+            }, null, 2),
+            startNodeId: 'start'
+        });
         setEditingId(null);
         setViewMode('create');
     };
@@ -1305,6 +1391,70 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                         )}
                                     </div>
 
+                                    {/* 节点内容编辑 */}
+                                    <div className="mt-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h4 className="text-sm font-bold text-emerald-400 border-b border-emerald-900/30 pb-2 flex-1">剧本节点内容</h4>
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    onClick={() => {
+                                                        // 初始化空节点结构
+                                                        const emptyNodes = {
+                                                            start: {
+                                                                id: 'start',
+                                                                title: '开始',
+                                                                content: '这是故事的开始...',
+                                                                choices: []
+                                                            }
+                                                        };
+                                                        setFormData({
+                                                            ...formData,
+                                                            nodes: JSON.stringify(emptyNodes, null, 2),
+                                                            startNodeId: 'start'
+                                                        });
+                                                    }}
+                                                    className="bg-slate-600 hover:bg-slate-500 text-sm"
+                                                >
+                                                    🆕 初始化节点
+                                                </Button>
+                                                <Button 
+                                                    onClick={() => {
+                                                        try {
+                                                            const nodes = typeof formData.nodes === 'string' ? JSON.parse(formData.nodes || '{}') : (formData.nodes || {});
+                                                            setShowScenarioBuilder(true);
+                                                        } catch (e) {
+                                                            showAlert('节点 JSON 格式错误，请先修复格式', '格式错误', 'error');
+                                                        }
+                                                    }}
+                                                    className="bg-emerald-600 hover:bg-emerald-500 text-sm"
+                                                >
+                                                    📝 打开可视化编辑器
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="mb-4">
+                                            <InputGroup label="起始节点ID">
+                                                <TextInput 
+                                                    value={formData.startNodeId || 'start'} 
+                                                    onChange={e => setFormData({...formData, startNodeId: e.target.value})}
+                                                    placeholder="start"
+                                                />
+                                            </InputGroup>
+                                        </div>
+                                        <InputGroup label="节点 JSON 数据">
+                                            <TextArea 
+                                                value={formData.nodes || ''} 
+                                                onChange={e => setFormData({...formData, nodes: e.target.value})} 
+                                                rows={15}
+                                                placeholder='{"start": {"id": "start", "title": "开始", "content": "这是故事的开始...", "choices": []}}'
+                                                className="font-mono text-sm"
+                                            />
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                💡 提示：可以直接编辑 JSON 格式的节点数据，或使用可视化编辑器进行编辑。节点格式示例：<code className="text-slate-400">&#123;"id": "节点ID", "title": "节点标题", "content": "节点内容", "choices": [&#123;"text": "选择文本", "nextNodeId": "下一个节点ID"&#125;]&#125;</code>
+                                            </p>
+                                        </InputGroup>
+                                    </div>
+
                                     {/* 节点流程可视化 */}
                                     {(() => {
                                         try {
@@ -1313,13 +1463,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                                 return (
                                                     <div className="mt-6">
                                                         <div className="flex items-center justify-between mb-4">
-                                                            <h4 className="text-sm font-bold text-emerald-400 border-b border-emerald-900/30 pb-2 flex-1">节点流程</h4>
-                                                            <Button 
-                                                                onClick={() => setShowScenarioBuilder(true)}
-                                                                className="bg-emerald-600 hover:bg-emerald-500 text-sm"
-                                                            >
-                                                                📝 打开可视化编辑器
-                                                            </Button>
+                                                            <h4 className="text-sm font-bold text-emerald-400 border-b border-emerald-900/30 pb-2 flex-1">节点流程预览</h4>
                                                         </div>
                                                         <ScenarioNodeFlow
                                                             nodes={nodes}
@@ -1335,6 +1479,11 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                             }
                                         } catch (e) {
                                             // JSON 解析失败，不显示可视化
+                                            return (
+                                                <div className="mt-4 p-4 bg-red-900/20 border border-red-500/50 rounded-lg">
+                                                    <p className="text-sm text-red-400">⚠️ 节点 JSON 格式错误，无法显示预览。请检查 JSON 格式。</p>
+                                                </div>
+                                            );
                                         }
                                         return null;
                                     })()}
@@ -1429,71 +1578,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                         />
                                         <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                                     </label>
-                                </div>
-                            </div>
-
-                            {/* 邮箱配置 */}
-                            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
-                                <h3 className="text-lg font-bold text-slate-100 mb-4">邮箱配置</h3>
-                                <div className="space-y-4">
-                                    <InputGroup label="SMTP服务器">
-                                        <TextInput
-                                            value={emailConfig.host}
-                                            onChange={(e) => setEmailConfig({ ...emailConfig, host: e.target.value })}
-                                            placeholder="smtp.163.com"
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="SMTP端口">
-                                        <TextInput
-                                            type="number"
-                                            value={emailConfig.port}
-                                            onChange={(e) => setEmailConfig({ ...emailConfig, port: e.target.value })}
-                                            placeholder="25"
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="邮箱用户名">
-                                        <TextInput
-                                            value={emailConfig.username}
-                                            onChange={(e) => setEmailConfig({ ...emailConfig, username: e.target.value })}
-                                            placeholder="tongyexin@163.com"
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="邮箱密码/授权码">
-                                        <TextInput
-                                            type="password"
-                                            value={emailConfig.password}
-                                            onChange={(e) => setEmailConfig({ ...emailConfig, password: e.target.value })}
-                                            placeholder="请输入授权码"
-                                        />
-                                        <p className="text-xs text-slate-500 mt-1">163邮箱需要授权码，不是登录密码</p>
-                                    </InputGroup>
-                                    <InputGroup label="发件人邮箱">
-                                        <TextInput
-                                            value={emailConfig.from}
-                                            onChange={(e) => setEmailConfig({ ...emailConfig, from: e.target.value })}
-                                            placeholder="tongyexin@163.com"
-                                        />
-                                    </InputGroup>
-                                    <div className="flex justify-end">
-                                        <Button
-                                            onClick={async () => {
-                                                if (!adminToken) return;
-                                                setIsLoadingEmailConfig(true);
-                                                try {
-                                                    await adminApi.config.setEmailConfig(emailConfig, adminToken);
-                                                    showAlert('邮箱配置已保存', '保存成功', 'success');
-                                                } catch (error: any) {
-                                                    showAlert('保存失败: ' + (error.message || '未知错误'), '保存失败', 'error');
-                                                } finally {
-                                                    setIsLoadingEmailConfig(false);
-                                                }
-                                            }}
-                                            disabled={isLoadingEmailConfig}
-                                            className="bg-indigo-600 hover:bg-indigo-700"
-                                        >
-                                            {isLoadingEmailConfig ? '保存中...' : '保存配置'}
-                                        </Button>
-                                    </div>
                                 </div>
                             </div>
 
@@ -1782,6 +1866,28 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                     <h2 className="text-xl font-bold text-slate-100">资源管理</h2>
                                     <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handleMatchAndUpdateResources}
+                                            disabled={isMatchingResources}
+                                            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                                                isMatchingResources
+                                                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                            }`}
+                                            title="根据资源名称自动匹配并更新所有预置场景和角色的图片"
+                                        >
+                                            {isMatchingResources ? (
+                                                <span className="flex items-center gap-2">
+                                                    <span className="animate-spin">⏳</span>
+                                                    更新中...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-2">
+                                                    <span>🔄</span>
+                                                    一键更新场景和角色图片
+                                                </span>
+                                            )}
+                                        </button>
                                         <span className="text-sm text-slate-400">分类筛选:</span>
                                         <select
                                             value={resourceCategory}
@@ -2789,42 +2895,58 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                 </div>
                             </div>
 
-                            {/* 印象笔记配置 */}
+                            {/* Notion 配置 */}
                             <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
-                                <h3 className="text-lg font-bold text-slate-100 mb-6">印象笔记配置</h3>
-                                <p className="text-sm text-slate-400 mb-4">配置印象笔记API密钥，用于笔记同步功能</p>
+                                <h3 className="text-lg font-bold text-slate-100 mb-6">Notion 配置</h3>
+                                <p className="text-sm text-slate-400 mb-4">
+                                    配置 Notion API 密钥，用于笔记同步功能。需要先在 <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">Notion 开发者门户</a> 创建 OAuth 集成。
+                                </p>
                                 
                                 <div className="space-y-4">
-                                    <InputGroup label="Consumer Key">
+                                    <InputGroup label="Client ID (OAuth Client ID)">
                                         <TextInput
-                                            value={evernoteConfig.consumerKey}
-                                            onChange={(e) => setEvernoteConfig({ ...evernoteConfig, consumerKey: e.target.value })}
-                                            placeholder="heartsphere"
+                                            value={notionConfig.clientId}
+                                            onChange={(e) => setNotionConfig({ ...notionConfig, clientId: e.target.value })}
+                                            placeholder="输入 Client ID"
                                         />
-                                        <p className="text-xs text-slate-500 mt-1">印象笔记应用的Consumer Key</p>
+                                        <p className="text-xs text-slate-500 mt-1">在 Notion 集成中获取的 OAuth Client ID</p>
                                     </InputGroup>
                                     
-                                    <InputGroup label="Consumer Secret">
+                                    <InputGroup label="Client Secret (OAuth Client Secret)">
                                         <TextInput
                                             type="password"
-                                            value={evernoteConfig.consumerSecret}
-                                            onChange={(e) => setEvernoteConfig({ ...evernoteConfig, consumerSecret: e.target.value })}
-                                            placeholder="输入Consumer Secret"
+                                            value={notionConfig.clientSecret}
+                                            onChange={(e) => setNotionConfig({ ...notionConfig, clientSecret: e.target.value })}
+                                            placeholder="输入 Client Secret"
                                         />
-                                        <p className="text-xs text-slate-500 mt-1">印象笔记应用的Consumer Secret</p>
+                                        <p className="text-xs text-slate-500 mt-1">在 Notion 集成中获取的 OAuth Client Secret</p>
                                     </InputGroup>
                                     
-                                    <InputGroup label="环境设置">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={evernoteConfig.sandbox}
-                                                onChange={(e) => setEvernoteConfig({ ...evernoteConfig, sandbox: e.target.checked })}
-                                                className="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 focus:ring-indigo-500"
-                                            />
-                                            <span className="text-white">使用沙箱环境（开发测试用）</span>
-                                        </label>
-                                        <p className="text-xs text-slate-500 mt-1">开发时建议开启，生产环境请关闭</p>
+                                    <InputGroup label="回调地址 (Redirect URI)">
+                                        <TextInput
+                                            value={notionConfig.redirectUri}
+                                            onChange={(e) => setNotionConfig({ ...notionConfig, redirectUri: e.target.value })}
+                                            placeholder="http://localhost:8081/api/notes/notion/callback"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">OAuth 回调地址，需要在 Notion 集成配置中设置此地址（Redirect URI）</p>
+                                    </InputGroup>
+                                    
+                                    <InputGroup label="笔记同步按钮显示">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-slate-300 mb-1">是否在前端显示笔记同步按钮</p>
+                                                <p className="text-xs text-slate-500">关闭后，用户将无法看到和使用笔记同步功能</p>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={notionConfig.syncButtonEnabled}
+                                                    onChange={(e) => setNotionConfig({ ...notionConfig, syncButtonEnabled: e.target.checked })}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                            </label>
+                                        </div>
                                     </InputGroup>
                                 </div>
 
@@ -2833,24 +2955,25 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                                     <Button
                                         onClick={async () => {
                                             if (!adminToken) return;
-                                            setIsLoadingEvernoteConfig(true);
+                                            setIsLoadingNotionConfig(true);
                                             try {
-                                                await adminApi.config.setEvernoteConfig({
-                                                    consumerKey: evernoteConfig.consumerKey,
-                                                    consumerSecret: evernoteConfig.consumerSecret,
-                                                    sandbox: evernoteConfig.sandbox
+                                                await adminApi.config.setNotionConfig({
+                                                    clientId: notionConfig.clientId,
+                                                    clientSecret: notionConfig.clientSecret,
+                                                    redirectUri: notionConfig.redirectUri,
+                                                    syncButtonEnabled: notionConfig.syncButtonEnabled
                                                 }, adminToken);
-                                                showAlert('印象笔记配置已保存', '保存成功', 'success');
+                                                showAlert('Notion 配置已保存', '保存成功', 'success');
                                             } catch (error: any) {
                                                 showAlert('保存失败: ' + (error.message || '未知错误'), '保存失败', 'error');
                                             } finally {
-                                                setIsLoadingEvernoteConfig(false);
+                                                setIsLoadingNotionConfig(false);
                                             }
                                         }}
-                                        disabled={isLoadingEvernoteConfig}
+                                        disabled={isLoadingNotionConfig}
                                         className="bg-indigo-600 hover:bg-indigo-700"
                                     >
-                                        {isLoadingEvernoteConfig ? '保存中...' : '保存配置'}
+                                        {isLoadingNotionConfig ? '保存中...' : '保存配置'}
                                     </Button>
                                 </div>
                             </div>

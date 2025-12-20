@@ -73,3 +73,6 @@ UPDATE `system_resources`
 SET `prompt` = 'A peaceful study or traditional Chinese room, books and calligraphy, tea ceremony setting, serene atmosphere, warm lighting, traditional Chinese home environment, high quality, detailed'
 WHERE `name` = '姥爷-背景';
 
+
+
+

@@ -106,17 +106,21 @@ public class DTOMapper {
     
     public static ScriptDTO toScriptDTO(Script script) {
         if (script == null) return null;
-        return new ScriptDTO(
-            script.getId(),
-            script.getTitle(),
-            script.getContent(),
-            script.getSceneCount(),
-            script.getWorld() != null ? script.getWorld().getId() : null,
-            script.getEra() != null ? script.getEra().getId() : null,
-            script.getUser() != null ? script.getUser().getId() : null,
-            script.getCreatedAt(),
-            script.getUpdatedAt()
-        );
+        ScriptDTO dto = new ScriptDTO();
+        dto.setId(script.getId());
+        dto.setTitle(script.getTitle());
+        dto.setDescription(script.getDescription());
+        dto.setContent(script.getContent());
+        dto.setSceneCount(script.getSceneCount());
+        dto.setCharacterIds(script.getCharacterIds());
+        dto.setTags(script.getTags());
+        dto.setWorldId(script.getWorld() != null ? script.getWorld().getId() : null);
+        dto.setEraId(script.getEra() != null ? script.getEra().getId() : null);
+        dto.setUserId(script.getUser() != null ? script.getUser().getId() : null);
+        dto.setCreatedAt(script.getCreatedAt());
+        dto.setUpdatedAt(script.getUpdatedAt());
+        // systemScriptId 不需要设置，因为这是输入参数，不是从实体映射的
+        return dto;
     }
 }
 

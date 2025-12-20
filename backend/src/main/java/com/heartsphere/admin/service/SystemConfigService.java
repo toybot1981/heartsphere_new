@@ -29,10 +29,11 @@ public class SystemConfigService {
     private static final String EMAIL_PASSWORD_KEY = "email_password";
     private static final String EMAIL_FROM_KEY = "email_from";
     
-    // 印象笔记配置键
-    private static final String EVERNOTE_CONSUMER_KEY_KEY = "evernote_consumer_key";
-    private static final String EVERNOTE_CONSUMER_SECRET_KEY = "evernote_consumer_secret";
-    private static final String EVERNOTE_SANDBOX_KEY = "evernote_sandbox";
+    // Notion 配置键
+    private static final String NOTION_CLIENT_ID_KEY = "notion_client_id";
+    private static final String NOTION_CLIENT_SECRET_KEY = "notion_client_secret";
+    private static final String NOTION_REDIRECT_URI_KEY = "notion_redirect_uri";
+    private static final String NOTION_SYNC_BUTTON_ENABLED_KEY = "notion_sync_button_enabled";
 
     /**
      * 获取邀请码是否必需
@@ -271,60 +272,75 @@ public class SystemConfigService {
     }
 
     /**
-     * 获取印象笔记Consumer Key
+     * 获取 Notion Client ID
      */
-    public String getEvernoteConsumerKey() {
-        return getConfigValue(EVERNOTE_CONSUMER_KEY_KEY);
+    public String getNotionClientId() {
+        return getConfigValue(NOTION_CLIENT_ID_KEY);
     }
 
     /**
-     * 设置印象笔记Consumer Key
+     * 设置 Notion Client ID
      */
     @Transactional
-    public void setEvernoteConsumerKey(String consumerKey) {
-        setConfigValue(EVERNOTE_CONSUMER_KEY_KEY, consumerKey, "印象笔记Consumer Key");
+    public void setNotionClientId(String clientId) {
+        setConfigValue(NOTION_CLIENT_ID_KEY, clientId, "Notion Client ID");
     }
 
     /**
-     * 获取印象笔记Consumer Secret
+     * 获取 Notion Client Secret
      */
-    public String getEvernoteConsumerSecret() {
-        return getConfigValue(EVERNOTE_CONSUMER_SECRET_KEY);
+    public String getNotionClientSecret() {
+        return getConfigValue(NOTION_CLIENT_SECRET_KEY);
     }
 
     /**
-     * 设置印象笔记Consumer Secret
+     * 设置 Notion Client Secret
      */
     @Transactional
-    public void setEvernoteConsumerSecret(String consumerSecret) {
-        setConfigValue(EVERNOTE_CONSUMER_SECRET_KEY, consumerSecret, "印象笔记Consumer Secret");
+    public void setNotionClientSecret(String clientSecret) {
+        setConfigValue(NOTION_CLIENT_SECRET_KEY, clientSecret, "Notion Client Secret");
     }
 
     /**
-     * 获取印象笔记是否使用沙箱环境
+     * 获取 Notion 回调地址
      */
-    public boolean isEvernoteSandbox() {
-        return configRepository.findByConfigKey(EVERNOTE_SANDBOX_KEY)
+    public String getNotionRedirectUri() {
+        return getConfigValue(NOTION_REDIRECT_URI_KEY);
+    }
+
+    /**
+     * 设置 Notion 回调地址
+     */
+    @Transactional
+    public void setNotionRedirectUri(String redirectUri) {
+        setConfigValue(NOTION_REDIRECT_URI_KEY, redirectUri, "Notion 回调地址");
+    }
+
+    /**
+     * 获取笔记同步按钮是否显示
+     */
+    public boolean isNotionSyncButtonEnabled() {
+        return configRepository.findByConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY)
                 .map(config -> Boolean.parseBoolean(config.getConfigValue()))
-                .orElse(true); // 默认使用沙箱环境
+                .orElse(false); // 默认不显示笔记同步按钮
     }
 
     /**
-     * 设置印象笔记是否使用沙箱环境
+     * 设置笔记同步按钮是否显示
      */
     @Transactional
-    public void setEvernoteSandbox(boolean sandbox) {
-        logger.info(String.format("设置印象笔记沙箱环境: %s", sandbox));
-        SystemConfig config = configRepository.findByConfigKey(EVERNOTE_SANDBOX_KEY)
+    public void setNotionSyncButtonEnabled(boolean enabled) {
+        logger.info(String.format("设置笔记同步按钮显示: %s", enabled));
+        SystemConfig config = configRepository.findByConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY)
                 .orElseGet(() -> {
                     SystemConfig newConfig = new SystemConfig();
-                    newConfig.setConfigKey(EVERNOTE_SANDBOX_KEY);
-                    newConfig.setDescription("印象笔记是否使用沙箱环境（开发测试用）");
+                    newConfig.setConfigKey(NOTION_SYNC_BUTTON_ENABLED_KEY);
+                    newConfig.setDescription("是否显示笔记同步按钮");
                     return newConfig;
                 });
-        config.setConfigValue(String.valueOf(sandbox));
+        config.setConfigValue(String.valueOf(enabled));
         configRepository.save(config);
-        logger.info(String.format("印象笔记沙箱环境已设置为: %s", sandbox));
+        logger.info(String.format("笔记同步按钮显示已设置为: %s", enabled));
     }
 }
 

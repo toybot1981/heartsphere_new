@@ -11,6 +11,7 @@ public interface SystemResourceRepository extends JpaRepository<SystemResource, 
     List<SystemResource> findByCategory(String category);
     List<SystemResource> findByCategoryOrderByCreatedAtDesc(String category);
     List<SystemResource> findAllByOrderByCreatedAtDesc();
+    SystemResource findByNameAndCategory(String name, String category);
 }
 
 

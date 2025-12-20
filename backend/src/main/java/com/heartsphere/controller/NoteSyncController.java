@@ -4,7 +4,7 @@ import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.entity.Note;
 import com.heartsphere.entity.NoteSync;
 import com.heartsphere.security.UserDetailsImpl;
-import com.heartsphere.service.EvernoteAuthService;
+import com.heartsphere.service.NotionAuthService;
 import com.heartsphere.service.NoteSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,16 +24,29 @@ import java.util.Map;
 public class NoteSyncController {
 
     @Autowired
-    private EvernoteAuthService evernoteAuthService;
+    private NotionAuthService notionAuthService;
+
+    @Autowired
+    private com.heartsphere.admin.service.SystemConfigService systemConfigService;
 
     @Autowired
     private NoteSyncService noteSyncService;
 
     /**
-     * 获取印象笔记授权URL
+     * 获取笔记同步按钮显示状态（公共API，无需认证）
      */
-    @GetMapping("/evernote/authorize")
-    public ResponseEntity<ApiResponse<Map<String, String>>> getEvernoteAuthUrl(
+    @GetMapping("/sync-button-enabled")
+    public ResponseEntity<Map<String, Boolean>> getSyncButtonEnabled() {
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("enabled", systemConfigService.isNotionSyncButtonEnabled());
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 获取 Notion 授权URL
+     */
+    @GetMapping("/notion/authorize")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getNotionAuthUrl(
             Authentication authentication,
             @RequestParam String callbackUrl) {
         
@@ -46,7 +59,7 @@ public class NoteSyncController {
         Long userId = userDetails.getId();
 
         try {
-            Map<String, String> authInfo = evernoteAuthService.getAuthorizationUrl(userId, callbackUrl);
+            Map<String, String> authInfo = notionAuthService.getAuthorizationUrl(userId, callbackUrl);
             return ResponseEntity.ok(ApiResponse.success("获取授权URL成功", authInfo));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -55,16 +68,15 @@ public class NoteSyncController {
     }
 
     /**
-     * 处理印象笔记授权回调
+     * 处理 Notion 授权回调
      */
-    @GetMapping("/evernote/callback")
-    public ResponseEntity<String> handleEvernoteCallback(
+    @GetMapping("/notion/callback")
+    public ResponseEntity<String> handleNotionCallback(
             @RequestParam(required = false) String state,
-            @RequestParam(required = false) String oauth_token,
-            @RequestParam(required = false) String oauth_verifier) {
+            @RequestParam(required = false) String code) {
         
         try {
-            Map<String, Object> result = evernoteAuthService.handleCallback(state, oauth_token, oauth_verifier);
+            Map<String, Object> result = notionAuthService.handleCallback(state, code);
             
             // 返回HTML页面，用于显示授权结果并通知父窗口
             String status = (String) result.get("status");
@@ -75,7 +87,7 @@ public class NoteSyncController {
                 <html>
                 <head>
                     <meta charset="UTF-8">
-                    <title>印象笔记授权</title>
+                    <title>Notion 授权</title>
                     <style>
                         body {
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -121,7 +133,7 @@ public class NoteSyncController {
                         // 通知父窗口授权结果
                         if (window.opener) {
                             window.opener.postMessage({
-                                type: 'evernote_auth_result',
+                                type: 'notion_auth_result',
                                 status: '%s',
                                 message: '%s'
                             }, '*');
@@ -149,7 +161,7 @@ public class NoteSyncController {
                 <html>
                 <head>
                     <meta charset="UTF-8">
-                    <title>印象笔记授权失败</title>
+                    <title>Notion 授权失败</title>
                     <style>
                         body {
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -180,7 +192,7 @@ public class NoteSyncController {
                     <script>
                         if (window.opener) {
                             window.opener.postMessage({
-                                type: 'evernote_auth_result',
+                                type: 'notion_auth_result',
                                 status: 'error',
                                 message: '%s'
                             }, '*');
@@ -237,12 +249,12 @@ public class NoteSyncController {
 
         Map<String, Object> status = new HashMap<>();
         
-        if ("evernote".equalsIgnoreCase(provider)) {
-            boolean authorized = evernoteAuthService.isAuthorized(userId);
+        if ("notion".equalsIgnoreCase(provider)) {
+            boolean authorized = notionAuthService.isAuthorized(userId);
             status.put("authorized", authorized);
             
             if (authorized) {
-                NoteSync noteSync = evernoteAuthService.getAuthorization(userId);
+                NoteSync noteSync = notionAuthService.getAuthorization(userId);
                 status.put("lastSyncAt", noteSync.getLastSyncAt());
                 status.put("syncStatus", noteSync.getSyncStatus());
             }
@@ -290,14 +302,48 @@ public class NoteSyncController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long userId = userDetails.getId();
 
-        if ("evernote".equalsIgnoreCase(provider)) {
-            evernoteAuthService.revokeAuthorization(userId);
+        if ("notion".equalsIgnoreCase(provider)) {
+            notionAuthService.revokeAuthorization(userId);
         } else {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("不支持的笔记服务提供商: " + provider));
         }
 
         return ResponseEntity.ok(ApiResponse.success("撤销授权成功", null));
+    }
+
+    /**
+     * 更新 Notion 数据库 ID
+     */
+    @PutMapping("/syncs/notion/database-id")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateNotionDatabaseId(
+            Authentication authentication,
+            @RequestBody Map<String, String> request) {
+        
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401)
+                .body(ApiResponse.error("未授权，请先登录"));
+        }
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+
+        String databaseId = request.get("databaseId");
+        if (databaseId == null || databaseId.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("数据库 ID 不能为空"));
+        }
+
+        try {
+            notionAuthService.updateDatabaseId(userId, databaseId.trim());
+            Map<String, Object> result = new HashMap<>();
+            result.put("databaseId", databaseId.trim());
+            result.put("message", "数据库 ID 更新成功");
+            return ResponseEntity.ok(ApiResponse.success("更新成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("更新失败: " + e.getMessage()));
+        }
     }
 
     /**

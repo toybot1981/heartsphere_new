@@ -35,6 +35,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 禁用将日期写为时间戳，使用 ISO-8601 格式
         mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        // 忽略未知属性，避免前端发送额外字段时抛出异常
+        mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
     }
 

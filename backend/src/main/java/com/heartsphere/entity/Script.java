@@ -19,10 +19,19 @@ public class Script {
     private String title;
 
     @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "scene_count")
     private Integer sceneCount;
+
+    @Column(name = "character_ids", columnDefinition = "TEXT")
+    private String characterIds; // JSON数组格式的角色ID列表
+
+    @Column(length = 200)
+    private String tags;
 
     @ManyToOne
     @JoinColumn(name = "world_id", nullable = false)

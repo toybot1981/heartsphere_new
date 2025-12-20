@@ -35,32 +35,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtUtils.validateJwtToken(jwt)) {
                     logger.debug("JWT token is valid");
                     
-                    // 3. 从令牌中获取用户名
-                    String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                    logger.debug("Extracted username from token: " + username);
-                    
-                    // 4. 加载用户信息
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    
-                    // 5. 创建认证对象
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    
-                    // 6. 将认证对象设置到SecurityContextHolder中
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    logger.debug("Authentication set in SecurityContext for user: " + username);
+                    try {
+                        // 3. 从令牌中获取用户名
+                        String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                        logger.debug("Extracted username from token: " + username);
+                        
+                        // 4. 加载用户信息
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                        
+                        // 5. 创建认证对象
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        
+                        // 6. 将认证对象设置到SecurityContextHolder中
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("Authentication set in SecurityContext for user: " + username);
+                    } catch (Exception e) {
+                        logger.warn("Failed to load user details for token: " + e.getMessage());
+                        // 清除可能已设置的认证信息
+                        SecurityContextHolder.clearContext();
+                    }
                 } else {
                     logger.warn("JWT token validation failed");
+                    // 清除可能已设置的认证信息
+                    SecurityContextHolder.clearContext();
                 }
             } else {
                 logger.debug("No JWT token found in request headers");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: " + e.getMessage(), e);
+            // 确保在异常情况下也清除认证信息
+            SecurityContextHolder.clearContext();
         }
         
-        // 继续处理请求
+        // 继续处理请求（无论认证成功与否）
         filterChain.doFilter(request, response);
     }
     

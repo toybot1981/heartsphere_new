@@ -13,13 +13,18 @@ import com.heartsphere.admin.entity.SystemWorld;
 import com.heartsphere.admin.repository.SystemCharacterRepository;
 import com.heartsphere.admin.repository.SystemEraRepository;
 import com.heartsphere.admin.repository.SystemMainStoryRepository;
+import com.heartsphere.admin.repository.SystemResourceRepository;
 import com.heartsphere.admin.repository.SystemScriptRepository;
 import com.heartsphere.admin.repository.SystemWorldRepository;
+import com.heartsphere.admin.entity.SystemResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -42,6 +47,9 @@ public class SystemDataService {
 
     @Autowired
     private SystemMainStoryRepository mainStoryRepository;
+
+    @Autowired
+    private SystemResourceRepository resourceRepository;
 
     // ========== SystemWorld CRUD ==========
     public List<SystemWorldDTO> getAllWorlds() {
@@ -511,6 +519,244 @@ public class SystemDataService {
         dto.setIsActive(story.getIsActive());
         dto.setSortOrder(story.getSortOrder());
         return dto;
+    }
+
+    // ========== 批量更新剧本节点提示词 ==========
+    @Transactional
+    public int updateAllScriptsWithPrompts() {
+        logger.info("========== [SystemDataService] 开始为所有系统预置剧本添加AI旁白提示词 ==========");
+        
+        List<SystemScript> scripts = scriptRepository.findAll();
+        int updatedCount = 0;
+        
+        for (SystemScript script : scripts) {
+            if (script.getContent() == null || script.getContent().trim().isEmpty()) {
+                logger.warning(String.format("[SystemDataService] 剧本ID %d 内容为空，跳过", script.getId()));
+                continue;
+            }
+            
+            try {
+                // 解析JSON内容
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode contentJson = mapper.readTree(script.getContent());
+                
+                if (!contentJson.has("nodes")) {
+                    logger.warning(String.format("[SystemDataService] 剧本ID %d 没有nodes字段，跳过", script.getId()));
+                    continue;
+                }
+                
+                com.fasterxml.jackson.databind.node.ObjectNode nodesObj = (com.fasterxml.jackson.databind.node.ObjectNode) contentJson.get("nodes");
+                boolean hasChanges = false;
+                
+                // 遍历所有节点
+                java.util.Iterator<String> nodeIds = nodesObj.fieldNames();
+                while (nodeIds.hasNext()) {
+                    String nodeId = nodeIds.next();
+                    com.fasterxml.jackson.databind.node.ObjectNode node = (com.fasterxml.jackson.databind.node.ObjectNode) nodesObj.get(nodeId);
+                    
+                    // 检查是否已有prompt字段
+                    if (node.has("prompt") && node.get("prompt").asText() != null && !node.get("prompt").asText().trim().isEmpty()) {
+                        // 已有prompt，跳过
+                        continue;
+                    }
+                    
+                    // 生成AI旁白提示词
+                    String text = node.has("text") ? node.get("text").asText() : "";
+                    String backgroundHint = node.has("backgroundHint") ? node.get("backgroundHint").asText() : "";
+                    String title = node.has("title") ? node.get("title").asText() : (node.has("id") ? node.get("id").asText() : nodeId);
+                    
+                    // 基于text和backgroundHint生成prompt
+                    String prompt = generatePromptFromNode(text, backgroundHint, title, script.getTitle(), script.getDescription());
+                    
+                    // 添加prompt字段
+                    node.put("prompt", prompt);
+                    hasChanges = true;
+                    
+                    logger.info(String.format("[SystemDataService] 为剧本ID %d 的节点 %s 添加了prompt", script.getId(), nodeId));
+                }
+                
+                // 如果有更改，更新数据库
+                if (hasChanges) {
+                    script.setContent(mapper.writeValueAsString(contentJson));
+                    scriptRepository.save(script);
+                    updatedCount++;
+                    logger.info(String.format("[SystemDataService] 成功更新剧本ID %d: %s", script.getId(), script.getTitle()));
+                }
+                
+            } catch (Exception e) {
+                logger.severe(String.format("[SystemDataService] 更新剧本ID %d 失败: %s", script.getId(), e.getMessage()));
+                e.printStackTrace();
+            }
+        }
+        
+        logger.info(String.format("========== [SystemDataService] 完成，共更新 %d 个剧本 ==========", updatedCount));
+        return updatedCount;
+    }
+    
+    /**
+     * 根据节点信息生成AI旁白提示词
+     */
+    private String generatePromptFromNode(String text, String backgroundHint, String nodeTitle, String scriptTitle, String scriptDescription) {
+        // 如果text不为空，优先使用text作为prompt的基础
+        if (text != null && !text.trim().isEmpty()) {
+            // 如果text已经是描述性的，直接使用
+            if (text.length() > 20) {
+                // 添加背景提示以增强描述
+                if (backgroundHint != null && !backgroundHint.trim().isEmpty()) {
+                    return String.format("%s。场景：%s", text, backgroundHint);
+                }
+                return text;
+            }
+        }
+        
+        // 如果没有text或text太短，根据节点标题和剧本信息生成
+        StringBuilder promptBuilder = new StringBuilder();
+        
+        if (scriptTitle != null && !scriptTitle.trim().isEmpty()) {
+            promptBuilder.append("在").append(scriptTitle).append("的故事中，");
+        }
+        
+        if (nodeTitle != null && !nodeTitle.trim().isEmpty() && !nodeTitle.equals("start") && !nodeTitle.equals("end")) {
+            promptBuilder.append("你来到了").append(nodeTitle).append("的场景。");
+        }
+        
+        if (text != null && !text.trim().isEmpty()) {
+            promptBuilder.append(text);
+        } else {
+            promptBuilder.append("描述这个场景中发生的事情，包括环境、氛围和角色的互动。");
+        }
+        
+        if (backgroundHint != null && !backgroundHint.trim().isEmpty()) {
+            promptBuilder.append("背景环境：").append(backgroundHint);
+        }
+        
+        return promptBuilder.toString();
+    }
+
+    // ========== 匹配资源并更新场景和角色图片 ==========
+    /**
+     * 根据名称匹配资源并更新预置场景和角色的图片
+     * @return 匹配结果统计
+     */
+    @Transactional
+    public Map<String, Object> matchAndUpdateResources() {
+        logger.info("========== [SystemDataService] 开始匹配资源并更新场景和角色图片 ==========");
+        
+        Map<String, Object> result = new HashMap<>();
+        int eraMatchedCount = 0;
+        int characterAvatarMatchedCount = 0;
+        List<String> eraMatched = new ArrayList<>();
+        List<String> characterMatched = new ArrayList<>();
+        List<String> eraNotFound = new ArrayList<>();
+        List<String> characterNotFound = new ArrayList<>();
+        
+        // 1. 匹配场景（SystemEra）和资源（category='era'）
+        List<SystemEra> eras = eraRepository.findAll();
+        logger.info(String.format("[SystemDataService] 找到 %d 个预置场景", eras.size()));
+        
+        for (SystemEra era : eras) {
+            try {
+                SystemResource resource = resourceRepository.findByNameAndCategory(era.getName(), "era");
+                if (resource != null && resource.getUrl() != null && !resource.getUrl().trim().isEmpty()) {
+                    era.setImageUrl(resource.getUrl());
+                    eraRepository.save(era);
+                    eraMatchedCount++;
+                    eraMatched.add(String.format("场景 '%s' (ID: %d) -> 资源 '%s' (URL: %s)", 
+                        era.getName(), era.getId(), resource.getName(), resource.getUrl()));
+                    logger.info(String.format("[SystemDataService] ✓ 场景 '%s' 匹配成功，已更新图片", era.getName()));
+                } else {
+                    eraNotFound.add(String.format("场景 '%s' (ID: %d) - 未找到匹配的资源", era.getName(), era.getId()));
+                    logger.warning(String.format("[SystemDataService] ✗ 场景 '%s' 未找到匹配的资源", era.getName()));
+                }
+            } catch (Exception e) {
+                logger.severe(String.format("[SystemDataService] 匹配场景 '%s' 时出错: %s", era.getName(), e.getMessage()));
+                eraNotFound.add(String.format("场景 '%s' (ID: %d) - 匹配出错: %s", era.getName(), era.getId(), e.getMessage()));
+            }
+        }
+        
+        // 2. 匹配角色（SystemCharacter）和资源
+        // 只更新角色头像：资源名称和角色名称匹配时，直接将资源图片URL复制给角色头像
+        List<SystemCharacter> characters = characterRepository.findAll();
+        logger.info(String.format("[SystemDataService] 找到 %d 个预置角色", characters.size()));
+        
+        // 获取所有角色相关的资源（category='character' 或 'avatar'）
+        List<SystemResource> characterResources = resourceRepository.findByCategory("character");
+        List<SystemResource> avatarResources = resourceRepository.findByCategory("avatar");
+        List<SystemResource> allCharacterResources = new ArrayList<>();
+        allCharacterResources.addAll(characterResources);
+        allCharacterResources.addAll(avatarResources);
+        logger.info(String.format("[SystemDataService] 找到 %d 个角色相关资源", allCharacterResources.size()));
+        
+        for (SystemCharacter character : characters) {
+            try {
+                boolean avatarMatched = false;
+                SystemResource matchedAvatarResource = null;
+                
+                String characterName = character.getName();
+                
+                // 遍历所有角色相关资源，查找匹配的资源
+                for (SystemResource resource : allCharacterResources) {
+                    if (resource.getUrl() == null || resource.getUrl().trim().isEmpty()) {
+                        continue; // 跳过没有URL的资源
+                    }
+                    
+                    String resourceName = resource.getName();
+                    
+                    // 检查资源名称是否匹配角色名称
+                    boolean nameMatches = false;
+                    
+                    // 如果资源名称包含"-头像"或"-背景"等后缀，需要精确匹配
+                    if (resourceName.contains("-头像") || resourceName.contains("-背景")) {
+                        // 格式：角色名称-头像 或 角色名称-背景
+                        String baseName = resourceName.replace("-头像", "").replace("-背景", "");
+                        nameMatches = baseName.equals(characterName);
+                    } else {
+                        // 直接匹配：资源名称包含角色名称，或角色名称包含资源名称
+                        nameMatches = resourceName.contains(characterName) || characterName.contains(resourceName);
+                    }
+                    
+                    // 如果名称匹配，且还没有匹配到头像，则匹配为头像
+                    if (nameMatches && !avatarMatched) {
+                        matchedAvatarResource = resource;
+                        avatarMatched = true;
+                        characterAvatarMatchedCount++;
+                        logger.info(String.format("[SystemDataService] ✓ 角色 '%s' 头像匹配成功: 资源 '%s' -> %s", 
+                            character.getName(), resourceName, resource.getUrl()));
+                    }
+                }
+                
+                // 更新角色的头像URL
+                if (matchedAvatarResource != null) {
+                    character.setAvatarUrl(matchedAvatarResource.getUrl());
+                    characterRepository.save(character);
+                    characterMatched.add(String.format("角色 '%s' (ID: %d) - 头像已更新: 资源 '%s'", 
+                        character.getName(), character.getId(), matchedAvatarResource.getName()));
+                } else {
+                    characterNotFound.add(String.format("角色 '%s' (ID: %d) - 未找到匹配的资源", character.getName(), character.getId()));
+                    logger.warning(String.format("[SystemDataService] ✗ 角色 '%s' 未找到匹配的资源", character.getName()));
+                }
+            } catch (Exception e) {
+                logger.severe(String.format("[SystemDataService] 匹配角色 '%s' 时出错: %s", character.getName(), e.getMessage()));
+                characterNotFound.add(String.format("角色 '%s' (ID: %d) - 匹配出错: %s", character.getName(), character.getId(), e.getMessage()));
+            }
+        }
+        
+        // 汇总结果
+        result.put("eraMatchedCount", eraMatchedCount);
+        result.put("characterAvatarMatchedCount", characterAvatarMatchedCount);
+        result.put("characterBackgroundMatchedCount", 0); // 不再匹配背景
+        result.put("eraMatched", eraMatched);
+        result.put("characterMatched", characterMatched);
+        result.put("eraNotFound", eraNotFound);
+        result.put("characterNotFound", characterNotFound);
+        result.put("totalEras", eras.size());
+        result.put("totalCharacters", characters.size());
+        
+        logger.info(String.format("========== [SystemDataService] 匹配完成 =========="));
+        logger.info(String.format("场景匹配: %d/%d", eraMatchedCount, eras.size()));
+        logger.info(String.format("角色头像匹配: %d/%d", characterAvatarMatchedCount, characters.size()));
+        
+        return result;
     }
 }
 

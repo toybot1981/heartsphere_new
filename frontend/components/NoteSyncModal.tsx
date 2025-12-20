@@ -48,13 +48,15 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [authorizing, setAuthorizing] = useState<string | null>(null);
   const [authWindow, setAuthWindow] = useState<Window | null>(null);
+  const [notionDatabaseId, setNotionDatabaseId] = useState('');
+  const [updatingDatabaseId, setUpdatingDatabaseId] = useState(false);
 
   useEffect(() => {
     loadData();
     
     // 监听来自授权窗口的消息
     const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'evernote_auth_result') {
+      if (event.data && event.data.type === 'notion_auth_result') {
         setAuthorizing(null);
         setAuthWindow(null);
         
@@ -110,19 +112,21 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
     }
   };
 
-  const handleAuthorizeEvernote = async () => {
+  const handleAuthorizeNotion = async () => {
     const actualToken = getActualToken();
     if (!actualToken) return;
     
     try {
-      setAuthorizing('evernote');
-      const callbackUrl = `${window.location.origin}/notes/evernote/callback`;
-      const authInfo = await noteSyncApi.getEvernoteAuthUrl(callbackUrl, actualToken);
+      setAuthorizing('notion');
+      // 使用后端服务器的回调地址，而不是前端地址
+      // Notion OAuth 2.0 回调地址需要指向后端服务器
+      const callbackUrl = `http://localhost:8081/api/notes/notion/callback`;
+      const authInfo = await noteSyncApi.getNotionAuthUrl(callbackUrl, actualToken);
       
       // 打开授权页面
       const newAuthWindow = window.open(
         authInfo.authorizationUrl,
-        'evernote_auth',
+        'notion_auth',
         'width=600,height=700,scrollbars=yes'
       );
 
@@ -146,7 +150,7 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
             try {
               const actualToken = getActualToken();
               if (!actualToken) return;
-              const status = await noteSyncApi.getSyncStatus('evernote', actualToken);
+              const status = await noteSyncApi.getSyncStatus('notion', actualToken);
               if (status.authorized) {
                 showAlert('授权成功！', '授权成功', 'success');
                 await loadData();
@@ -272,24 +276,24 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'syncs' && (
             <div className="space-y-4">
-              {/* 印象笔记 */}
+              {/* Notion */}
               <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-white mb-1">印象笔记 (Evernote)</h3>
-                    <p className="text-sm text-slate-400">同步您的印象笔记到心域</p>
+                    <h3 className="text-lg font-bold text-white mb-1">Notion</h3>
+                    <p className="text-sm text-slate-400">同步您的 Notion 笔记到心域</p>
                   </div>
-                  {syncs.find(s => s.provider === 'evernote' && s.isActive) ? (
+                  {syncs.find(s => s.provider === 'notion' && s.isActive) ? (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleSync('evernote')}
-                        disabled={syncing === 'evernote'}
+                        onClick={() => handleSync('notion')}
+                        disabled={syncing === 'notion'}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {syncing === 'evernote' ? '同步中...' : '立即同步'}
+                        {syncing === 'notion' ? '同步中...' : '立即同步'}
                       </button>
                       <button
-                        onClick={() => handleRevoke('evernote')}
+                        onClick={() => handleRevoke('notion')}
                         className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
                       >
                         撤销授权
@@ -297,11 +301,11 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
                     </div>
                   ) : (
                     <button
-                      onClick={handleAuthorizeEvernote}
-                      disabled={authorizing === 'evernote'}
+                      onClick={handleAuthorizeNotion}
+                      disabled={authorizing === 'notion'}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      {authorizing === 'evernote' ? (
+                      {authorizing === 'notion' ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           授权中...
@@ -318,43 +322,93 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
                   )}
                 </div>
 
-                {syncs.find(s => s.provider === 'evernote') && (
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">状态:</span>
-                      <span className={getStatusColor(syncs.find(s => s.provider === 'evernote')?.syncStatus || null)}>
-                        {(() => {
-                          const status = syncs.find(s => s.provider === 'evernote')?.syncStatus;
-                          if (status === 'success') return '✓ 已同步';
-                          if (status === 'error') return '✗ 同步失败';
-                          if (status === 'syncing') return '⟳ 同步中';
-                          if (status === 'authorized') return '✓ 已授权';
-                          return '未同步';
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">最后同步:</span>
-                      <span className="text-slate-300">
-                        {formatDate(syncs.find(s => s.provider === 'evernote')?.lastSyncAt || null)}
-                      </span>
-                    </div>
-                    {syncs.find(s => s.provider === 'evernote')?.syncError && (
-                      <div className="mt-2 p-2 bg-red-900/20 border border-red-800 rounded text-red-400 text-xs">
-                        {syncs.find(s => s.provider === 'evernote')?.syncError}
+                {syncs.find(s => s.provider === 'notion') && (
+                  <div className="mt-4 space-y-4">
+                    {/* 数据库 ID 配置 */}
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Notion 数据库 ID
+                      </label>
+                      <p className="text-xs text-slate-400 mb-3">
+                        在 Notion 中创建数据库后，从 URL 中复制数据库 ID（32 位字符，包含连字符）
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={notionDatabaseId}
+                          onChange={(e) => setNotionDatabaseId(e.target.value)}
+                          placeholder="例如: 8c916df3-7fc1-81b5-b59f-0003c2b3777d"
+                          className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!notionDatabaseId.trim()) {
+                              showAlert('请输入数据库 ID', '错误', 'error');
+                              return;
+                            }
+                            try {
+                              setUpdatingDatabaseId(true);
+                              const actualToken = getActualToken();
+                              if (!actualToken) return;
+                              await noteSyncApi.updateNotionDatabaseId(notionDatabaseId.trim(), actualToken);
+                              showAlert('数据库 ID 更新成功！', '成功', 'success');
+                              setNotionDatabaseId('');
+                              await loadData();
+                            } catch (error: any) {
+                              showAlert('更新失败: ' + (error.message || '未知错误'), '错误', 'error');
+                            } finally {
+                              setUpdatingDatabaseId(false);
+                            }
+                          }}
+                          disabled={updatingDatabaseId || !notionDatabaseId.trim()}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {updatingDatabaseId ? '更新中...' : '更新'}
+                        </button>
                       </div>
-                    )}
+                      <p className="text-xs text-slate-500 mt-2">
+                        💡 提示：数据库必须与您的 Notion 集成共享
+                      </p>
+                    </div>
+
+                    {/* 状态信息 */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">状态:</span>
+                        <span className={getStatusColor(syncs.find(s => s.provider === 'notion')?.syncStatus || null)}>
+                          {(() => {
+                            const status = syncs.find(s => s.provider === 'notion')?.syncStatus;
+                            if (status === 'success') return '✓ 已同步';
+                            if (status === 'error') return '✗ 同步失败';
+                            if (status === 'syncing') return '⟳ 同步中';
+                            if (status === 'authorized') return '✓ 已授权';
+                            return '未同步';
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">最后同步:</span>
+                        <span className="text-slate-300">
+                          {formatDate(syncs.find(s => s.provider === 'notion')?.lastSyncAt || null)}
+                        </span>
+                      </div>
+                      {syncs.find(s => s.provider === 'notion')?.syncError && (
+                        <div className="mt-2 p-2 bg-red-900/20 border border-red-800 rounded text-red-400 text-xs">
+                          {syncs.find(s => s.provider === 'notion')?.syncError}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 
-                {authorizing === 'evernote' && (
+                {authorizing === 'notion' && (
                   <div className="mt-4 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
                     <div className="flex items-start gap-3">
                       <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mt-0.5"></div>
                       <div className="flex-1">
                         <p className="text-blue-300 text-sm font-medium mb-1">正在授权中...</p>
                         <p className="text-blue-400/80 text-xs">
-                          请在弹出的窗口中完成印象笔记授权。授权完成后，窗口将自动关闭。
+                          请在弹出的窗口中完成 Notion 授权。授权完成后，窗口将自动关闭。
                         </p>
                         {authWindow && (
                           <button
@@ -414,7 +468,7 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     }`}
                   >
-                    {provider === 'evernote' ? '印象笔记' : provider}
+                    {provider === 'notion' ? 'Notion' : provider}
                   </button>
                 ))}
               </div>
@@ -443,7 +497,7 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
                               {note.content?.substring(0, 200)}...
                             </p>
                             <div className="flex items-center gap-4 text-xs text-slate-500">
-                              <span>{note.provider === 'evernote' ? '印象笔记' : note.provider}</span>
+                              <span>{note.provider === 'notion' ? 'Notion' : note.provider}</span>
                               {note.notebookName && <span>📁 {note.notebookName}</span>}
                               {note.tags && <span>🏷️ {note.tags}</span>}
                               <span>🕒 {formatDate(note.updatedAtProvider || note.updatedAt)}</span>

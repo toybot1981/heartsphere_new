@@ -1,5 +1,7 @@
 package com.heartsphere.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "note_syncs")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class NoteSync {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +27,7 @@ public class NoteSync {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JsonIgnore
     private User user;
 
     @Column(name = "provider", nullable = false, length = 50)
@@ -67,4 +71,7 @@ public class NoteSync {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
+
+
+
 

@@ -145,6 +145,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                 // 保存token
                 if (status.token) {
                     localStorage.setItem('auth_token', status.token);
+                    console.log('[LoginModal] 微信登录成功，token已保存到localStorage，长度:', status.token.length);
+                } else {
+                    console.error('[LoginModal] 微信登录成功但未收到token！');
+                }
+                
+                // 确保token已保存后再调用登录成功回调
+                // 添加短暂延迟，确保localStorage写入完成
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                // 验证token是否已保存
+                const savedToken = localStorage.getItem('auth_token');
+                if (!savedToken) {
+                    console.error('[LoginModal] token保存失败！');
+                    setError('登录成功，但保存登录信息失败，请重新登录');
+                    return;
                 }
                 
                 // 调用登录成功回调

@@ -448,59 +448,71 @@ public class AdminSystemDataController {
           return ResponseEntity.ok(response);
       }
 
-      // ========== Evernote Config APIs ==========
-      @GetMapping("/config/evernote")
-      public ResponseEntity<Map<String, Object>> getEvernoteConfig(
+      // ========== Notion Config APIs ==========
+      @GetMapping("/config/notion")
+      public ResponseEntity<Map<String, Object>> getNotionConfig(
               @RequestHeader(value = "Authorization", required = false) String authHeader) {
           validateAdmin(authHeader);
           Map<String, Object> config = new HashMap<>();
-          config.put("consumerKey", systemConfigService.getEvernoteConsumerKey() != null ? systemConfigService.getEvernoteConsumerKey() : "");
-          config.put("consumerSecret", "******"); // 不返回实际密钥
-          config.put("sandbox", systemConfigService.isEvernoteSandbox());
+          config.put("clientId", systemConfigService.getNotionClientId() != null ? systemConfigService.getNotionClientId() : "");
+          config.put("clientSecret", "******"); // 不返回实际密钥
+          config.put("redirectUri", systemConfigService.getNotionRedirectUri() != null ? systemConfigService.getNotionRedirectUri() : "");
+          config.put("syncButtonEnabled", systemConfigService.isNotionSyncButtonEnabled());
           return ResponseEntity.ok(config);
       }
 
-      @PutMapping("/config/evernote")
-      public ResponseEntity<Map<String, Object>> setEvernoteConfig(
+      @PutMapping("/config/notion")
+      public ResponseEntity<Map<String, Object>> setNotionConfig(
               @RequestBody Map<String, String> request,
               @RequestHeader(value = "Authorization", required = false) String authHeader) {
           validateAdmin(authHeader);
-          String consumerKey = request.get("consumerKey");
-          String consumerSecret = request.get("consumerSecret");
-          Boolean sandbox = request.containsKey("sandbox") ? Boolean.parseBoolean(request.get("sandbox")) : null;
+          String clientId = request.get("clientId");
+          String clientSecret = request.get("clientSecret");
+          String redirectUri = request.get("redirectUri");
+          Boolean syncButtonEnabled = request.containsKey("syncButtonEnabled") ? Boolean.parseBoolean(request.get("syncButtonEnabled")) : null;
 
           java.util.logging.Logger logger = java.util.logging.Logger.getLogger(AdminSystemDataController.class.getName());
-          logger.info("设置印象笔记配置 - consumerKey: " + (consumerKey != null ? consumerKey : "null") + 
-                     ", consumerSecret: " + (consumerSecret != null ? "***" : "null") + 
-                     ", sandbox: " + sandbox);
+          logger.info("设置 Notion 配置 - clientId: " + (clientId != null ? clientId : "null") + 
+                     ", clientSecret: " + (clientSecret != null ? "***" : "null") + 
+                     ", redirectUri: " + (redirectUri != null ? redirectUri : "null") +
+                     ", syncButtonEnabled: " + syncButtonEnabled);
 
-          if (consumerKey != null && !consumerKey.trim().isEmpty()) {
-              systemConfigService.setEvernoteConsumerKey(consumerKey.trim());
-              logger.info("已保存Consumer Key: " + consumerKey.trim());
-          } else if (consumerKey != null && consumerKey.trim().isEmpty()) {
-              logger.warning("Consumer Key为空字符串，跳过保存");
+          if (clientId != null && !clientId.trim().isEmpty()) {
+              systemConfigService.setNotionClientId(clientId.trim());
+              logger.info("已保存 Client ID: " + clientId.trim());
+          } else if (clientId != null && clientId.trim().isEmpty()) {
+              logger.warning("Client ID 为空字符串，跳过保存");
           }
-          if (consumerSecret != null && !consumerSecret.trim().isEmpty()) {
-              systemConfigService.setEvernoteConsumerSecret(consumerSecret.trim());
-              logger.info("已保存Consumer Secret");
-          } else if (consumerSecret != null && consumerSecret.trim().isEmpty()) {
-              logger.warning("Consumer Secret为空字符串，跳过保存");
+          if (clientSecret != null && !clientSecret.trim().isEmpty()) {
+              systemConfigService.setNotionClientSecret(clientSecret.trim());
+              logger.info("已保存 Client Secret");
+          } else if (clientSecret != null && clientSecret.trim().isEmpty()) {
+              logger.warning("Client Secret 为空字符串，跳过保存");
           }
-          if (sandbox != null) {
-              systemConfigService.setEvernoteSandbox(sandbox);
-              logger.info("已保存Sandbox设置: " + sandbox);
+          if (redirectUri != null && !redirectUri.trim().isEmpty()) {
+              systemConfigService.setNotionRedirectUri(redirectUri.trim());
+              logger.info("已保存 Redirect URI: " + redirectUri.trim());
+          } else if (redirectUri != null && redirectUri.trim().isEmpty()) {
+              logger.warning("Redirect URI 为空字符串，跳过保存");
+          }
+          if (syncButtonEnabled != null) {
+              systemConfigService.setNotionSyncButtonEnabled(syncButtonEnabled);
+              logger.info("已保存笔记同步按钮显示设置: " + syncButtonEnabled);
           }
 
           // 验证配置是否已保存
-          String savedKey = systemConfigService.getEvernoteConsumerKey();
-          String savedSecret = systemConfigService.getEvernoteConsumerSecret();
-          logger.info("验证保存结果 - Consumer Key: " + (savedKey != null ? savedKey : "null") + 
-                     ", Consumer Secret: " + (savedSecret != null && !savedSecret.isEmpty() ? "已保存" : "未保存"));
+          String savedClientId = systemConfigService.getNotionClientId();
+          String savedClientSecret = systemConfigService.getNotionClientSecret();
+          String savedRedirectUri = systemConfigService.getNotionRedirectUri();
+          logger.info("验证保存结果 - Client ID: " + (savedClientId != null ? savedClientId : "null") + 
+                     ", Client Secret: " + (savedClientSecret != null && !savedClientSecret.isEmpty() ? "已保存" : "未保存") +
+                     ", Redirect URI: " + (savedRedirectUri != null ? savedRedirectUri : "null"));
 
           Map<String, Object> response = new HashMap<>();
-          response.put("consumerKey", systemConfigService.getEvernoteConsumerKey() != null ? systemConfigService.getEvernoteConsumerKey() : "");
-          response.put("consumerSecret", "******");
-          response.put("sandbox", systemConfigService.isEvernoteSandbox());
+          response.put("clientId", systemConfigService.getNotionClientId() != null ? systemConfigService.getNotionClientId() : "");
+          response.put("clientSecret", "******");
+          response.put("redirectUri", systemConfigService.getNotionRedirectUri() != null ? systemConfigService.getNotionRedirectUri() : "");
+          response.put("syncButtonEnabled", systemConfigService.isNotionSyncButtonEnabled());
           return ResponseEntity.ok(response);
       }
 
@@ -521,6 +533,23 @@ public class AdminSystemDataController {
               e.printStackTrace();
               throw e;
           }
+      }
+
+      /**
+       * 匹配资源并更新预置场景和角色的图片
+       * 根据名称匹配：
+       * - 场景：匹配 category='era' 且名称相同的资源，更新场景的 imageUrl
+       * - 角色头像：匹配 category='character' 或 'avatar' 的资源，资源名称包含角色名称或角色名称包含资源名称
+       *   匹配成功后，直接将资源图片URL复制给角色的头像
+       * 
+       * 注意：此接口必须放在 /resources/{id} 之前，以避免路径冲突
+       */
+      @PostMapping("/resources/match-and-update")
+      public ResponseEntity<Map<String, Object>> matchAndUpdateResources(
+              @RequestHeader(value = "Authorization", required = false) String authHeader) {
+          validateAdmin(authHeader);
+          Map<String, Object> result = systemDataService.matchAndUpdateResources();
+          return ResponseEntity.ok(result);
       }
 
       @GetMapping("/resources/{id}")
@@ -620,14 +649,34 @@ public class AdminSystemDataController {
       public ResponseEntity<List<ScriptDTO>> getAllUserScripts(
               @RequestHeader(value = "Authorization", required = false) String authHeader) {
           validateAdmin(authHeader);
-          // 管理员可以查看所有用户的剧本（包括已删除的）
-          List<Script> scripts = scriptRepository.findAll();
-          List<ScriptDTO> scriptDTOs = scripts.stream()
-                  .map(DTOMapper::toScriptDTO)
-                  .collect(Collectors.toList());
-          return ResponseEntity.ok()
-                  .header("Content-Type", "application/json;charset=UTF-8")
-                  .body(scriptDTOs);
+          try {
+              // 管理员可以查看所有用户的剧本（包括已删除的）
+              List<Script> scripts = scriptRepository.findAll();
+              List<ScriptDTO> scriptDTOs = scripts.stream()
+                      .filter(script -> script != null) // 过滤掉 null 值
+                      .map(script -> {
+                          try {
+                              return DTOMapper.toScriptDTO(script);
+                          } catch (Exception e) {
+                              // 如果转换失败，记录错误并返回 null，后续会被过滤
+                              System.err.println("转换 Script 到 DTO 失败，Script ID: " + (script != null ? script.getId() : "null") + ", 错误: " + e.getMessage());
+                              e.printStackTrace();
+                              return null;
+                          }
+                      })
+                      .filter(dto -> dto != null) // 过滤掉转换失败的 null 值
+                      .collect(Collectors.toList());
+              return ResponseEntity.ok()
+                      .header("Content-Type", "application/json;charset=UTF-8")
+                      .body(scriptDTOs);
+          } catch (Exception e) {
+              System.err.println("获取所有用户剧本失败: " + e.getMessage());
+              e.printStackTrace();
+              // 返回空列表而不是抛出异常，避免 500 错误
+              return ResponseEntity.ok()
+                      .header("Content-Type", "application/json;charset=UTF-8")
+                      .body(new java.util.ArrayList<>());
+          }
       }
 
       @GetMapping("/scripts/{id}")
@@ -729,5 +778,36 @@ public class AdminSystemDataController {
           scriptRepository.save(script);
           return ResponseEntity.ok().build();
       }
+
+    // ========== 系统预置剧本管理 APIs ==========
+    @GetMapping("/system-scripts")
+    public ResponseEntity<List<com.heartsphere.admin.dto.SystemScriptDTO>> getAllSystemScripts(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        return ResponseEntity.ok(systemDataService.getAllScripts());
+    }
+
+    @GetMapping("/system-scripts/{id}")
+    public ResponseEntity<com.heartsphere.admin.dto.SystemScriptDTO> getSystemScriptById(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        return ResponseEntity.ok(systemDataService.getScriptById(id));
+    }
+
+    /**
+     * 批量更新所有系统预置剧本的节点，为每个节点生成AI旁白提示词
+     */
+    @PostMapping("/system-scripts/update-prompts")
+    public ResponseEntity<Map<String, Object>> updateAllSystemScriptsWithPrompts(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        int updatedCount = systemDataService.updateAllScriptsWithPrompts();
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("updatedCount", updatedCount);
+        response.put("message", String.format("成功更新 %d 个系统预置剧本的AI旁白提示词", updatedCount));
+        return ResponseEntity.ok(response);
+    }
 }
 

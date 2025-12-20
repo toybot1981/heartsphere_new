@@ -81,7 +81,11 @@ public class WebSecurityConfig {
                 // 配置授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 允许公开访问的端点
-                        .requestMatchers("/api/auth/**", "/api/admin/auth/**", "/api/wechat/**", "/api/notes/evernote/callback", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/admin/auth/**", "/api/wechat/**", 
+                                "/api/notes/evernote/callback", 
+                                "/api/notes/notion/callback",  // Notion OAuth 回调端点
+                                "/api/notes/sync-button-enabled",  // 笔记同步按钮显示状态（公开）
+                                "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // 允许所有OPTIONS请求
                         .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
                         // 允许所有请求，方便开发测试

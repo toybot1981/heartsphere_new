@@ -4,7 +4,7 @@ import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, C
 import { geminiService } from '../services/gemini';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
-import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi } from '../services/api';
+import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
 import { syncService } from '../services/syncService';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileRealWorld } from './MobileRealWorld';
@@ -505,7 +505,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         if (currentScene && currentScene.id) {
             const eraId = parseInt(currentScene.id);
             if (!isNaN(eraId)) {
-                systemScriptApi.getByEraId(eraId)
+                presetScriptApi.getByEraId(eraId)
                     .then(scripts => {
                         // 将系统预设剧本转换为 CustomScenario 格式
                         const convertedScripts: CustomScenario[] = scripts.map(script => {

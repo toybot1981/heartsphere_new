@@ -16,3 +16,6 @@ public interface NoteSyncRepository extends JpaRepository<NoteSync, Long> {
     List<NoteSync> findByUserIdAndIsActiveTrue(Long userId);
 }
 
+
+
+

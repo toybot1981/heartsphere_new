@@ -966,6 +966,112 @@ The content MUST be in Chinese. The story should be engaging, with clear charact
       }, 2, 3000); 
   }
 
+  /**
+   * 根据标题、场景、简介、标签和角色生成剧本节点流程
+   */
+  async generateScriptWithCharacters(params: {
+    title: string;
+    sceneName: string;
+    sceneDescription?: string;
+    description?: string;
+    tags?: string;
+    characters: Array<{
+      id: string;
+      name: string;
+      role?: string;
+      bio?: string;
+    }>;
+  }): Promise<{ nodes: Record<string, StoryNode>; startNodeId: string }> {
+    return this.retry(async () => {
+      try {
+        // 构建角色信息字符串
+        let characterInfo = '';
+        if (params.characters && params.characters.length > 0) {
+          characterInfo = '\n\n参与角色信息：\n';
+          params.characters.forEach(char => {
+            characterInfo += `- ${char.name}`;
+            if (char.role) characterInfo += `（${char.role}）`;
+            if (char.bio) characterInfo += `：${char.bio}`;
+            characterInfo += '\n';
+          });
+          characterInfo += '\n故事应主要围绕这些角色展开，确保他们的性格、背景和关系在故事中得到体现。';
+        }
+
+        // 构建标签信息
+        const tagsInfo = params.tags ? `\n标签：${params.tags}` : '';
+
+        // 构建场景信息
+        const sceneInfo = params.sceneDescription 
+          ? `\n场景背景：${params.sceneDescription}`
+          : '';
+
+        const userPrompt = `请根据以下信息创建一个互动视觉小说剧本的节点流程结构：
+
+剧本标题：${params.title}
+${sceneInfo}
+场景名称：${params.sceneName}
+${params.description ? `剧本简介：${params.description}` : ''}
+${tagsInfo}
+${characterInfo}
+
+请生成一个包含至少4-6个节点的分支剧情结构。每个节点应包含：
+- id: 节点唯一标识符（如 "start", "node_1", "node_2" 等）
+- title: 节点标题（简短描述）
+- prompt: 场景描述和剧情推进内容（要详细，包含对话和动作，使用中文）
+- options: 选项数组，每个选项包含 id, text（选项文本）, nextNodeId（指向的下一个节点ID）
+
+要求：
+1. 第一个节点的id必须是"start"
+2. 每个节点应该有2-3个选项分支
+3. 剧情要有逻辑性和连贯性
+4. 内容必须使用中文
+5. 确保选项能够形成合理的分支路径
+6. 故事要围绕参与角色展开，体现他们的性格特点
+
+请直接返回JSON格式，不要包含其他文本说明。JSON格式：
+{
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "title": "...",
+      "prompt": "...",
+      "options": [
+        {
+          "id": "opt_1",
+          "text": "...",
+          "nextNodeId": "node_1"
+        }
+      ]
+    },
+    "node_1": { ... }
+  }
+}`;
+
+        const systemPrompt = `You are a creative director for an interactive visual novel game.
+Generate a branching scenario structure in JSON format based on the provided information.
+The content MUST be in Chinese.`;
+
+        const responseText = await this.generateText(userPrompt, systemPrompt, true);
+        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const scenarioData = JSON.parse(jsonStr);
+
+        // 验证并返回节点数据
+        if (!scenarioData.nodes || typeof scenarioData.nodes !== 'object') {
+          throw new Error('生成的剧本节点格式无效');
+        }
+
+        return {
+          nodes: scenarioData.nodes,
+          startNodeId: scenarioData.startNodeId || 'start'
+        };
+      } catch (e) {
+        this.log('generateScriptWithCharacters', 'error', e);
+        throw e;
+      }
+    }, 2, 3000);
+  }
+
   // --- Image Generation ---
   async generateImageFromPrompt(prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '3:4' | '4:3' = '1:1'): Promise<string | null> {
     const providers = this.getPrioritizedProviders('image');

@@ -132,11 +132,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const isStoryMode = !!customScenario || character?.id.startsWith('story_');
   const isScenarioMode = !!customScenario; // Specifically for Node-based scenarios
   
-  console.log('[ChatWindow] 模式判断:', {
+  // 详细调试日志
+  console.log('[ChatWindow] ════════════════════════════════════════');
+  console.log('[ChatWindow] 🔍 模式判断详细分析:', {
     isStoryMode,
     isScenarioMode,
-    characterIdStartsWithStory: character?.id?.startsWith('story_')
+    hasCustomScenario: !!customScenario,
+    customScenarioType: typeof customScenario,
+    customScenarioValue: customScenario,
+    customScenarioId: customScenario?.id,
+    customScenarioTitle: customScenario?.title,
+    customScenarioNodesCount: customScenario ? Object.keys(customScenario.nodes || {}).length : 0,
+    characterId: character?.id,
+    characterIdStartsWithStory: character?.id?.startsWith('story_'),
+    willShowInput: !isScenarioMode && !isCinematic,
+    willShowChoices: isScenarioMode,
+    isCinematic
   });
+  console.log('[ChatWindow] ════════════════════════════════════════');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -296,6 +309,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setIsLoading(true);
     const tempBotId = `bot_${Date.now()}`;
     
+    // 在流程驱动模式下，直接显示节点的prompt内容，不调用AI生成
+    // 因为剧本是预设的流程，不需要AI动态生成对话
+    
     let currentHistory = [...history];
     if (choiceText) {
        const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: choiceText, timestamp: Date.now() };
@@ -303,30 +319,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
        onUpdateHistory(currentHistory);
     }
 
-    // 使用传入的参与角色信息，如果没有则尝试从 customScenario 中获取
-    const charsToUse = participatingCharacters && participatingCharacters.length > 0 
-        ? participatingCharacters 
-        : undefined;
-
     try {
-       const stream = await geminiService.generateStoryBeatStream(node, currentHistory, choiceText, userProfile, charsToUse);
-       let fullResponseText = '';
-       let firstChunk = true;
-       for await (const chunk of stream) {
-         const chunkText = (chunk as GenerateContentResponse).text;
-         if (chunkText) {
-           fullResponseText += chunkText;
-           const newMsg = { id: tempBotId, role: 'model' as const, text: fullResponseText, timestamp: Date.now() };
-           if (firstChunk) {
-               currentHistory = [...currentHistory, newMsg];
-               firstChunk = false;
-           } else {
-               currentHistory = [...currentHistory.slice(0, -1), newMsg];
-           }
-           onUpdateHistory(currentHistory);
-         }
-       }
-       
+      // 流程驱动模式：直接使用节点预设的prompt内容，不调用AI生成
+      const nodeContent = node.prompt || node.title || '【场景内容】';
+      const botMsg: Message = { 
+        id: tempBotId, 
+        role: 'model', 
+        text: nodeContent, 
+        timestamp: Date.now() 
+      };
+      currentHistory = [...currentHistory, botMsg];
+      onUpdateHistory(currentHistory);
+      
       // 更新场景状态到当前节点
       if (onUpdateScenarioState) {
         console.log('[ChatWindow] 调用 onUpdateScenarioState 更新节点:', {
@@ -339,13 +343,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         console.warn('[ChatWindow] onUpdateScenarioState 未定义，无法更新状态');
       }
        
-       // 重要：如果当前节点有选项，应该停下来等待用户选择，而不是自动继续
-       // 节点处理完成，等待用户选择（如果有选项的话）
-       // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
+      // 节点处理完成，等待用户选择（如果有选项的话）
+      // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
        
     } catch (e) {
-        console.error("Scenario generation failed", e);
-        onUpdateHistory([...currentHistory, {id: tempBotId, role: 'model', text: "【系统错误：剧本生成失败，请稍后重试】", timestamp: Date.now()}]);
+        console.error("Scenario transition failed", e);
+        onUpdateHistory([...currentHistory, {id: tempBotId, role: 'model', text: "【系统错误：剧本执行失败，请稍后重试】", timestamp: Date.now()}]);
     } finally {
         setIsLoading(false);
     }
@@ -614,9 +617,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               currentTarget: e.currentTarget,
               timestamp: Date.now()
             });
-          }}
-          onMouseEnter={() => {
-            console.log('[ChatWindow] 🖱️ 鼠标进入按钮容器');
           }}
           onMouseEnter={() => {
             console.log('[ChatWindow] 🖱️ 鼠标进入按钮容器');

@@ -708,50 +708,34 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
           }
         }
         if (targetEraId) {
-          const scriptData = {
-            title: item.customName || script.title,
-            description: script.description || null, // 从预置剧本中复制 description
-            content: script.content,
+          // 创建用户剧本
+          // 只传递系统预置剧本ID和用户场景ID，后端会从预置数据库查询完整数据
+          const scriptData: {
+            systemScriptId: number;
+            eraId: number;
+            worldId: number;
+            title?: string; // 可选：自定义标题
+          } = {
+            systemScriptId: script.id, // 系统预置剧本ID
+            eraId: targetEraId, // 用户场景ID
             worldId: worldId,
-            eraId: targetEraId,
-            sceneCount: script.sceneCount || 0 // 从预置剧本中复制 sceneCount
           };
           
-          console.log(`[初始化-剧本] ========== 开始创建剧本: ${scriptData.title} ==========`);
-          console.log(`[初始化-剧本] 预置数据源:`, {
-            id: script.id,
-            title: script.title,
-            description: script.description,
-            content: script.content ? `有(${script.content.length}字符)` : '无',
-            sceneCount: script.sceneCount,
-            systemEraId: script.systemEraId,
-          });
-          console.log(`[初始化-剧本] 赋值映射:`, {
-            title: `${script.title} -> ${scriptData.title}${item.customName ? ' (已自定义)' : ''}`,
-            description: `${script.description || '无'} -> ${scriptData.description || '无'}`,
-            content: `${script.content ? '有(' + script.content.length + '字符)' : '无'} -> ${scriptData.content ? '有' : '无'}`,
-            sceneCount: `${script.sceneCount || 0} -> ${scriptData.sceneCount}`,
-          });
-          console.log(`[初始化-剧本] 目标场景ID: ${targetEraId}, 世界ID: ${worldId}`);
-          
-          // 如果 content 是 JSON 字符串，尝试解析并显示节点信息
-          if (script.content) {
-            try {
-              const contentObj = JSON.parse(script.content);
-              if (contentObj.nodes) {
-                const nodeCount = Object.keys(contentObj.nodes).length;
-                console.log(`[初始化-剧本] 节点信息: 共 ${nodeCount} 个节点`);
-                if (contentObj.startNodeId) {
-                  console.log(`[初始化-剧本] 起始节点ID: ${contentObj.startNodeId}`);
-                }
-              }
-            } catch (e) {
-              console.log(`[初始化-剧本] 内容解析: 非JSON格式或解析失败`);
-            }
+          // 如果用户自定义了标题，添加到请求中
+          if (item.customName) {
+            scriptData.title = item.customName;
           }
           
+          console.log(`[初始化-剧本] ========== 开始创建剧本 ==========`);
+          console.log(`[初始化-剧本] 系统预置剧本ID: ${script.id}`);
+          console.log(`[初始化-剧本] 系统预置剧本名称: ${script.title}`);
+          console.log(`[初始化-剧本] 用户场景ID: ${targetEraId}`);
+          console.log(`[初始化-剧本] 自定义标题: ${item.customName || '无'}`);
+          console.log(`[初始化-剧本] 发送的数据（仅ID）:`, scriptData);
+          console.log(`[初始化-剧本] 后端将从 system_scripts 表查询完整数据并创建`);
+          
           await scriptApi.createScript(scriptData, token);
-          console.log(`[初始化-剧本] ✅ 创建剧本成功: ${scriptData.title}`);
+          console.log(`[初始化-剧本] ✅ 创建剧本成功: ${item.customName || script.title}`);
           console.log(`[初始化-剧本] ========== 剧本创建完成 ==========\n`);
         }
       }

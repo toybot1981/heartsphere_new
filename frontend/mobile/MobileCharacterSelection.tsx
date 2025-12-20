@@ -38,6 +38,30 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto pb-24 p-4 space-y-8">
                 
+                {/* Main Story Section - 主线故事显示在角色上方 */}
+                {scene.mainStory && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-white border-l-4 border-pink-500 pl-3">主线剧情</h3>
+                        </div>
+                        <div 
+                            onClick={() => onSelectCharacter(scene.mainStory!)}
+                            className="bg-gradient-to-r from-gray-800 to-gray-900 border border-pink-500/30 rounded-xl p-4 active:scale-[0.98] transition-transform"
+                        >
+                            <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                    <span className="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-bold">Main Story</span>
+                                    <h4 className="text-white font-bold mt-2">{scene.mainStory.name}</h4>
+                                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">{scene.mainStory.bio}</p>
+                                </div>
+                                <div className="w-16 h-16 ml-3 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                                    <img src={scene.mainStory.avatarUrl} className="w-full h-full object-cover" alt={scene.mainStory.name} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Characters Section */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -75,24 +99,6 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                     </div>
 
                     <div className="space-y-3">
-                        {scene.mainStory && (
-                            <div 
-                                onClick={() => onSelectCharacter(scene.mainStory!)}
-                                className="bg-gradient-to-r from-gray-800 to-gray-900 border border-pink-500/30 rounded-xl p-4 active:scale-[0.98] transition-transform"
-                            >
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <span className="text-[10px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-bold">Main Story</span>
-                                        <h4 className="text-white font-bold mt-2">{scene.mainStory.name}</h4>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10">
-                                        <img src={scene.mainStory.avatarUrl} className="w-full h-full object-cover" />
-                                    </div>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 line-clamp-2">{scene.mainStory.bio}</p>
-                            </div>
-                        )}
-
                         {scenarios.map(scen => (
                              <div 
                                 key={scen.id}
@@ -119,7 +125,7 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                             </div>
                         ))}
 
-                        {scenarios.length === 0 && !scene.mainStory && (
+                        {scenarios.length === 0 && (
                             <p className="text-center text-xs text-gray-600 py-4">暂无剧情，点击右上角创建。</p>
                         )}
                     </div>

@@ -29,6 +29,7 @@ import { MembershipModal } from './components/MembershipModal';
 import { GlobalDialogs, showAlert, showConfirm } from './utils/dialog';
 import { InitializationWizard } from './components/InitializationWizard';
 import { useScrollPosition } from './hooks/useScrollPosition';
+import { StateManagementTest } from './components/StateManagementTest';
 
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
@@ -3305,6 +3306,11 @@ const App: React.FC = () => {
   }
 
   if (!isLoaded) return <div className="h-screen w-screen bg-black flex items-center justify-center text-white">Loading HeartSphere Core...</div>;
+  
+  // 测试模式：在URL中添加 ?test=state 可以访问状态管理测试页面
+  if (typeof window !== 'undefined' && window.location.search.includes('test=state')) {
+    return <StateManagementTest />;
+  }
   
   const currentSceneLocal = currentScenes.find(s => s.id === gameState.selectedSceneId);
   

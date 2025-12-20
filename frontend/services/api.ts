@@ -1,4 +1,23 @@
 // API服务，用于处理与后端的通信
+// 注意：此文件正在逐步迁移到模块化结构（services/api/）
+// 新的API模块位于 services/api/ 目录下
+
+// 从新模块导入API（已完成迁移）
+// 场景模块
+export { eraApi } from './api/scene';
+export type { SystemEra, UserEra, CreateEraDTO, UpdateEraDTO } from './api/scene/types';
+
+// 角色模块
+export { characterApi } from './api/character';
+export type { SystemCharacter, UserCharacter, CreateCharacterDTO, UpdateCharacterDTO } from './api/character/types';
+
+// 剧本模块
+export { scriptApi, presetScriptApi, systemScriptApi } from './api/script';
+export type { UserScript, SystemScript, CreateScriptDTO, UpdateScriptDTO } from './api/script/types';
+
+// 主线剧情模块
+export { userMainStoryApi, presetMainStoryApi, systemMainStoryApi } from './api/mainStory';
+export type { UserMainStory, SystemMainStory, CreateUserMainStoryDTO, UpdateUserMainStoryDTO } from './api/mainStory/types';
 
 const API_BASE_URL = 'http://localhost:8081/api';
 
@@ -718,6 +737,25 @@ export const adminApi = {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    matchAndUpdate: (token: string) => {
+      return request<{
+        eraMatchedCount: number;
+        characterAvatarMatchedCount: number;
+        characterBackgroundMatchedCount: number;
+        eraMatched: string[];
+        characterMatched: string[];
+        eraNotFound: string[];
+        characterNotFound: string[];
+        totalEras: number;
+        totalCharacters: number;
+      }>('/admin/system/resources/match-and-update', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
     },
@@ -1639,139 +1677,15 @@ export const journalApi = {
   },
 };
 
-// 场景相关API
-export const eraApi = {
-  // 获取预置场景（客户端公共API，不需要认证）
-  getSystemEras: () => {
-    return request<Array<{
-      id: number;
-      name: string;
-      description: string;
-      startYear: number | null;
-      endYear: number | null;
-      imageUrl: string | null;
-      isActive: boolean;
-      sortOrder: number;
-    }>>('/preset-eras', {
-      method: 'GET',
-    });
-  },
-  
-  // 获取所有场景
-  getAllEras: (token: string) => {
-    return request<Array<{
-      id: number;
-      name: string;
-      description: string;
-      startYear: number | null;
-      endYear: number | null;
-      imageUrl: string | null;
-      systemEraId: number | null;
-      worldId: number;
-      userId: number;
-      createdAt: string;
-      updatedAt: string;
-    }>>('/eras', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
+// 场景相关API已迁移到 services/api/scene/ 模块
+// 上面的导入语句已经重新导出，这里不再重复定义
 
-  // 获取指定世界的所有场景
-  getErasByWorldId: (worldId: number, token: string) => {
-    return request<Array<{
-      id: number;
-      name: string;
-      description: string;
-      startYear: number | null;
-      endYear: number | null;
-      imageUrl: string | null;
-      systemEraId: number | null;
-      worldId: number;
-      userId: number;
-      createdAt: string;
-      updatedAt: string;
-    }>>(`/eras/world/${worldId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
+// 角色相关API已迁移到 services/api/character/ 模块
+// 上面的导入语句已经重新导出，这里不再重复定义
 
-  // 创建场景
-  createEra: (data: {
-    name: string;
-    description: string;
-    startYear?: number;
-    endYear?: number;
-    worldId: number;
-    imageUrl?: string;
-    systemEraId?: number | null;
-  }, token: string) => {
-    return request<{
-      id: number;
-      name: string;
-      description: string;
-      startYear: number | null;
-      endYear: number | null;
-      imageUrl: string | null;
-      systemEraId: number | null;
-      worldId: number;
-      createdAt: string;
-      updatedAt: string;
-    }>('/eras', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-
-  // 更新场景
-  updateEra: (id: number, data: {
-    name: string;
-    description: string;
-    startYear?: number;
-    endYear?: number;
-    worldId: number;
-    imageUrl?: string;
-    systemEraId?: number | null;
-  }, token: string) => {
-    return request<{
-      id: number;
-      name: string;
-      description: string;
-      startYear: number | null;
-      endYear: number | null;
-      imageUrl: string | null;
-      systemEraId: number | null;
-      worldId: number;
-      createdAt: string;
-      updatedAt: string;
-    }>(`/eras/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-
-  // 删除场景
-  deleteEra: (id: number, token: string) => {
-    return request<void>(`/eras/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-};
-
-// 角色相关API
-export const characterApi = {
+// 临时注释掉旧定义（将在所有模块迁移完成后删除）
+/*
+const _characterApi_old = {
   // 获取预置角色（客户端公共API，不需要认证）
   // 支持按场景ID过滤
   getSystemCharacters: (eraId?: number) => {
@@ -2085,9 +1999,13 @@ export const characterApi = {
     }
   },
 };
+*/
 
-// 剧本相关API
-export const scriptApi = {
+// 剧本相关API已迁移到 services/api/script/ 模块
+// 上面的导入语句已经重新导出，这里不再重复定义
+
+/*
+const _scriptApi_old = {
   // 获取所有剧本
   getAllScripts: (token: string) => {
     return request<Array<{
@@ -2096,6 +2014,8 @@ export const scriptApi = {
       description: string | null;
       content: string;
       sceneCount: number;
+      characterIds: string | null; // JSON数组格式的角色ID列表
+      tags: string | null; // 标签（逗号分隔）
       worldId: number;
       eraId: number;
       createdAt: string;
@@ -2115,6 +2035,8 @@ export const scriptApi = {
       description: string | null;
       content: string;
       sceneCount: number;
+      characterIds: string | null;
+      tags: string | null;
       worldId: number;
       eraId: number;
       createdAt: string;
@@ -2134,6 +2056,8 @@ export const scriptApi = {
       description: string | null;
       content: string;
       sceneCount: number;
+      characterIds: string | null;
+      tags: string | null;
       worldId: number;
       eraId: number;
       createdAt: string;
@@ -2147,10 +2071,13 @@ export const scriptApi = {
 
   // 创建剧本
   createScript: (data: {
-    title: string;
+    systemScriptId?: number; // 系统预置剧本ID（用于从预置数据库查询完整数据）
+    title?: string; // 可选：自定义标题（如果提供了systemScriptId，此字段可选；否则必需）
     description?: string | null;
-    content: string;
+    content?: string;
     sceneCount?: number;
+    characterIds?: string | null; // JSON数组格式的角色ID列表
+    tags?: string | null; // 标签（逗号分隔）
     worldId: number;
     eraId?: number;
   }, token: string) => {
@@ -2160,6 +2087,8 @@ export const scriptApi = {
       description: string | null;
       content: string;
       sceneCount: number;
+      characterIds: string | null;
+      tags: string | null;
       worldId: number;
       eraId: number;
       createdAt: string;
@@ -2179,6 +2108,8 @@ export const scriptApi = {
     description?: string | null;
     content: string;
     sceneCount?: number;
+    characterIds?: string | null; // JSON数组格式的角色ID列表
+    tags?: string | null; // 标签（逗号分隔）
     worldId: number;
     eraId?: number;
   }, token: string) => {
@@ -2188,6 +2119,8 @@ export const scriptApi = {
       description: string | null;
       content: string;
       sceneCount: number;
+      characterIds: string | null;
+      tags: string | null;
       worldId: number;
       eraId: number;
       createdAt: string;
@@ -2211,8 +2144,7 @@ export const scriptApi = {
     });
   },
 };
-
-
+*/
 
 // 存储和获取token
 export const tokenStorage = {
@@ -2666,10 +2598,11 @@ export const imageApi = {
   },
 };
 
-// 系统预设剧本API（普通用户访问）
-// 系统预置主线剧情API（公开接口，不需要认证）
-// 客户端预置主线剧情API（公开接口，不需要认证）
-export const presetMainStoryApi = {
+// presetMainStoryApi, userMainStoryApi, systemMainStoryApi 已迁移到 services/api/mainStory/ 模块
+// 上面的导入语句已经重新导出，这里不再重复定义
+
+/*
+const _presetMainStoryApi_old = {
   // 获取所有系统预设主线剧情
   getAll: () => {
     return request<Array<{
@@ -2784,8 +2717,7 @@ export const presetMainStoryApi = {
   },
 };
 
-// 用户主线剧情API（需要用户认证）
-export const userMainStoryApi = {
+const _userMainStoryApi_old = {
   // 获取当前用户的所有主线剧情
   getAll: (token: string) => {
     return request<Array<{
@@ -3034,95 +2966,4 @@ export const systemMainStoryApi = {
     });
   },
 };
-
-export const systemScriptApi = {
-  // 获取所有系统预设剧本（管理后台接口）
-  getAll: (token: string) => {
-    return request<Array<{
-      id: number;
-      title: string;
-      description: string;
-      content: string;
-      sceneCount: number;
-      systemEraId: number | null;
-      eraName: string | null;
-      characterIds: string;
-      tags: string | null;
-      isActive: boolean;
-      sortOrder: number;
-      createdAt: string;
-      updatedAt: string;
-    }>>('/system/scripts', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-};
-
-// 客户端预置剧本API（公开接口，不需要认证）
-export const presetScriptApi = {
-  // 获取所有系统预设剧本
-  getAll: () => {
-    return request<Array<{
-      id: number;
-      title: string;
-      description: string;
-      content: string;
-      sceneCount: number;
-      systemEraId: number | null;
-      eraName: string | null;
-      characterIds: string;
-      tags: string | null;
-      isActive: boolean;
-      sortOrder: number;
-      createdAt: string;
-      updatedAt: string;
-    }>>('/preset-scripts', {
-      method: 'GET',
-    });
-  },
-
-  // 根据场景ID获取系统预设剧本
-  getByEraId: (eraId: number) => {
-    return request<Array<{
-      id: number;
-      title: string;
-      description: string;
-      content: string;
-      sceneCount: number;
-      systemEraId: number | null;
-      eraName: string | null;
-      characterIds: string;
-      tags: string | null;
-      isActive: boolean;
-      sortOrder: number;
-      createdAt: string;
-      updatedAt: string;
-    }>>(`/preset-scripts/era/${eraId}`, {
-      method: 'GET',
-    });
-  },
-
-  // 根据ID获取系统预设剧本
-  getById: (id: number) => {
-    return request<{
-      id: number;
-      title: string;
-      description: string;
-      content: string;
-      sceneCount: number;
-      systemEraId: number | null;
-      eraName: string | null;
-      characterIds: string;
-      tags: string | null;
-      isActive: boolean;
-      sortOrder: number;
-      createdAt: string;
-      updatedAt: string;
-    }>(`/preset-scripts/${id}`, {
-      method: 'GET',
-    });
-  },
-};
+*/

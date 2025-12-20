@@ -188,9 +188,45 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({ initialScenari
                         </div>
                         <div>
                           <label className="text-xs text-gray-500">跳转至节点</label>
-                          <select value={opt.nextNodeId} onChange={e => updateOption(idx, 'nextNodeId', e.target.value)} className="w-full bg-gray-900 rounded px-2 py-1 border border-gray-700 text-sm">
-                            {Object.values(nodes).map((n: StoryNode) => (<option key={n.id} value={n.id}>{n.title}</option>))}
+                          <select 
+                            value={opt.nextNodeId || ''} 
+                            onChange={e => updateOption(idx, 'nextNodeId', e.target.value)} 
+                            className="w-full bg-gray-900 rounded px-2 py-1 border border-gray-700 text-sm focus:border-green-500 outline-none"
+                            style={{ 
+                              color: '#ffffff', 
+                              backgroundColor: '#111827',
+                              WebkitAppearance: 'none',
+                              MozAppearance: 'none',
+                              appearance: 'none'
+                            }}
+                          >
+                            {Object.values(nodes).length > 0 ? (
+                              Object.values(nodes).map((n: StoryNode) => {
+                                const nodeTitle = n.title || n.id || '未命名节点';
+                                return (
+                                  <option 
+                                    key={n.id} 
+                                    value={n.id} 
+                                    style={{ 
+                                      backgroundColor: '#111827', 
+                                      color: '#ffffff',
+                                      padding: '8px'
+                                    }}
+                                  >
+                                    {nodeTitle}
+                                  </option>
+                                );
+                              })
+                            ) : (
+                              <option value="" style={{ color: '#ffffff', backgroundColor: '#111827' }}>暂无节点</option>
+                            )}
                           </select>
+                          {/* 调试信息：显示当前选中的值和节点数量 */}
+                          {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              选中: {opt.nextNodeId}, 节点数: {Object.values(nodes).length}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <button onClick={() => deleteOption(idx)} className="text-gray-500 hover:text-red-500 mt-6"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>

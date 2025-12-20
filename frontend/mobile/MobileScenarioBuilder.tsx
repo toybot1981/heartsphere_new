@@ -70,13 +70,14 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
           showAlert("无法删除起始节点", "提示", "warning");
           return;
       }
-      const confirmed = await showConfirm("确定删除此节点吗？", "删除节点", "warning");
-      if (confirmed) {
-          const newNodes = { ...nodes };
-          delete newNodes[nodeId];
-          setNodes(newNodes);
-          setEditingNodeId(null);
-      }
+      showConfirm("确定删除此节点吗？", "删除节点", "warning").then((confirmed) => {
+          if (confirmed) {
+              const newNodes = { ...nodes };
+              delete newNodes[nodeId];
+              setNodes(newNodes);
+              setEditingNodeId(null);
+          }
+      });
   };
 
   const handleSave = () => {

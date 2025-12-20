@@ -23,3 +23,6 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findRecentNotesByUserId(@Param("userId") Long userId);
 }
 
+
+
+

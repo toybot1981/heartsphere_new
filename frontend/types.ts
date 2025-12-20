@@ -83,6 +83,17 @@ export interface WorldScene {
   imageUrl: string;
   characters: Character[];
   mainStory?: Character;
+  scripts?: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    content: string;
+    sceneCount: number;
+    eraId?: number | null;
+    worldId?: number | null;
+    characterIds?: string | null;
+    tags?: string | null;
+  }>; // 剧本列表
   memories?: EraMemory[]; // Personal memories specific to this era
   scenes?: any[]; // Scenes for this era
   worldId?: number; // Associated world ID
@@ -160,6 +171,7 @@ export interface AppSettings {
   autoGenerateJournalImages: boolean; // New setting for journal
   debugMode: boolean; 
   dialogueStyle?: DialogueStyle; // 对话风格配置
+  showNoteSync?: boolean; // 是否显示笔记同步按钮
   
   // Modality Routing Settings
   textProvider: AIProvider;
@@ -235,6 +247,7 @@ export interface GameState {
   tempStoryCharacter: Character | null;
 
   editingScenarioId: string | null;
+  editingScript: any | null; // 正在编辑的剧本（后端script对象）
   history: Record<string, Message[]>; 
   customAvatars: Record<string, string>; 
   generatingAvatarId: string | null; 
@@ -259,4 +272,5 @@ export interface GameState {
   debugLogs: DebugLog[]; // Store runtime logs
   showWelcomeOverlay: boolean; // 是否显示首次登录欢迎蒙层
   worldStyle: WorldStyle; // 当前世界风格设定
+  pageScrollPositions: Record<string, number>; // 保存每个页面的滚动位置，key为页面标识符（如'characterSelection:sceneId'）
 }

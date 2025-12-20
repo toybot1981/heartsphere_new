@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Footer } from './Footer';
 
 interface WelcomeOverlayProps {
   onClose: () => void;
@@ -84,10 +85,12 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
         {/* 底部装饰 */}
         <div className={`mt-16 transform transition-all duration-1000 delay-700 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
           <div className="w-32 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto"></div>
-          <p className="text-sm text-cyan-300 mt-4 opacity-70">
-            HeartSphere © {new Date().getFullYear()}
-          </p>
         </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <Footer />
       </div>
 
       {/* 动态光效 */}

@@ -1,6 +1,7 @@
 package com.heartsphere.security;
 
 import com.heartsphere.entity.User;
+import com.heartsphere.admin.entity.SystemAdmin;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,15 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getIsEnabled());
+    }
+
+    public static UserDetailsImpl buildFromAdmin(SystemAdmin admin) {
+        return new UserDetailsImpl(
+                admin.getId(),
+                admin.getUsername(),
+                admin.getEmail(),
+                admin.getPassword(),
+                admin.getIsActive());
     }
 
     @Override

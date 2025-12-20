@@ -21,10 +21,11 @@ interface RealWorldScreenProps {
   worldStyle?: string; // 当前世界风格
   userName?: string; // 用户名
   isGuest?: boolean; // 是否为访客模式
+  showNoteSync?: boolean; // 是否显示笔记同步按钮
 }
 
 export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({ 
-    entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest 
+    entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest, showNoteSync = false
 }) => {
   // State for View Mode
   const [isCreating, setIsCreating] = useState(false);
@@ -53,6 +54,13 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   
   // Note Sync State
   const [showNoteSyncModal, setShowNoteSyncModal] = useState(false);
+  const [syncButtonEnabled, setSyncButtonEnabled] = useState(showNoteSync); // 从props读取初始值
+  
+  // 当 showNoteSync prop 变化时，更新按钮显示状态
+  useEffect(() => {
+    setSyncButtonEnabled(showNoteSync);
+    console.log('[RealWorldScreen] 笔记同步按钮显示状态更新:', showNoteSync);
+  }, [showNoteSync]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -471,7 +479,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       </button>
                   )}
               </div>
-              {/* Note Sync Button */}
+              {/* Note Sync Button - 根据配置显示/隐藏 */}
+              {syncButtonEnabled && (
               <Button 
                   onClick={() => {
                       console.log('========== [RealWorldScreen] 点击笔记同步按钮 ==========');
@@ -531,6 +540,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   </svg>
                   笔记同步
               </Button>
+              )}
               {/* New Record Button */}
               <Button onClick={handleCreateClick} className="bg-gradient-to-r from-pink-600 to-purple-600 shadow-lg shadow-purple-900/20">
                   + 新记录
