@@ -5,3 +5,4 @@ ALTER TABLE `scripts`
 ADD COLUMN `character_ids` TEXT NULL COMMENT '关联的角色ID列表（JSON数组）' AFTER `scene_count`,
 ADD COLUMN `tags` VARCHAR(200) NULL COMMENT '标签（逗号分隔）' AFTER `character_ids`;
 
+
