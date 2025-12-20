@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { adminApi, imageApi } from '../../services/api';
 import { showAlert, showConfirm } from '../../utils/dialog';
 import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
-import { Button } from '../Button';
+import { Button } from '../../components/Button';
 
 interface CharactersManagementProps {
     systemCharacters: any[];

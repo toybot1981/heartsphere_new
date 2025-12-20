@@ -2,7 +2,7 @@ import React from 'react';
 import { adminApi, authApi } from '../../services/api';
 import { showAlert } from '../../utils/dialog';
 import { InputGroup, TextInput } from './AdminUIComponents';
-import { Button } from '../Button';
+import { Button } from '../../components/Button';
 
 interface EmailConfigManagementProps {
     emailVerificationRequired: boolean;
