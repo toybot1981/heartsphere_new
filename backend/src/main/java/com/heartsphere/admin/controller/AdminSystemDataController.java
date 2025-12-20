@@ -807,6 +807,118 @@ public class AdminSystemDataController {
         response.put("success", true);
         response.put("updatedCount", updatedCount);
         response.put("message", String.format("成功更新 %d 个系统预置剧本的AI旁白提示词", updatedCount));
+          return ResponseEntity.ok(response);
+    }
+
+    // ========== WeChat Pay Config APIs ==========
+    @GetMapping("/config/wechat-pay")
+    public ResponseEntity<Map<String, Object>> getWechatPayConfig(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        Map<String, Object> config = new HashMap<>();
+        config.put("appId", systemConfigService.getWechatPayAppId() != null ? systemConfigService.getWechatPayAppId() : "");
+        config.put("mchId", systemConfigService.getWechatPayMchId() != null ? systemConfigService.getWechatPayMchId() : "");
+        config.put("apiKey", systemConfigService.getWechatPayApiKey() != null ? "******" : "");
+        config.put("apiV3Key", systemConfigService.getWechatPayApiV3Key() != null ? "******" : "");
+        config.put("certPath", systemConfigService.getWechatPayCertPath() != null ? systemConfigService.getWechatPayCertPath() : "");
+        config.put("notifyUrl", systemConfigService.getWechatPayNotifyUrl() != null ? systemConfigService.getWechatPayNotifyUrl() : "");
+        return ResponseEntity.ok(config);
+    }
+
+    @PutMapping("/config/wechat-pay")
+    public ResponseEntity<Map<String, Object>> setWechatPayConfig(
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        String appId = request.get("appId");
+        String mchId = request.get("mchId");
+        String apiKey = request.get("apiKey");
+        String apiV3Key = request.get("apiV3Key");
+        String certPath = request.get("certPath");
+        String notifyUrl = request.get("notifyUrl");
+        
+        if (appId != null) {
+            systemConfigService.setWechatPayAppId(appId);
+        }
+        if (mchId != null) {
+            systemConfigService.setWechatPayMchId(mchId);
+        }
+        if (apiKey != null && !apiKey.equals("******")) {
+            systemConfigService.setWechatPayApiKey(apiKey);
+        }
+        if (apiV3Key != null && !apiV3Key.equals("******")) {
+            systemConfigService.setWechatPayApiV3Key(apiV3Key);
+        }
+        if (certPath != null) {
+            systemConfigService.setWechatPayCertPath(certPath);
+        }
+        if (notifyUrl != null) {
+            systemConfigService.setWechatPayNotifyUrl(notifyUrl);
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("appId", systemConfigService.getWechatPayAppId() != null ? systemConfigService.getWechatPayAppId() : "");
+        response.put("mchId", systemConfigService.getWechatPayMchId() != null ? systemConfigService.getWechatPayMchId() : "");
+        response.put("apiKey", "******");
+        response.put("apiV3Key", "******");
+        response.put("certPath", systemConfigService.getWechatPayCertPath() != null ? systemConfigService.getWechatPayCertPath() : "");
+        response.put("notifyUrl", systemConfigService.getWechatPayNotifyUrl() != null ? systemConfigService.getWechatPayNotifyUrl() : "");
+        return ResponseEntity.ok(response);
+    }
+
+    // ========== Alipay Config APIs ==========
+    @GetMapping("/config/alipay")
+    public ResponseEntity<Map<String, Object>> getAlipayConfig(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        Map<String, Object> config = new HashMap<>();
+        config.put("appId", systemConfigService.getAlipayAppId() != null ? systemConfigService.getAlipayAppId() : "");
+        config.put("privateKey", systemConfigService.getAlipayPrivateKey() != null ? "******" : "");
+        config.put("publicKey", systemConfigService.getAlipayPublicKey() != null ? systemConfigService.getAlipayPublicKey() : "");
+        config.put("notifyUrl", systemConfigService.getAlipayNotifyUrl() != null ? systemConfigService.getAlipayNotifyUrl() : "");
+        config.put("returnUrl", systemConfigService.getAlipayReturnUrl() != null ? systemConfigService.getAlipayReturnUrl() : "");
+        config.put("gatewayUrl", systemConfigService.getAlipayGatewayUrl());
+        return ResponseEntity.ok(config);
+    }
+
+    @PutMapping("/config/alipay")
+    public ResponseEntity<Map<String, Object>> setAlipayConfig(
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        String appId = request.get("appId");
+        String privateKey = request.get("privateKey");
+        String publicKey = request.get("publicKey");
+        String notifyUrl = request.get("notifyUrl");
+        String returnUrl = request.get("returnUrl");
+        String gatewayUrl = request.get("gatewayUrl");
+        
+        if (appId != null) {
+            systemConfigService.setAlipayAppId(appId);
+        }
+        if (privateKey != null && !privateKey.equals("******")) {
+            systemConfigService.setAlipayPrivateKey(privateKey);
+        }
+        if (publicKey != null) {
+            systemConfigService.setAlipayPublicKey(publicKey);
+        }
+        if (notifyUrl != null) {
+            systemConfigService.setAlipayNotifyUrl(notifyUrl);
+        }
+        if (returnUrl != null) {
+            systemConfigService.setAlipayReturnUrl(returnUrl);
+        }
+        if (gatewayUrl != null) {
+            systemConfigService.setAlipayGatewayUrl(gatewayUrl);
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("appId", systemConfigService.getAlipayAppId() != null ? systemConfigService.getAlipayAppId() : "");
+        response.put("privateKey", "******");
+        response.put("publicKey", systemConfigService.getAlipayPublicKey() != null ? systemConfigService.getAlipayPublicKey() : "");
+        response.put("notifyUrl", systemConfigService.getAlipayNotifyUrl() != null ? systemConfigService.getAlipayNotifyUrl() : "");
+        response.put("returnUrl", systemConfigService.getAlipayReturnUrl() != null ? systemConfigService.getAlipayReturnUrl() : "");
+        response.put("gatewayUrl", systemConfigService.getAlipayGatewayUrl());
         return ResponseEntity.ok(response);
     }
 }

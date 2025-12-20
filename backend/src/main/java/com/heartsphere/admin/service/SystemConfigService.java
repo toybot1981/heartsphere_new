@@ -34,6 +34,22 @@ public class SystemConfigService {
     private static final String NOTION_CLIENT_SECRET_KEY = "notion_client_secret";
     private static final String NOTION_REDIRECT_URI_KEY = "notion_redirect_uri";
     private static final String NOTION_SYNC_BUTTON_ENABLED_KEY = "notion_sync_button_enabled";
+    
+    // 微信支付配置键
+    private static final String WECHAT_PAY_APP_ID_KEY = "wechat_pay_app_id";
+    private static final String WECHAT_PAY_MCH_ID_KEY = "wechat_pay_mch_id";
+    private static final String WECHAT_PAY_API_KEY_KEY = "wechat_pay_api_key";
+    private static final String WECHAT_PAY_API_V3_KEY_KEY = "wechat_pay_api_v3_key";
+    private static final String WECHAT_PAY_CERT_PATH_KEY = "wechat_pay_cert_path";
+    private static final String WECHAT_PAY_NOTIFY_URL_KEY = "wechat_pay_notify_url";
+    
+    // 支付宝支付配置键
+    private static final String ALIPAY_APP_ID_KEY = "alipay_app_id";
+    private static final String ALIPAY_PRIVATE_KEY_KEY = "alipay_private_key";
+    private static final String ALIPAY_PUBLIC_KEY_KEY = "alipay_public_key";
+    private static final String ALIPAY_NOTIFY_URL_KEY = "alipay_notify_url";
+    private static final String ALIPAY_RETURN_URL_KEY = "alipay_return_url";
+    private static final String ALIPAY_GATEWAY_URL_KEY = "alipay_gateway_url";
 
     /**
      * 获取邀请码是否必需
@@ -341,6 +357,191 @@ public class SystemConfigService {
         config.setConfigValue(String.valueOf(enabled));
         configRepository.save(config);
         logger.info(String.format("笔记同步按钮显示已设置为: %s", enabled));
+    }
+
+    // ========== 微信支付配置 ==========
+    
+    /**
+     * 获取微信支付AppID
+     */
+    public String getWechatPayAppId() {
+        return getConfigValue(WECHAT_PAY_APP_ID_KEY);
+    }
+
+    /**
+     * 设置微信支付AppID
+     */
+    @Transactional
+    public void setWechatPayAppId(String appId) {
+        setConfigValue(WECHAT_PAY_APP_ID_KEY, appId, "微信支付AppID（商户号对应的AppID）");
+    }
+
+    /**
+     * 获取微信支付商户号
+     */
+    public String getWechatPayMchId() {
+        return getConfigValue(WECHAT_PAY_MCH_ID_KEY);
+    }
+
+    /**
+     * 设置微信支付商户号
+     */
+    @Transactional
+    public void setWechatPayMchId(String mchId) {
+        setConfigValue(WECHAT_PAY_MCH_ID_KEY, mchId, "微信支付商户号（MchId）");
+    }
+
+    /**
+     * 获取微信支付API密钥
+     */
+    public String getWechatPayApiKey() {
+        return getConfigValue(WECHAT_PAY_API_KEY_KEY);
+    }
+
+    /**
+     * 设置微信支付API密钥
+     */
+    @Transactional
+    public void setWechatPayApiKey(String apiKey) {
+        setConfigValue(WECHAT_PAY_API_KEY_KEY, apiKey, "微信支付API密钥（用于签名）");
+    }
+
+    /**
+     * 获取微信支付API v3密钥
+     */
+    public String getWechatPayApiV3Key() {
+        return getConfigValue(WECHAT_PAY_API_V3_KEY_KEY);
+    }
+
+    /**
+     * 设置微信支付API v3密钥
+     */
+    @Transactional
+    public void setWechatPayApiV3Key(String apiV3Key) {
+        setConfigValue(WECHAT_PAY_API_V3_KEY_KEY, apiV3Key, "微信支付API v3密钥");
+    }
+
+    /**
+     * 获取微信支付证书路径
+     */
+    public String getWechatPayCertPath() {
+        return getConfigValue(WECHAT_PAY_CERT_PATH_KEY);
+    }
+
+    /**
+     * 设置微信支付证书路径
+     */
+    @Transactional
+    public void setWechatPayCertPath(String certPath) {
+        setConfigValue(WECHAT_PAY_CERT_PATH_KEY, certPath, "微信支付证书路径（可选）");
+    }
+
+    /**
+     * 获取微信支付回调地址
+     */
+    public String getWechatPayNotifyUrl() {
+        return getConfigValue(WECHAT_PAY_NOTIFY_URL_KEY);
+    }
+
+    /**
+     * 设置微信支付回调地址
+     */
+    @Transactional
+    public void setWechatPayNotifyUrl(String notifyUrl) {
+        setConfigValue(WECHAT_PAY_NOTIFY_URL_KEY, notifyUrl, "微信支付回调通知地址");
+    }
+
+    // ========== 支付宝支付配置 ==========
+    
+    /**
+     * 获取支付宝AppID
+     */
+    public String getAlipayAppId() {
+        return getConfigValue(ALIPAY_APP_ID_KEY);
+    }
+
+    /**
+     * 设置支付宝AppID
+     */
+    @Transactional
+    public void setAlipayAppId(String appId) {
+        setConfigValue(ALIPAY_APP_ID_KEY, appId, "支付宝应用AppID");
+    }
+
+    /**
+     * 获取支付宝应用私钥
+     */
+    public String getAlipayPrivateKey() {
+        return getConfigValue(ALIPAY_PRIVATE_KEY_KEY);
+    }
+
+    /**
+     * 设置支付宝应用私钥
+     */
+    @Transactional
+    public void setAlipayPrivateKey(String privateKey) {
+        setConfigValue(ALIPAY_PRIVATE_KEY_KEY, privateKey, "支付宝应用私钥（RSA2）");
+    }
+
+    /**
+     * 获取支付宝公钥
+     */
+    public String getAlipayPublicKey() {
+        return getConfigValue(ALIPAY_PUBLIC_KEY_KEY);
+    }
+
+    /**
+     * 设置支付宝公钥
+     */
+    @Transactional
+    public void setAlipayPublicKey(String publicKey) {
+        setConfigValue(ALIPAY_PUBLIC_KEY_KEY, publicKey, "支付宝公钥（用于验签）");
+    }
+
+    /**
+     * 获取支付宝回调地址
+     */
+    public String getAlipayNotifyUrl() {
+        return getConfigValue(ALIPAY_NOTIFY_URL_KEY);
+    }
+
+    /**
+     * 设置支付宝回调地址
+     */
+    @Transactional
+    public void setAlipayNotifyUrl(String notifyUrl) {
+        setConfigValue(ALIPAY_NOTIFY_URL_KEY, notifyUrl, "支付宝异步回调通知地址");
+    }
+
+    /**
+     * 获取支付宝同步返回地址
+     */
+    public String getAlipayReturnUrl() {
+        return getConfigValue(ALIPAY_RETURN_URL_KEY);
+    }
+
+    /**
+     * 设置支付宝同步返回地址
+     */
+    @Transactional
+    public void setAlipayReturnUrl(String returnUrl) {
+        setConfigValue(ALIPAY_RETURN_URL_KEY, returnUrl, "支付宝同步返回地址");
+    }
+
+    /**
+     * 获取支付宝网关地址
+     */
+    public String getAlipayGatewayUrl() {
+        String url = getConfigValue(ALIPAY_GATEWAY_URL_KEY);
+        return url != null && !url.isEmpty() ? url : "https://openapi.alipay.com/gateway.do";
+    }
+
+    /**
+     * 设置支付宝网关地址
+     */
+    @Transactional
+    public void setAlipayGatewayUrl(String gatewayUrl) {
+        setConfigValue(ALIPAY_GATEWAY_URL_KEY, gatewayUrl, "支付宝网关地址（默认：https://openapi.alipay.com/gateway.do）");
     }
 }
 
