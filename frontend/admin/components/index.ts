@@ -5,5 +5,6 @@ export { DashboardView } from './DashboardView';
 export { ErasManagement } from './ErasManagement';
 export { MainStoriesManagement } from './MainStoriesManagement';
 export { ScenarioNodeFlow } from './ScenarioNodeFlow';
+export { InviteCodesManagement } from './InviteCodesManagement';
 
 
