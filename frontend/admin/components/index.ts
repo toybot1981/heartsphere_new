@@ -8,5 +8,6 @@ export { ScenarioNodeFlow } from './ScenarioNodeFlow';
 export { InviteCodesManagement } from './InviteCodesManagement';
 export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
 export { EmailConfigManagement } from './EmailConfigManagement';
+export { CharactersManagement } from './CharactersManagement';
 
 
