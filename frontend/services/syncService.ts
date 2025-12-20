@@ -470,10 +470,16 @@ export const syncService = {
           }
           break;
         case 'scenario':
-          if (data.id) {
-            // Update existing scenario/script
+          // 检查ID是否是数字格式（后端数据库ID），只有数字ID才同步到服务器
+          // 如果ID是字符串格式（如 scenario_xxx），说明是本地创建的临时剧本，不需要同步到服务器
+          const scenarioIdNum = typeof data.id === 'string' ? parseInt(data.id) : data.id;
+          const isScenarioNumericId = !isNaN(scenarioIdNum) && scenarioIdNum > 0;
+          
+          if (data.id && isScenarioNumericId) {
+            // Update existing scenario/script (只有数字ID的才更新)
+            console.log('[syncService] 更新scenario到服务器:', { id: scenarioIdNum, title: data.title });
             await scriptApi.updateScript(
-              parseInt(data.id),
+              scenarioIdNum,
               {
                 title: data.title,
                 content: JSON.stringify(data),
@@ -483,8 +489,9 @@ export const syncService = {
               },
               token
             );
-          } else {
-            // Create new scenario/script
+          } else if (!data.id) {
+            // Create new scenario/script (只有没有ID的才创建新剧本)
+            console.log('[syncService] 创建新scenario到服务器:', { title: data.title });
             await scriptApi.createScript(
               {
                 title: data.title,
@@ -495,6 +502,9 @@ export const syncService = {
               },
               token
             );
+          } else {
+            // ID存在但不是数字格式，说明是本地临时剧本，不同步到服务器
+            console.log('[syncService] 跳过本地临时scenario的同步:', { id: data.id, title: data.title });
           }
           break;
         // TODO: Handle scene data type
