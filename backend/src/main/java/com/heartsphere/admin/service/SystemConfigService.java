@@ -50,6 +50,7 @@ public class SystemConfigService {
     private static final String ALIPAY_NOTIFY_URL_KEY = "alipay_notify_url";
     private static final String ALIPAY_RETURN_URL_KEY = "alipay_return_url";
     private static final String ALIPAY_GATEWAY_URL_KEY = "alipay_gateway_url";
+    private static final String GUIDE_CONFIG_LINK_KEY = "guide_config_link";
 
     /**
      * 获取邀请码是否必需
@@ -542,6 +543,22 @@ public class SystemConfigService {
     @Transactional
     public void setAlipayGatewayUrl(String gatewayUrl) {
         setConfigValue(ALIPAY_GATEWAY_URL_KEY, gatewayUrl, "支付宝网关地址（默认：https://openapi.alipay.com/gateway.do）");
+    }
+
+    // ========== Guide Config Link ==========
+    /**
+     * 获取引导配置链接
+     */
+    public String getGuideConfigLink() {
+        return getConfigValue(GUIDE_CONFIG_LINK_KEY);
+    }
+
+    /**
+     * 设置引导配置链接
+     */
+    @Transactional
+    public void setGuideConfigLink(String link) {
+        setConfigValue(GUIDE_CONFIG_LINK_KEY, link, "引导配置链接");
     }
 }
 

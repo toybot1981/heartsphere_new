@@ -921,5 +921,29 @@ public class AdminSystemDataController {
         response.put("gatewayUrl", systemConfigService.getAlipayGatewayUrl());
         return ResponseEntity.ok(response);
     }
+
+    // ========== Guide Config Link API ==========
+    @GetMapping("/config/guide-link")
+    public ResponseEntity<Map<String, Object>> getGuideConfigLink(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        Map<String, Object> config = new HashMap<>();
+        config.put("link", systemConfigService.getGuideConfigLink() != null ? systemConfigService.getGuideConfigLink() : "");
+        return ResponseEntity.ok(config);
+    }
+
+    @PutMapping("/config/guide-link")
+    public ResponseEntity<Map<String, Object>> setGuideConfigLink(
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        String link = request.get("link");
+        if (link != null) {
+            systemConfigService.setGuideConfigLink(link);
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("link", systemConfigService.getGuideConfigLink() != null ? systemConfigService.getGuideConfigLink() : "");
+        return ResponseEntity.ok(response);
+    }
 }
 
