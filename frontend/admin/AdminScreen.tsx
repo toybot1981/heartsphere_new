@@ -155,68 +155,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     
       // 订阅计划管理状态（从 useAdminData hook 获取）
 
-    // 检查本地存储的token
-    useEffect(() => {
-        console.log("========== [AdminScreen] 检查本地token ==========");
-        const token = localStorage.getItem('admin_token');
-        console.log("[AdminScreen] 本地token存在:", !!token);
-        if (token) {
-            console.log("[AdminScreen] 发现本地token，自动登录...");
-            setAdminToken(token);
-            setIsAuthenticated(true);
-            loadSystemData(token);
-        } else {
-            console.log("[AdminScreen] 未找到本地token，显示登录界面");
-        }
-
-        // 监听 token 过期事件
-        const handleTokenExpired = () => {
-            console.warn("[AdminScreen] 收到 token 过期事件，清除认证状态");
-            handleLogout();
-            showAlert('登录已过期，请重新登录', '登录过期', 'warning');
-        };
-
-        window.addEventListener('admin-token-expired', handleTokenExpired);
-        return () => {
-            window.removeEventListener('admin-token-expired', handleTokenExpired);
-        };
-    }, []);
-
-    const handleLogin = async (loginUsername: string, loginPassword: string) => {
-        console.log("========== [AdminScreen] 管理员登录 ==========");
-        console.log("[AdminScreen] 接收到的用户名:", loginUsername);
-        console.log("[AdminScreen] 接收到的密码长度:", loginPassword ? loginPassword.length : 0);
-        setLoginError('');
-        setLoading(true);
-        try {
-            console.log("[AdminScreen] 调用adminApi.login...");
-            const response = await adminApi.login(loginUsername, loginPassword);
-            console.log("[AdminScreen] 登录成功，收到token:", !!response.token);
-            setAdminToken(response.token);
-            localStorage.setItem('admin_token', response.token);
-            setIsAuthenticated(true);
-            console.log("[AdminScreen] 认证状态已更新，开始加载系统数据...");
-            await loadSystemData(response.token);
-            console.log("[AdminScreen] 登录流程完成");
-        } catch (error: any) {
-            console.error('[AdminScreen] 登录失败:', error);
-            console.error('[AdminScreen] 错误详情:', error.message || error);
-            setLoginError(error.message || '登录失败，请检查用户名和密码');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-      // handleLogout 已从 useAdminAuth hook 获取，这里不再重复声明
-      const handleLogoutLocal = () => {
-        setAdminToken(null);
-        localStorage.removeItem('admin_token');
-        setIsAuthenticated(false);
-        setUsername('');
-        setPassword('');
-    };
-
-      // checkAndHandleTokenError 已从 useAdminAuth hook 获取，这里不再重复声明
+    // Token 检查和过期处理已由 useAdminAuth hook 处理
       // 如果需要本地版本，使用 checkAndHandleTokenErrorLocal
       const checkAndHandleTokenErrorLocal = (error: any): boolean => {
         const errorMessage = error?.message || '';
