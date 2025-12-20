@@ -13,7 +13,7 @@ interface CharacterSelectionScreenProps {
   gameState: GameState;
   currentScene: WorldScene;
   sceneCharacters: Character[];
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   onBack: () => void;
   onCharacterSelect: (character: Character) => void;
   onEditMainStory: (mainStory: Character, sceneId: string) => void;
