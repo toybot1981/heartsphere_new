@@ -15,6 +15,7 @@ import { MainStoriesManagement } from './components/MainStoriesManagement';
 import { ScenarioNodeFlow } from './components/ScenarioNodeFlow';
 import { ScenarioBuilder } from '../components/ScenarioBuilder';
 import { showAlert, showConfirm } from '../utils/dialog';
+import { useAdminAuth, useAdminData, useAdminConfig } from './hooks';
 
 interface AdminScreenProps {
     gameState: GameState;
@@ -26,12 +27,31 @@ interface AdminScreenProps {
 // --- MAIN COMPONENT ---
 
 export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGameState, onResetWorld, onBack }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [adminToken, setAdminToken] = useState<string | null>(null);
-    const [loginError, setLoginError] = useState('');
-    const [loading, setLoading] = useState(false);
+    // 使用自定义 hooks
+    const adminData = useAdminData();
+    const adminConfig = useAdminConfig();
+    
+    // 创建统一的 loadAllData 函数
+    const loadAllData = async (token: string) => {
+        await Promise.all([
+            adminData.loadSystemData(token),
+            adminConfig.loadConfigData(token)
+        ]);
+    };
+    
+    const {
+        isAuthenticated,
+        username,
+        setUsername,
+        password,
+        setPassword,
+        adminToken,
+        loginError,
+        loading,
+        handleLogin,
+        handleLogout,
+        checkAndHandleTokenError
+    } = useAdminAuth(loadAllData);
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
@@ -57,71 +77,57 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const charAvatarInputRef = useRef<HTMLInputElement>(null);
     const charBackgroundInputRef = useRef<HTMLInputElement>(null);
 
-    // 系统数据状态
-    const [systemWorlds, setSystemWorlds] = useState<any[]>([]);
-    const [systemEras, setSystemEras] = useState<any[]>([]);
-    const [systemCharacters, setSystemCharacters] = useState<any[]>([]);
-    const [systemScripts, setSystemScripts] = useState<any[]>([]);
-    const [systemMainStories, setSystemMainStories] = useState<any[]>([]);
-    const [inviteCodes, setInviteCodes] = useState<any[]>([]);
-    const [inviteCodeRequired, setInviteCodeRequired] = useState(false);
-    const [emailVerificationRequired, setEmailVerificationRequired] = useState(true); // 邮箱验证开关，默认开启
+    // 从 hooks 中解构状态
+    const {
+        systemWorlds,
+        setSystemWorlds,
+        systemEras,
+        setSystemEras,
+        systemCharacters,
+        setSystemCharacters,
+        systemScripts,
+        setSystemScripts,
+        systemMainStories,
+        setSystemMainStories,
+        inviteCodes,
+        setInviteCodes,
+        inviteCodeRequired,
+        setInviteCodeRequired,
+        subscriptionPlans,
+        setSubscriptionPlans
+    } = adminData;
+    
+    const {
+        emailVerificationRequired,
+        setEmailVerificationRequired,
+        emailConfig,
+        setEmailConfig,
+        isLoadingEmailConfig,
+        setIsLoadingEmailConfig,
+        showAuthCodeGuide,
+        setShowAuthCodeGuide,
+        notionConfig,
+        setNotionConfig,
+        isLoadingNotionConfig,
+        setIsLoadingNotionConfig,
+        wechatConfig,
+        setWechatConfig,
+        isLoadingWechatConfig,
+        setIsLoadingWechatConfig,
+        wechatPayConfig,
+        setWechatPayConfig,
+        isLoadingWechatPayConfig,
+        setIsLoadingWechatPayConfig,
+        alipayConfig,
+        setAlipayConfig,
+        isLoadingAlipayConfig,
+        setIsLoadingAlipayConfig
+    } = adminConfig;
     
     // 调试：监听邮箱验证状态变化
     useEffect(() => {
         console.log("[AdminScreen] 邮箱验证状态变化:", emailVerificationRequired);
     }, [emailVerificationRequired]);
-    
-    // 邮箱配置状态
-    const [emailConfig, setEmailConfig] = useState({
-        emailType: '163' as 'qq' | '163', // 邮箱类型
-        host: 'smtp.163.com',
-        port: '25',
-        username: 'tongyexin@163.com',
-        password: '',
-        from: 'tongyexin@163.com'
-    });
-    const [isLoadingEmailConfig, setIsLoadingEmailConfig] = useState(false);
-    const [showAuthCodeGuide, setShowAuthCodeGuide] = useState(false);
-    
-    // Notion 配置状态
-    const [notionConfig, setNotionConfig] = useState({
-        clientId: '',
-        clientSecret: '',
-        redirectUri: 'http://localhost:8081/api/notes/notion/callback',
-        syncButtonEnabled: false // 默认不显示笔记同步按钮
-    });
-    const [isLoadingNotionConfig, setIsLoadingNotionConfig] = useState(false);
-    
-    // 微信配置状态
-    const [wechatConfig, setWechatConfig] = useState({
-        appId: '',
-        appSecret: '',
-        redirectUri: 'http://localhost:8081/api/wechat/callback'
-    });
-    const [isLoadingWechatConfig, setIsLoadingWechatConfig] = useState(false);
-    
-    // 微信支付配置状态
-    const [wechatPayConfig, setWechatPayConfig] = useState({
-        appId: '',
-        mchId: '',
-        apiKey: '',
-        apiV3Key: '',
-        certPath: '',
-        notifyUrl: ''
-    });
-    const [isLoadingWechatPayConfig, setIsLoadingWechatPayConfig] = useState(false);
-    
-    // 支付宝配置状态
-    const [alipayConfig, setAlipayConfig] = useState({
-        appId: '',
-        privateKey: '',
-        publicKey: '',
-        gatewayUrl: 'https://openapi.alipay.com/gateway.do',
-        notifyUrl: '',
-        returnUrl: ''
-    });
-    const [isLoadingAlipayConfig, setIsLoadingAlipayConfig] = useState(false);
     
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
