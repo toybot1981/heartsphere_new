@@ -101,6 +101,32 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     });
     const [isLoadingWechatConfig, setIsLoadingWechatConfig] = useState(false);
     
+    // 微信支付配置状态
+    const [wechatPayConfig, setWechatPayConfig] = useState({
+        appId: '',
+        mchId: '',
+        apiKey: '',
+        apiV3Key: '',
+        certPath: '',
+        notifyUrl: ''
+    });
+    const [isLoadingWechatPayConfig, setIsLoadingWechatPayConfig] = useState(false);
+    
+    // 支付宝配置状态
+    const [alipayConfig, setAlipayConfig] = useState({
+        appId: '',
+        privateKey: '',
+        publicKey: '',
+        gatewayUrl: 'https://openapi.alipay.com/gateway.do',
+        notifyUrl: '',
+        returnUrl: ''
+    });
+    const [isLoadingAlipayConfig, setIsLoadingAlipayConfig] = useState(false);
+    
+    // 引导配置链接
+    const [guideConfigLink, setGuideConfigLink] = useState('');
+    const [isLoadingGuideLink, setIsLoadingGuideLink] = useState(false);
+    
     // 邀请码生成表单
     const [generateQuantity, setGenerateQuantity] = useState(10);
     const [generateExpiresAt, setGenerateExpiresAt] = useState('');
@@ -237,6 +263,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                 adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
                 adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getWechatPayConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getAlipayConfig(token).catch(() => null), // 如果失败返回null
+                adminApi.config.getGuideConfigLink(token).catch(() => null), // 如果失败返回null
                 // 订阅计划API可能未加载，使用catch处理404错误
                 adminApi.subscriptionPlans.getAll(token),
                 // 加载剧本数据（使用管理员专用API）
@@ -254,9 +283,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
             const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
             const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
             const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
-            const plans = results[9].status === 'fulfilled' ? results[9].value : [];
-            const scripts = results[10].status === 'fulfilled' ? results[10].value : [];
-            const mainStories = results[11].status === 'fulfilled' ? results[11].value : [];
+            const wechatPayConfigData = results[9].status === 'fulfilled' && results[9].value ? results[9].value : null;
+            const alipayConfigData = results[10].status === 'fulfilled' && results[10].value ? results[10].value : null;
+            const guideLinkData = results[11].status === 'fulfilled' && results[11].value ? results[11].value : null;
+            const plans = results[12].status === 'fulfilled' ? results[12].value : [];
+            const scripts = results[13].status === 'fulfilled' ? results[13].value : [];
+            const mainStories = results[14].status === 'fulfilled' ? results[14].value : [];
             
             console.log("[AdminScreen] 邮箱验证配置加载结果:", {
                 emailVerificationConfig,
