@@ -216,43 +216,18 @@ const AppContent: React.FC = () => {
 
   const [memoryScene, setMemoryScene] = useState<WorldScene | null>(null);
   const [currentMembership, setCurrentMembership] = useState<any>(null);
-  const [initializationData, setInitializationData] = useState<{ token: string; userId: number; worldId: number } | null>(null);
-  // 标记是否已经处理过初始化向导，防止在 entryPoint 渲染后被错误触发
-  const initializationWizardProcessedRef = useRef(false);
   
-  // 监听初始化向导状态变化，用于调试
-  useEffect(() => {
-    console.log('[App] 初始化向导状态变化:', {
-      showInitializationWizard,
-      hasInitializationData: !!initializationData,
-      currentScreen: gameState.currentScreen,
-      initializationData: initializationData ? {
-        userId: initializationData.userId,
-        worldId: initializationData.worldId,
-        tokenExists: !!initializationData.token
-      } : null
-    });
-    
-    // 如果初始化向导状态为 true，但没有数据，或者不在正确的页面，自动清理
-    if (showInitializationWizard && (!initializationData || (gameState.currentScreen !== 'entryPoint' && gameState.currentScreen !== 'profileSetup'))) {
-      console.warn('[App] 检测到初始化向导状态不一致，自动清理:', {
-        showInitializationWizard,
-        hasInitializationData: !!initializationData,
-        currentScreen: gameState.currentScreen
-      });
-      setShowInitializationWizard(false);
-      setInitializationData(null);
-      initializationWizardProcessedRef.current = false; // 重置标记
-    }
-    
-    // 如果已经处理过初始化向导，但状态仍然为 true，且不在正确的页面，强制清理
-    if (initializationWizardProcessedRef.current && showInitializationWizard && gameState.currentScreen !== 'entryPoint' && gameState.currentScreen !== 'profileSetup') {
-      console.warn('[App] 检测到初始化向导已处理但仍在显示，强制清理');
-      setShowInitializationWizard(false);
-      setInitializationData(null);
-      initializationWizardProcessedRef.current = false;
-    }
-  }, [showInitializationWizard, initializationData, gameState.currentScreen]);
+  // 使用初始化向导 Hook
+  const {
+    showInitializationWizard,
+    setShowInitializationWizard,
+    initializationData,
+    setInitializationData,
+    initializationWizardProcessedRef,
+    shouldShowWizard,
+    handleWizardComplete,
+    handleWizardCancel,
+  } = useInitializationWizard();
 
   const pendingActionRef = useRef<() => void>(() => {});
 

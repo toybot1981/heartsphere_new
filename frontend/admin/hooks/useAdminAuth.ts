@@ -24,8 +24,8 @@ export const useAdminAuth = () => {
             console.log("[useAdminAuth] 发现本地token，自动登录...");
             setAdminToken(token);
             setIsAuthenticated(true);
-            if (onDataLoad) {
-                onDataLoad(token);
+            if (onDataLoadRef.current) {
+                onDataLoadRef.current(token);
             }
         } else {
             console.log("[useAdminAuth] 未找到本地token，显示登录界面");
@@ -42,7 +42,7 @@ export const useAdminAuth = () => {
         return () => {
             window.removeEventListener('admin-token-expired', handleTokenExpired);
         };
-    }, [onDataLoad]);
+    }, []);
 
     const handleLogin = async (loginUsername: string, loginPassword: string) => {
         console.log("========== [useAdminAuth] 管理员登录 ==========");
@@ -58,8 +58,8 @@ export const useAdminAuth = () => {
             localStorage.setItem('admin_token', response.token);
             setIsAuthenticated(true);
             console.log("[useAdminAuth] 认证状态已更新，开始加载系统数据...");
-            if (onDataLoad) {
-                await onDataLoad(response.token);
+            if (onDataLoadRef.current) {
+                await onDataLoadRef.current(response.token);
             }
             console.log("[useAdminAuth] 登录流程完成");
         } catch (error: any) {
@@ -106,7 +106,8 @@ export const useAdminAuth = () => {
         loading,
         handleLogin,
         handleLogout,
-        checkAndHandleTokenError
+        checkAndHandleTokenError,
+        setOnDataLoad
     };
 };
 

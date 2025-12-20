@@ -39,7 +39,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         loading,
         handleLogin,
         handleLogout,
-        checkAndHandleTokenError
+        checkAndHandleTokenError,
+        setOnDataLoad
     } = useAdminAuth();
     
     // 使用 checkAndHandleTokenError 初始化 data 和 config hooks
@@ -54,12 +55,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         ]);
     };
     
-    // 更新 useAdminAuth 的 onDataLoad 回调
+    // 设置 useAdminAuth 的 onDataLoad 回调
     React.useEffect(() => {
-        if (adminToken && isAuthenticated) {
-            loadAllData(adminToken);
-        }
-    }, [adminToken, isAuthenticated]);
+        setOnDataLoad(loadAllData);
+    }, []);
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
