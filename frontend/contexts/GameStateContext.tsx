@@ -47,6 +47,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // 加载游戏数据
   const loadGameData = useCallback(async (): Promise<void> => {
     const loadedState = await storageService.loadState();
+    // 检查是否有 token（即使 localStorage 中没有 userProfile，如果有 token 也应该显示 entryPoint）
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+    
     if (loadedState) {
       const savedSettings = (loadedState.settings || {}) as Partial<AppSettings>;
       const mergedSettings: AppSettings = {
@@ -70,16 +73,23 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         }
       };
 
+      // 确定应该显示的页面
+      let targetScreen: GameState['currentScreen'];
+      if (hasToken || loadedState.userProfile) {
+        // 如果有 token 或用户已登录，确保停留在 entryPoint
+        targetScreen = (loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen) 
+          ? 'entryPoint' 
+          : loadedState.currentScreen;
+      } else {
+        // 如果没有 token 且没有用户信息，显示 profileSetup
+        targetScreen = 'profileSetup';
+      }
+
       dispatch({
         type: 'BATCH_UPDATE',
         payload: {
           ...loadedState,
-          // 如果用户已登录，确保停留在 entryPoint，而不是回到 profileSetup 或其他页面
-          currentScreen: loadedState.userProfile 
-            ? (loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen 
-                ? 'entryPoint' 
-                : loadedState.currentScreen)
-            : 'profileSetup',
+          currentScreen: targetScreen,
           generatingAvatarId: null,
           activeJournalEntryId: null,
           editingScenarioId: null,
@@ -97,6 +107,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
       geminiService.updateConfig(mergedSettings);
     } else {
+      // 即使没有保存的状态，如果有 token，也应该显示 entryPoint
+      if (hasToken) {
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+      }
       geminiService.updateConfig(DEFAULT_GAME_STATE.settings);
     }
   }, []);
