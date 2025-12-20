@@ -252,7 +252,6 @@ const AppContent: React.FC = () => {
     }
   }, [showInitializationWizard, initializationData, gameState.currentScreen]);
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const pendingActionRef = useRef<() => void>(() => {});
 
   const hasCheckedMail = useRef(false);
