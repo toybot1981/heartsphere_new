@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { adminApi } from '../../services/api';
 import { showAlert } from '../../utils/dialog';
 
-export const useAdminAuth = (onDataLoad?: (token: string) => void) => {
+export const useAdminAuth = () => {
+    const onDataLoadRef = useRef<((token: string) => void) | null>(null);
+    
+    const setOnDataLoad = (callback: (token: string) => void) => {
+        onDataLoadRef.current = callback;
+    };
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');

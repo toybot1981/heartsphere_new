@@ -27,18 +27,7 @@ interface AdminScreenProps {
 // --- MAIN COMPONENT ---
 
 export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGameState, onResetWorld, onBack }) => {
-    // 使用自定义 hooks
-    const adminData = useAdminData();
-    const adminConfig = useAdminConfig();
-    
-    // 创建统一的 loadAllData 函数
-    const loadAllData = async (token: string) => {
-        await Promise.all([
-            adminData.loadSystemData(token),
-            adminConfig.loadConfigData(token)
-        ]);
-    };
-    
+    // 使用自定义 hooks - 先初始化 auth hook 以获取 checkAndHandleTokenError
     const {
         isAuthenticated,
         username,
@@ -51,7 +40,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         handleLogin,
         handleLogout,
         checkAndHandleTokenError
-    } = useAdminAuth(loadAllData);
+    } = useAdminAuth();
+    
+    // 使用 checkAndHandleTokenError 初始化 data 和 config hooks
+    const adminData = useAdminData(checkAndHandleTokenError);
+    const adminConfig = useAdminConfig();
+    
+    // 创建统一的 loadAllData 函数
+    const loadAllData = async (token: string) => {
+        await Promise.all([
+            adminData.loadSystemData(token),
+            adminConfig.loadConfigData(token)
+        ]);
+    };
+    
+    // 更新 useAdminAuth 的 onDataLoad 回调
+    React.useEffect(() => {
+        if (adminToken && isAuthenticated) {
+            loadAllData(adminToken);
+        }
+    }, [adminToken, isAuthenticated]);
     
     // Navigation
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
@@ -248,162 +256,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         return false;
     };
 
+    // loadSystemData 现在由 hooks 处理，这里保留一个包装函数用于向后兼容
     const loadSystemData = async (token: string) => {
-        console.log("========== [AdminScreen] 加载系统数据 ==========");
-        console.log("[AdminScreen] Token存在:", !!token);
-        try {
-            console.log("[AdminScreen] 开始并行加载系统数据...");
-            
-            // 分别加载数据，允许部分失败
-            const results = await Promise.allSettled([
-                adminApi.worlds.getAll(token),
-                adminApi.eras.getAll(token),
-                adminApi.characters.getAll(token),
-                adminApi.inviteCodes.getAll(token),
-                adminApi.config.getInviteCodeRequired(token),
-                adminApi.config.getEmailConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getEmailVerificationRequired(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getNotionConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getWechatConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getWechatPayConfig(token).catch(() => null), // 如果失败返回null
-                adminApi.config.getAlipayConfig(token).catch(() => null), // 如果失败返回null
-                // 订阅计划API可能未加载，使用catch处理404错误
-                adminApi.subscriptionPlans.getAll(token),
-                // 加载剧本数据（使用管理员专用API）
-                adminApi.scripts.getAll(token),
-                // 加载主线剧情数据
-                adminApi.mainStories.getAll(token)
-            ]);
-            
-            const worlds = results[0].status === 'fulfilled' ? results[0].value : [];
-            const eras = results[1].status === 'fulfilled' ? results[1].value : [];
-            const characters = results[2].status === 'fulfilled' ? results[2].value : [];
-            const codes = results[3].status === 'fulfilled' ? results[3].value : [];
-            const config = results[4].status === 'fulfilled' ? results[4].value : { inviteCodeRequired: false };
-            const emailConfigData = results[5].status === 'fulfilled' && results[5].value ? results[5].value : null;
-            const emailVerificationConfig = results[6].status === 'fulfilled' && results[6].value ? results[6].value : null;
-            const notionConfigData = results[7].status === 'fulfilled' && results[7].value ? results[7].value : null;
-            const wechatConfigData = results[8].status === 'fulfilled' && results[8].value ? results[8].value : null;
-            const wechatPayConfigData = results[9].status === 'fulfilled' && results[9].value ? results[9].value : null;
-            const alipayConfigData = results[10].status === 'fulfilled' && results[10].value ? results[10].value : null;
-            const plans = results[11].status === 'fulfilled' ? results[11].value : [];
-            const scripts = results[12].status === 'fulfilled' ? results[12].value : [];
-            const mainStories = results[13].status === 'fulfilled' ? results[13].value : [];
-            
-            console.log("[AdminScreen] 邮箱验证配置加载结果:", {
-                emailVerificationConfig,
-                hasValue: !!emailVerificationConfig,
-                emailVerificationRequired: emailVerificationConfig?.emailVerificationRequired
-            });
-            
-            console.log("[AdminScreen] 数据加载结果:", {
-                worlds: Array.isArray(worlds) ? worlds.length : 0,
-                eras: Array.isArray(eras) ? eras.length : 0,
-                characters: Array.isArray(characters) ? characters.length : 0,
-                scripts: Array.isArray(scripts) ? scripts.length : 0,
-                inviteCodes: Array.isArray(codes) ? codes.length : 0,
-                plans: Array.isArray(plans) ? plans.length : 0,
-                config: config
-            });
-            console.log("[AdminScreen] 邀请码数据详情:", codes);
-            console.log("[AdminScreen] 邀请码数据类型:", typeof codes, Array.isArray(codes));
-            
-            // 确保 codes 是数组
-            const inviteCodesArray = Array.isArray(codes) ? codes : (codes ? [codes] : []);
-            console.log("[AdminScreen] 处理后的邀请码数组:", inviteCodesArray);
-            
-            setSystemWorlds(Array.isArray(worlds) ? worlds : []);
-            setSystemEras(Array.isArray(eras) ? eras : []);
-            setSystemCharacters(Array.isArray(characters) ? characters : []);
-            setSystemScripts(Array.isArray(scripts) ? scripts : []);
-            setSystemMainStories(Array.isArray(mainStories) ? mainStories : []);
-            setInviteCodes(inviteCodesArray);
-            setInviteCodeRequired(config.inviteCodeRequired || false);
-            setSubscriptionPlans(Array.isArray(plans) ? plans : []);
-            // 更新邮箱验证配置
-            if (emailVerificationConfig) {
-                const required = emailVerificationConfig.emailVerificationRequired;
-                if (required !== undefined && required !== null) {
-                    console.log("[AdminScreen] 设置邮箱验证状态:", required);
-                    setEmailVerificationRequired(Boolean(required));
-                } else {
-                    console.warn("[AdminScreen] 邮箱验证配置存在但 emailVerificationRequired 字段无效:", emailVerificationConfig);
-                }
-            } else {
-                console.warn("[AdminScreen] 邮箱验证配置未加载，使用默认值: true");
-                // 如果配置未加载，保持默认值（true），但可以尝试重新加载
-            }
-            if (emailConfigData) {
-                // 根据host判断邮箱类型
-                const emailType = emailConfigData.host?.includes('qq.com') ? 'qq' : '163';
-                setEmailConfig({
-                    emailType: emailType,
-                    host: emailConfigData.host || 'smtp.163.com',
-                    port: emailConfigData.port || (emailType === 'qq' ? '587' : '25'),
-                    username: emailConfigData.username || (emailType === 'qq' ? 'heartsphere@qq.com' : 'tongyexin@163.com'),
-                    password: emailConfigData.password || '',
-                    from: emailConfigData.from || (emailType === 'qq' ? 'heartsphere@qq.com' : 'tongyexin@163.com')
-                });
-            }
-            if (notionConfigData) {
-                console.log("[AdminScreen] 加载 Notion 配置:", notionConfigData);
-                setNotionConfig({
-                    clientId: notionConfigData.clientId || '',
-                    clientSecret: notionConfigData.clientSecret || '',
-                    redirectUri: notionConfigData.redirectUri || 'http://localhost:8081/api/notes/notion/callback',
-                    syncButtonEnabled: notionConfigData.syncButtonEnabled !== undefined ? notionConfigData.syncButtonEnabled : false
-                });
-            } else {
-                console.log("[AdminScreen] 未加载到 Notion 配置，使用默认值");
-            }
-            if (wechatConfigData) {
-                console.log("[AdminScreen] 加载微信配置:", wechatConfigData);
-                setWechatConfig({
-                    appId: wechatConfigData.appId || '',
-                    appSecret: wechatConfigData.appSecret === '******' ? '' : (wechatConfigData.appSecret || ''), // 如果是******则保持为空，表示已保存但未显示
-                    redirectUri: wechatConfigData.redirectUri || 'http://localhost:8081/api/wechat/callback'
-                });
-            }
-            if (wechatPayConfigData) {
-                console.log("[AdminScreen] 加载微信支付配置:", wechatPayConfigData);
-                setWechatPayConfig({
-                    appId: wechatPayConfigData.appId || '',
-                    mchId: wechatPayConfigData.mchId || '',
-                    apiKey: wechatPayConfigData.apiKey === '******' ? '' : (wechatPayConfigData.apiKey || ''),
-                    apiV3Key: wechatPayConfigData.apiV3Key === '******' ? '' : (wechatPayConfigData.apiV3Key || ''),
-                    certPath: wechatPayConfigData.certPath || '',
-                    notifyUrl: wechatPayConfigData.notifyUrl || ''
-                });
-            }
-            if (alipayConfigData) {
-                console.log("[AdminScreen] 加载支付宝配置:", alipayConfigData);
-                setAlipayConfig({
-                    appId: alipayConfigData.appId || '',
-                    privateKey: alipayConfigData.privateKey === '******' ? '' : (alipayConfigData.privateKey || ''),
-                    publicKey: alipayConfigData.publicKey || '',
-                    gatewayUrl: alipayConfigData.gatewayUrl || 'https://openapi.alipay.com/gateway.do',
-                    notifyUrl: alipayConfigData.notifyUrl || '',
-                    returnUrl: alipayConfigData.returnUrl || ''
-                });
-            }
-            console.log("[AdminScreen] 系统数据状态已更新，邀请码数量:", inviteCodesArray.length);
-        } catch (error: any) {
-            console.error('[AdminScreen] 加载系统数据失败:', error);
-            console.error('[AdminScreen] 错误详情:', error);
-            
-            // 检查是否是 token 验证失败
-            if (checkAndHandleTokenError(error)) {
-                return;
-            }
-            
-            // 即使加载失败，也显示界面，只是数据为空
-            setSystemWorlds([]);
-            setSystemEras([]);
-            setSystemCharacters([]);
-            setSystemScripts([]);
-            setInviteCodes([]);
-            setSubscriptionPlans([]);
-        }
+        await loadAllData(token);
     };
 
     // 加载资源数据
