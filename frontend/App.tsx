@@ -50,6 +50,7 @@ import { useMemoryHandlers } from './hooks/useMemoryHandlers';
 import { useMailHandlers } from './hooks/useMailHandlers';
 import { useMirrorHandlers } from './hooks/useMirrorHandlers';
 import { checkIsMobile } from './utils/deviceDetection';
+import { useModalState } from './hooks/useModalState';
 import { SceneSelectionScreen } from './components/screens/SceneSelectionScreen';
 import { CharacterSelectionScreen } from './components/screens/CharacterSelectionScreen';
 import { ProfileSetupScreen } from './components/screens/ProfileSetupScreen';
