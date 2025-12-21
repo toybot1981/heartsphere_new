@@ -28,14 +28,8 @@ import { RecycleBinModal } from './components/RecycleBinModal';
 import { MembershipModal } from './components/MembershipModal';
 import { GlobalDialogs, showAlert, showConfirm } from './utils/dialog';
 import { InitializationWizard } from './components/InitializationWizard';
-import { useScrollPosition } from './hooks/useScrollPosition';
 import { StateManagementTest } from './components/StateManagementTest';
 import { GameStateProvider, useGameState } from './contexts/GameStateContext';
-import { useScenes } from './hooks/useScenes';
-import { useCharacters } from './hooks/useCharacters';
-import { useScripts } from './hooks/useScripts';
-import { useChat } from './hooks/useChat';
-import { useSettings } from './hooks/useSettings';
 import { DEFAULT_GAME_STATE } from './contexts/constants/defaultState';
 import { convertErasToWorldScenes, convertBackendMainStoryToCharacter, convertBackendCharacterToFrontend } from './utils/dataTransformers';
 import { showSyncErrorToast } from './utils/toast';
@@ -59,6 +53,7 @@ import { useMailCheck } from './hooks/useMailCheck';
 import { SceneSelectionScreen } from './components/screens/SceneSelectionScreen';
 import { CharacterSelectionScreen } from './components/screens/CharacterSelectionScreen';
 import { ProfileSetupScreen } from './components/screens/ProfileSetupScreen';
+import { UserProfile } from './components/UserProfile';
 
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
@@ -176,7 +171,7 @@ const AppContent: React.FC = () => {
   );
   const { handleAddJournalEntry, handleUpdateJournalEntry, handleDeleteJournalEntry } = useJournalHandlers();
   const { handleSaveMainStory, handleDeleteMainStory: handleDeleteMainStoryHook, handleEditMainStory: handleEditMainStoryHook } = useMainStoryHandlers();
-  const { loadAndSyncWorldData: loadAndSyncWorldDataHook, handleLoginSuccess: handleLoginSuccessHook, checkAuth: checkAuthHook } = useDataLoader();
+  const { loadAndSyncWorldData: loadAndSyncWorldDataHook } = useDataLoader();
   const { 
     handleSaveScenario: handleSaveScenarioHook, 
     handleDeleteScenario: handleDeleteScenarioHook, 
@@ -201,7 +196,7 @@ const AppContent: React.FC = () => {
   const [editingMainStorySceneId, setEditingMainStorySceneId] = useState<string | null>(null);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   const [editingCharacterSceneId, setEditingCharacterSceneId] = useState<string | null>(null);
-  
+
   // 使用 Character Handlers Hook（需要在 editingCharacterSceneId 和 editingMainStory 声明之后）
   const { handleSaveCharacter: handleSaveCharacterHook, handleDeleteCharacter: handleDeleteCharacterHook, handleGenerateAvatar: handleGenerateAvatarHook } = useCharacterHandlers(
     editingCharacterSceneId,
@@ -220,7 +215,7 @@ const AppContent: React.FC = () => {
   
   // 使用初始化向导 Hook
   const {
-    showInitializationWizard,
+      showInitializationWizard,
     setShowInitializationWizard,
     initializationData,
     setInitializationData,
@@ -301,15 +296,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const shouldLoadData = gameState.currentScreen === 'entryPoint' || gameState.currentScreen === 'sceneSelection';
     
-    console.log('[DataLoader useEffect] 触发检查:', {
-      currentScreen: gameState.currentScreen,
-      shouldLoadData,
-      hasUserProfile: !!gameState.userProfile,
-      isGuest: gameState.userProfile?.isGuest,
-      userWorldScenesCount: gameState.userWorldScenes?.length || 0,
-      hasLoadedEntryPointData: hasLoadedEntryPointData.current
-    });
-    
     // 重置标志，当离开需要加载数据的页面时
     if (!shouldLoadData) {
       hasLoadedEntryPointData.current = false;
@@ -317,40 +303,13 @@ const AppContent: React.FC = () => {
     }
     
     if (shouldLoadData && gameState.userProfile && !gameState.userProfile.isGuest) {
-      // 注释掉：不再使用本地缓存，每次都从数据库获取最新数据
-      // // 防止重复加载：只有在已有数据且标志为true时才跳过
-      // // 如果标志为true但没有数据，说明上次加载失败，需要重新加载
-      // if (hasLoadedEntryPointData.current && gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
-      //   console.log('[DataLoader] 已经加载过数据且数据存在，跳过。数据数量:', gameState.userWorldScenes.length);
-      //   return;
-      // }
-      
-      // // 如果标志为true但没有数据，重置标志并继续加载
-      // if (hasLoadedEntryPointData.current && (!gameState.userWorldScenes || gameState.userWorldScenes.length === 0)) {
-      //   console.log('[DataLoader] 标志为true但数据为空，重置标志并重新加载');
-      //   hasLoadedEntryPointData.current = false;
-      // }
-      
-      // // 如果已经有 userWorldScenes 数据，说明 handleLoginSuccess 已经加载过了，跳过
-      // if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
-      //   console.log('[DataLoader] 检测到已有数据（可能来自 handleLoginSuccess），跳过加载。数据数量:', gameState.userWorldScenes.length);
-      //   hasLoadedEntryPointData.current = true;
-      //   return;
-      // }
-      
-      console.log('[DataLoader] 强制从数据库获取数据，忽略本地缓存');
-      
       const token = localStorage.getItem('auth_token');
-      console.log(`[DataLoader ${gameState.currentScreen}] 条件检查通过，token存在:`, !!token);
       
       if (!token) {
-        console.warn(`[DataLoader ${gameState.currentScreen}] token不存在，可能是登录流程还未完成`);
-        console.warn(`[DataLoader ${gameState.currentScreen}] 等待200ms后重试...`);
         // 等待一小段时间，可能是登录流程还未完成
         setTimeout(() => {
           const retryToken = localStorage.getItem('auth_token');
           if (retryToken) {
-            console.log(`[DataLoader ${gameState.currentScreen}] 重试后token存在，开始加载数据`);
             // 通过更新 gameState 来重新触发 useEffect
             dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
           } else {
@@ -358,7 +317,6 @@ const AppContent: React.FC = () => {
             console.error(`[DataLoader ${gameState.currentScreen}] 检测到用户已登录但token丢失，清除用户信息并提示重新登录`);
             // 如果用户已登录但token丢失，清除用户信息并提示重新登录
             if (gameState.userProfile && !gameState.userProfile.isGuest) {
-              console.warn(`[DataLoader ${gameState.currentScreen}] 清除无效的用户信息`);
               dispatch({ type: 'SET_USER_PROFILE', payload: null });
               dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'profileSetup' });
               dispatch({ type: 'SET_USER_WORLD_SCENES', payload: [] });
@@ -376,38 +334,20 @@ const AppContent: React.FC = () => {
       }
       
       if (token) {
-        console.log(`[DataLoader ${gameState.currentScreen}] ========== 开始从数据库加载场景数据 ==========`);
-        console.log(`[DataLoader ${gameState.currentScreen}] 注意：已禁用本地缓存，强制从数据库获取最新数据`);
-        // 注释掉：不再显示本地缓存数据
-        // console.log(`[DataLoader ${gameState.currentScreen}] 当前本地数据:`, {
-        //   userWorldScenesCount: gameState.userWorldScenes?.length || 0,
-        //   userWorldScenes: gameState.userWorldScenes
-        // });
-        
         // 使用 useDataLoader Hook 加载数据
         const screenName = gameState.currentScreen;
-        console.log(`[DataLoader ${screenName}] ========== 开始从数据库加载场景数据 ==========`);
-        console.log(`[DataLoader ${screenName}] 注意：已禁用本地缓存，强制从数据库获取最新数据`);
         
         // 如果本地已有数据，先显示本地数据，然后后台同步
         if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
-          console.log(`[DataLoader ${screenName}] 检测到本地已有数据，数量:`, gameState.userWorldScenes.length);
-          console.log(`[DataLoader ${screenName}] 使用本地数据，后台同步远程数据`);
           loadAndSyncWorldDataHook(token, screenName).catch(error => {
             console.error(`[DataLoader ${screenName}] 后台同步失败:`, error);
           });
-        } else {
-          console.log(`[DataLoader ${screenName}] 检测到本地无数据`);
-          console.log(`[DataLoader ${screenName}] 本地无数据，立即加载远程数据`);
+              } else {
           loadAndSyncWorldDataHook(token, screenName).catch(error => {
             console.error(`[DataLoader ${screenName}] 加载失败:`, error);
           });
         }
-      } else {
-        console.warn(`[DataLoader ${gameState.currentScreen}] token不存在，无法加载数据`);
       }
-    } else {
-      console.log(`[DataLoader] 条件检查未通过，不加载数据`);
     }
   }, [gameState.currentScreen, gameState.userProfile]);
 
@@ -471,19 +411,12 @@ const AppContent: React.FC = () => {
     const result = await handleEditMainStoryHook(mainStory, sceneId);
     if (result) {
       try {
-        console.log('[App] 设置编辑状态:', {
-          editingMainStory: result.mainStory,
-          editingMainStorySceneId: result.sceneId
-        });
-        
         setEditingMainStory(result.mainStory);
         setEditingMainStorySceneId(result.sceneId);
-        setShowMainStoryEditor(true);
-        
-        console.log('[App] 状态已设置，MainStoryEditor 应该显示');
+          setShowMainStoryEditor(true);
       } catch (error) {
         console.error('[App] 编辑主线故事出错:', error);
-        showAlert('打开编辑器失败，请稍后重试', '错误', 'error');
+          showAlert('打开编辑器失败，请稍后重试', '错误', 'error');
       }
     }
   };
@@ -547,7 +480,6 @@ const AppContent: React.FC = () => {
   const currentScenes = useMemo(() => {
     // 如果正在显示初始化向导，返回空数组，避免显示游客预置场景
     if (showInitializationWizard) {
-      console.log('[currentScenes] 初始化向导显示中，返回空场景列表');
       return [];
     }
     
@@ -579,78 +511,6 @@ const AppContent: React.FC = () => {
   // 为了保持向后兼容，创建一个函数
   const getCurrentScenes = useCallback(() => currentScenes, [currentScenes]);
   
-  // 场景详情页面日志 - 必须在早期返回之前，遵守 React Hooks 规则
-  useEffect(() => {
-    const currentSceneLocal = currentScenes.find(s => s.id === gameState.selectedSceneId);
-    if (gameState.currentScreen === 'sceneSelection' && currentSceneLocal) {
-      console.log('========== [场景详情] 数据加载 ==========');
-      console.log('[场景详情] 当前场景ID:', gameState.selectedSceneId);
-      console.log('[场景详情] 当前场景信息:', {
-        id: currentSceneLocal.id,
-        name: currentSceneLocal.name,
-        description: currentSceneLocal.description,
-        worldId: currentSceneLocal.worldId,
-        systemEraId: currentSceneLocal.systemEraId
-      });
-      
-      // 主线故事数据
-      if (currentSceneLocal.mainStory) {
-        console.log('[场景详情] 主线故事数据:', {
-          id: currentSceneLocal.mainStory.id,
-          name: currentSceneLocal.mainStory.name,
-          role: currentSceneLocal.mainStory.role,
-          bio: currentSceneLocal.mainStory.bio?.substring(0, 50) + '...',
-          avatarUrl: currentSceneLocal.mainStory.avatarUrl ? '存在' : '不存在',
-          backgroundUrl: currentSceneLocal.mainStory.backgroundUrl ? '存在' : '不存在',
-          firstMessage: currentSceneLocal.mainStory.firstMessage?.substring(0, 50) + '...',
-          isNumericId: /^\d+$/.test(currentSceneLocal.mainStory.id),
-          isUserOwned: /^\d+$/.test(currentSceneLocal.mainStory.id)
-        });
-      } else {
-        console.log('[场景详情] 主线故事: 无');
-      }
-      
-      // 角色数据
-      const customCharsForScene = gameState.customCharacters[currentSceneLocal.id] || [];
-      const allChars = [...currentSceneLocal.characters, ...customCharsForScene];
-      console.log('[场景详情] 角色数据:', {
-        总数: allChars.length,
-        后端角色数: currentSceneLocal.characters.length,
-        自定义角色数: customCharsForScene.length,
-        角色列表: allChars.map(char => ({
-          id: char.id,
-          name: char.name,
-          role: char.role,
-          isNumericId: /^\d+$/.test(char.id),
-          isInCustomChars: customCharsForScene.some(c => c.id === char.id),
-          isUserOwned: /^\d+$/.test(char.id) || customCharsForScene.some(c => c.id === char.id)
-        }))
-      });
-      
-      // 剧本数据
-      const backendScripts = currentSceneLocal.scripts || [];
-      const customScenarios = gameState.customScenarios.filter(s => s.sceneId === currentSceneLocal.id);
-      console.log('[场景详情] 剧本数据:', {
-        后端剧本数: backendScripts.length,
-        自定义剧本数: customScenarios.length,
-        后端剧本列表: backendScripts.map(script => ({
-          id: script.id,
-          title: script.title,
-          sceneCount: script.sceneCount,
-          contentLength: script.content?.length || 0,
-          hasContent: !!script.content
-        })),
-        自定义剧本列表: customScenarios.map(scenario => ({
-          id: scenario.id,
-          title: scenario.title,
-          nodesCount: Object.keys(scenario.nodes || {}).length,
-          startNodeId: scenario.startNodeId
-        }))
-      });
-      
-      console.log('========== [场景详情] 数据加载完成 ==========');
-    }
-  }, [gameState.currentScreen, gameState.selectedSceneId, currentScenes, gameState.customCharacters, gameState.customScenarios]);
   
   if (isMobileMode) {
       return (
@@ -677,11 +537,6 @@ const AppContent: React.FC = () => {
       const filteredCharacters = currentSceneLocal.characters.filter(char => {
           // 如果角色ID与主线故事ID相同，则过滤掉
           if (mainStoryId && char.id === mainStoryId) {
-              console.log('[场景详情] 过滤掉角色列表中的主线故事:', {
-                  characterId: char.id,
-                  characterName: char.name,
-                  mainStoryId: mainStoryId
-              });
               return false;
           }
           return true;
@@ -713,30 +568,13 @@ const AppContent: React.FC = () => {
       })
     : null;
   
-  // 详细调试日志：检查 currentScenarioLocal 的查找
-  if (gameState.selectedScenarioId || gameState.currentScreen === 'chat') {
-    console.log('[App] 🔍 currentScenarioLocal 查找:', {
+  // 检查 currentScenarioLocal 的查找，记录错误
+  if (!currentScenarioLocal && gameState.selectedScenarioId) {
+    console.error('[App] 找不到对应的 scenario', {
       selectedScenarioId: gameState.selectedScenarioId,
       selectedScenarioIdType: typeof gameState.selectedScenarioId,
-      customScenariosCount: gameState.customScenarios.length,
-      customScenariosIds: gameState.customScenarios.map(s => ({ id: s.id, idType: typeof s.id, title: s.title })),
-      found: !!currentScenarioLocal,
-      currentScenarioLocalId: currentScenarioLocal?.id,
-      currentScenarioLocalTitle: currentScenarioLocal?.title,
-      currentScenarioLocalNodesCount: currentScenarioLocal ? Object.keys(currentScenarioLocal.nodes || {}).length : 0,
-      currentScenarioLocalHasNodes: !!currentScenarioLocal?.nodes,
-      currentScreen: gameState.currentScreen
+      availableIds: gameState.customScenarios.map(s => ({ id: s.id, title: s.title }))
     });
-    
-    if (!currentScenarioLocal && gameState.selectedScenarioId) {
-      console.error('[App] ❌ 警告：找不到对应的 scenario！', {
-        selectedScenarioId: gameState.selectedScenarioId,
-        selectedScenarioIdType: typeof gameState.selectedScenarioId,
-        selectedScenarioIdString: String(gameState.selectedScenarioId),
-        availableIds: gameState.customScenarios.map(s => ({ id: s.id, idType: typeof s.id, idString: String(s.id) })),
-        customScenarios: gameState.customScenarios.map(s => ({ id: s.id, title: s.title }))
-      });
-    }
   }
 
   return (
@@ -748,8 +586,8 @@ const AppContent: React.FC = () => {
               onCancel={() => { setShowLoginModal(false); pendingActionRef.current = () => {}; }}
               initialNickname={
                 gameState.userProfile?.isGuest 
-                  ? gameState.userProfile.nickname 
-                  : undefined
+                    ? gameState.userProfile.nickname 
+                    : undefined
               }
             />
           )}
@@ -759,27 +597,18 @@ const AppContent: React.FC = () => {
             <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
           )}
 
-      {/* 初始化向导 - 只在真正需要时显示，且确保不会覆盖正常页面 */}
+          {/* 初始化向导 - 只在真正需要时显示，且确保不会覆盖正常页面 */}
       {shouldShowWizard && initializationData && (
-        <>
-          {console.log('[初始化向导] ========== 渲染初始化向导组件 ==========')}
-          {console.log('[初始化向导] showInitializationWizard:', showInitializationWizard)}
-          {console.log('[初始化向导] currentScreen:', gameState.currentScreen)}
-          {console.log('[初始化向导] initializationData:', initializationData)}
-          {console.log('[初始化向导] userId:', initializationData.userId)}
-          {console.log('[初始化向导] worldId:', initializationData.worldId)}
-          {console.log('[初始化向导] token存在:', !!initializationData.token)}
-          <InitializationWizard
-            token={initializationData.token}
-            userId={initializationData.userId}
-            worldId={initializationData.worldId}
+            <InitializationWizard
+              token={initializationData.token}
+              userId={initializationData.userId}
+              worldId={initializationData.worldId}
             onComplete={handleWizardComplete}
-            onCancel={() => {
+              onCancel={() => {
               handleWizardCancel();
-              showAlert('你可以稍后在设置中完成初始化');
-            }}
-          />
-        </>
+                showAlert('你可以稍后在设置中完成初始化');
+              }}
+            />
       )}
 
 
@@ -793,7 +622,6 @@ const AppContent: React.FC = () => {
       {gameState.currentScreen === 'entryPoint' && (() => {
         // 在 entryPoint 渲染时，如果初始化向导不应该显示，立即清理
         if (showInitializationWizard && (!initializationData || !initializationWizardProcessedRef.current)) {
-          console.warn('[EntryPoint] 检测到初始化向导状态异常，立即清理');
           setShowInitializationWizard(false);
           setInitializationData(null);
           initializationWizardProcessedRef.current = false;
@@ -809,6 +637,7 @@ const AppContent: React.FC = () => {
               dispatch({ type: 'SET_CURRENT_SCREEN', payload: screen });
             }} 
             nickname={gameState.userProfile?.nickname || ''} 
+            avatarUrl={gameState.userProfile?.avatarUrl}
             onOpenSettings={() => setShowSettingsModal(true)}
             onSwitchToMobile={handleSwitchToMobile}
             currentStyle={gameState.worldStyle}
@@ -847,6 +676,36 @@ const AppContent: React.FC = () => {
              autoGenerateImage={gameState.settings.autoGenerateJournalImages}
              userName={gameState.userProfile?.nickname}
              isGuest={gameState.userProfile?.isGuest || !gameState.userProfile}
+          />
+      )}
+
+      {gameState.currentScreen === 'profile' && gameState.userProfile && (
+        <UserProfile
+          userProfile={gameState.userProfile}
+          journalEntries={gameState.journalEntries}
+          mailbox={gameState.mailbox}
+          history={gameState.history}
+          gameState={gameState}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onLogout={handleLogout}
+          onUpdateProfile={(profile) => {
+            dispatch({ type: 'SET_USER_PROFILE', payload: profile });
+          }}
+          onNavigateToScene={(sceneId) => {
+            dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: sceneId });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' });
+          }}
+          onNavigateToCharacter={(characterId, sceneId) => {
+            dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: sceneId });
+            dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: characterId });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'chat' });
+          }}
+          onNavigateToJournal={() => {
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'realWorld' });
+          }}
+          onBack={() => {
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+          }}
           />
       )}
 
@@ -904,8 +763,8 @@ const AppContent: React.FC = () => {
           onOpenMemoryModal={openMemoryModal}
           onOpenMailbox={() => setShowMailbox(true)}
           onOpenEraCreator={() => {
-            setEditingScene(null);
-            setShowEraCreator(true);
+                        setEditingScene(null); 
+                        setShowEraCreator(true); 
           }}
           requireAuth={requireAuth}
           dispatch={dispatch}
@@ -923,14 +782,14 @@ const AppContent: React.FC = () => {
           onEditMainStory={handleEditMainStory}
           onDeleteMainStory={handleDeleteMainStory}
           onAddCharacter={() => {
-            setEditingCharacter(null);
-            setEditingCharacterSceneId(currentSceneLocal.id);
-            setShowCharacterCreator(true);
+                            setEditingCharacter(null); 
+                            setEditingCharacterSceneId(currentSceneLocal.id); 
+                            setShowCharacterCreator(true);
           }}
           onEditCharacter={(c) => {
-            setEditingCharacter(c);
-            setEditingCharacterSceneId(currentSceneLocal.id);
-            setShowCharacterCreator(true);
+                                      setEditingCharacter(c);
+                                      setEditingCharacterSceneId(currentSceneLocal.id);
+                                      setShowCharacterCreator(true);
           }}
           onDeleteCharacter={handleDeleteCharacter}
           onGenerateAvatar={handleGenerateAvatar}
@@ -978,32 +837,7 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      {(() => {
-        const shouldRenderChatWindow = gameState.currentScreen === 'chat' && currentCharacterLocal;
-        console.log('[App] 🔍 ChatWindow 渲染条件检查:', {
-          currentScreen: gameState.currentScreen,
-          hasCurrentCharacterLocal: !!currentCharacterLocal,
-          currentCharacterLocalId: currentCharacterLocal?.id,
-          shouldRenderChatWindow,
-          willRender: shouldRenderChatWindow
-        });
-        return null;
-      })()}
-      {gameState.currentScreen === 'chat' && currentCharacterLocal && (() => {
-          console.log('[App] 🎬 准备渲染ChatWindow:', {
-            currentScreen: gameState.currentScreen,
-            hasCurrentCharacterLocal: !!currentCharacterLocal,
-            currentCharacterLocalId: currentCharacterLocal?.id,
-            selectedScenarioId: gameState.selectedScenarioId,
-            hasCurrentScenarioLocal: !!currentScenarioLocal,
-            currentScenarioLocalId: currentScenarioLocal?.id,
-            currentScenarioLocalTitle: currentScenarioLocal?.title,
-            customScenariosCount: gameState.customScenarios.length,
-            customScenariosIds: gameState.customScenarios.map(s => s.id),
-            currentScenarioState: gameState.currentScenarioState
-          });
-          
-          return (
+      {gameState.currentScreen === 'chat' && currentCharacterLocal && (
         <ChatWindow 
           character={currentCharacterLocal} 
           customScenario={currentScenarioLocal || undefined}
@@ -1014,15 +848,9 @@ const AppContent: React.FC = () => {
           activeJournalEntryId={gameState.activeJournalEntryId}
           onUpdateHistory={handleUpdateHistory}
           onUpdateScenarioState={(nodeId) => {
-            console.log('[App] onUpdateScenarioState 被调用:', {
-              nodeId,
-              currentScenarioState: gameState.currentScenarioState,
-              selectedScenarioId: gameState.selectedScenarioId
-            });
             const newScenarioState = gameState.currentScenarioState 
               ? { ...gameState.currentScenarioState, currentNodeId: nodeId }
               : { scenarioId: gameState.selectedScenarioId || '', currentNodeId: nodeId };
-              console.log('[App] 更新 scenarioState:', newScenarioState);
             dispatch({ type: 'SET_CURRENT_SCENARIO_STATE', payload: newScenarioState });
           }}
           onBack={handleChatBack}
@@ -1044,8 +872,7 @@ const AppContent: React.FC = () => {
             return undefined;
           })()}
         />
-          );
-      })()}
+      )}
 
       {gameState.currentScreen === 'builder' && (
           <ScenarioBuilder 
@@ -1215,12 +1042,6 @@ const AppContent: React.FC = () => {
 
       {showMainStoryEditor && editingMainStory && editingMainStorySceneId && (() => {
           const editorScene = currentScenes.find(s => s.id === editingMainStorySceneId) || currentScenes[0];
-          console.log('[MainStoryEditor] 渲染编辑器:', { 
-              showMainStoryEditor, 
-              editingMainStory: !!editingMainStory, 
-              editingMainStorySceneId,
-              editorScene: editorScene?.name 
-          });
           if (!editorScene) {
               console.error('[MainStoryEditor] 无法找到场景:', editingMainStorySceneId);
               return null;
@@ -1231,7 +1052,6 @@ const AppContent: React.FC = () => {
                  initialMainStory={editingMainStory}
                  onSave={handleSaveCharacter}
                  onClose={() => {
-                     console.log('[MainStoryEditor] 关闭编辑器');
                      setShowMainStoryEditor(false);
                      setEditingMainStory(null);
                      setEditingMainStorySceneId(null);

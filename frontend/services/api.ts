@@ -1133,7 +1133,7 @@ export const adminApi = {
         isEnabled: boolean;
         createdAt: string;
         updatedAt: string;
-      }>(`/admin/users/${id}/status`, {
+      }>(`/admin/users/${id}/toggle-enabled`, {
         method: 'PUT',
         body: JSON.stringify({ isEnabled }),
         headers: {

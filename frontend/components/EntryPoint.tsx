@@ -6,9 +6,10 @@ import { LoginModal } from './LoginModal';
 import { Footer } from './Footer';
 
 interface EntryPointProps {
-  onNavigate: (screen: 'realWorld' | 'sceneSelection' | 'admin') => void;
+  onNavigate: (screen: 'realWorld' | 'sceneSelection' | 'admin' | 'profile') => void;
   onOpenSettings: () => void;
   nickname: string;
+  avatarUrl?: string; // 添加头像URL
   onSwitchToMobile: () => void;
   currentStyle: WorldStyle;
   onStyleChange: (style: WorldStyle) => void;
@@ -20,7 +21,8 @@ interface EntryPointProps {
 export const EntryPoint: React.FC<EntryPointProps> = ({ 
   onNavigate, 
   onOpenSettings, 
-  nickname, 
+  nickname,
+  avatarUrl,
   onSwitchToMobile,
   currentStyle,
   onStyleChange,
@@ -167,18 +169,68 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
         <div className="space-y-2">
             {isGuest ? (
               <>
-                <p className="text-xl text-white font-medium">欢迎，{nickname || '访客'}</p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => onNavigate('profile')}
+                    className="relative group"
+                    title="个人资料"
+                  >
+                    {avatarUrl ? (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer">
+                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
+                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                          <span className="text-xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'G'}</span>
+                        </div>
+                      </div>
+                    )}
+                    {/* 提示文字 */}
+                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <span className="text-xs text-slate-400">个人资料</span>
+                    </div>
+                  </button>
+                  <p className="text-xl text-white font-medium">欢迎，{nickname || '访客'}</p>
+                </div>
                 <p className="text-sm text-slate-300">
                   以游客身份体验，或登录账户同步数据
                 </p>
               </>
             ) : (
               <>
-            <p className="text-xl text-white font-medium">欢迎回来，{nickname}</p>
-            <p className="text-sm text-slate-400">
-                系统已就绪，等待神经链接... 
-                <span className="block sm:inline opacity-60 text-xs ml-0 sm:ml-2">System Ready. Waiting for Neural Link...</span>
-            </p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => onNavigate('profile')}
+                    className="relative group"
+                    title="个人资料"
+                  >
+                    {avatarUrl ? (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer">
+                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
+                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                          <span className="text-xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'U'}</span>
+                        </div>
+                      </div>
+                    )}
+                    {/* 提示文字 */}
+                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <span className="text-xs text-slate-400">个人资料</span>
+                    </div>
+                  </button>
+                  <p className="text-xl text-white font-medium">欢迎回来，{nickname}</p>
+                </div>
+                <p className="text-sm text-slate-400">
+                    系统已就绪，等待神经链接... 
+                    <span className="block sm:inline opacity-60 text-xs ml-0 sm:ml-2">System Ready. Waiting for Neural Link...</span>
+                </p>
               </>
             )}
         </div>

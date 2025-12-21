@@ -77,7 +77,7 @@ public class AdminUserController extends BaseAdminController {
     /**
      * 启用/禁用用户
      */
-    @PutMapping("/{id}/status")
+    @PutMapping("/{id}/toggle-enabled")
     public ResponseEntity<?> updateUserStatus(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable("id") Long id,

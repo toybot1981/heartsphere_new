@@ -193,6 +193,7 @@ export interface UserProfile {
   avatarUrl: string;
   phoneNumber?: string;
   isGuest: boolean; // True if not logged in/registered
+  wechatOpenid?: string; // 微信OpenID，用于判断是否已绑定微信
 }
 
 export interface JournalEcho {
@@ -237,7 +238,7 @@ export interface DebugLog {
 }
 
 export interface GameState {
-  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'admin' | 'mobileProfile';
+  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'admin' | 'mobileProfile' | 'profile';
   userProfile: UserProfile | null;
   selectedSceneId: string | null;
   selectedCharacterId: string | null;

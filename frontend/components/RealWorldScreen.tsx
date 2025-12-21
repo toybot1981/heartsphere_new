@@ -235,6 +235,15 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         console.log("[步骤4/6] 调用App.tsx中的onUpdateEntry方法");
         onUpdateEntry(updatedEntry);
         console.log("[步骤4/6] onUpdateEntry调用完成");
+        
+        // 5. 编辑模式下，关闭编辑框
+        console.log("[步骤5/6] 开始清理表单状态（编辑模式：关闭编辑框）");
+        setIsCreating(false);
+        setIsEditing(false);
+        setSelectedEntry(null);
+        setNewTags([]);
+        setTagInput('');
+        console.log("[步骤5/6] 表单状态清理完成");
     } else {
         console.log("[步骤4/6] 进入新建模式保存分支");
         
@@ -249,16 +258,20 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
         onAddEntry(finalTitle, newContent, finalImageUrl, mirrorInsight || undefined, tagsString);
         console.log("[步骤4/6] onAddEntry调用完成");
+        
+        // 5. 新建模式下，只清空表单内容，保持编辑框打开
+        console.log("[步骤5/6] 开始清理表单状态（新建模式：保持编辑框打开）");
+        setNewTitle('');
+        setNewContent('');
+        setNewTags([]);
+        setTagInput('');
+        setUploadedImageUrl(undefined);
+        setMirrorInsight(null);
+        // 保持 isCreating = true，不关闭编辑框
+        setIsEditing(false);
+        setSelectedEntry(null);
+        console.log("[步骤5/6] 表单内容已清空，编辑框保持打开");
     }
-    
-    // 5. 清理状态
-    console.log("[步骤5/6] 开始清理表单状态");
-    setIsCreating(false);
-    setIsEditing(false);
-    setSelectedEntry(null);
-    setNewTags([]);
-    setTagInput('');
-    console.log("[步骤5/6] 表单状态清理完成");
     
     // 6. 保存完成
     console.log("[步骤6/6] 日志保存流程全部完成");
@@ -324,16 +337,26 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       const loadDailyGreeting = async () => {
           setIsLoadingGreeting(true);
           try {
-              console.log("[RealWorldScreen] 开始生成每日问候");
               const recentEntries = entries.slice(-3);
+              // generateDailyGreeting 现在保证永远不会抛出错误，总是返回默认值
               const greeting = await geminiService.generateDailyGreeting(recentEntries, userName);
               if (greeting) {
                   setDailyGreeting(greeting);
-                  console.log("[RealWorldScreen] 每日问候生成成功");
+              } else {
+                  // 兜底：如果返回 null 或 undefined，使用默认问候
+                  setDailyGreeting({
+                      greeting: entries.length === 0 
+                          ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+                          : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
+                      question: entries.length === 0
+                          ? '今天有什么让你印象深刻的事吗？'
+                          : '今天想记录些什么新的想法呢？'
+                  });
               }
           } catch (error) {
-              console.error("[RealWorldScreen] 生成每日问候失败:", error);
-              // 使用默认问候
+              // 这个 catch 现在不应该被触发，因为 generateDailyGreeting 不会抛出错误
+              // 但为了安全起见，保留这个兜底逻辑
+              console.error("[RealWorldScreen] 生成每日问候异常（不应发生）:", error);
               setDailyGreeting({
                   greeting: entries.length === 0 
                       ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
@@ -348,7 +371,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       };
 
       loadDailyGreeting();
-  }, [entries.length]); // 只在条目数量变化时重新生成
+  }, [entries, userName]); // 当 entries 数组或 userName 变化时重新生成（使用 entries 而不是 entries.length 以便在内容变化时也能更新）
 
   // Handle clicking on greeting question to fill editor
   const handleGreetingQuestionClick = () => {

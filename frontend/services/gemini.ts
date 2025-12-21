@@ -1373,13 +1373,27 @@ The content MUST be in Chinese.`;
     const providers = this.getPrioritizedProviders('text');
     let lastError: Error | null = null;
 
+    // 如果没有任何可用的 provider，直接返回默认问候
+    if (!providers || providers.length === 0) {
+        console.warn("[GeminiService] 没有可用的 provider，使用默认问候");
+        return {
+            greeting: recentEntries.length === 0 
+                ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+                : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
+            question: recentEntries.length === 0
+                ? '今天有什么让你印象深刻的事吗？'
+                : '今天想记录些什么新的想法呢？'
+        };
+    }
+
     for (const provider of providers) {
         try {
             const config = this.getConfigForProvider(provider);
             const effectiveKey = config?.apiKey || (provider === 'gemini' ? process.env.API_KEY : '');
             
+            // 如果没有配置或 API key，跳过这个 provider，继续尝试下一个
             if (!config || !effectiveKey) {
-                if (providers.length === 1) throw new Error(`${provider} API Key missing.`);
+                console.warn(`[GeminiService] ${provider} provider 配置缺失或 API key 不存在，跳过`);
                 continue;
             }
 
@@ -1437,16 +1451,17 @@ Instructions:
                 greeting: result.greeting || '你好，今天想记录些什么呢？',
                 question: result.prompt || result.question || '今天有什么让你印象深刻的事吗？'
             };
-        } catch (e) {
-            console.warn(`generateDailyGreeting failed on ${provider}`, e);
+        } catch (e: any) {
+            console.warn(`[GeminiService] generateDailyGreeting 在 ${provider} 上失败:`, e?.message || e);
             this.log('generateDailyGreeting', 'error_fallback', { provider, error: e });
             lastError = e;
+            // 继续尝试下一个 provider
             continue;
         }
     }
     
-    // 如果所有provider都失败，返回默认问候
-    console.warn("[GeminiService] 所有provider失败，使用默认问候");
+    // 如果所有provider都失败，返回默认问候（永远不会抛出错误）
+    console.warn("[GeminiService] 所有 provider 都失败，使用默认问候", lastError ? `最后错误: ${lastError.message}` : '');
     return {
         greeting: recentEntries.length === 0 
             ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'

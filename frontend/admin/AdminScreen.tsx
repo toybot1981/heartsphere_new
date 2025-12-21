@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSettings, GameState, AIProvider, WorldScene, Character, CustomScenario, StoryNode } from '../types';
 import { Button } from '../components/Button';
 import { WORLD_SCENES } from '../constants';
@@ -69,12 +69,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users'>('dashboard');
     const [settingsTab, setSettingsTab] = useState<'general' | 'models'>('models');
     
-    
-    // Image upload states
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
-    
-    // File input refs
-    const eraImageInputRef = useRef<HTMLInputElement>(null);
 
     // 从 hooks 中解构状态
     const {
@@ -123,20 +117,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
         setIsLoadingAlipayConfig
     } = adminConfig;
     
-    // 调试：监听邮箱验证状态变化
-    useEffect(() => {
-        console.log("[AdminScreen] 邮箱验证状态变化:", emailVerificationRequired);
-    }, [emailVerificationRequired]);
-    
-    // 邀请码生成表单
-    const [generateQuantity, setGenerateQuantity] = useState(10);
-    const [generateExpiresAt, setGenerateExpiresAt] = useState('');
-    
-    // 邀请码筛选状态
-    const [inviteCodeFilter, setInviteCodeFilter] = useState<'all' | 'available' | 'used' | 'expired'>('all');
-    
-    
-    
     // 资源选择器状态
     const [showResourcePicker, setShowResourcePicker] = useState(false);
     const [resourcePickerCategory, setResourcePickerCategory] = useState<string>('era');
@@ -147,19 +127,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
 
     // Token 检查和过期处理已由 useAdminAuth hook 处理
 
-    // loadSystemData 现在由 hooks 处理，这里保留一个包装函数用于向后兼容
-    const loadSystemData = async (token: string) => {
-        await loadAllData(token);
-    };
-
-    // 加载资源数据
 
 
 
     // 当切换到订阅计划管理页面时，自动加载数据
     useEffect(() => {
         if (activeSection === 'subscription-plans' && adminToken) {
-            loadSystemData(adminToken);
+            loadAllData(adminToken);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeSection, adminToken]);
@@ -275,7 +249,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             }}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                    await loadAllData(adminToken);
                                 }
                             }}
                         />
@@ -336,7 +310,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             }}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                    await loadAllData(adminToken);
                                 }
                             }}
                         />

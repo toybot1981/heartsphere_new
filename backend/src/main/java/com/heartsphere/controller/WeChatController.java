@@ -2,9 +2,12 @@ package com.heartsphere.controller;
 
 import com.heartsphere.service.WeChatAuthService;
 import com.heartsphere.repository.WorldRepository;
+import com.heartsphere.repository.UserRepository;
 import com.heartsphere.entity.World;
+import com.heartsphere.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -23,6 +26,9 @@ public class WeChatController {
 
     @Autowired
     private WorldRepository worldRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     /**
      * 生成微信登录二维码URL
@@ -48,8 +54,9 @@ public class WeChatController {
         try {
             Map<String, Object> status = weChatAuthService.checkLoginStatus(state);
             
-            // 如果登录成功，添加世界列表
-            if ("confirmed".equals(status.get("status"))) {
+            // 如果是登录操作且登录成功，添加世界列表
+            String type = (String) status.get("type");
+            if ("confirmed".equals(status.get("status")) && !"bind".equals(type)) {
                 Long userId = (Long) status.get("userId");
                 List<World> userWorlds = worldRepository.findByUserId(userId);
                 boolean isFirstLogin = userWorlds.isEmpty();
@@ -79,15 +86,18 @@ public class WeChatController {
 
             Map<String, Object> result = weChatAuthService.handleCallback(code, state);
             
+            String type = (String) result.get("type");
+            String title = "bind".equals(type) ? "绑定" : "登录";
+            
             if ("confirmed".equals(result.get("status"))) {
-                // 登录成功，返回成功页面（前端会通过轮询获取状态）
+                // 成功，返回成功页面（前端会通过轮询获取状态）
                 return ResponseEntity.ok()
                     .header("Content-Type", "text/html;charset=UTF-8")
-                    .body("<html><body><h1>登录成功！</h1><p>请关闭此页面，返回应用查看登录结果。</p><script>setTimeout(function(){window.close();}, 2000);</script></body></html>");
+                    .body("<html><body><h1>" + title + "成功！</h1><p>请关闭此页面，返回应用查看结果。</p><script>setTimeout(function(){window.close();}, 2000);</script></body></html>");
             } else {
                 return ResponseEntity.badRequest()
                     .header("Content-Type", "text/html;charset=UTF-8")
-                    .body("<html><body><h1>登录失败</h1><p>" + result.get("error") + "</p></body></html>");
+                    .body("<html><body><h1>" + title + "失败</h1><p>" + result.get("error") + "</p></body></html>");
             }
         } catch (Exception e) {
             return ResponseEntity.status(500)
@@ -104,5 +114,31 @@ public class WeChatController {
         Map<String, String> response = new HashMap<>();
         response.put("appid", weChatAuthService.getAppId());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 生成微信绑定二维码URL（用于绑定微信到已有账号）
+     */
+    @GetMapping("/bind/qr-code")
+    public ResponseEntity<?> getBindQrCodeUrl(Authentication authentication) {
+        try {
+            if (authentication == null || authentication.getPrincipal() == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "未授权：请重新登录"));
+            }
+
+            // 获取当前登录用户ID
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Long userId = userDetails.getId();
+
+            Map<String, String> result = weChatAuthService.generateBindQrCodeUrl(userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("qrCodeUrl", result.get("qrCodeUrl"));
+            response.put("state", result.get("state"));
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "生成绑定二维码失败: " + e.getMessage()));
+        }
     }
 }

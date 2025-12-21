@@ -81,6 +81,23 @@ public class WeChatAuthService {
      * 生成登录二维码URL和state
      */
     public Map<String, String> generateQrCodeUrl() {
+        return generateQrCodeUrl(null, "login");
+    }
+
+    /**
+     * 生成绑定二维码URL和state（用于绑定微信）
+     * @param userId 当前登录用户的ID
+     */
+    public Map<String, String> generateBindQrCodeUrl(Long userId) {
+        return generateQrCodeUrl(userId, "bind");
+    }
+
+    /**
+     * 生成二维码URL和state（通用方法）
+     * @param userId 用户ID（绑定操作时需要，登录时可为null）
+     * @param type 操作类型：login（登录）或 bind（绑定）
+     */
+    private Map<String, String> generateQrCodeUrl(Long userId, String type) {
         String appId = getAppId();
         String redirectUri = getRedirectUri();
         
@@ -100,16 +117,20 @@ public class WeChatAuthService {
             state
         );
 
-        // 初始化登录状态
+        // 初始化状态
         Map<String, Object> stateInfo = new HashMap<>();
         stateInfo.put("status", "waiting");
+        stateInfo.put("type", type);
         stateInfo.put("createdAt", System.currentTimeMillis());
+        if (userId != null) {
+            stateInfo.put("userId", userId);
+        }
         loginStates.put(state, stateInfo);
 
         // 清理过期状态（30分钟）
         cleanupExpiredStates();
 
-        logger.info("生成微信登录二维码，state: " + state);
+        logger.info("生成微信" + ("bind".equals(type) ? "绑定" : "登录") + "二维码，state: " + state);
         
         Map<String, String> result = new HashMap<>();
         result.put("qrCodeUrl", qrCodeUrl);
@@ -175,51 +196,106 @@ public class WeChatAuthService {
             String avatar = (String) userInfoResponse.get("headimgurl");
             // unionid可能为空，不需要使用
 
-            // 3. 查找或创建用户
-            User user = userRepository.findByWechatOpenid(openid)
-                    .orElseGet(() -> {
-                        User newUser = new User();
-                        newUser.setWechatOpenid(openid);
-                        newUser.setUsername("wx_" + openid.substring(0, Math.min(10, openid.length())));
-                        newUser.setEmail(openid + "@wechat.com");
-                        newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-                        newUser.setNickname(nickname != null ? nickname : "微信用户");
-                        newUser.setAvatar(avatar);
-                        newUser.setIsEnabled(true);
-                        User saved = userRepository.save(newUser);
-                        // 初始化用户数据
-                        initializationService.initializeUserData(saved);
-                        return saved;
-                    });
-
-            // 更新用户信息（如果微信信息有更新）
-            boolean needUpdate = false;
-            if (nickname != null && (user.getNickname() == null || !nickname.equals(user.getNickname()))) {
-                user.setNickname(nickname);
-                needUpdate = true;
-            }
-            if (avatar != null && (user.getAvatar() == null || !avatar.equals(user.getAvatar()))) {
-                user.setAvatar(avatar);
-                needUpdate = true;
-            }
-            if (needUpdate) {
-                userRepository.save(user);
+            // 判断操作类型
+            String type = (String) stateInfo.get("type");
+            if (type == null) {
+                type = "login"; // 默认为登录
             }
 
-            // 4. 生成JWT token
-            String jwt = jwtUtils.generateJwtTokenFromUsername(user.getUsername());
+            if ("bind".equals(type)) {
+                // 绑定操作：将微信openid绑定到当前登录的用户
+                Long userId = (Long) stateInfo.get("userId");
+                if (userId == null) {
+                    stateInfo.put("status", "error");
+                    stateInfo.put("error", "绑定操作缺少用户ID");
+                    return stateInfo;
+                }
 
-            // 5. 更新状态
-            stateInfo.put("status", "confirmed");
-            stateInfo.put("openid", openid);
-            stateInfo.put("token", jwt);
-            stateInfo.put("userId", user.getId());
-            stateInfo.put("username", user.getUsername());
-            stateInfo.put("nickname", user.getNickname());
-            stateInfo.put("avatar", user.getAvatar());
+                // 检查该openid是否已被其他账号使用
+                java.util.Optional<User> existingUser = userRepository.findByWechatOpenid(openid);
+                if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                    stateInfo.put("status", "error");
+                    stateInfo.put("error", "该微信账号已被其他账号绑定");
+                    return stateInfo;
+                }
 
-            logger.info("微信登录成功，用户ID: " + user.getId() + ", openid: " + openid);
-            return stateInfo;
+                // 获取当前用户
+                User currentUser = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+                // 如果该openid已被当前用户绑定，直接返回成功
+                if (openid.equals(currentUser.getWechatOpenid())) {
+                    stateInfo.put("status", "confirmed");
+                    stateInfo.put("openid", openid);
+                    stateInfo.put("message", "微信账号已绑定");
+                    logger.info("微信账号已绑定，用户ID: " + userId + ", openid: " + openid);
+                    return stateInfo;
+                }
+
+                // 绑定openid到当前用户
+                currentUser.setWechatOpenid(openid);
+                // 可选：更新头像和昵称（如果当前用户没有设置）
+                if (avatar != null && (currentUser.getAvatar() == null || currentUser.getAvatar().trim().isEmpty())) {
+                    currentUser.setAvatar(avatar);
+                }
+                if (nickname != null && (currentUser.getNickname() == null || currentUser.getNickname().trim().isEmpty())) {
+                    currentUser.setNickname(nickname);
+                }
+
+                userRepository.save(currentUser);
+
+                stateInfo.put("status", "confirmed");
+                stateInfo.put("openid", openid);
+                stateInfo.put("message", "微信绑定成功");
+                logger.info("微信绑定成功，用户ID: " + userId + ", openid: " + openid);
+                return stateInfo;
+            } else {
+                // 登录操作：查找或创建用户
+                User user = userRepository.findByWechatOpenid(openid)
+                        .orElseGet(() -> {
+                            User newUser = new User();
+                            newUser.setWechatOpenid(openid);
+                            newUser.setUsername("wx_" + openid.substring(0, Math.min(10, openid.length())));
+                            newUser.setEmail(openid + "@wechat.com");
+                            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                            newUser.setNickname(nickname != null ? nickname : "微信用户");
+                            newUser.setAvatar(avatar);
+                            newUser.setIsEnabled(true);
+                            User saved = userRepository.save(newUser);
+                            // 初始化用户数据
+                            initializationService.initializeUserData(saved);
+                            return saved;
+                        });
+
+                // 更新用户信息（如果微信信息有更新）
+                boolean needUpdate = false;
+                if (nickname != null && (user.getNickname() == null || !nickname.equals(user.getNickname()))) {
+                    user.setNickname(nickname);
+                    needUpdate = true;
+                }
+                if (avatar != null && (user.getAvatar() == null || !avatar.equals(user.getAvatar()))) {
+                    user.setAvatar(avatar);
+                    needUpdate = true;
+                }
+                if (needUpdate) {
+                    userRepository.save(user);
+                }
+
+                // 生成JWT token
+                String jwt = jwtUtils.generateJwtTokenFromUsername(user.getUsername());
+
+                // 更新状态
+                stateInfo.put("status", "confirmed");
+                stateInfo.put("openid", openid);
+                stateInfo.put("token", jwt);
+                stateInfo.put("userId", user.getId());
+                stateInfo.put("username", user.getUsername());
+                stateInfo.put("nickname", user.getNickname());
+                stateInfo.put("avatar", user.getAvatar());
+
+                logger.info("微信登录成功，用户ID: " + user.getId() + ", openid: " + openid);
+                return stateInfo;
+            }
 
         } catch (Exception e) {
             logger.severe("处理微信回调异常: " + e.getMessage());

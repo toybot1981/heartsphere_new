@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, CustomScenario } from '../types';
 import { geminiService } from '../services/gemini';
 import { storageService } from '../services/storage';
@@ -11,7 +11,7 @@ import { MobileRealWorld } from './MobileRealWorld';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { MobileSceneSelection } from './MobileSceneSelection';
 import { MobileCharacterSelection } from './MobileCharacterSelection';
-import { MobileProfile } from './MobileProfile';
+import { UserProfile } from '../components/UserProfile';
 import { MobileScenarioBuilder } from './MobileScenarioBuilder'; // Imported Mobile Builder
 import { ChatWindow } from '../components/ChatWindow';
 import { ConnectionSpace } from '../components/ConnectionSpace';
@@ -1059,14 +1059,33 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 )}
 
                 {gameState.currentScreen === 'mobileProfile' && gameState.userProfile && (
-                    <MobileProfile 
+                    <UserProfile 
                         userProfile={gameState.userProfile}
                         journalEntries={gameState.journalEntries}
                         mailbox={gameState.mailbox}
                         history={gameState.history}
+                        gameState={gameState}
                         onOpenSettings={() => setShowSettings(true)}
                         onLogout={handleLogout}
                         onUpdateProfile={(profile) => setGameState(prev => ({ ...prev, userProfile: profile }))}
+                        onNavigateToScene={(sceneId) => {
+                            setGameState(prev => ({ 
+                                ...prev, 
+                                selectedSceneId: sceneId, 
+                                currentScreen: 'sceneSelection' 
+                            }));
+                        }}
+                        onNavigateToCharacter={(characterId, sceneId) => {
+                            setGameState(prev => ({ 
+                                ...prev, 
+                                selectedSceneId: sceneId,
+                                selectedCharacterId: characterId,
+                                currentScreen: 'chat'
+                            }));
+                        }}
+                        onNavigateToJournal={() => {
+                            setGameState(prev => ({ ...prev, currentScreen: 'realWorld' }));
+                        }}
                     />
                 )}
 
