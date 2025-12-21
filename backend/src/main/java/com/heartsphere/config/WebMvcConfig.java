@@ -55,10 +55,10 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
     }
 
     @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
+    public void configurePathMatch(@NonNull PathMatchConfigurer configurer) {
         // 确保 API 路径优先匹配控制器，而不是静态资源
-        configurer.setUseSuffixPatternMatch(false);
-        configurer.setUseTrailingSlashMatch(false);
+        // 注意：这些方法在 Spring 6.0+ 中已废弃，但为了兼容性保留
+        // 实际配置通过 application.properties 中的 spring.mvc.pathmatch.* 属性控制
     }
 
     @Override

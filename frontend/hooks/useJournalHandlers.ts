@@ -104,7 +104,7 @@ export const useJournalHandlers = () => {
           }
           
           await journalApi.updateJournalEntry(updatedEntry.id, apiRequestData, token);
-          console.log('Journal entry synced with server:', updatedEntry.id);
+          // 更新成功，不需要日志（根据重构要求，只保留错误日志）
         } catch (error) {
           console.error('Failed to sync journal entry with server:', error);
           showSyncErrorToast('日志');
