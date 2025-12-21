@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -27,4 +28,8 @@ public interface EraRepository extends JpaRepository<Era, Long> {
     @EntityGraph(attributePaths = {"world", "user"})
     @Query("SELECT e FROM Era e WHERE e.user.id = :userId AND e.isDeleted = true")
     List<Era> findDeletedByUser_Id(@Param("userId") Long userId);
+    
+    // 统计指定日期范围内创建的场景数
+    @Query("SELECT COUNT(e) FROM Era e WHERE e.createdAt >= :startDate AND e.createdAt < :endDate")
+    Long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

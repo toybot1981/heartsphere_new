@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -27,4 +28,8 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     @EntityGraph(attributePaths = {"world", "era", "user"})
     @Query("SELECT c FROM Character c WHERE c.user.id = :userId AND c.isDeleted = true")
     List<Character> findDeletedByUser_Id(@Param("userId") Long userId);
+    
+    // 统计指定日期范围内创建的角色数
+    @Query("SELECT COUNT(c) FROM Character c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
+    Long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

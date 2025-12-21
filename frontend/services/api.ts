@@ -1076,6 +1076,137 @@ export const adminApi = {
       });
     },
   },
+
+  // 用户管理
+  users: {
+    getAll: (page: number = 0, size: number = 20, search?: string, token: string) => {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('size', size.toString());
+      if (search) {
+        params.append('search', search);
+      }
+      return request<{
+        users: Array<{
+          id: number;
+          username: string;
+          email: string;
+          nickname: string | null;
+          avatar: string | null;
+          isEnabled: boolean;
+          createdAt: string;
+          updatedAt: string;
+        }>;
+        totalElements: number;
+        totalPages: number;
+        currentPage: number;
+        pageSize: number;
+      }>(`/admin/users?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    getById: (id: number, token: string) => {
+      return request<{
+        id: number;
+        username: string;
+        email: string;
+        nickname: string | null;
+        avatar: string | null;
+        isEnabled: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>(`/admin/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    updateStatus: (id: number, isEnabled: boolean, token: string) => {
+      return request<{
+        id: number;
+        username: string;
+        email: string;
+        nickname: string | null;
+        avatar: string | null;
+        isEnabled: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>(`/admin/users/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ isEnabled }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    delete: (id: number, token: string) => {
+      return request<void>(`/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+  },
+
+  // 统计数据
+  statistics: {
+    getOverview: (token: string) => {
+      return request<{
+        totalUsers: number;
+        enabledUsers: number;
+        totalJournals: number;
+        totalCharacters: number;
+        totalEras: number;
+      }>('/admin/statistics/overview', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    getDaily: (startDate?: string, endDate?: string, days: number = 7, token: string) => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      params.append('days', days.toString());
+      return request<{
+        startDate: string;
+        endDate: string;
+        dailyStats: Array<{
+          date: string;
+          newUsers: number;
+          newJournals: number;
+          newCharacters: number;
+          newEras: number;
+        }>;
+      }>(`/admin/statistics/daily?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    getTrends: (weeks: number = 7, token: string) => {
+      return request<{
+        weeks: number;
+        weeklyStats: Array<{
+          weekStart: string;
+          weekEnd: string;
+          weekLabel: string;
+          newUsers: number;
+          newJournals: number;
+          newCharacters: number;
+          newEras: number;
+        }>;
+      }>(`/admin/statistics/trends?weeks=${weeks}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+  },
 };
 
 // 通用请求函数
@@ -1412,7 +1543,116 @@ export const authApi = {
       email: string;
       nickname: string;
       avatar: string;
+      wechatOpenid?: string;
     }>('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
+// 用户资料API
+export const userProfileApi = {
+  // 获取用户资料
+  getProfile: (token: string) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+      isEnabled: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>('/user/profile', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 更新用户资料（昵称和/或头像）
+  updateProfile: (token: string, data: { nickname?: string; avatar?: string }) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+      isEnabled: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>('/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // 更新昵称
+  updateNickname: (token: string, nickname: string) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+      isEnabled: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>('/user/profile/nickname', {
+      method: 'PUT',
+      body: JSON.stringify({ nickname }),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // 更新头像
+  updateAvatar: (token: string, avatar: string) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+      isEnabled: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>('/user/profile/avatar', {
+      method: 'PUT',
+      body: JSON.stringify({ avatar }),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // 获取用户统计数据
+  getStatistics: (token: string) => {
+    return request<{
+      scenesCount: number;
+      charactersCount: number;
+      totalMessages: number;
+      activeDays: number;
+      journalEntriesCount: number;
+      customCharactersCount: number;
+      customScenesCount: number;
+      customScriptsCount: number;
+      totalMails: number;
+      unreadMails: number;
+    }>('/user/profile/statistics', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -1455,6 +1695,18 @@ export const wechatApi = {
   // 获取微信AppID（兼容旧接口）
   getAppId: () => {
     return request<{ appid: string }>('/wechat/appid');
+  },
+
+  // 生成微信绑定二维码URL（用于绑定微信到已有账号）
+  getBindQrCodeUrl: (token: string) => {
+    return request<{
+      qrCodeUrl: string;
+      state: string;
+    }>('/wechat/bind/qr-code', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   },
 };
 

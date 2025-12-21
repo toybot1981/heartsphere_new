@@ -63,7 +63,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
             uploadPath += "/";
         }
         registry.addResourceHandler("/api/images/files/**")
-                .addResourceLocations("file:" + uploadPath);
+                .addResourceLocations("file:" + uploadPath)
+                .setCachePeriod(0) // 禁用缓存，确保API请求不被误判为静态资源
+                .resourceChain(false); // 禁用资源链，避免与API路径冲突
     }
 }
 

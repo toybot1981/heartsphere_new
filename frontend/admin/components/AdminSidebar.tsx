@@ -1,7 +1,7 @@
 import React from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -59,6 +59,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                 />
                 
                 <p className="px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">System</p>
+                <AdminSidebarItem 
+                    label="用户管理 Users" 
+                    icon="👤" 
+                    active={activeSection === 'users'} 
+                    onClick={() => handleSectionClick('users')} 
+                />
                 <AdminSidebarItem 
                     label="资源管理 Resources" 
                     icon="🖼️" 

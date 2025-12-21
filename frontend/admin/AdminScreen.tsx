@@ -18,6 +18,7 @@ import { EmailConfigManagement } from './components/EmailConfigManagement';
 import { CharactersManagement } from './components/CharactersManagement';
 import { ResourcesManagement } from './components/ResourcesManagement';
 import { ScenariosManagement } from './components/ScenariosManagement';
+import { UsersManagement } from './components/UsersManagement';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { useAdminAuth, useAdminData, useAdminConfig } from './hooks';
 
@@ -65,7 +66,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
     }, []);
     
     // Navigation
-    const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config'>('dashboard');
+    const [activeSection, setActiveSection] = useState<'dashboard' | 'eras' | 'characters' | 'scenarios' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users'>('dashboard');
     const [settingsTab, setSettingsTab] = useState<'general' | 'models'>('models');
     
     
@@ -243,7 +244,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                     
                     {/* --- DASHBOARD VIEW --- */}
                     {activeSection === 'dashboard' && (
-                        <DashboardView gameState={gameState} onResetWorld={onResetWorld} />
+                        <DashboardView gameState={gameState} onResetWorld={onResetWorld} adminToken={adminToken} />
                     )}
 
                     {/* --- ERAS MANAGEMENT --- */}
@@ -403,6 +404,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ gameState, onUpdateGam
                             isLoadingNotionConfig={isLoadingNotionConfig}
                             setIsLoadingNotionConfig={setIsLoadingNotionConfig}
                             adminToken={adminToken}
+                        />
+                    )}
+
+                    {/* --- USERS MANAGEMENT --- */}
+                    {activeSection === 'users' && (
+                        <UsersManagement
+                            adminToken={adminToken}
+                            onRefresh={() => adminToken && loadAllData(adminToken)}
                         />
                     )}
 
