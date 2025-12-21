@@ -11,6 +11,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.core.Ordered;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
@@ -21,7 +22,7 @@ import java.util.List;
  * 配置静态资源访问，用于访问上传的图片
  */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
+public class WebMvcConfig implements WebMvcConfigurer, Ordered {
 
     @Value("${app.image.storage.local.path:./uploads/images}")
     private String localStoragePath;
@@ -66,6 +67,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:" + uploadPath)
                 .setCachePeriod(0) // 禁用缓存，确保API请求不被误判为静态资源
                 .resourceChain(false); // 禁用资源链，避免与API路径冲突
+    }
+
+    @Override
+    public int getOrder() {
+        // 设置较低的优先级，确保API控制器优先处理
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }
 
