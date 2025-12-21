@@ -11,6 +11,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.core.Ordered;
 
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,13 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
         jsonConverter.setObjectMapper(objectMapper());
         converters.add(0, jsonConverter);
+    }
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        // 确保 API 路径优先匹配控制器，而不是静态资源
+        configurer.setUseSuffixPatternMatch(false);
+        configurer.setUseTrailingSlashMatch(false);
     }
 
     @Override

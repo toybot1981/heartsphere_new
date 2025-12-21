@@ -14,11 +14,13 @@ import { showSyncErrorToast } from '../utils/toast';
  */
 export const useJournalHandlers = () => {
   const { state: gameState, dispatch } = useGameState();
-  // 使用 ref 来获取最新的 journalEntries，避免闭包问题
+  // 使用 ref 来获取最新的 journalEntries 和 userProfile，避免闭包问题
   const journalEntriesRef = useRef(gameState.journalEntries);
+  const userProfileRef = useRef(gameState.userProfile);
   
   // 更新 ref
   journalEntriesRef.current = gameState.journalEntries;
+  userProfileRef.current = gameState.userProfile;
 
   /**
    * 添加日记条目
@@ -46,7 +48,7 @@ export const useJournalHandlers = () => {
 
     // 2. 异步同步到服务器（如果已登录）
     const token = localStorage.getItem('auth_token');
-    const currentUserProfile = gameState.userProfile;
+    const currentUserProfile = userProfileRef.current;
     if (token && currentUserProfile && !currentUserProfile.isGuest) {
       // 异步同步到服务器（不阻塞 UI 更新）
       (async () => {
@@ -75,7 +77,7 @@ export const useJournalHandlers = () => {
         }
       })();
     }
-  }, [gameState.userProfile, dispatch]);
+  }, [dispatch]);
 
   /**
    * 更新日记条目
@@ -87,8 +89,9 @@ export const useJournalHandlers = () => {
 
     // 2. 异步同步到服务器（如果已登录且ID是数字）
     const token = localStorage.getItem('auth_token');
+    const currentUserProfile = userProfileRef.current;
     const isNumericId = /^\d+$/.test(updatedEntry.id);
-    if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
+    if (token && currentUserProfile && !currentUserProfile.isGuest && isNumericId) {
       (async () => {
         try {
           const apiRequestData: any = {
@@ -108,35 +111,51 @@ export const useJournalHandlers = () => {
         }
       })();
     }
-  }, [gameState, dispatch]);
+  }, [dispatch]);
 
   /**
    * 删除日记条目
    */
   const handleDeleteJournalEntry = useCallback(async (id: string) => {
+    // 保存删除前的完整条目列表，以便失败时恢复
+    const entriesBeforeDelete = [...journalEntriesRef.current];
+    
+    // 检查要删除的条目是否存在
+    const entryToDelete = entriesBeforeDelete.find(e => e.id === id);
+    if (!entryToDelete) {
+      console.error('[useJournalHandlers] Journal entry not found for deletion:', id);
+      return;
+    }
+
     // 1. 先删除本地（立即更新UI）
-    const remainingEntries = journalEntriesRef.current.filter(e => e.id !== id);
+    const remainingEntries = entriesBeforeDelete.filter(e => e.id !== id);
     dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: remainingEntries });
 
     // 2. 异步同步到服务器（如果已登录且ID是数字）
     const token = localStorage.getItem('auth_token');
-    const currentUserProfile = gameState.userProfile;
+    const currentUserProfile = userProfileRef.current;
     const isNumericId = /^\d+$/.test(id);
     
     // 如果是临时 ID（非数字），不需要同步到服务器
     if (token && currentUserProfile && !currentUserProfile.isGuest && isNumericId) {
-      (async () => {
-        try {
-          await journalApi.deleteJournalEntry(id, token);
-          console.log('Journal entry deleted from server:', id);
-        } catch (error) {
-          console.error('Failed to delete journal entry from server:', error);
-          showSyncErrorToast('日志删除');
-          // 如果删除失败，可以选择恢复条目，但为了用户体验，这里不恢复
-        }
-      })();
+      try {
+        await journalApi.deleteJournalEntry(id, token);
+        // 删除成功，不需要日志（根据重构要求，只保留错误日志）
+      } catch (error) {
+        console.error('[useJournalHandlers] Failed to delete journal entry from server:', error);
+        // 删除失败，恢复本地条目（使用删除前的完整列表）
+        dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: entriesBeforeDelete });
+        showSyncErrorToast('日志删除失败，已恢复');
+      }
+    } else {
+      // 对于临时 ID 或访客用户，不需要同步，直接删除即可
+      if (!token || !currentUserProfile || currentUserProfile.isGuest) {
+        console.error('[useJournalHandlers] Guest user or no token, skipping server sync for deletion');
+      } else if (!isNumericId) {
+        console.error('[useJournalHandlers] Non-numeric ID, skipping server sync for deletion:', id);
+      }
     }
-  }, [gameState.userProfile, dispatch]);
+  }, [dispatch]);
 
   return {
     handleAddJournalEntry,

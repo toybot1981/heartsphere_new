@@ -723,9 +723,11 @@ export class GeminiService {
             const config = this.getConfigForProvider(provider);
             const effectiveKey = config?.apiKey || (provider === 'gemini' ? process.env.API_KEY : '');
             
+            // 如果配置或 API key 缺失，跳过这个 provider，继续尝试下一个
             if (!config || !effectiveKey) {
-                 if (providers.length === 1) throw new Error(`${provider} API Key missing.`);
-                 continue;
+                console.error(`[GeminiService] ${provider} provider 配置缺失或 API key 不存在，跳过并尝试下一个 provider`);
+                this.log('sendMessageStream', 'skip_provider', { provider, reason: 'missing_config_or_key' });
+                continue;
             }
             
             this.log('sendMessageStream', 'attempt', { provider }, config.modelName);
@@ -756,7 +758,15 @@ export class GeminiService {
                 return this.parseOpenAIStream(response);
             }
             // 2. Gemini
-            else {
+            else if (provider === 'gemini') {
+                 // 再次确认 Gemini API key 存在（getSession 内部也会检查，但提前检查可以避免不必要的操作）
+                 const geminiConfig = this.getConfigForProvider('gemini');
+                 const geminiKey = geminiConfig?.apiKey || process.env.API_KEY;
+                 if (!geminiKey) {
+                     console.error('[GeminiService] Gemini API Key 缺失，跳过并尝试下一个 provider');
+                     continue;
+                 }
+                 
                  let historyForInit = history;
                  if (history.length > 0) {
                     const lastMsg = history[history.length - 1];
@@ -769,14 +779,19 @@ export class GeminiService {
             }
 
         } catch (e) {
-             console.warn(`sendMessageStream failed on ${provider}`, e);
+             console.error(`[GeminiService] sendMessageStream failed on ${provider}`, e);
              this.log('sendMessageStream', 'error_fallback', { provider, error: e });
              lastError = e;
              if (provider === 'gemini') this.chatSessions.delete(character.id);
              continue; // Try next provider
         }
     }
-    throw lastError || new Error("All text providers failed for streaming");
+    
+    // 所有 provider 都失败后，抛出最后一个错误或通用错误
+    const errorMessage = lastError 
+        ? `所有文本模型都失败，最后尝试的是: ${lastError.message}`
+        : "所有文本模型都失败，没有可用的 API key 配置";
+    throw new Error(errorMessage);
   }
 
   // --- Era & Character Constructor ---
