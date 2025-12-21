@@ -10,5 +10,6 @@ export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
 export { EmailConfigManagement } from './EmailConfigManagement';
 export { CharactersManagement } from './CharactersManagement';
 export { ResourcesManagement } from './ResourcesManagement';
+export { ScenariosManagement } from './ScenariosManagement';
 
 
