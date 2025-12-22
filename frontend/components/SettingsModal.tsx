@@ -1,10 +1,12 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { AppSettings, GameState, AIProvider, UserProfile, DialogueStyle } from '../types';
 import { Button } from './Button';
 import { storageService } from '../services/storage';
 import { geminiService } from '../services/gemini';
 import { showAlert, showConfirm } from '../utils/dialog';
+import { AIConfigManager } from '../services/ai/config';
+import { AIMode, UserAIConfig } from '../services/ai/types';
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -57,6 +59,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'general' | 'models' | 'backup'>('general');
+  const [aiConfig, setAiConfig] = useState<UserAIConfig>(AIConfigManager.getUserConfigSync());
+  const [localApiKeys, setLocalApiKeys] = useState<Record<AIProvider, string | undefined>>(
+    AIConfigManager.getLocalApiKeys()
+  );
+  const [loading, setLoading] = useState(false);
+
+  // 加载AI配置
+  useEffect(() => {
+    const loadConfig = async () => {
+      const config = await AIConfigManager.getUserConfig();
+      const keys = AIConfigManager.getLocalApiKeys();
+      setAiConfig(config);
+      setLocalApiKeys(keys);
+    };
+    loadConfig();
+  }, []);
 
   const handleExportBackup = () => {
     // We use the current in-memory state for export, which is the most up-to-date
@@ -312,7 +330,115 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
             {activeTab === 'models' && (
                 <div className="space-y-8">
                     
-                    {/* 1. API KEY CONFIGURATION */}
+                    {/* 0. AI接入模式选择 */}
+                    <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 p-5 rounded-xl border border-indigo-500/30 shadow-lg">
+                        <h4 className="text-sm font-bold text-indigo-300 mb-4 uppercase tracking-widest border-b border-indigo-500/20 pb-2">
+                            AI接入模式 (AI Access Mode)
+                        </h4>
+                        
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <label className="flex items-start gap-3 cursor-pointer flex-1 p-4 rounded-lg border-2 transition-all hover:bg-indigo-900/20"
+                                    style={{
+                                        borderColor: aiConfig.mode === 'unified' ? 'rgb(99, 102, 241)' : 'rgb(55, 65, 81)',
+                                        backgroundColor: aiConfig.mode === 'unified' ? 'rgba(99, 102, 241, 0.1)' : 'transparent'
+                                    }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="aiMode"
+                                        value="unified"
+                                        checked={aiConfig.mode === 'unified'}
+                                        onChange={async (e) => {
+                                            const newConfig = { ...aiConfig, mode: 'unified' as AIMode };
+                                            setAiConfig(newConfig);
+                                            setLoading(true);
+                                            try {
+                                                await AIConfigManager.saveUserConfig(newConfig);
+                                                showAlert('已切换到统一接入模式', '模式切换', 'success');
+                                            } catch (error) {
+                                                showAlert('切换失败: ' + (error instanceof Error ? error.message : String(error)), '错误', 'error');
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }}
+                                        className="mt-1 w-4 h-4 text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500"
+                                        disabled={loading}
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-white font-bold">统一接入模式</span>
+                                            <span className="text-xs px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded">推荐</span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 leading-relaxed">
+                                            通过后台API统一接入，费用由系统承担，无需配置API Key。
+                                            所有AI请求将通过后台统一处理，支持使用量统计和配额管理。
+                                        </p>
+                                    </div>
+                                </label>
+                                
+                                <label className="flex items-start gap-3 cursor-pointer flex-1 p-4 rounded-lg border-2 transition-all hover:bg-purple-900/20"
+                                    style={{
+                                        borderColor: aiConfig.mode === 'local' ? 'rgb(168, 85, 247)' : 'rgb(55, 65, 81)',
+                                        backgroundColor: aiConfig.mode === 'local' ? 'rgba(168, 85, 247, 0.1)' : 'transparent'
+                                    }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="aiMode"
+                                        value="local"
+                                        checked={aiConfig.mode === 'local'}
+                                        onChange={async (e) => {
+                                            const newConfig = { ...aiConfig, mode: 'local' as AIMode };
+                                            setAiConfig(newConfig);
+                                            setLoading(true);
+                                            try {
+                                                await AIConfigManager.saveUserConfig(newConfig);
+                                                showAlert('已切换到本地配置模式，请配置API Key', '模式切换', 'success');
+                                            } catch (error) {
+                                                showAlert('切换失败: ' + (error instanceof Error ? error.message : String(error)), '错误', 'error');
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }}
+                                        className="mt-1 w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 focus:ring-purple-500"
+                                        disabled={loading}
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-white font-bold">本地配置模式</span>
+                                            <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded">高级</span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 leading-relaxed">
+                                            直接调用模型API，需要自行申请API Key并承担费用。
+                                            适合有API Key且希望直接控制AI服务的用户。
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            {aiConfig.mode === 'unified' && (
+                                <div className="mt-4 p-3 bg-indigo-900/20 border border-indigo-700/50 rounded-lg">
+                                    <p className="text-sm text-indigo-300 flex items-center gap-2">
+                                        <span>✅</span>
+                                        <span>当前使用统一接入模式，所有AI请求将通过后台API处理，无需配置API Key。</span>
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {aiConfig.mode === 'local' && (
+                                <div className="mt-4 p-3 bg-purple-900/20 border border-purple-700/50 rounded-lg">
+                                    <p className="text-sm text-purple-300 flex items-center gap-2">
+                                        <span>⚠️</span>
+                                        <span>当前使用本地配置模式，请在下方配置各提供商的API Key。</span>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    {/* 1. API KEY CONFIGURATION - 仅在本地模式下显示 */}
+                    {aiConfig.mode === 'local' && (
                     <div className="space-y-6">
                         <h4 className="text-sm font-bold text-gray-300 border-b border-gray-700 pb-2">API 密钥 & 模型参数</h4>
                         
@@ -325,8 +451,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                              <ConfigSection title="Authentication">
                                 <ConfigInput 
                                     label="API Key" 
-                                    value={settings.geminiConfig.apiKey} 
-                                    onChange={(v) => updateProviderConfig('gemini', 'apiKey', v)} 
+                                    value={localApiKeys.gemini || ''} 
+                                    onChange={(v) => setLocalApiKeys({ ...localApiKeys, gemini: v })} 
                                     placeholder="sk-..." type="password" 
                                 />
                              </ConfigSection>
@@ -365,8 +491,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                              <ConfigSection title="Authentication">
                                 <ConfigInput 
                                     label="API Key" 
-                                    value={settings.openaiConfig.apiKey} 
-                                    onChange={(v) => updateProviderConfig('openai', 'apiKey', v)} 
+                                    value={localApiKeys.openai || ''} 
+                                    onChange={(v) => setLocalApiKeys({ ...localApiKeys, openai: v })} 
                                     placeholder="sk-..." type="password" 
                                 />
                                 <ConfigInput 
@@ -395,8 +521,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                              <ConfigSection title="Authentication">
                                 <ConfigInput 
                                     label="DashScope API Key" 
-                                    value={settings.qwenConfig.apiKey} 
-                                    onChange={(v) => updateProviderConfig('qwen', 'apiKey', v)} 
+                                    value={localApiKeys.qwen || ''} 
+                                    onChange={(v) => setLocalApiKeys({ ...localApiKeys, qwen: v })} 
                                     placeholder="sk-..." type="password" 
                                 />
                              </ConfigSection>
@@ -443,8 +569,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                              <ConfigSection title="Authentication">
                                 <ConfigInput 
                                     label="API Key" 
-                                    value={settings.doubaoConfig.apiKey} 
-                                    onChange={(v) => updateProviderConfig('doubao', 'apiKey', v)} 
+                                    value={localApiKeys.doubao || ''} 
+                                    onChange={(v) => setLocalApiKeys({ ...localApiKeys, doubao: v })} 
                                     placeholder="xxxxxxxx-xxxx-..." type="password" 
                                 />
                                 <ConfigInput 
@@ -479,7 +605,83 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                                 </div>
                              </ConfigSection>
                         </div>
+                        
+                        {/* 保存API Keys按钮 */}
+                        <div className="flex justify-end pt-4">
+                            <Button
+                                onClick={async () => {
+                                    setLoading(true);
+                                    try {
+                                        // 保存配置
+                                        await AIConfigManager.saveUserConfig(aiConfig);
+                                        // 保存API Keys
+                                        AIConfigManager.saveLocalApiKeys(localApiKeys);
+                                        
+                                        // 同步 localApiKeys 到 settings 的各个 config 中，以便 geminiService 可以读取
+                                        const updatedSettings: AppSettings = {
+                                            ...settings,
+                                            geminiConfig: {
+                                                ...settings.geminiConfig,
+                                                apiKey: localApiKeys.gemini || settings.geminiConfig.apiKey
+                                            },
+                                            openaiConfig: {
+                                                ...settings.openaiConfig,
+                                                apiKey: localApiKeys.openai || settings.openaiConfig.apiKey
+                                            },
+                                            qwenConfig: {
+                                                ...settings.qwenConfig,
+                                                apiKey: localApiKeys.qwen || settings.qwenConfig.apiKey
+                                            },
+                                            doubaoConfig: {
+                                                ...settings.doubaoConfig,
+                                                apiKey: localApiKeys.doubao || settings.doubaoConfig.apiKey
+                                            }
+                                        };
+                                        
+                                        onSettingsChange(updatedSettings);
+                                        showAlert('配置已保存', '成功', 'success');
+                                    } catch (error) {
+                                        showAlert('保存失败: ' + (error instanceof Error ? error.message : String(error)), '错误', 'error');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                            >
+                                {loading ? '保存中...' : '保存配置'}
+                            </Button>
+                        </div>
                     </div>
+                    )}
+                    
+                    {/* 统一接入模式下的提示信息 */}
+                    {aiConfig.mode === 'unified' && (
+                    <div className="space-y-6">
+                        <div className="bg-indigo-900/20 p-6 rounded-xl border border-indigo-700/50">
+                            <div className="text-center space-y-4">
+                                <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-indigo-400">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-indigo-300 mb-2">统一接入模式已启用</h4>
+                                    <p className="text-sm text-indigo-200/80 leading-relaxed">
+                                        所有AI请求将通过后台API统一处理，无需额外配置。
+                                        <br />
+                                        系统会自动选择最优的模型提供商，费用由系统承担。
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-indigo-700/50">
+                                    <p className="text-xs text-indigo-300/60">
+                                        如需自定义配置或使用自己的API Key，请切换到"本地配置模式"
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    )}
                     
                     {/* 2. ROUTING STRATEGY & FALLBACK */}
                     <div className="bg-gray-800/80 p-5 rounded-xl border border-indigo-500/30 shadow-lg">

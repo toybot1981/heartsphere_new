@@ -87,7 +87,7 @@ export class GeminiService {
       try {
         this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       } catch (e) {
-        console.warn("Failed to initialize GoogleGenAI with process.env.API_KEY", e);
+        // Failed to initialize GoogleGenAI with process.env.API_KEY
       }
     }
   }
@@ -152,12 +152,20 @@ export class GeminiService {
 
   private getPrioritizedProviders(modality: 'text' | 'image' | 'video' | 'audio'): AIProvider[] {
       if (!this.settings) {
-          // 如果没有设置，尝试所有可能的 providers（包括环境变量中的 Gemini）
+          // 如果没有设置，检查所有可能的 providers 是否有配置
           const allProviders: AIProvider[] = ['gemini', 'openai', 'qwen', 'doubao'];
-          return allProviders.filter(p => {
-              if (p === 'gemini') return true; // Gemini 可能使用环境变量
-              return false; // 其他需要配置
-          });
+          const available: AIProvider[] = [];
+          
+          for (const p of allProviders) {
+              // 对于 gemini，可能使用环境变量
+              if (p === 'gemini' && process.env.API_KEY) {
+                  available.push(p);
+              }
+              // 对于其他 providers，需要从 localStorage 或其他地方检查配置
+              // 这里暂时只返回 gemini（如果有环境变量）
+          }
+          
+          return available.length > 0 ? available : ['gemini']; // 至少返回 gemini，让错误处理来处理
       }
 
       let primary: AIProvider = 'gemini';
@@ -281,12 +289,6 @@ export class GeminiService {
                 response_format: jsonMode && provider === 'openai' ? { type: "json_object" } : undefined
             };
 
-            // --- Enhanced Logging for Debugging ---
-            console.group(`[GeminiService] ${provider} Request`);
-            console.log(`URL: ${url}`);
-            console.log(`Model: ${modelName}`);
-            console.log("Payload:", payload);
-            console.groupEnd();
 
             this.log('executeText', 'request', { 
                 provider, 
@@ -526,7 +528,7 @@ export class GeminiService {
           if (!config || !config.apiKey) return null;
           const model = config.videoModel || 'default-video-model';
           this.log('executeVideo', 'request', { prompt }, model, provider);
-          console.warn(`${provider} video generation not fully implemented yet.`);
+          // Video generation not fully implemented yet
           return null; 
       }
       return null;
@@ -542,7 +544,7 @@ export class GeminiService {
           try {
               return await this.executeTextGeneration(provider, prompt, systemInstruction, jsonMode);
           } catch (e) {
-              console.warn(`Provider ${provider} failed, trying next...`, e);
+              // Provider failed, trying next
               lastError = e;
               this.log('generateText', 'fallback_error', { provider, error: e });
               continue;
@@ -567,11 +569,6 @@ export class GeminiService {
         temperature: 0.8
     };
 
-    // Log the stream init request
-    console.group(`[GeminiService] Stream Init (${config.modelName})`);
-    console.log(`URL: ${url}`);
-    console.log("Payload:", payload);
-    console.groupEnd();
 
     this.log('sendMessageStream', 'init_request', { url, model: config.modelName }, config.modelName, 'generic_stream');
 
@@ -715,21 +712,115 @@ export class GeminiService {
     userProfile: UserProfile | null
   ): Promise<AsyncIterable<GenerateContentResponse>> {
     
-    const providers = this.getPrioritizedProviders('text');
+    console.log('========== [GeminiService] sendMessageStream 开始 ==========');
+    console.log('[GeminiService] Settings 状态:', {
+      hasSettings: !!this.settings,
+      settingsValue: this.settings ? {
+        textProvider: this.settings.textProvider,
+        enableFallback: this.settings.enableFallback,
+        hasGeminiConfig: !!this.settings.geminiConfig,
+        hasOpenaiConfig: !!this.settings.openaiConfig,
+        hasQwenConfig: !!this.settings.qwenConfig,
+        hasDoubaoConfig: !!this.settings.doubaoConfig,
+      } : null
+    });
+    
+    // 获取所有可用的 providers（包括降级选项）
+    let providers = this.getPrioritizedProviders('text');
+    console.log('[GeminiService] getPrioritizedProviders 返回:', providers);
+    
+    // 检查所有 providers 的配置状态，确保所有有配置的 providers 都被包含
+    const allProviders: AIProvider[] = ['gemini', 'openai', 'qwen', 'doubao'];
+    const availableProviders: AIProvider[] = [];
+    
+    console.log('[GeminiService] ========== 检查所有 providers 配置状态 ==========');
+    for (const provider of allProviders) {
+      const config = this.getConfigForProvider(provider);
+      const effectiveKey = config?.apiKey || (provider === 'gemini' ? process.env.API_KEY : '');
+      const hasConfig = !!(config && effectiveKey && effectiveKey.trim() !== '');
+      
+      console.log(`[GeminiService] ${provider} 详细检查:`, {
+        hasConfigObject: !!config,
+        configValue: config ? {
+          hasApiKey: !!config.apiKey,
+          apiKeyLength: config.apiKey?.length || 0,
+          apiKeyPreview: config.apiKey ? `${config.apiKey.substring(0, 10)}...` : 'null',
+          modelName: config.modelName,
+        } : null,
+        effectiveKey: effectiveKey ? {
+          hasKey: true,
+          keyLength: effectiveKey.length,
+          keyPreview: `${effectiveKey.substring(0, 10)}...`,
+        } : { hasKey: false },
+        hasValidConfig: hasConfig,
+        inPrioritizedList: providers.includes(provider),
+      });
+      
+      if (hasConfig) {
+        // 如果不在 prioritized 列表中，添加到可用列表（作为降级选项）
+        if (!providers.includes(provider)) {
+          availableProviders.push(provider);
+          console.log(`[GeminiService] ✅ 发现可用的降级 provider: ${provider}`);
+        } else {
+          console.log(`[GeminiService] ✅ ${provider} 已在 prioritized 列表中`);
+        }
+      } else {
+        console.log(`[GeminiService] ❌ ${provider} 配置不可用`);
+      }
+    }
+    
+    console.log('[GeminiService] ========== 构建最终 providers 列表 ==========');
+    console.log('[GeminiService] prioritized providers:', providers);
+    console.log('[GeminiService] available providers (降级):', availableProviders);
+    
+    // 合并 prioritized 和可用的 providers，确保降级选项在最后
+    // 同时去重，确保每个 provider 只出现一次
+    const finalProvidersSet = new Set<AIProvider>();
+    providers.forEach(p => finalProvidersSet.add(p));
+    availableProviders.forEach(p => finalProvidersSet.add(p));
+    const finalProviders = Array.from(finalProvidersSet);
+    
+    console.log(`[GeminiService] ✅ 最终 providers 列表: [${finalProviders.join(', ')}]`);
+    console.log('[GeminiService] ========== 开始尝试 providers ==========');
+    
     let lastError: Error | null = null;
+    const attemptedProviders: Array<{ provider: AIProvider; reason: string }> = [];
 
-    for (const provider of providers) {
+    for (let i = 0; i < finalProviders.length; i++) {
+        const provider = finalProviders[i];
+        console.log(`[GeminiService] ========== 尝试 provider ${i + 1}/${finalProviders.length}: ${provider} ==========`);
+        
         try {
             const config = this.getConfigForProvider(provider);
             const effectiveKey = config?.apiKey || (provider === 'gemini' ? process.env.API_KEY : '');
             
+            console.log(`[GeminiService] ${provider} 配置检查:`, {
+                hasConfig: !!config,
+                configDetails: config ? {
+                    hasApiKey: !!config.apiKey,
+                    apiKeyLength: config.apiKey?.length || 0,
+                    modelName: config.modelName,
+                    baseUrl: config.baseUrl,
+                } : null,
+                effectiveKey: effectiveKey ? {
+                    hasKey: true,
+                    keyLength: effectiveKey.length,
+                } : { hasKey: false },
+            });
+            
             // 如果配置或 API key 缺失，跳过这个 provider，继续尝试下一个
-            if (!config || !effectiveKey) {
-                console.error(`[GeminiService] ${provider} provider 配置缺失或 API key 不存在，跳过并尝试下一个 provider`);
+            if (!config || !effectiveKey || effectiveKey.trim() === '') {
+                const reason = `配置缺失或 API key 不存在`;
+                attemptedProviders.push({ provider, reason });
+                console.log(`[GeminiService] ❌ ${provider} ${reason}，尝试下一个 provider`);
                 this.log('sendMessageStream', 'skip_provider', { provider, reason: 'missing_config_or_key' });
                 continue;
             }
             
+            console.log(`[GeminiService] ✅ ${provider} 配置有效，开始调用`, { 
+                model: config.modelName,
+                apiKeyLength: effectiveKey.length,
+            });
             this.log('sendMessageStream', 'attempt', { provider }, config.modelName);
 
             // 1. OpenAI / Qwen / Doubao
@@ -755,6 +846,7 @@ export class GeminiService {
                 messages.push({ role: 'user', content: userMessage });
                 
                 const response = await this.initOpenAIStreamRequest({ ...config, apiKey: effectiveKey }, messages);
+                console.log(`[GeminiService] ✅ ${provider} 调用成功`);
                 return this.parseOpenAIStream(response);
             }
             // 2. Gemini
@@ -762,8 +854,9 @@ export class GeminiService {
                  // 再次确认 Gemini API key 存在（getSession 内部也会检查，但提前检查可以避免不必要的操作）
                  const geminiConfig = this.getConfigForProvider('gemini');
                  const geminiKey = geminiConfig?.apiKey || process.env.API_KEY;
-                 if (!geminiKey) {
-                     console.error('[GeminiService] Gemini API Key 缺失，跳过并尝试下一个 provider');
+                 if (!geminiKey || geminiKey.trim() === '') {
+                     attemptedProviders.push({ provider, reason: 'API key 缺失' });
+                     console.log('[GeminiService] Gemini API Key 缺失，尝试下一个 provider');
                      continue;
                  }
                  
@@ -775,22 +868,28 @@ export class GeminiService {
                     }
                  }
                  const chat = this.getSession(character, historyForInit, userProfile);
+                 console.log(`[GeminiService] ✅ ${provider} 调用成功`);
                  return await chat.sendMessageStream({ message: userMessage });
             }
 
         } catch (e) {
-             console.error(`[GeminiService] sendMessageStream failed on ${provider}`, e);
+             const error = e instanceof Error ? e : new Error(String(e));
+             attemptedProviders.push({ provider, reason: error.message });
+             console.error(`[GeminiService] ${provider} 调用失败:`, error.message);
              this.log('sendMessageStream', 'error_fallback', { provider, error: e });
-             lastError = e;
+             lastError = error;
              if (provider === 'gemini') this.chatSessions.delete(character.id);
              continue; // Try next provider
         }
     }
     
-    // 所有 provider 都失败后，抛出最后一个错误或通用错误
+    // 所有 provider 都失败后，生成详细的错误信息
+    const failedProviders = attemptedProviders.map(p => `${p.provider} (${p.reason})`).join(', ');
     const errorMessage = lastError 
-        ? `所有文本模型都失败，最后尝试的是: ${lastError.message}`
-        : "所有文本模型都失败，没有可用的 API key 配置";
+        ? `所有文本模型都失败。尝试过的模型: ${failedProviders}。最后错误: ${lastError.message}`
+        : `所有文本模型都失败，没有可用的 API key 配置。尝试过的模型: ${failedProviders}`;
+    
+    console.error(`[GeminiService] ❌ ${errorMessage}`);
     throw new Error(errorMessage);
   }
 
@@ -854,20 +953,6 @@ export class GeminiService {
     // 使用 fallback 机制，尝试所有可用的 providers
     const providers = this.getPrioritizedProviders('text');
     
-    // 调试信息：打印可用的 providers 和配置状态
-    console.log('[generateMainStory] 可用的 providers:', providers);
-    if (this.settings) {
-      console.log('[generateMainStory] Settings:', {
-        textProvider: this.settings.textProvider,
-        enableFallback: this.settings.enableFallback,
-        geminiConfig: { hasKey: !!(this.settings.geminiConfig?.apiKey?.trim()) },
-        openaiConfig: { hasKey: !!(this.settings.openaiConfig?.apiKey?.trim()) },
-        qwenConfig: { hasKey: !!(this.settings.qwenConfig?.apiKey?.trim()), apiKeyLength: this.settings.qwenConfig?.apiKey?.length || 0 },
-        doubaoConfig: { hasKey: !!(this.settings.doubaoConfig?.apiKey?.trim()) }
-      });
-    } else {
-      console.warn('[generateMainStory] Settings 未初始化！');
-    }
     
     let lastError: Error | null = null;
 
@@ -929,7 +1014,7 @@ The content MUST be in Chinese. The story should be engaging, with clear charact
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e));
         const errorMsg = error?.message || String(e);
-        console.warn(`[generateMainStory] Provider ${provider} failed: ${errorMsg}, trying next...`);
+        // Provider failed, trying next...
         lastError = error;
         this.log('generateMainStory', 'fallback_error', { provider, error: errorMsg });
         
@@ -1095,7 +1180,7 @@ The content MUST be in Chinese.`;
             const result = await this.executeImageGeneration(provider, prompt, aspectRatio);
             if (result) return result;
         } catch (e: any) {
-            console.warn(`Image gen failed on ${provider}`, e);
+            // Image generation failed
             this.log('generateImage', 'fallback_error', { provider, error: e?.message || e });
             continue;
         }
@@ -1111,7 +1196,7 @@ The content MUST be in Chinese.`;
               const result = await this.executeVideoGeneration(provider, prompt);
               if (result) return result;
           } catch(e) {
-              console.warn(`Video gen failed on ${provider}`, e);
+              // Video generation failed
               continue;
           }
       }
@@ -1382,15 +1467,11 @@ The content MUST be in Chinese.`;
 
   // --- Daily Greeting Generation ---
   async generateDailyGreeting(recentEntries: JournalEntry[], userName?: string): Promise<{greeting: string, question: string} | null> {
-    console.log("========== [GeminiService] 生成每日问候 ==========");
-    console.log(`[GeminiService] 最近日记数量: ${recentEntries.length}, 用户名: ${userName || '未提供'}`);
-    
     const providers = this.getPrioritizedProviders('text');
     let lastError: Error | null = null;
 
     // 如果没有任何可用的 provider，直接返回默认问候
     if (!providers || providers.length === 0) {
-        console.warn("[GeminiService] 没有可用的 provider，使用默认问候");
         return {
             greeting: recentEntries.length === 0 
                 ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
@@ -1408,7 +1489,6 @@ The content MUST be in Chinese.`;
             
             // 如果没有配置或 API key，跳过这个 provider，继续尝试下一个
             if (!config || !effectiveKey) {
-                console.warn(`[GeminiService] ${provider} provider 配置缺失或 API key 不存在，跳过`);
                 continue;
             }
 
@@ -1452,10 +1532,6 @@ Instructions:
             const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             const result = JSON.parse(jsonStr);
             
-            console.log("[GeminiService] 问候生成成功:", {
-                greetingLength: result.greeting?.length || 0,
-                questionLength: result.question?.length || 0
-            });
             
             this.log('generateDailyGreeting', 'success', { 
                 hasGreeting: !!result.greeting, 
@@ -1467,7 +1543,6 @@ Instructions:
                 question: result.prompt || result.question || '今天有什么让你印象深刻的事吗？'
             };
         } catch (e: any) {
-            console.warn(`[GeminiService] generateDailyGreeting 在 ${provider} 上失败:`, e?.message || e);
             this.log('generateDailyGreeting', 'error_fallback', { provider, error: e });
             lastError = e;
             // 继续尝试下一个 provider
@@ -1476,7 +1551,6 @@ Instructions:
     }
     
     // 如果所有provider都失败，返回默认问候（永远不会抛出错误）
-    console.warn("[GeminiService] 所有 provider 都失败，使用默认问候", lastError ? `最后错误: ${lastError.message}` : '');
     return {
         greeting: recentEntries.length === 0 
             ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'

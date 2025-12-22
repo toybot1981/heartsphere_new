@@ -9,13 +9,16 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.lang.NonNull;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
-import org.springframework.core.Ordered;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+import io.netty.channel.ChannelOption;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -23,7 +26,7 @@ import java.util.List;
  * 配置静态资源访问，用于访问上传的图片
  */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer, Ordered {
+public class WebMvcConfig implements WebMvcConfigurer {
 
     @Value("${app.image.storage.local.path:./uploads/images}")
     private String localStoragePath;
@@ -42,6 +45,36 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
         return mapper;
     }
 
+    @Bean
+    public WebClient webClient() {
+        // 配置连接池
+        ConnectionProvider connectionProvider = ConnectionProvider.builder("webclient-pool")
+            .maxConnections(500)
+            .maxIdleTime(Duration.ofSeconds(20))
+            .maxLifeTime(Duration.ofSeconds(60))
+            .pendingAcquireTimeout(Duration.ofSeconds(60))
+            .evictInBackground(Duration.ofSeconds(120))
+            .build();
+        
+        // 配置 HttpClient，优化 DNS 解析
+        // 注意：DNS 配置通过 JVM 参数设置：
+        // -Dio.netty.resolver.dns.queryTimeoutMillis=30000 (DNS 查询超时 30 秒)
+        // -Djava.net.preferIPv4Stack=true (优先使用 IPv4)
+        HttpClient httpClient = HttpClient.create(connectionProvider)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 连接超时 30 秒
+            .resolver(spec -> {
+                // 配置 DNS 解析器超时时间（30秒）
+                // DNS 服务器使用系统配置或 JVM 参数指定的配置
+                spec.queryTimeout(Duration.ofSeconds(30)); // DNS 查询超时 30 秒
+            })
+            .responseTimeout(Duration.ofSeconds(60)); // 响应超时 60 秒
+        
+        return WebClient.builder()
+            .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(httpClient))
+            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+            .build();
+    }
+
     @Override
     public void configureMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
         // 确保字符串消息转换器使用UTF-8编码
@@ -55,13 +88,6 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
     }
 
     @Override
-    public void configurePathMatch(@NonNull PathMatchConfigurer configurer) {
-        // 确保 API 路径优先匹配控制器，而不是静态资源
-        // 注意：这些方法在 Spring 6.0+ 中已废弃，但为了兼容性保留
-        // 实际配置通过 application.properties 中的 spring.mvc.pathmatch.* 属性控制
-    }
-
-    @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // 配置图片访问路径
         // 将 /api/images/files/** 映射到本地文件系统的 uploads/images/ 目录
@@ -72,15 +98,7 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
             uploadPath += "/";
         }
         registry.addResourceHandler("/api/images/files/**")
-                .addResourceLocations("file:" + uploadPath)
-                .setCachePeriod(0) // 禁用缓存，确保API请求不被误判为静态资源
-                .resourceChain(false); // 禁用资源链，避免与API路径冲突
-    }
-
-    @Override
-    public int getOrder() {
-        // 设置较低的优先级，确保API控制器优先处理
-        return Ordered.LOWEST_PRECEDENCE;
+                .addResourceLocations("file:" + uploadPath);
     }
 }
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Character, WorldScene } from '../types';
 import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { imageApi, characterApi } from '../services/api';
 import { Button } from './Button';
 import { ResourcePicker } from './ResourcePicker';
@@ -140,7 +141,8 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
     setIsLoading(true);
     setGeneratedCharacter(null);
     try {
-        const newCharacter = await geminiService.generateCharacterFromPrompt(prompt, scene.name);
+        // 使用统一的AI服务，支持所有模式和provider，具备容错能力
+        const newCharacter = await aiService.generateCharacterFromPrompt(prompt, scene.name);
         if (newCharacter) {
             setGeneratedCharacter(newCharacter);
         } else {
@@ -148,7 +150,8 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         }
     } catch (e) {
         console.error(e);
-        setError('角色生成时发生网络错误，请稍后重试。');
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        setError(`角色生成失败：${errorMessage}。请检查API配置或稍后重试。`);
     } finally {
         setIsLoading(false);
     }

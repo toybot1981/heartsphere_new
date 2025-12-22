@@ -33,3 +33,6 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 SELECT id, name, category, tags FROM system_resources WHERE tags LIKE '%希腊%' ORDER BY id DESC LIMIT 12;
 
 
+
+
+

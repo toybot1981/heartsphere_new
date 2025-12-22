@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho } from '../types';
+import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho, DialogueStyle } from '../types';
 import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
+import { AIConfigManager } from '../services/ai/config';
 import { GenerateContentResponse } from '@google/genai';
 import { Button } from './Button';
 import { showAlert } from '../utils/dialog';
+import { createScenarioContext } from '../constants';
 
 // --- Audio Decoding Helpers (Raw PCM) ---
 function decode(base64: string) {
@@ -83,7 +86,7 @@ interface ChatWindowProps {
   settings: AppSettings;
   userProfile: UserProfile;
   activeJournalEntryId: string | null; 
-  onUpdateHistory: (msgs: Message[]) => void;
+  onUpdateHistory: (msgs: Message[] | ((prev: Message[]) => Message[])) => void;
   onUpdateScenarioState?: (nodeId: string) => void;
   onBack: (echo?: JournalEcho) => void;
   participatingCharacters?: Character[]; // 参与剧本的角色列表
@@ -92,20 +95,19 @@ interface ChatWindowProps {
 export const ChatWindow: React.FC<ChatWindowProps> = ({ 
   character, customScenario, history, scenarioState, settings, userProfile, activeJournalEntryId, onUpdateHistory, onUpdateScenarioState, onBack, participatingCharacters 
 }) => {
-  console.log('========================================');
-  console.log('[ChatWindow] 🚀 组件被渲染/更新:', {
-    hasCharacter: !!character,
-    characterId: character?.id,
-    characterName: character?.name,
-    hasCustomScenario: !!customScenario,
-    customScenarioId: customScenario?.id,
-    customScenarioTitle: customScenario?.title,
-    hasScenarioState: !!scenarioState,
-    scenarioStateValue: scenarioState,
-    historyLength: history?.length || 0,
-    timestamp: Date.now()
-  });
-  console.log('========================================');
+  // 防御性检查：确保history是数组
+  const safeHistory = Array.isArray(history) ? history : [];
+  
+  // 调试日志：检查history数据
+  useEffect(() => {
+    console.log('[ChatWindow] history prop变化:', {
+      historyLength: history?.length || 0,
+      historyType: typeof history,
+      isArray: Array.isArray(history),
+      safeHistoryLength: safeHistory.length,
+      safeHistoryContent: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+    });
+  }, [history, safeHistory]);
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -127,58 +129,75 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  
+  // 标记是否已经初始化过history（防止在用户交互后重置history）
+  const hasInitializedHistoryRef = useRef<boolean>(false);
 
   // Determine mode
-  const isStoryMode = !!customScenario || character?.id.startsWith('story_');
+  const isStoryMode = !!customScenario || (character?.id?.startsWith('story_') ?? false);
   const isScenarioMode = !!customScenario; // Specifically for Node-based scenarios
-  
-  // 详细调试日志
-  console.log('[ChatWindow] ════════════════════════════════════════');
-  console.log('[ChatWindow] 🔍 模式判断详细分析:', {
-    isStoryMode,
-    isScenarioMode,
-    hasCustomScenario: !!customScenario,
-    customScenarioType: typeof customScenario,
-    customScenarioValue: customScenario,
-    customScenarioId: customScenario?.id,
-    customScenarioTitle: customScenario?.title,
-    customScenarioNodesCount: customScenario ? Object.keys(customScenario.nodes || {}).length : 0,
-    characterId: character?.id,
-    characterIdStartsWithStory: character?.id?.startsWith('story_'),
-    willShowInput: !isScenarioMode && !isCinematic,
-    willShowChoices: isScenarioMode,
-    isCinematic
-  });
-  console.log('[ChatWindow] ════════════════════════════════════════');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [history, isCinematic]); 
+  useEffect(scrollToBottom, [safeHistory, isCinematic]); 
 
   // --- CRITICAL FIX: Reset Session on Mount ---
   // This ensures that when we enter a chat, the Gemini Service clears any stale cache 
   // and rebuilds the context from the passed 'history' prop.
   useEffect(() => {
-    if (character) {
+    if (character?.id) {
         geminiService.resetSession(character.id);
     }
-  }, [character.id]);
+  }, [character?.id]);
 
+  // 存储上一次的character.id和customScenario.id，用于检测切换
+  const prevCharacterIdRef = useRef<string | undefined>(character?.id);
+  const prevScenarioIdRef = useRef<string | undefined>(customScenario?.id);
+  
+  // 检测character或scenario是否切换了
+  useEffect(() => {
+    const characterChanged = prevCharacterIdRef.current !== character?.id;
+    const scenarioChanged = prevScenarioIdRef.current !== customScenario?.id;
+    
+    if (characterChanged || scenarioChanged) {
+      console.log('[ChatWindow] character或scenario切换，重置初始化标记:', {
+        prevCharacterId: prevCharacterIdRef.current,
+        newCharacterId: character?.id,
+        prevScenarioId: prevScenarioIdRef.current,
+        newScenarioId: customScenario?.id,
+        currentHistoryLength: safeHistory.length
+      });
+      hasInitializedHistoryRef.current = false;
+      prevCharacterIdRef.current = character?.id;
+      prevScenarioIdRef.current = customScenario?.id;
+    }
+  }, [character?.id, customScenario?.id]);
+  
+  // 初始化history：只在首次加载且history为空时执行
+  // 使用useEffect + hasInitializedHistoryRef确保不会在用户交互后重置history
   useEffect(() => {
     if (!character) return;
-
-    console.log('[ChatWindow] 初始化检查:', {
-      historyLength: history.length,
-      hasCustomScenario: !!customScenario,
-      hasScenarioState: !!scenarioState,
-      scenarioStateValue: scenarioState,
-      customScenarioStartNodeId: customScenario?.startNodeId,
-      customScenarioNodes: customScenario ? Object.keys(customScenario.nodes || {}) : []
+    
+    // 关键检查：
+    // 1. 还没有初始化过
+    // 2. history确实为空
+    // 如果history已经有内容（用户已经交互过），就不再初始化
+    const shouldInitialize = !hasInitializedHistoryRef.current && safeHistory.length === 0;
+    
+    console.log('[ChatWindow] 检查是否需要初始化history:', {
+      shouldInitialize,
+      hasInitialized: hasInitializedHistoryRef.current,
+      historyLength: safeHistory.length,
+      characterId: character.id,
+      customScenarioId: customScenario?.id
     });
-
-    if (history.length === 0) {
+    
+    if (shouldInitialize) {
+      console.log('[ChatWindow] ========== 开始初始化history ==========');
+      hasInitializedHistoryRef.current = true; // 立即标记为已初始化，防止重复执行
+      
       if (customScenario && onUpdateScenarioState) {
           // Scenario Mode: 确保 scenarioState 已初始化
           let targetNodeId = scenarioState?.currentNodeId;
@@ -186,7 +205,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           // 如果 scenarioState 未初始化或 currentNodeId 无效，使用 startNodeId
           if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
             targetNodeId = customScenario.startNodeId;
-            console.log('[ChatWindow] 使用 startNodeId 初始化 scenarioState:', targetNodeId);
             
             // 更新 scenarioState
             if (onUpdateScenarioState) {
@@ -196,11 +214,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           
           const startNode = customScenario.nodes[targetNodeId];
           if (startNode) {
-            console.log('[ChatWindow] 触发第一个节点:', {
-              nodeId: startNode.id,
-              nodeTitle: startNode.title,
-              hasOptions: !!startNode.options && startNode.options.length > 0
-            });
+            console.log('[ChatWindow] Scenario Mode: 调用handleScenarioTransition');
             handleScenarioTransition(startNode, null);
           } else {
             console.error('[ChatWindow] 找不到起始节点:', {
@@ -210,18 +224,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           }
       } else if (!isStoryMode) {
         // Normal Mode
-        onUpdateHistory([{ id: 'init', role: 'model', text: character.firstMessage, timestamp: Date.now() }]);
+        console.log('[ChatWindow] Normal Mode: 初始化firstMessage');
+        const initMsg = { id: 'init', role: 'model' as const, text: character.firstMessage, timestamp: Date.now() };
+        onUpdateHistory([initMsg]);
+        console.log('[ChatWindow] Normal Mode: firstMessage已添加:', initMsg);
       } else if (isStoryMode && !customScenario) {
         // Main Story Mode
-        onUpdateHistory([{ id: 'init_story', role: 'model', text: character.firstMessage, timestamp: Date.now() }]);
+        console.log('[ChatWindow] Main Story Mode: 初始化firstMessage');
+        const initMsg = { id: 'init_story', role: 'model' as const, text: character.firstMessage, timestamp: Date.now() };
+        onUpdateHistory([initMsg]);
+        console.log('[ChatWindow] Main Story Mode: firstMessage已添加:', initMsg);
       }
+      
+      console.log('[ChatWindow] ========== history初始化完成 ==========');
+    } else if (!hasInitializedHistoryRef.current && safeHistory.length > 0) {
+      // history已经有内容（可能是从外部加载的），标记为已初始化（防止后续被重置）
+      console.log('[ChatWindow] history已有内容，标记为已初始化，防止被重置:', {
+        historyLength: safeHistory.length,
+        historyPreview: safeHistory.map(m => ({ id: m.id, role: m.role }))
+      });
+      hasInitializedHistoryRef.current = true;
     }
   }, [character?.id, customScenario?.id]);
 
   useEffect(() => {
     if (!isStoryMode || !settings.autoGenerateStoryScenes) return;
     
-    const lastMsg = history[history.length - 1];
+    const lastMsg = safeHistory[safeHistory.length - 1];
     if (lastMsg && lastMsg.role === 'model' && !isGeneratingScene) {
         const generate = async () => {
             setIsGeneratingScene(true);
@@ -312,7 +341,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     // 在流程驱动模式下，直接显示节点的prompt内容，不调用AI生成
     // 因为剧本是预设的流程，不需要AI动态生成对话
     
-    let currentHistory = [...history];
+    let currentHistory = [...safeHistory];
     if (choiceText) {
        const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: choiceText, timestamp: Date.now() };
        currentHistory.push(userMsg);
@@ -333,14 +362,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       // 更新场景状态到当前节点
       if (onUpdateScenarioState) {
-        console.log('[ChatWindow] 调用 onUpdateScenarioState 更新节点:', {
-          newNodeId: node.id,
-          nodeTitle: node.title,
-          hasOptions: !!node.options && node.options.length > 0
-        });
         onUpdateScenarioState(node.id);
-      } else {
-        console.warn('[ChatWindow] onUpdateScenarioState 未定义，无法更新状态');
       }
        
       // 节点处理完成，等待用户选择（如果有选项的话）
@@ -355,91 +377,43 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleOptionClick = (optionId: string) => {
-      console.log('========================================');
-      console.log('[ChatWindow] 🟢🟢🟢 handleOptionClick 被调用:', { 
-        optionId, 
-        customScenario: !!customScenario, 
-        scenarioState,
-        isLoading,
-        timestamp: Date.now(),
-        callStack: new Error().stack
-      });
-      console.log('========================================');
-      
       // 如果正在加载，阻止处理
       if (isLoading) {
-          console.warn('[ChatWindow] handleOptionClick 被阻止 - 正在加载中');
           return;
       }
       
       if (!customScenario || !scenarioState) {
-          console.error('[ChatWindow] ❌ 缺少 customScenario 或 scenarioState:', {
-            hasCustomScenario: !!customScenario,
-            hasScenarioState: !!scenarioState,
-            scenarioStateValue: scenarioState
-          });
+          console.error('[ChatWindow] 缺少 customScenario 或 scenarioState');
           return;
       }
       
       const currentNodeId = scenarioState.currentNodeId;
       if (!currentNodeId) {
-          console.error('[ChatWindow] ❌ scenarioState.currentNodeId 为空');
+          console.error('[ChatWindow] scenarioState.currentNodeId 为空');
           return;
       }
       
       const currentNode = customScenario.nodes[currentNodeId];
       if (!currentNode) {
-          console.error('[ChatWindow] ❌ 找不到当前节点:', {
-            currentNodeId,
-            availableNodes: Object.keys(customScenario.nodes),
-            nodesData: customScenario.nodes
-          });
+          console.error('[ChatWindow] 找不到当前节点:', currentNodeId);
           return;
       }
       
-      console.log('[ChatWindow] 📍 当前节点信息:', {
-        nodeId: currentNode.id,
-        nodeTitle: currentNode.title,
-        optionsCount: currentNode.options?.length || 0,
-        options: currentNode.options?.map(o => ({ id: o.id, text: o.text, nextNodeId: o.nextNodeId }))
-      });
-      
-      const option = currentNode.options.find(o => o.id === optionId);
+      const option = currentNode.options?.find(o => o.id === optionId);
       if (!option) {
-          console.error('[ChatWindow] ❌ 找不到选项:', {
-            optionId,
-            availableOptions: currentNode.options.map(o => ({ id: o.id, text: o.text }))
-          });
+          console.error('[ChatWindow] 找不到选项:', optionId);
           return;
       }
-      
-      console.log('[ChatWindow] ✅ 找到选项:', { 
-        optionId, 
-        text: option.text, 
-        nextNodeId: option.nextNodeId,
-        optionData: option
-      });
       
       if (!option.nextNodeId) {
-          console.warn('[ChatWindow] ⚠️ 选项没有 nextNodeId（故事可能结束）:', option);
           return;
       }
       
       const nextNode = customScenario.nodes[option.nextNodeId];
       if (!nextNode) {
-          console.error('[ChatWindow] ❌ 找不到下一个节点:', {
-            nextNodeId: option.nextNodeId,
-            availableNodes: Object.keys(customScenario.nodes),
-            allNodeIds: Object.keys(customScenario.nodes)
-          });
+          console.error('[ChatWindow] 找不到下一个节点:', option.nextNodeId);
           return;
       }
-      
-      console.log('[ChatWindow] 🚀 准备跳转到节点:', {
-        nextNodeId: nextNode.id,
-        nextNodeTitle: nextNode.title,
-        choiceText: option.text || optionId
-      });
       
       // 调用场景转换
       handleScenarioTransition(nextNode, option.text || optionId);
@@ -447,40 +421,437 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || isScenarioMode) return;
+    
+    // 防止并发请求：如果已有请求在进行，忽略新的请求
+    if (isLoading) {
+      console.warn('[ChatWindow] 已有请求在进行中，忽略新请求');
+      return;
+    }
+    
     const userText = input.trim();
     setInput('');
     setIsLoading(true);
     
     const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: userText, timestamp: Date.now() };
-    let currentHistory = [...history, userMsg];
-    onUpdateHistory(currentHistory);
-    
-    let fullResponseText = '';
     const tempBotId = `bot_${Date.now()}`;
     
+    // 使用函数式更新，确保获取最新的history状态
+    // 注意：用户消息需要立即添加到history，这样后续的响应才能正确追加
+    console.log('[ChatWindow] ========== 开始添加用户消息 ==========');
+    console.log('[ChatWindow] 当前history prop:', {
+      historyLength: safeHistory.length,
+      history: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+    });
+    console.log('[ChatWindow] 要添加的用户消息:', userMsg);
+    
+    // 先构建包含用户消息的完整历史，用于后续AI调用
+    // 这样可以确保AI调用时包含用户消息，即使prop还没更新
+    const historyWithUserMsg = [...safeHistory, userMsg];
+    
+    // 使用函数式更新，确保获取最新的history状态（即使prop还没更新）
+    onUpdateHistory(prevHistory => {
+      // 防御性检查：确保prevHistory不是函数，且是数组
+      if (typeof prevHistory === 'function') {
+        console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
+        return [userMsg];
+      }
+      const prev = Array.isArray(prevHistory) ? prevHistory : [];
+      
+      // 检查用户消息是否已经存在（防止重复添加）
+      const userMsgExists = prev.some(m => m.id === userMsg.id);
+      if (userMsgExists) {
+        console.log('[ChatWindow] 用户消息已存在，跳过重复添加');
+        return prev;
+      }
+      
+      const newHistory = [...prev, userMsg];
+      console.log('[ChatWindow] 用户消息已添加到history:', {
+        prevLength: prev.length,
+        newLength: newHistory.length,
+        userMsgId: userMsg.id,
+        userMsgText: userMsg.text.substring(0, 50),
+        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+      });
+      return newHistory;
+    });
+    
+    console.log('[ChatWindow] ========== 用户消息添加完成 ==========');
+    
     try {
-      // Pass userProfile correctly
-      const stream = await geminiService.sendMessageStream(character, currentHistory, userText, userProfile);
-      let firstChunk = true;
-      for await (const chunk of stream) {
-        const chunkText = (chunk as GenerateContentResponse).text;
-        if (chunkText) {
-          fullResponseText += chunkText;
-          const msg = { id: tempBotId, role: 'model' as const, text: fullResponseText, timestamp: Date.now() };
-          if (firstChunk) {
-            currentHistory = [...currentHistory, msg];
-            firstChunk = false;
-          } else {
-            currentHistory = [...currentHistory.slice(0, -1), msg];
-          }
-          onUpdateHistory(currentHistory);
+      // 检查当前配置模式
+      const config = await AIConfigManager.getUserConfig();
+      
+      console.log('[ChatWindow] 大模型连接模式检测:', {
+        mode: config.mode,
+        textProvider: config.textProvider,
+        textModel: config.textModel,
+        hasApiKeys: {
+          gemini: !!AIConfigManager.getLocalApiKeys().gemini,
+          openai: !!AIConfigManager.getLocalApiKeys().openai,
+          qwen: !!AIConfigManager.getLocalApiKeys().qwen,
+          doubao: !!AIConfigManager.getLocalApiKeys().doubao,
         }
+      });
+      
+      if (config.mode === 'unified') {
+        console.log('[ChatWindow] 使用统一接入模式调用大模型');
+        
+        // 统一接入模式：使用新的 aiService
+        // 构建系统指令
+        let systemInstruction = character.systemInstruction || '';
+        if (character.mbti) systemInstruction += `\nMBTI: ${character.mbti}`;
+        if (character.speechStyle) systemInstruction += `\nSpeaking Style: ${character.speechStyle}`;
+        if (character.catchphrases) systemInstruction += `\nCommon Phrases: ${character.catchphrases.join(', ')}`;
+        if (character.secrets) systemInstruction += `\nSecrets: ${character.secrets}`;
+        
+        // 添加对话风格
+        const dialogueStyle = settings?.dialogueStyle || 'mobile-chat';
+        const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
+        systemInstruction += styleInstruction;
+        
+        // 添加场景上下文
+        if (userProfile) {
+          const scenarioContext = createScenarioContext(userProfile);
+          systemInstruction = `${scenarioContext}\n\n${systemInstruction}`;
+        }
+        
+        // 转换消息历史：使用包含用户消息的完整历史
+        // 注意：这里使用historyWithUserMsg而不是safeHistory，确保包含刚添加的用户消息
+        const historyMessages = historyWithUserMsg.map(msg => ({
+          role: msg.role === 'model' ? 'assistant' : 'user' as 'user' | 'assistant' | 'system',
+          content: msg.text,
+        }));
+        
+        console.log('[ChatWindow] 统一模式 - 构建AI请求的historyMessages:', {
+          historyWithUserMsgLength: historyWithUserMsg.length,
+          historyMessagesLength: historyMessages.length,
+          lastMsg: historyMessages[historyMessages.length - 1],
+          allRoles: historyMessages.map(m => m.role)
+        });
+        
+        // 使用统一AI服务
+        // 为当前请求创建独立的状态，避免闭包捕获旧请求的状态
+        const currentRequestId = tempBotId; // 使用tempBotId作为请求ID
+        let requestFullResponseText = ''; // 当前请求的响应文本（每个请求独立）
+        let hasAddedBotMessage = false; // 标记是否已添加机器人消息（使用ref方式避免闭包问题）
+        
+        await aiService.generateTextStream(
+          {
+            prompt: userText,
+            systemInstruction: systemInstruction,
+            messages: historyMessages, // 历史消息（不包含当前用户输入）
+            temperature: 0.7,
+            maxTokens: 2048,
+          },
+          (chunk) => {
+            try {
+              if (!chunk.done && chunk.content) {
+                requestFullResponseText += chunk.content;
+                const msg = { id: currentRequestId, role: 'model' as const, text: requestFullResponseText, timestamp: Date.now() };
+                
+                // 使用函数式更新，确保获取最新的history状态，避免闭包问题
+                // 通过消息ID匹配确保更新正确的消息
+                onUpdateHistory(prevHistory => {
+                  try {
+                    // 防御性检查：确保prevHistory是数组，且不是函数
+                    if (typeof prevHistory === 'function') {
+                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
+                      return [];
+                    }
+                    if (!Array.isArray(prevHistory)) {
+                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
+                      return [];
+                    }
+                    
+                    // 检查用户消息是否存在（确保用户消息没有被丢失）
+                    const userMsgExists = prevHistory.some(m => m.id === userMsg.id && m.role === 'user');
+                    if (!userMsgExists) {
+                      console.warn('[ChatWindow] ⚠️ 用户消息不在history中，重新添加:', {
+                        userMsgId: userMsg.id,
+                        prevHistoryLength: prevHistory.length,
+                        prevHistoryIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      // 如果用户消息不在history中，先添加用户消息，然后再添加机器人消息
+                      prevHistory = [...prevHistory, userMsg];
+                    }
+                    
+                    // 检查最后一条消息是否是我们刚刚添加的机器人消息
+                    const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
+                    const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
+                    
+                    console.log('[ChatWindow] 更新机器人消息:', {
+                      prevHistoryLength: prevHistory.length,
+                      lastMsgId: lastMsg?.id,
+                      lastMsgRole: lastMsg?.role,
+                      currentRequestId,
+                      isLastMsgOurs,
+                      hasAddedBotMessage,
+                      userMsgExists,
+                      allMsgIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
+                    });
+                    
+                    if (!hasAddedBotMessage && !isLastMsgOurs) {
+                      // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory, msg];
+                      console.log('[ChatWindow] 添加机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    } else if (isLastMsgOurs) {
+                      // 最后一条是我们的消息，更新它
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory.slice(0, -1), msg];
+                      console.log('[ChatWindow] 更新机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    } else {
+                      // 其他情况，追加新消息
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory, msg];
+                      console.log('[ChatWindow] 追加机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    }
+                  } catch (error) {
+                    console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
+                    // 返回安全的默认值，确保不返回函数
+                    return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
+                  }
+                });
+              } else if (chunk.done) {
+                // 完成 - 确保完成信号能够正常处理（即使isLoading已经变为false）
+                setIsLoading(false);
+              }
+            } catch (error) {
+              console.error('[ChatWindow] 处理chunk时发生错误:', error);
+              // 确保即使出错也能恢复加载状态
+              setIsLoading(false);
+            }
+          }
+        );
+      } else {
+        console.log('[ChatWindow] 使用本地配置模式调用大模型', {
+          provider: config.textProvider || 'gemini',
+          model: config.textModel,
+          hasProviderConfig: {
+            gemini: !!AIConfigManager.getLocalApiKeys().gemini,
+            openai: !!AIConfigManager.getLocalApiKeys().openai,
+            qwen: !!AIConfigManager.getLocalApiKeys().qwen,
+            doubao: !!AIConfigManager.getLocalApiKeys().doubao,
+          }
+        });
+        
+        // 本地配置模式：使用新的 aiService（具备多provider容错能力）
+        // 构建系统指令
+        let systemInstruction = character.systemInstruction || '';
+        if (character.mbti) systemInstruction += `\nMBTI: ${character.mbti}`;
+        if (character.speechStyle) systemInstruction += `\nSpeaking Style: ${character.speechStyle}`;
+        if (character.catchphrases) systemInstruction += `\nCommon Phrases: ${character.catchphrases.join(', ')}`;
+        if (character.secrets) systemInstruction += `\nSecrets: ${character.secrets}`;
+        
+        // 添加对话风格
+        const dialogueStyle = settings?.dialogueStyle || 'mobile-chat';
+        const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
+        systemInstruction += styleInstruction;
+        
+        // 添加场景上下文
+        if (userProfile) {
+          const scenarioContext = createScenarioContext(userProfile);
+          systemInstruction = `${scenarioContext}\n\n${systemInstruction}`;
+        }
+        
+        // 转换消息历史：使用包含用户消息的完整历史
+        // 注意：这里使用historyWithUserMsg而不是safeHistory，确保包含刚添加的用户消息
+        const historyMessages = historyWithUserMsg.map(msg => ({
+          role: msg.role === 'model' ? 'assistant' : 'user' as 'user' | 'assistant' | 'system',
+          content: msg.text,
+        }));
+        
+        console.log('[ChatWindow] 本地模式 - 构建AI请求的historyMessages:', {
+          historyWithUserMsgLength: historyWithUserMsg.length,
+          historyMessagesLength: historyMessages.length,
+          lastMsg: historyMessages[historyMessages.length - 1],
+          allRoles: historyMessages.map(m => m.role)
+        });
+        
+        // 使用本地AI服务（会自动尝试所有可用的provider）
+        // 为当前请求创建独立的状态，避免闭包捕获旧请求的状态
+        const currentRequestId = tempBotId; // 使用tempBotId作为请求ID
+        let requestFullResponseText = ''; // 当前请求的响应文本（每个请求独立）
+        let hasAddedBotMessage = false; // 标记是否已添加机器人消息（使用ref方式避免闭包问题）
+        
+        await aiService.generateTextStream(
+          {
+            prompt: userText,
+            systemInstruction: systemInstruction,
+            messages: historyMessages, // 历史消息（不包含当前用户输入）
+            temperature: 0.7,
+            maxTokens: 2048,
+          },
+          (chunk) => {
+            try {
+              if (!chunk.done && chunk.content) {
+                requestFullResponseText += chunk.content;
+                const msg = { id: currentRequestId, role: 'model' as const, text: requestFullResponseText, timestamp: Date.now() };
+                
+                // 使用函数式更新，确保获取最新的history状态，避免闭包问题
+                // 通过消息ID匹配确保更新正确的消息
+                onUpdateHistory(prevHistory => {
+                  try {
+                    // 防御性检查：确保prevHistory是数组，且不是函数
+                    if (typeof prevHistory === 'function') {
+                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
+                      return [];
+                    }
+                    if (!Array.isArray(prevHistory)) {
+                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
+                      return [];
+                    }
+                    
+                    // 检查用户消息是否存在（确保用户消息没有被丢失）
+                    const userMsgExists = prevHistory.some(m => m.id === userMsg.id && m.role === 'user');
+                    if (!userMsgExists) {
+                      console.warn('[ChatWindow] ⚠️ 用户消息不在history中，重新添加:', {
+                        userMsgId: userMsg.id,
+                        prevHistoryLength: prevHistory.length,
+                        prevHistoryIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      // 如果用户消息不在history中，先添加用户消息，然后再添加机器人消息
+                      prevHistory = [...prevHistory, userMsg];
+                    }
+                    
+                    // 检查最后一条消息是否是我们刚刚添加的机器人消息
+                    const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
+                    const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
+                    
+                    console.log('[ChatWindow] 更新机器人消息:', {
+                      prevHistoryLength: prevHistory.length,
+                      lastMsgId: lastMsg?.id,
+                      lastMsgRole: lastMsg?.role,
+                      currentRequestId,
+                      isLastMsgOurs,
+                      hasAddedBotMessage,
+                      userMsgExists,
+                      allMsgIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
+                    });
+                    
+                    if (!hasAddedBotMessage && !isLastMsgOurs) {
+                      // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory, msg];
+                      console.log('[ChatWindow] 添加机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    } else if (isLastMsgOurs) {
+                      // 最后一条是我们的消息，更新它
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory.slice(0, -1), msg];
+                      console.log('[ChatWindow] 更新机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    } else {
+                      // 其他情况，追加新消息
+                      hasAddedBotMessage = true;
+                      const newHistory = [...prevHistory, msg];
+                      console.log('[ChatWindow] 追加机器人消息，新history长度:', newHistory.length, {
+                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
+                      });
+                      return newHistory;
+                    }
+                  } catch (error) {
+                    console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
+                    // 返回安全的默认值，确保不返回函数
+                    return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
+                  }
+                });
+              } else if (chunk.done) {
+                // 完成
+                setIsLoading(false);
+              }
+            } catch (error) {
+              console.error('[ChatWindow] 处理chunk时发生错误:', error);
+              // 确保即使出错也能恢复加载状态
+              setIsLoading(false);
+            }
+          }
+        );
       }
     } catch (error) { 
-        console.error("Gemini Error:", error);
-        onUpdateHistory([...currentHistory, {id: tempBotId, role: 'model', text: "【系统错误：连接失败，请稍后重试】", timestamp: Date.now()}]);
+        console.error('[ChatWindow] AI服务调用失败:', error);
+        try {
+          // 使用函数式更新，确保获取最新的history状态
+          onUpdateHistory(prevHistory => {
+            try {
+                    // 防御性检查：确保prevHistory不是函数，且是数组
+                    if (typeof prevHistory === 'function') {
+                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
+                      return [];
+                    }
+                    if (!Array.isArray(prevHistory)) {
+                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
+                      return [];
+                    }
+              return [
+                ...prevHistory, 
+                {id: tempBotId, role: 'model', text: "【系统错误：连接失败，请稍后重试】", timestamp: Date.now()}
+              ];
+            } catch (updateError) {
+              console.error('[ChatWindow] 更新错误消息时发生错误:', updateError);
+              return prevHistory;
+            }
+          });
+        } catch (updateError) {
+          console.error('[ChatWindow] 调用onUpdateHistory失败:', updateError);
+        }
     } finally { 
         setIsLoading(false); 
+    }
+  };
+  
+  // 辅助函数：获取对话风格指令
+  const getDialogueStyleInstruction = (style: DialogueStyle = 'mobile-chat'): string => {
+    switch (style) {
+      case 'mobile-chat':
+        return `\n\n[对话风格：即时网聊]
+- 使用短句，像微信聊天一样自然
+- 可以适当使用 Emoji 表情（😊、😢、🤔、💭 等）
+- 动作描写用 *动作内容* 格式，例如：*轻轻拍了拍你的肩膀*
+- 节奏要快，回复要简洁有力
+- 语气要轻松、亲切，像和朋友聊天
+- 避免冗长的描述，重点突出对话和互动`;
+      case 'visual-novel':
+        return `\n\n[对话风格：沉浸小说]
+- 侧重心理描写和环境渲染
+- 辞藻优美，富有文学性
+- 像读轻小说一样，有代入感和画面感
+- 可以详细描述角色的内心活动、表情、动作
+- 适当描写周围环境，营造氛围
+- 回复可以较长，但要保持节奏感
+- 注重情感表达和细节刻画`;
+      case 'stage-script':
+        return `\n\n[对话风格：剧本独白]
+- 格式严格：动作用 [动作内容] 表示，台词直接说
+- 例如：[缓缓转身] 你来了...
+- 干脆利落，适合作为创作大纲
+- 动作和台词要清晰分离
+- 避免过多的心理描写，重点在动作和对话
+- 风格要简洁、有力，像舞台剧脚本`;
+      case 'poetic':
+        return `\n\n[对话风格：诗意留白]
+- 极简、隐晦、富有哲理
+- 像《主要还是看气质》或《光遇》的风格
+- 用词要精炼，意境要深远
+- 可以适当留白，让读者自己体会
+- 避免直白的表达，多用隐喻和象征
+- 节奏要慢，每个字都要有分量
+- 注重氛围和情感，而非具体情节`;
+      default:
+        return '';
     }
   };
 
@@ -489,7 +860,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleCrystalizeMemory = async () => {
-    if (!activeJournalEntryId || history.length < 2 || isCrystalizing) return;
+    if (!activeJournalEntryId || safeHistory.length < 2 || isCrystalizing) return;
     setIsCrystalizing(true);
     try {
         const wisdom = await geminiService.generateWisdomEcho(history, character.name);
@@ -512,75 +883,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
   
   const renderChoices = () => {
-    console.log('========================================');
-    console.log('[ChatWindow] 🎯 renderChoices 函数被调用!');
-    console.log('[ChatWindow] renderChoices 参数检查:', {
-      hasCustomScenario: !!customScenario,
-      hasScenarioState: !!scenarioState,
-      isLoading,
-      scenarioStateValue: scenarioState,
-      customScenarioNodes: customScenario ? Object.keys(customScenario.nodes || {}) : [],
-      customScenarioStartNodeId: customScenario?.startNodeId,
-      customScenarioId: customScenario?.id,
-      customScenarioTitle: customScenario?.title
-    });
-    console.log('========================================');
-
     if (!customScenario || !scenarioState || isLoading) {
-      console.log('[ChatWindow] renderChoices 返回 null - 缺少必要数据或正在加载');
       return null;
     }
 
     const currentNodeId = scenarioState.currentNodeId;
     if (!currentNodeId) {
-      console.warn('[ChatWindow] renderChoices - scenarioState.currentNodeId 为空');
       return null;
     }
 
     const currentNode = customScenario.nodes[currentNodeId];
     if (!currentNode) {
-      console.warn('[ChatWindow] renderChoices - 找不到当前节点:', {
-        currentNodeId,
-        availableNodes: Object.keys(customScenario.nodes),
-        nodesData: customScenario.nodes
-      });
       return null;
     }
 
     // 检查 options 是否存在且是数组
-    if (!currentNode.options) {
-      console.warn('[ChatWindow] renderChoices - 节点没有 options 字段:', {
-        nodeId: currentNode.id,
-        nodeTitle: currentNode.title,
-        nodeData: currentNode
-      });
-      return null;
-    }
-
-    if (!Array.isArray(currentNode.options)) {
-      console.warn('[ChatWindow] renderChoices - options 不是数组:', {
-        nodeId: currentNode.id,
-        optionsType: typeof currentNode.options,
-        optionsValue: currentNode.options
-      });
-      return null;
-    }
-
-    if (currentNode.options.length === 0) {
-      console.log('[ChatWindow] renderChoices - 节点没有选项（这是正常的，表示故事结束）');
+    if (!currentNode.options || !Array.isArray(currentNode.options) || currentNode.options.length === 0) {
       return null;
     }
 
     // 验证每个选项的结构，并确保每个选项都有唯一的 id
     const validOptions = currentNode.options
       .map((opt, index) => {
-        // 如果选项没有 id，生成一个唯一的 id
         if (!opt || typeof opt !== 'object') {
-          console.warn('[ChatWindow] renderChoices - 发现无效选项:', opt);
           return null;
         }
         if (!opt.id) {
-          console.warn('[ChatWindow] renderChoices - 选项缺少 id，生成临时 id:', { opt, index });
           return { ...opt, id: `temp-option-${currentNode.id}-${index}` };
         }
         return opt;
@@ -588,65 +916,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       .filter((opt): opt is NonNullable<typeof opt> => opt !== null);
 
     if (validOptions.length === 0) {
-      console.warn('[ChatWindow] renderChoices - 没有有效的选项');
       return null;
     }
-
-    // 调试日志
-    console.log('[ChatWindow] ✅ 渲染选择按钮:', {
-      currentNodeId: currentNode.id,
-      currentNodeTitle: currentNode.title,
-      optionsCount: validOptions.length,
-      options: validOptions.map(opt => ({ id: opt.id, text: opt.text || '(无文本)', nextNodeId: opt.nextNodeId }))
-    });
-
-    console.log('[ChatWindow] 🎨 准备渲染按钮容器，validOptions 数量:', validOptions.length);
 
     return (
         <div 
           className={`flex flex-wrap gap-3 justify-center mt-4 animate-fade-in ${isCinematic ? 'mb-10' : ''}`}
           style={{ 
-            zIndex: 999, // 提高 z-index 确保按钮容器在最上层
+            zIndex: 999,
             position: 'relative',
-            pointerEvents: 'auto', // 确保容器可以接收事件
-            backgroundColor: 'rgba(255, 0, 0, 0.1)' // 临时添加背景色用于调试
-          }}
-          onClick={(e) => {
-            console.log('[ChatWindow] 📦 按钮容器 onClick 事件:', {
-              target: e.target,
-              currentTarget: e.currentTarget,
-              timestamp: Date.now()
-            });
-          }}
-          onMouseEnter={() => {
-            console.log('[ChatWindow] 🖱️ 鼠标进入按钮容器');
+            pointerEvents: 'auto'
           }}
         >
             {validOptions.map((opt, index) => {
-              console.log('[ChatWindow] 🔘 正在渲染按钮:', {
-                index,
-                optionId: opt.id,
-                buttonText: opt.text || opt.id || '选择'
-              });
-              // 确保文本存在，提供 fallback
               const buttonText = opt.text || opt.id || '选择';
-              
-              // 检查按钮是否应该被禁用
               const isButtonDisabled = isLoading;
-              
-              // 确保 key 的唯一性：使用 opt.id，如果不存在则使用 index
               const uniqueKey = opt.id || `option-${index}`;
-              
-              console.log('[ChatWindow] 🔘 渲染按钮详情:', {
-                index,
-                optionId: opt.id,
-                uniqueKey,
-                buttonText,
-                isDisabled: isButtonDisabled,
-                isLoading,
-                nextNodeId: opt.nextNodeId,
-                willRender: true
-              });
               
               return (
                 <button
@@ -655,86 +940,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   data-option-id={opt.id}
                   data-index={index}
                   onClick={(e) => {
-                    console.log('[ChatWindow] 🔵🔵🔵 onClick 事件触发:', {
-                      optionId: opt.id,
-                      uniqueKey,
-                      buttonText,
-                      isLoading,
-                      isButtonDisabled,
-                      timestamp: Date.now(),
-                      eventType: e.type,
-                      target: e.target,
-                      currentTarget: e.currentTarget
-                    });
-                    
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // 如果正在加载，阻止点击
-                    if (isLoading) {
-                      console.warn('[ChatWindow] ⚠️ 按钮点击被阻止 - 正在加载中');
+                    if (isLoading || isButtonDisabled) {
                       return;
                     }
                     
-                    if (isButtonDisabled) {
-                      console.warn('[ChatWindow] ⚠️ 按钮点击被阻止 - 按钮被禁用');
-                      return;
-                    }
-                    
-                    console.log('[ChatWindow] ✅ 准备调用 handleOptionClick');
-                    
-                    // 调用处理函数（handleScenarioTransition 内部会设置 loading 状态）
                     try {
-                      console.log('[ChatWindow] 🚀 调用 handleOptionClick，参数:', opt.id);
-                      const result = handleOptionClick(opt.id);
-                      console.log('[ChatWindow] handleOptionClick 返回:', result);
+                      handleOptionClick(opt.id);
                     } catch (error) {
-                      console.error('[ChatWindow] ❌ 处理选项点击时出错:', {
-                        error,
-                        errorMessage: error instanceof Error ? error.message : String(error),
-                        errorStack: error instanceof Error ? error.stack : undefined,
-                        optionId: opt.id
-                      });
+                      console.error('[ChatWindow] 处理选项点击时出错:', error);
                     }
-                  }}
-                  onMouseDown={(e) => {
-                    console.log('[ChatWindow] 🖱️ onMouseDown 事件:', {
-                      optionId: opt.id,
-                      button: e.button,
-                      timestamp: Date.now()
-                    });
-                  }}
-                  onMouseUp={(e) => {
-                    console.log('[ChatWindow] 🖱️ onMouseUp 事件:', {
-                      optionId: opt.id,
-                      button: e.button,
-                      timestamp: Date.now()
-                    });
-                  }}
-                  onTouchStart={(e) => {
-                    console.log('[ChatWindow] 📱 onTouchStart 事件:', {
-                      optionId: opt.id,
-                      touches: e.touches.length,
-                      timestamp: Date.now()
-                    });
-                  }}
-                  onTouchEnd={(e) => {
-                    console.log('[ChatWindow] 📱 onTouchEnd 事件:', {
-                      optionId: opt.id,
-                      touches: e.touches.length,
-                      timestamp: Date.now()
-                    });
                   }}
                   className="bg-indigo-600/80 backdrop-blur-md hover:bg-indigo-500 text-white px-6 py-3 rounded-xl shadow-lg border border-indigo-400/50 transition-all active:scale-95"
                   style={{
-                    // 添加内联样式作为 fallback，确保按钮可见
                     backgroundColor: isButtonDisabled ? 'rgba(79, 70, 229, 0.4)' : 'rgba(79, 70, 229, 0.8)',
                     color: '#ffffff',
                     padding: '12px 24px',
                     borderRadius: '12px',
                     border: '1px solid rgba(99, 102, 241, 0.5)',
                     cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-                    zIndex: 999, // 提高 z-index 确保按钮在最上层
+                    zIndex: 999,
                     position: 'relative',
                     minWidth: '120px',
                     fontSize: '16px',
@@ -742,7 +969,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     whiteSpace: 'nowrap',
                     opacity: isButtonDisabled ? 0.6 : 1,
                     pointerEvents: isButtonDisabled ? 'none' : 'auto',
-                    // 确保按钮可以接收点击事件
                     touchAction: 'manipulation',
                     WebkitTapHighlightColor: 'transparent'
                   }}
@@ -758,14 +984,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
   
   if (!character) {
-    console.warn('[ChatWindow] ⚠️ character 为空，组件不渲染');
     return null;
   }
-
-  console.log('[ChatWindow] ✅ character 存在，准备渲染组件:', {
-    characterId: character.id,
-    characterName: character.name
-  });
 
   const backgroundImage = isStoryMode && sceneImageUrl ? sceneImageUrl : character.backgroundUrl;
 
@@ -843,14 +1063,46 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%)' }}>
-          {history.length === 0 && isLoading && isStoryMode && (
+          {safeHistory.length === 0 && isLoading && isStoryMode && (
               <div className="h-full flex flex-col items-center justify-center space-y-4 animate-fade-in">
                   <div className="w-16 h-16 border-4 border-t-indigo-500 border-white/20 rounded-full animate-spin" />
                   <p className="text-indigo-300 font-bold text-lg animate-pulse">正在生成故事...</p>
               </div>
           )}
-          {history.map((msg, index) => (
-              <div key={`msg-${msg.id}-${index}`} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${isCinematic && msg.role === 'user' ? 'opacity-0 h-0 overflow-hidden' : ''}`}> 
+          {safeHistory.length === 0 && !isLoading && (
+            <div className="text-white/50 text-center py-4">
+              <p>暂无消息</p>
+              <p className="text-xs mt-2 opacity-50">history类型: {typeof history}, 是否为数组: {Array.isArray(history) ? '是' : '否'}, 长度: {safeHistory.length}</p>
+            </div>
+          )}
+          {safeHistory.map((msg, index) => {
+            if (!msg || !msg.text) {
+              console.warn('[ChatWindow] 无效的消息:', msg);
+              return null;
+            }
+            
+            const isUserMsg = msg.role === 'user';
+            const willBeHidden = isCinematic && isUserMsg;
+            
+            // 只在开发时输出详细日志（避免日志过多）
+            if (index < 3 || safeHistory.length - index <= 2 || isUserMsg) {
+              console.log(`[ChatWindow] 渲染消息 ${index}/${safeHistory.length - 1}:`, {
+                id: msg.id,
+                role: msg.role,
+                textPreview: msg.text.substring(0, 50),
+                isUser: isUserMsg,
+                isCinematic: isCinematic,
+                willBeHidden: willBeHidden,
+                fullHistory: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+              });
+            }
+            
+            return (
+              <div 
+                key={`msg-${msg.id}-${index}`} 
+                className={`flex w-full ${isUserMsg ? 'justify-end' : 'justify-start'}`}
+                style={willBeHidden ? { opacity: 0, height: 0, overflow: 'hidden' } : {}}
+              > 
                 <div 
                   className={`
                     max-w-[85%] sm:max-w-[70%] rounded-2xl overflow-hidden backdrop-blur-md shadow-lg text-sm sm:text-base leading-relaxed 
@@ -885,42 +1137,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   )}
                 </div>
               </div>
-          ))}
-          {isLoading && history.length > 0 && (<div className="flex justify-start w-full"><div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /></div></div>)}
+            );
+          })}
+          {isLoading && safeHistory.length > 0 && (<div className="flex justify-start w-full"><div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /></div></div>)}
           <div ref={messagesEndRef} />
         </div>
 
         <div 
           className="px-4 sm:px-8 mt-2 max-w-4xl mx-auto w-full pb-6 min-h-[80px]"
           style={{ 
-            zIndex: 1000, // 提高 z-index
+            zIndex: 1000,
             position: 'relative',
             pointerEvents: 'auto'
           }}
         >
-            {(() => {
-              console.log('[ChatWindow] 🔍 检查渲染模式:', {
-                isScenarioMode,
-                hasCustomScenario: !!customScenario,
-                customScenarioId: customScenario?.id,
-                willRenderChoices: isScenarioMode
-              });
-              
-              if (isScenarioMode) {
-                console.log('[ChatWindow] 🎯 isScenarioMode 为 true，准备调用 renderChoices');
-                const choices = renderChoices();
-                console.log('[ChatWindow] 🎯 renderChoices 返回:', {
-                  hasContent: !!choices,
-                  isNull: choices === null,
-                  isUndefined: choices === undefined,
-                  type: typeof choices
-                });
-                return choices;
-              } else {
-                console.log('[ChatWindow] 📝 isScenarioMode 为 false，渲染输入框');
-                return null;
-              }
-            })()}
+            {isScenarioMode ? renderChoices() : null}
             
             {!isScenarioMode && !isCinematic && (
                 <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">

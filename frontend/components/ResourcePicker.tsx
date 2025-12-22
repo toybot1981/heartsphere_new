@@ -31,8 +31,8 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
       try {
         // 根据 useAdminApi 决定使用哪个 API
         const data = useAdminApi 
-          ? await adminApi.resources.getAll(category, token)
-          : await resourceApi.getAll(category, token);
+          ? await adminApi.resources.getAll(token, category)
+          : await resourceApi.getAll(token, category);
         setResources(data);
       } catch (err) {
         console.error('加载资源失败:', err);

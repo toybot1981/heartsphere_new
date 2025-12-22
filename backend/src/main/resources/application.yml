@@ -7,6 +7,15 @@ spring:
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # Spring AI Alibaba DashScope配置（使用OpenAPI兼容模式）
+  ai:
+    dashscope:
+      api-key: sk-a486b81e29484fcea112b2c010b7bd95
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      chat:
+        options:
+          model: qwen-max
+          temperature: 0.7
   jpa:
     hibernate:
       ddl-auto: update
@@ -57,6 +66,24 @@ wechat:
   app-secret: ${WECHAT_APP_SECRET:your-wechat-app-secret}
   redirect-uri: ${WECHAT_REDIRECT_URI:http://localhost:8081/api/wechat/callback}
 
+# SpringDoc OpenAPI 配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    doc-expansion: none
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  show-actuator: false
+
 # 图片存储配置
 app:
   image:
@@ -88,6 +115,15 @@ logging:
     org.springframework.web: DEBUG
     # SQL语句和参数日志
     org.hibernate.engine.internal: DEBUG
+    # AI服务日志
+    com.heartsphere.aiagent: DEBUG
+    # Spring AI日志
+    org.springframework.ai: INFO
+    com.alibaba.cloud.ai: INFO
+    # Netty DNS日志（用于调试DNS问题）
+    io.netty.resolver.dns: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+

@@ -47,7 +47,7 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
   };
   
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 pb-24 bg-slate-950 overflow-hidden">
+    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 pb-32 bg-slate-950 overflow-hidden">
       {/* Background Effect */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
@@ -154,7 +154,7 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-fade-in">
+      <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-fade-in mb-32">
         <div className="space-y-2">
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
             HEARTSPHERE
@@ -189,8 +189,8 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
                       </div>
                     )}
                     {/* 提示文字 */}
-                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      <span className="text-xs text-slate-400">个人资料</span>
+                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                      <span className="text-xs text-slate-400 bg-slate-900/90 px-2 py-1 rounded">个人资料</span>
                     </div>
                   </button>
                   <p className="text-xl text-white font-medium">欢迎，{nickname || '访客'}</p>
@@ -221,8 +221,8 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
                       </div>
                     )}
                     {/* 提示文字 */}
-                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      <span className="text-xs text-slate-400">个人资料</span>
+                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                      <span className="text-xs text-slate-400 bg-slate-900/90 px-2 py-1 rounded">个人资料</span>
                     </div>
                   </button>
                   <p className="text-xl text-white font-medium">欢迎回来，{nickname}</p>
@@ -337,8 +337,8 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
         <Footer />
       </div>
       
-      {/* Footer Decoration */}
-      <div className="absolute bottom-20 text-[10px] text-white/30 tracking-widest font-mono">
+      {/* Footer Decoration - 调整位置避免与Footer重叠 */}
+      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-[10px] text-white/30 tracking-widest font-mono z-10">
         SYSTEM VERSION 2.5.0 // CONNECTED // 已连接
       </div>
     </div>

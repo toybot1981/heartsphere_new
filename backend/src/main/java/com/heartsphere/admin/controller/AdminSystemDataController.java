@@ -35,8 +35,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*")
-@RestController
+// @RestController  // 已禁用，功能已拆分到新的Controller中
 @RequestMapping("/api/admin/system")
+@Deprecated
+/**
+ * @deprecated 此Controller已被拆分为多个独立的Controller，请使用新的Controller：
+ * - AdminWorldController (/api/admin/system/worlds)
+ * - AdminEraController (/api/admin/system/eras)
+ * - AdminCharacterController (/api/admin/system/characters)
+ * - AdminMainStoryController (/api/admin/system/main-stories)
+ * - AdminScriptController (/api/admin/system/system-scripts)
+ * - AdminResourceController (/api/admin/system/resources)
+ * - AdminResourceMatchingController (/api/admin/system/resources)
+ * - AdminSystemConfigController (/api/admin/system/config)
+ * - AdminInviteCodeController (/api/admin/system/invite-codes)
+ * - AdminSubscriptionPlanController (/api/admin/system/subscription-plans)
+ * 
+ * 此类将在未来版本中移除。
+ */
 public class AdminSystemDataController {
 
     @Autowired
@@ -919,30 +935,6 @@ public class AdminSystemDataController {
         response.put("notifyUrl", systemConfigService.getAlipayNotifyUrl() != null ? systemConfigService.getAlipayNotifyUrl() : "");
         response.put("returnUrl", systemConfigService.getAlipayReturnUrl() != null ? systemConfigService.getAlipayReturnUrl() : "");
         response.put("gatewayUrl", systemConfigService.getAlipayGatewayUrl());
-        return ResponseEntity.ok(response);
-    }
-
-    // ========== Guide Config Link API ==========
-    @GetMapping("/config/guide-link")
-    public ResponseEntity<Map<String, Object>> getGuideConfigLink(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        validateAdmin(authHeader);
-        Map<String, Object> config = new HashMap<>();
-        config.put("link", systemConfigService.getGuideConfigLink() != null ? systemConfigService.getGuideConfigLink() : "");
-        return ResponseEntity.ok(config);
-    }
-
-    @PutMapping("/config/guide-link")
-    public ResponseEntity<Map<String, Object>> setGuideConfigLink(
-            @RequestBody Map<String, String> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        validateAdmin(authHeader);
-        String link = request.get("link");
-        if (link != null) {
-            systemConfigService.setGuideConfigLink(link);
-        }
-        Map<String, Object> response = new HashMap<>();
-        response.put("link", systemConfigService.getGuideConfigLink() != null ? systemConfigService.getGuideConfigLink() : "");
         return ResponseEntity.ok(response);
     }
 }

@@ -6,3 +6,6 @@ ADD COLUMN `character_ids` TEXT NULL COMMENT '关联的角色ID列表（JSON数�
 ADD COLUMN `tags` VARCHAR(200) NULL COMMENT '标签（逗号分隔）' AFTER `character_ids`;
 
 
+
+
+

@@ -118,7 +118,7 @@ public class SystemConfigService {
     }
 
     // ========== 注册相关配置 ==========
-    
+
     /**
      * 获取邀请码是否必需
      */
@@ -150,7 +150,7 @@ public class SystemConfigService {
     }
 
     // ========== 微信OAuth配置 ==========
-    
+
     /**
      * 获取微信AppID
      */
@@ -197,7 +197,7 @@ public class SystemConfigService {
     }
 
     // ========== 邮件配置 ==========
-    
+
     /**
      * 获取邮件服务器地址
      */
@@ -274,7 +274,7 @@ public class SystemConfigService {
     }
 
     // ========== Notion配置 ==========
-    
+
     /**
      * 获取 Notion Client ID
      */

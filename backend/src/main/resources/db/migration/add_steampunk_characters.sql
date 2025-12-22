@@ -28,3 +28,6 @@ INSERT INTO `system_characters` (`name`, `description`, `bio`, `avatar_url`, `ba
 SELECT id, name, role, system_era_id FROM system_characters WHERE system_era_id = (SELECT id FROM system_eras WHERE name = '蒸汽朋克' LIMIT 1) ORDER BY sort_order;
 
 
+
+
+

@@ -211,10 +211,83 @@ export const useNavigationHandlers = () => {
   /**
    * 更新对话历史
    */
-  const handleUpdateHistory = useCallback((msgs: Message[]) => {
-    if (!gameState.selectedCharacterId) return;
+  const handleUpdateHistory = useCallback((msgs: Message[] | ((prev: Message[]) => Message[])) => {
+    if (!gameState.selectedCharacterId) {
+      console.warn('[handleUpdateHistory] selectedCharacterId为空，无法更新history');
+      return;
+    }
+    
+    const characterId = gameState.selectedCharacterId;
+    
+    // 如果msgs是函数，需要先调用它获取实际的数组
+    let messagesToSave: Message[];
+    if (typeof msgs === 'function') {
+      // 获取当前的历史记录（使用最新的state，避免闭包问题）
+      const currentHistory = gameState.history[characterId] || [];
+      console.log('[handleUpdateHistory] 函数式更新 - 当前history:', {
+        characterId,
+        currentHistoryLength: currentHistory.length,
+        currentHistory: currentHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+      });
+      
+      messagesToSave = msgs(currentHistory);
+      
+      // 再次检查，确保结果是数组且不包含函数
+      if (typeof messagesToSave === 'function' || !Array.isArray(messagesToSave)) {
+        console.error('[handleUpdateHistory] 函数式更新返回了无效值:', messagesToSave);
+        messagesToSave = [];
+      }
+      
+      console.log('[handleUpdateHistory] 函数式更新 - 新history:', {
+        characterId,
+        newHistoryLength: messagesToSave.length,
+        newHistory: messagesToSave.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+      });
+    } else {
+      messagesToSave = msgs;
+      
+      // 验证数组，确保不包含函数
+      if (!Array.isArray(messagesToSave)) {
+        console.error('[handleUpdateHistory] msgs不是数组:', messagesToSave);
+        messagesToSave = [];
+      }
+      
+      console.log('[handleUpdateHistory] 直接更新 - 新history:', {
+        characterId,
+        newHistoryLength: messagesToSave.length,
+        newHistory: messagesToSave.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+      });
+    }
+    
+    // 清理消息数组，移除任何函数或无效项
+    const cleanedMessages = messagesToSave.filter(msg => {
+      if (typeof msg === 'function') {
+        console.warn('[handleUpdateHistory] 消息数组中包含函数，已移除');
+        return false;
+      }
+      if (!msg || typeof msg !== 'object' || !msg.id || !msg.role || !msg.text) {
+        console.warn('[handleUpdateHistory] 无效的消息，已移除:', msg);
+        return false;
+      }
+      return true;
+    }) as Message[];
+    
+    console.log('[handleUpdateHistory] 清理后的消息:', {
+      characterId,
+      cleanedLength: cleanedMessages.length,
+      cleanedMessages: cleanedMessages.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
+    });
+    
     // 更新对话历史
-    dispatch({ type: 'SET_HISTORY', payload: { ...gameState.history, [gameState.selectedCharacterId!]: msgs } });
+    const newHistory = { ...gameState.history, [characterId]: cleanedMessages };
+    console.log('[handleUpdateHistory] 最终保存的history:', {
+      characterId,
+      allCharacterIds: Object.keys(newHistory),
+      messagesForCharacter: newHistory[characterId]?.length || 0,
+      allMessages: newHistory[characterId]?.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) })) || []
+    });
+    
+    dispatch({ type: 'SET_HISTORY', payload: newHistory });
   }, [gameState.selectedCharacterId, gameState.history, dispatch]);
 
   /**

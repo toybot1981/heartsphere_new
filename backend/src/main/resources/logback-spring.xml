@@ -55,6 +55,13 @@
     <!-- 应用日志 -->
     <logger name="com.heartsphere" level="DEBUG"/>
     
+    <!-- AI服务日志（更详细的日志） -->
+    <logger name="com.heartsphere.aiagent" level="DEBUG"/>
+    
+    <!-- Spring AI日志 -->
+    <logger name="org.springframework.ai" level="INFO"/>
+    <logger name="com.alibaba.cloud.ai" level="INFO"/>
+    
     <!-- Spring Data JPA -->
     <logger name="org.springframework.data.jpa" level="DEBUG"/>
     

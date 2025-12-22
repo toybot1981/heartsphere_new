@@ -31,7 +31,7 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
   }));
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-black/95 via-purple-900/80 to-black/95 flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[99999] bg-gradient-to-b from-black/95 via-purple-900/80 to-black/95 flex items-center justify-center overflow-hidden">
       {/* 粒子背景 */}
       {showParticles && particles.map((particle) => (
         <div

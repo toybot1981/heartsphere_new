@@ -174,7 +174,7 @@ public class ScriptController {
         Script script = new Script();
         script.setWorld(world);
         script.setUser(user);
-        script.setEra(era);
+            script.setEra(era);
         
         // 如果提供了系统预置剧本ID，从预置数据库获取完整数据
         if (systemScript != null) {

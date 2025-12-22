@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -27,8 +26,4 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Stri
     @Query("SELECT j FROM JournalEntry j WHERE j.user.id = :userId AND " +
            "LOWER(j.tags) LIKE LOWER(CONCAT('%', :tag, '%'))")
     List<JournalEntry> findByTag(@Param("userId") Long userId, @Param("tag") String tag);
-    
-    // 统计指定日期范围内创建的日记数
-    @Query("SELECT COUNT(j) FROM JournalEntry j WHERE j.createdAt >= :startDate AND j.createdAt < :endDate")
-    Long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

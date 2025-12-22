@@ -84,3 +84,6 @@ export const useMailCheck = ({ isLoaded, showInitializationWizard }: UseMailChec
   }, [isLoaded, gameState.userProfile, gameState.lastLoginTime, gameState.history, gameState.customScenes, gameState.customCharacters, currentScenes, dispatch, showInitializationWizard]);
 };
 
+
+
+

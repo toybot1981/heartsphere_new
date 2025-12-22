@@ -257,8 +257,10 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
             {(() => {
               const localScenarios = gameState.customScenarios.filter(s => s.sceneId === currentScene.id);
               const localScenarioIds = new Set(localScenarios.map(s => String(s.id)));
-              const serverScripts = (currentScene.scripts || []).filter(script => {
-                return !localScenarioIds.has(String(script.id));
+              // 确保 scripts 存在，避免 undefined 错误
+              const sceneScripts = Array.isArray(currentScene.scripts) ? currentScene.scripts : [];
+              const serverScripts = sceneScripts.filter(script => {
+                return script && script.id && !localScenarioIds.has(String(script.id));
               });
 
               const allItems: Array<{ type: 'local' | 'server', data: any }> = [
@@ -348,7 +350,7 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
               return mappedItems.filter((item): item is React.ReactElement => item !== null);
             })()}
             {/* 如果没有剧本，显示提示 */}
-            {(!currentScene.scripts || currentScene.scripts.length === 0) &&
+            {(!Array.isArray(currentScene.scripts) || currentScene.scripts.length === 0) &&
              gameState.customScenarios.filter(s => s.sceneId === currentScene.id).length === 0 && (
               <div className="col-span-full text-center py-12 text-gray-500">
                 <p className="text-sm">暂无剧本，点击上方按钮创建第一个剧本</p>

@@ -5,12 +5,14 @@ export { DashboardView } from './DashboardView';
 export { ErasManagement } from './ErasManagement';
 export { MainStoriesManagement } from './MainStoriesManagement';
 export { ScenarioNodeFlow } from './ScenarioNodeFlow';
+export { UsersManagement } from './UsersManagement';
+export { CharactersManagement } from './CharactersManagement';
+export { ScenariosManagement } from './ScenariosManagement';
 export { InviteCodesManagement } from './InviteCodesManagement';
+export { ResourcesManagement } from './ResourcesManagement';
 export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
 export { EmailConfigManagement } from './EmailConfigManagement';
-export { CharactersManagement } from './CharactersManagement';
-export { ResourcesManagement } from './ResourcesManagement';
-export { ScenariosManagement } from './ScenariosManagement';
-export { UsersManagement } from './UsersManagement';
+export { SettingsManagement } from './SettingsManagement';
+export { PlaceholderManagement } from './PlaceholderManagement';
 
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspens
 import { WORLD_SCENES, APP_TITLE } from './constants';
 import { ChatWindow } from './components/ChatWindow';
 import { ScenarioBuilder } from './components/ScenarioBuilder';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { UserScriptEditor } from './components/UserScriptEditor';
 import { SettingsModal } from './components/SettingsModal';
 import { CharacterCard } from './components/CharacterCard';
@@ -619,7 +620,7 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      {gameState.currentScreen === 'entryPoint' && (() => {
+      {gameState.currentScreen === 'entryPoint' && !gameState.showWelcomeOverlay && (() => {
         // 在 entryPoint 渲染时，如果初始化向导不应该显示，立即清理
         if (showInitializationWizard && (!initializationData || !initializationWizardProcessedRef.current)) {
           setShowInitializationWizard(false);
@@ -838,26 +839,31 @@ const AppContent: React.FC = () => {
       )}
 
       {gameState.currentScreen === 'chat' && currentCharacterLocal && (
-        <ChatWindow 
-          character={currentCharacterLocal} 
-          customScenario={currentScenarioLocal || undefined}
-          history={gameState.history[currentCharacterLocal.id] || []}
-          scenarioState={gameState.currentScenarioState}
-          settings={gameState.settings}
-          userProfile={gameState.userProfile!}
-          activeJournalEntryId={gameState.activeJournalEntryId}
-          onUpdateHistory={handleUpdateHistory}
-          onUpdateScenarioState={(nodeId) => {
-            const newScenarioState = gameState.currentScenarioState 
-              ? { ...gameState.currentScenarioState, currentNodeId: nodeId }
-              : { scenarioId: gameState.selectedScenarioId || '', currentNodeId: nodeId };
-            dispatch({ type: 'SET_CURRENT_SCENARIO_STATE', payload: newScenarioState });
+        <ErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('[App] ChatWindow错误:', error, errorInfo);
           }}
-          onBack={handleChatBack}
-          participatingCharacters={(() => {
-            // 获取参与剧本的角色列表
-            if (currentScenarioLocal && currentScenarioLocal.participatingCharacters) {
-              // 登录用户只使用 userWorldScenes，不包含 WORLD_SCENES（体验场景）
+        >
+          <ChatWindow 
+            character={currentCharacterLocal} 
+            customScenario={currentScenarioLocal || undefined}
+            history={gameState.history[currentCharacterLocal.id] || []}
+            scenarioState={gameState.currentScenarioState}
+            settings={gameState.settings}
+            userProfile={gameState.userProfile!}
+            activeJournalEntryId={gameState.activeJournalEntryId}
+            onUpdateHistory={handleUpdateHistory}
+            onUpdateScenarioState={(nodeId) => {
+              const newScenarioState = gameState.currentScenarioState 
+                ? { ...gameState.currentScenarioState, currentNodeId: nodeId }
+                : { scenarioId: gameState.selectedScenarioId || '', currentNodeId: nodeId };
+              dispatch({ type: 'SET_CURRENT_SCENARIO_STATE', payload: newScenarioState });
+            }}
+            onBack={handleChatBack}
+            participatingCharacters={(() => {
+              // 获取参与剧本的角色列表
+              if (currentScenarioLocal && currentScenarioLocal.participatingCharacters) {
+                // 登录用户只使用 userWorldScenes，不包含 WORLD_SCENES（体验场景）
       const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
         ? [...gameState.userWorldScenes, ...gameState.customScenes]
         : [...WORLD_SCENES, ...gameState.customScenes];
@@ -872,6 +878,7 @@ const AppContent: React.FC = () => {
             return undefined;
           })()}
         />
+        </ErrorBoundary>
       )}
 
       {gameState.currentScreen === 'builder' && (

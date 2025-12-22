@@ -670,14 +670,14 @@ export const adminApi = {
       });
     },
     getAlipayConfig: (token: string) => {
-      return request<{ appId: string; privateKey: string; publicKey: string; gatewayUrl: string; notifyUrl: string; returnUrl: string }>('/admin/system/config/alipay', {
+      return request<{ appId: string; privateKey: string; publicKey: string; notifyUrl: string; returnUrl: string; gatewayUrl: string }>('/admin/system/config/alipay', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
     },
-    setAlipayConfig: (config: { appId?: string; privateKey?: string; publicKey?: string; gatewayUrl?: string; notifyUrl?: string; returnUrl?: string }, token: string) => {
-      return request<{ appId: string; privateKey: string; publicKey: string; gatewayUrl: string; notifyUrl: string; returnUrl: string }>('/admin/system/config/alipay', {
+    setAlipayConfig: (config: { appId?: string; privateKey?: string; publicKey?: string; notifyUrl?: string; returnUrl?: string; gatewayUrl?: string }, token: string) => {
+      return request<{ appId: string; privateKey: string; publicKey: string; notifyUrl: string; returnUrl: string; gatewayUrl: string }>('/admin/system/config/alipay', {
         method: 'PUT',
         body: JSON.stringify(config),
         headers: {
@@ -686,28 +686,301 @@ export const adminApi = {
         },
       });
     },
-    getGuideConfigLink: (token: string) => {
-      return request<{ link: string }>('/admin/system/config/guide-link', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  },
+
+  // AI配置管理（统一接入模式）
+  aiConfig: {
+    // 模型配置管理
+    models: {
+      getAll: (token: string) => {
+        return request<Array<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          apiKey: string;
+          baseUrl?: string;
+          modelParams?: string;
+          isDefault: boolean;
+          priority: number;
+          costPerToken?: number;
+          isActive: boolean;
+          description?: string;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/admin/system/ai-config/models', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      getByCapability: (capability: string, token: string) => {
+        return request<Array<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          apiKey: string;
+          baseUrl?: string;
+          modelParams?: string;
+          isDefault: boolean;
+          priority: number;
+          costPerToken?: number;
+          isActive: boolean;
+          description?: string;
+        }>>(`/admin/system/ai-config/models/${capability}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      getByProviderAndCapability: (capability: string, provider: string, token: string) => {
+        return request<Array<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          apiKey: string;
+          baseUrl?: string;
+          modelParams?: string;
+          isDefault: boolean;
+          priority: number;
+          costPerToken?: number;
+          isActive: boolean;
+          description?: string;
+        }>>(`/admin/system/ai-config/models/${capability}/${provider}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      create: (data: {
+        provider: string;
+        modelName: string;
+        capability: string;
+        apiKey: string;
+        baseUrl?: string;
+        modelParams?: string;
+        isDefault?: boolean;
+        priority?: number;
+        costPerToken?: number;
+        isActive?: boolean;
+        description?: string;
+      }, token: string) => {
+        return request<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          apiKey: string;
+          baseUrl?: string;
+          modelParams?: string;
+          isDefault: boolean;
+          priority: number;
+          costPerToken?: number;
+          isActive: boolean;
+          description?: string;
+        }>('/admin/system/ai-config/models', {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      },
+      update: (id: number, data: {
+        provider?: string;
+        modelName?: string;
+        capability?: string;
+        apiKey?: string;
+        baseUrl?: string;
+        modelParams?: string;
+        isDefault?: boolean;
+        priority?: number;
+        costPerToken?: number;
+        isActive?: boolean;
+        description?: string;
+      }, token: string) => {
+        return request<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          apiKey: string;
+          baseUrl?: string;
+          modelParams?: string;
+          isDefault: boolean;
+          priority: number;
+          costPerToken?: number;
+          isActive: boolean;
+          description?: string;
+        }>(`/admin/system/ai-config/models/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      },
+      delete: (id: number, token: string) => {
+        return request<void>(`/admin/system/ai-config/models/${id}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      setDefault: (id: number, token: string) => {
+        return request<{
+          id: number;
+          provider: string;
+          modelName: string;
+          capability: string;
+          isDefault: boolean;
+        }>(`/admin/system/ai-config/models/${id}/set-default`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
     },
-    setGuideConfigLink: (link: string, token: string) => {
-      return request<{ link: string }>('/admin/system/config/guide-link', {
-        method: 'PUT',
-        body: JSON.stringify({ link }),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    // 路由策略管理
+    routingStrategies: {
+      getAll: (token: string) => {
+        return request<Array<{
+          id: number;
+          capability: string;
+          strategyType: 'single' | 'fallback' | 'economy';
+          config: any;
+          isActive: boolean;
+          description?: string;
+          defaultProvider?: string;
+          defaultModel?: string;
+          fallbackChain?: Array<{
+            provider: string;
+            model: string;
+            priority: number;
+          }>;
+          economyConfig?: {
+            enabled: boolean;
+            preferredProvider?: string;
+            maxCostPerToken?: number;
+          };
+        }>>('/admin/system/ai-config/routing-strategies', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      getByCapability: (capability: string, token: string) => {
+        return request<{
+          id: number;
+          capability: string;
+          strategyType: 'single' | 'fallback' | 'economy';
+          config: any;
+          isActive: boolean;
+          description?: string;
+          defaultProvider?: string;
+          defaultModel?: string;
+          fallbackChain?: Array<{
+            provider: string;
+            model: string;
+            priority: number;
+          }>;
+          economyConfig?: {
+            enabled: boolean;
+            preferredProvider?: string;
+            maxCostPerToken?: number;
+          };
+        }>(`/admin/system/ai-config/routing-strategies/${capability}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
+      save: (data: {
+        capability: string;
+        strategyType: 'single' | 'fallback' | 'economy';
+        isActive?: boolean;
+        description?: string;
+        defaultProvider?: string;
+        defaultModel?: string;
+        fallbackChain?: Array<{
+          provider: string;
+          model: string;
+          priority: number;
+        }>;
+        economyConfig?: {
+          enabled: boolean;
+          preferredProvider?: string;
+          maxCostPerToken?: number;
+        };
+      }, token: string) => {
+        return request<{
+          id: number;
+          capability: string;
+          strategyType: 'single' | 'fallback' | 'economy';
+          config: any;
+          isActive: boolean;
+        }>('/admin/system/ai-config/routing-strategies', {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      },
+      update: (id: number, data: {
+        capability?: string;
+        strategyType?: 'single' | 'fallback' | 'economy';
+        isActive?: boolean;
+        description?: string;
+        defaultProvider?: string;
+        defaultModel?: string;
+        fallbackChain?: Array<{
+          provider: string;
+          model: string;
+          priority: number;
+        }>;
+        economyConfig?: {
+          enabled: boolean;
+          preferredProvider?: string;
+          maxCostPerToken?: number;
+        };
+      }, token: string) => {
+        return request<{
+          id: number;
+          capability: string;
+          strategyType: 'single' | 'fallback' | 'economy';
+          config: any;
+          isActive: boolean;
+        }>(`/admin/system/ai-config/routing-strategies/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      },
+      delete: (id: number, token: string) => {
+        return request<void>(`/admin/system/ai-config/routing-strategies/${id}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      },
     },
   },
 
   // 系统资源管理
   resources: {
-    getAll: (category?: string, token: string) => {
+    getAll: (token: string, category?: string) => {
       const url = category ? `/admin/system/resources?category=${category}` : '/admin/system/resources';
       return request<Array<{
         id: number;
@@ -818,11 +1091,15 @@ export const adminApi = {
       return request<Array<{
         id: number;
         title: string;
+        description?: string;
         content: string;
         sceneCount: number;
-        worldId: number;
-        eraId: number;
-        userId: number;
+        systemEraId: number | null;
+        eraName?: string;
+        characterIds?: string;
+        tags?: string;
+        isActive: boolean;
+        sortOrder: number;
         createdAt: string;
         updatedAt: string;
       }>>('/admin/system/scripts', {
@@ -835,11 +1112,15 @@ export const adminApi = {
       return request<{
         id: number;
         title: string;
+        description?: string;
         content: string;
         sceneCount: number;
-        worldId: number;
-        eraId: number;
-        userId: number;
+        systemEraId: number | null;
+        eraName?: string;
+        characterIds?: string;
+        tags?: string;
+        isActive: boolean;
+        sortOrder: number;
         createdAt: string;
         updatedAt: string;
       }>(`/admin/system/scripts/${id}`, {
@@ -850,20 +1131,27 @@ export const adminApi = {
     },
     create: (data: {
       title: string;
+      description?: string;
       content: string;
       sceneCount?: number;
-      worldId: number;
-      eraId?: number;
-      userId: number;
+      systemEraId?: number | null;
+      characterIds?: string | null;
+      tags?: string | null;
+      isActive?: boolean;
+      sortOrder?: number;
     }, token: string) => {
       return request<{
         id: number;
         title: string;
+        description?: string;
         content: string;
         sceneCount: number;
-        worldId: number;
-        eraId: number;
-        userId: number;
+        systemEraId: number | null;
+        eraName?: string;
+        characterIds?: string;
+        tags?: string;
+        isActive: boolean;
+        sortOrder: number;
         createdAt: string;
         updatedAt: string;
       }>('/admin/system/scripts', {
@@ -877,19 +1165,27 @@ export const adminApi = {
     },
     update: (id: number, data: {
       title: string;
+      description?: string;
       content: string;
       sceneCount?: number;
-      worldId: number;
-      eraId?: number;
+      systemEraId?: number | null;
+      characterIds?: string | null;
+      tags?: string | null;
+      isActive?: boolean;
+      sortOrder?: number;
     }, token: string) => {
       return request<{
         id: number;
         title: string;
+        description?: string;
         content: string;
         sceneCount: number;
-        worldId: number;
-        eraId: number;
-        userId: number;
+        systemEraId: number | null;
+        eraName?: string;
+        characterIds?: string;
+        tags?: string;
+        isActive: boolean;
+        sortOrder: number;
         createdAt: string;
         updatedAt: string;
       }>(`/admin/system/scripts/${id}`, {
@@ -1079,12 +1375,10 @@ export const adminApi = {
 
   // 用户管理
   users: {
-    getAll: (page: number = 0, size: number = 20, search?: string, token: string) => {
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('size', size.toString());
+    getAll: (token: string, page: number = 0, size: number = 20, search?: string) => {
+      let url = `/admin/users?page=${page}&size=${size}`;
       if (search) {
-        params.append('search', search);
+        url += `&search=${encodeURIComponent(search)}`;
       }
       return request<{
         users: Array<{
@@ -1093,6 +1387,7 @@ export const adminApi = {
           email: string;
           nickname: string | null;
           avatar: string | null;
+          wechatOpenid: string | null;
           isEnabled: boolean;
           createdAt: string;
           updatedAt: string;
@@ -1101,7 +1396,7 @@ export const adminApi = {
         totalPages: number;
         currentPage: number;
         pageSize: number;
-      }>(`/admin/users?${params.toString()}`, {
+      }>(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -1114,6 +1409,7 @@ export const adminApi = {
         email: string;
         nickname: string | null;
         avatar: string | null;
+        wechatOpenid: string | null;
         isEnabled: boolean;
         createdAt: string;
         updatedAt: string;
@@ -1130,12 +1426,33 @@ export const adminApi = {
         email: string;
         nickname: string | null;
         avatar: string | null;
+        wechatOpenid: string | null;
         isEnabled: boolean;
         createdAt: string;
         updatedAt: string;
-      }>(`/admin/users/${id}/toggle-enabled`, {
+      }>(`/admin/users/${id}/status`, {
         method: 'PUT',
         body: JSON.stringify({ isEnabled }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    },
+    update: (id: number, data: { nickname?: string; avatar?: string }, token: string) => {
+      return request<{
+        id: number;
+        username: string;
+        email: string;
+        nickname: string | null;
+        avatar: string | null;
+        wechatOpenid: string | null;
+        isEnabled: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>(`/admin/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1151,62 +1468,6 @@ export const adminApi = {
       });
     },
   },
-
-  // 统计数据
-  statistics: {
-    getOverview: (token: string) => {
-      return request<{
-        totalUsers: number;
-        enabledUsers: number;
-        totalJournals: number;
-        totalCharacters: number;
-        totalEras: number;
-      }>('/admin/statistics/overview', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    },
-    getDaily: (startDate?: string, endDate?: string, days: number = 7, token: string) => {
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      params.append('days', days.toString());
-      return request<{
-        startDate: string;
-        endDate: string;
-        dailyStats: Array<{
-          date: string;
-          newUsers: number;
-          newJournals: number;
-          newCharacters: number;
-          newEras: number;
-        }>;
-      }>(`/admin/statistics/daily?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    },
-    getTrends: (weeks: number = 7, token: string) => {
-      return request<{
-        weeks: number;
-        weeklyStats: Array<{
-          weekStart: string;
-          weekEnd: string;
-          weekLabel: string;
-          newUsers: number;
-          newJournals: number;
-          newCharacters: number;
-          newEras: number;
-        }>;
-      }>(`/admin/statistics/trends?weeks=${weeks}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    },
-  },
 };
 
 // 通用请求函数
@@ -1215,20 +1476,6 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   const fullUrl = `${API_BASE_URL}${url}`;
   const method = options?.method?.toUpperCase() || 'GET';
-  
-  // 检查是否是 subscription-plans 的请求（用于静默处理404）
-  const isSubscriptionPlansRequest = url.includes('/subscription-plans');
-  
-  // 日志记录（对于 subscription-plans 的请求，静默处理）
-  if (!isSubscriptionPlansRequest) {
-    console.log(`=== [API Request] ${requestId} 开始 ===`);
-    console.log(`[${requestId}] 基本信息:`, {
-      url: fullUrl,
-      method: method,
-      hasBody: !!options?.body,
-      timestamp: new Date().toISOString()
-    });
-  }
   
   try {
     // 1. 确保请求体正确处理
@@ -1258,10 +1505,6 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
     
     // 3. 合并自定义headers
     if (options?.headers) {
-      if (!isSubscriptionPlansRequest) {
-        console.log(`[${requestId}] 原始自定义headers:`, options.headers);
-      }
-      
       if (options.headers instanceof Headers) {
         options.headers.forEach((value, key) => {
           const lowerKey = key.toLowerCase();
@@ -1280,12 +1523,7 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
       }
     }
     
-    // 4. 调试：显示最终的headers（对于 subscription-plans 的请求，静默处理）
-    if (!isSubscriptionPlansRequest) {
-      console.log(`[${requestId}] 最终headers:`, headers);
-      console.log(`[${requestId}] 请求体:`, requestBody);
-      console.log(`[${requestId}] 正在发送请求...`);
-    }
+    // 4. 发送请求
     const response = await fetch(fullUrl, {
       method,
       headers,
@@ -1299,14 +1537,7 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
       signal: options?.signal
     });
     
-    // 调试：显示响应状态（对于 subscription-plans 的 404 错误，静默处理）
-    if (!(isSubscriptionPlansRequest && response.status === 404)) {
-      console.log(`[${requestId}] 响应状态:`, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-    }
+    // 处理响应
 
     // 6. 处理响应
     if (!response.ok) {
@@ -1376,13 +1607,10 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
 
     // 检查响应是否有内容（204 No Content 等状态码没有响应体）
     const responseContentType = response.headers.get('content-type');
-    const contentLength = response.headers.get('content-length');
     
     // 如果是 204 No Content，直接返回（不尝试读取响应体）
     if (response.status === 204) {
-      console.log(`[${requestId}] 请求成功，无响应体 (204 No Content)`);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
-      return undefined;
+      return undefined as T;
     }
 
     // 尝试读取响应体
@@ -1390,40 +1618,28 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
     
     // 如果响应体为空，直接返回
     if (!text || text.trim() === '') {
-      console.log(`[${requestId}] 请求成功，响应体为空`);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
-      return undefined;
+      return undefined as T;
     }
 
     // 检查内容类型是否为 JSON，或者尝试解析为 JSON
     if (responseContentType && responseContentType.includes('application/json')) {
       try {
         const data = JSON.parse(text);
-        console.log(`[${requestId}] 请求成功，响应数据:`, data);
         
         // 如果响应是 ApiResponse 格式（包含 code, message, data），提取 data 部分
         if (data && typeof data === 'object' && 'data' in data && 'code' in data) {
-          console.log(`[${requestId}] 检测到 ApiResponse 格式，提取 data 字段`);
-          console.log(`[${requestId}] ApiResponse code:`, data.code, 'message:', data.message);
-          console.log(`[${requestId}] ApiResponse data:`, data.data);
-          console.log(`=== [API Request] ${requestId} 完成 ===`);
-          return data.data;
+          return data.data as T;
         }
         
-        console.log(`=== [API Request] ${requestId} 完成 ===`);
-        return data;
+        return data as T;
       } catch (e) {
         // JSON 解析失败，返回文本
         console.warn(`[${requestId}] JSON 解析失败，返回文本:`, e);
-        console.log(`[${requestId}] 请求成功，响应文本:`, text);
-        console.log(`=== [API Request] ${requestId} 完成 ===`);
-        return text;
+        return text as T;
       }
     } else {
       // 非 JSON 响应，返回文本
-      console.log(`[${requestId}] 请求成功，响应文本:`, text);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
-      return text;
+      return text as T;
     }
   } catch (error: any) {
     // 对于 subscription-plans 的 404 错误，静默处理（不输出错误日志）
@@ -1543,116 +1759,7 @@ export const authApi = {
       email: string;
       nickname: string;
       avatar: string;
-      wechatOpenid?: string;
     }>('/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-};
-
-// 用户资料API
-export const userProfileApi = {
-  // 获取用户资料
-  getProfile: (token: string) => {
-    return request<{
-      id: number;
-      username: string;
-      email: string;
-      nickname: string;
-      avatar: string;
-      wechatOpenid?: string;
-      isEnabled: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>('/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  },
-
-  // 更新用户资料（昵称和/或头像）
-  updateProfile: (token: string, data: { nickname?: string; avatar?: string }) => {
-    return request<{
-      id: number;
-      username: string;
-      email: string;
-      nickname: string;
-      avatar: string;
-      wechatOpenid?: string;
-      isEnabled: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>('/user/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-  },
-
-  // 更新昵称
-  updateNickname: (token: string, nickname: string) => {
-    return request<{
-      id: number;
-      username: string;
-      email: string;
-      nickname: string;
-      avatar: string;
-      wechatOpenid?: string;
-      isEnabled: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>('/user/profile/nickname', {
-      method: 'PUT',
-      body: JSON.stringify({ nickname }),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-  },
-
-  // 更新头像
-  updateAvatar: (token: string, avatar: string) => {
-    return request<{
-      id: number;
-      username: string;
-      email: string;
-      nickname: string;
-      avatar: string;
-      wechatOpenid?: string;
-      isEnabled: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>('/user/profile/avatar', {
-      method: 'PUT',
-      body: JSON.stringify({ avatar }),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-  },
-
-  // 获取用户统计数据
-  getStatistics: (token: string) => {
-    return request<{
-      scenesCount: number;
-      charactersCount: number;
-      totalMessages: number;
-      activeDays: number;
-      journalEntriesCount: number;
-      customCharactersCount: number;
-      customScenesCount: number;
-      customScriptsCount: number;
-      totalMails: number;
-      unreadMails: number;
-    }>('/user/profile/statistics', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -1696,13 +1803,58 @@ export const wechatApi = {
   getAppId: () => {
     return request<{ appid: string }>('/wechat/appid');
   },
+};
 
-  // 生成微信绑定二维码URL（用于绑定微信到已有账号）
-  getBindQrCodeUrl: (token: string) => {
+// 用户资料API
+export const userProfileApi = {
+  // 更新用户昵称
+  updateNickname: (token: string, nickname: string) => {
     return request<{
-      qrCodeUrl: string;
-      state: string;
-    }>('/wechat/bind/qr-code', {
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+    }>('/user/profile/nickname', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nickname }),
+    });
+  },
+
+  // 更新用户头像
+  updateAvatar: (token: string, avatar: string) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+    }>('/user/profile/avatar', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ avatar }),
+    });
+  },
+
+  // 获取用户资料
+  getProfile: (token: string) => {
+    return request<{
+      id: number;
+      username: string;
+      email: string;
+      nickname: string;
+      avatar: string;
+      wechatOpenid?: string;
+    }>('/user/profile', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -1961,20 +2113,35 @@ export const journalApi = {
   },
 
   // 删除记录
-  deleteJournalEntry: (id: string, token: string) => {
-    console.log("[journalApi] 开始删除日志");
-    console.log("[journalApi] 删除日志ID:", id);
+  deleteJournalEntry: async (id: string, token: string) => {
+    console.log('=== [journalApi] 开始删除日志条目 ===');
+    console.log('[journalApi] 删除参数:');
+    console.log('  - ID:', id);
+    console.log('  - ID类型:', typeof id);
+    console.log('  - Token存在:', !!token);
+    console.log('  - API路径: /journal-entries/' + id);
+    
     try {
-      const result = request<void>(`/journal-entries/${id}`, {
+      const result = await request<void>(`/journal-entries/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log(`[journalApi] 删除日志请求已发送，ID: ${id}`);
+      
+      console.log('[journalApi] ✅ API删除请求成功');
+      console.log('[journalApi] 响应结果:', result);
+      console.log('=== [journalApi] 删除日志条目完成 ===');
       return result;
     } catch (error) {
-      console.error(`[journalApi] 删除日志失败，ID: ${id}`, error);
+      console.error('[journalApi] ❌ API删除请求失败');
+      console.error('[journalApi] 错误信息:', error);
+      console.error('[journalApi] 错误详情:', {
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : undefined,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      console.log('=== [journalApi] 删除日志条目失败 ===');
       throw error;
     }
   },
@@ -2149,7 +2316,7 @@ export const membershipApi = {
 // 资源API - 供普通用户使用（不需要管理员权限）
 export const resourceApi = {
   // 获取所有资源（按分类筛选）
-  getAll: (category?: string, token: string) => {
+  getAll: (token: string, category?: string) => {
     const url = category ? `/resources?category=${category}` : '/resources';
     return request<Array<{
       id: number;

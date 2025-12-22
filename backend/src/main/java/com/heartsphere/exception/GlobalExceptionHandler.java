@@ -141,6 +141,31 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理AI服务异常
+     */
+    @ExceptionHandler(com.heartsphere.aiagent.exception.AIServiceException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAIServiceException(
+            com.heartsphere.aiagent.exception.AIServiceException e) {
+        log.error("AI服务异常: provider={}, model={}, message={}", 
+            e.getProvider(), e.getModel(), e.getMessage(), e);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(500, "AI服务错误: " + e.getMessage()));
+    }
+
+    /**
+     * 处理不支持的模型异常
+     */
+    @ExceptionHandler(com.heartsphere.aiagent.exception.UnsupportedModelException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUnsupportedModelException(
+            com.heartsphere.aiagent.exception.UnsupportedModelException e) {
+        log.warn("不支持的模型异常: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(400, e.getMessage()));
+    }
+
+    /**
      * 处理所有其他未捕获的异常
      */
     @ExceptionHandler(Exception.class)

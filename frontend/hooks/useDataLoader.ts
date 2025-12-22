@@ -23,28 +23,13 @@ export const useDataLoader = () => {
     const screen = screenName || gameState.currentScreen || 'unknown';
     
     try {
-      console.log(`[useDataLoader ${screen}] 步骤1: 开始获取世界列表...`);
       const worlds = await worldApi.getAllWorlds(token);
-      console.log(`[useDataLoader ${screen}] 步骤1完成: 获取世界列表成功，数量:`, worlds.length);
-      
-      console.log(`[useDataLoader ${screen}] 步骤2: 开始获取场景列表...`);
       const eras = await eraApi.getAllEras(token);
-      console.log(`[useDataLoader ${screen}] 步骤2完成: 获取场景列表成功，数量:`, eras.length);
-      
-      console.log(`[useDataLoader ${screen}] 步骤3: 开始获取角色列表...`);
       const characters = await characterApi.getAllCharacters(token);
-      console.log(`[useDataLoader ${screen}] 步骤3完成: 获取角色列表成功，数量:`, characters.length);
-      
-      console.log(`[useDataLoader ${screen}] 步骤3.5: 开始获取剧本列表...`);
       const scripts = await scriptApi.getAllScripts(token);
-      console.log(`[useDataLoader ${screen}] 步骤3.5完成: 获取剧本列表成功，数量:`, scripts.length);
-      
-      console.log(`[useDataLoader ${screen}] 步骤3.6: 开始获取用户主线剧情列表...`);
       const userMainStories = await userMainStoryApi.getAll(token);
-      console.log(`[useDataLoader ${screen}] 步骤3.6完成: 获取用户主线剧情列表成功，数量:`, userMainStories.length);
       
       // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
-      console.log(`[useDataLoader ${screen}] 步骤4-6: 开始转换数据...`);
       const userWorldScenes = convertErasToWorldScenes(
         worlds,
         eras,
@@ -52,32 +37,18 @@ export const useDataLoader = () => {
         scripts,
         userMainStories
       );
-      console.log(`[useDataLoader ${screen}] 步骤4-6完成: 共创建`, userWorldScenes.length, '个场景');
       
-      console.log(`[useDataLoader ${screen}] 步骤7: 开始更新游戏状态...`);
       dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
       dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
-      
-      console.log(`[useDataLoader ${screen}] ========== 场景数据加载并同步完成 ==========`);
-      console.log(`[useDataLoader ${screen}] 最终结果: 共`, userWorldScenes.length, '个场景');
       
       // 只有在成功加载数据后才设置标志
       if (userWorldScenes.length > 0) {
         hasLoadedEntryPointData.current = true;
-        console.log(`[useDataLoader ${screen}] 数据加载成功，设置标志为true`);
-      } else {
-        console.warn(`[useDataLoader ${screen}] 数据加载完成但场景数量为0，不设置标志`);
       }
     } catch (error) {
-      console.error(`[useDataLoader ${screen}] ========== 加载场景数据失败 ==========`);
-      console.error(`[useDataLoader ${screen}] 错误详情:`, error);
-      if (error instanceof Error) {
-        console.error(`[useDataLoader ${screen}] 错误消息:`, error.message);
-        console.error(`[useDataLoader ${screen}] 错误堆栈:`, error.stack);
-      }
+      console.error(`[useDataLoader ${screen}] 加载场景数据失败:`, error);
       // 加载失败时重置标志，允许重试
       hasLoadedEntryPointData.current = false;
-      console.log(`[useDataLoader ${screen}] 加载失败，重置标志为false，允许重试`);
       throw error;
     }
   }, [gameState, dispatch]);
@@ -100,16 +71,11 @@ export const useDataLoader = () => {
   }> => {
     // 从localStorage获取token（确保token已经保存）
     let token = localStorage.getItem('auth_token');
-    console.log('[useDataLoader handleLoginSuccess] ========== 开始处理登录成功 ==========');
-    console.log('[useDataLoader handleLoginSuccess] 方法:', method, '标识:', identifier, '首次登录:', isFirstLogin);
-    console.log('[useDataLoader handleLoginSuccess] token存在:', !!token);
     
     // 如果token不存在，等待一小段时间后重试（可能是异步保存导致的延迟）
     if (!token) {
-      console.warn('[useDataLoader handleLoginSuccess] token不存在，等待100ms后重试...');
       await new Promise(resolve => setTimeout(resolve, 100));
       token = localStorage.getItem('auth_token');
-      console.log('[useDataLoader handleLoginSuccess] 重试后token存在:', !!token);
     }
     
     if (!token) {
@@ -117,33 +83,26 @@ export const useDataLoader = () => {
     }
     
     try {
-      console.log('[useDataLoader handleLoginSuccess] 准备调用 getCurrentUser');
       // 使用token获取完整用户信息
       const userInfo = await authApi.getCurrentUser(token);
-      console.log('[useDataLoader handleLoginSuccess] getCurrentUser 成功，用户信息:', userInfo);
       
       // 安全检查：确保 userInfo 和 userInfo.id 存在
       if (!userInfo || userInfo.id === undefined || userInfo.id === null) {
-        console.error('用户信息无效或缺少ID:', userInfo);
+        console.error('[useDataLoader] 用户信息无效或缺少ID:', userInfo);
         throw new Error('无法获取有效的用户信息');
       }
       
       // 获取日记列表
-      console.log('[useDataLoader handleLoginSuccess] 尝试获取日记列表...');
       const journalEntries = await journalApi.getAllJournalEntries(token);
-      console.log('[useDataLoader handleLoginSuccess] 获取日记列表成功:', journalEntries);
       
       // 获取世界列表 (如果登录响应中没有，则单独获取)
       const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
-      console.log('[useDataLoader handleLoginSuccess] 获取世界列表成功:', remoteWorlds);
       
       // 获取场景列表
       const eras = await eraApi.getAllEras(token);
-      console.log('[useDataLoader handleLoginSuccess] 获取场景列表成功:', eras);
       
       // 获取角色列表
       const characters = await characterApi.getAllCharacters(token);
-      console.log('[useDataLoader handleLoginSuccess] 获取角色列表成功:', characters);
       
       // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
       const userWorldScenes = convertErasToWorldScenes(
@@ -191,8 +150,6 @@ export const useDataLoader = () => {
       dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
       dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
       
-      console.log('[useDataLoader handleLoginSuccess] ========== 登录成功处理完成 ==========');
-      
       return {
         userInfo,
         journalEntries,
@@ -201,12 +158,7 @@ export const useDataLoader = () => {
         shouldShowInitializationWizard: isFirstLogin || gameState.currentScreen === 'profileSetup'
       };
     } catch (error) {
-      console.error('[useDataLoader handleLoginSuccess] ========== 登录成功处理失败 ==========');
-      console.error('[useDataLoader handleLoginSuccess] 错误详情:', error);
-      if (error instanceof Error) {
-        console.error('[useDataLoader handleLoginSuccess] 错误消息:', error.message);
-        console.error('[useDataLoader handleLoginSuccess] 错误堆栈:', error.stack);
-      }
+      console.error('[useDataLoader] 登录成功处理失败:', error);
       throw error;
     }
   }, [dispatch]);

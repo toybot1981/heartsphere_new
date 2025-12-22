@@ -2,7 +2,9 @@ package com.heartsphere.admin.service;
 
 import com.heartsphere.admin.dto.SystemScriptDTO;
 import com.heartsphere.admin.entity.SystemScript;
+import com.heartsphere.admin.entity.SystemEra;
 import com.heartsphere.admin.repository.SystemScriptRepository;
+import com.heartsphere.admin.repository.SystemEraRepository;
 import com.heartsphere.admin.util.SystemDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,11 +26,32 @@ public class SystemScriptService {
     @Autowired
     private SystemScriptRepository scriptRepository;
 
+    @Autowired
+    private SystemEraRepository eraRepository;
+
     /**
-     * 获取所有激活的剧本（按排序）
+     * 获取所有剧本（按排序）
+     * 管理员可以查看所有剧本，包括非激活的
      */
     public List<SystemScriptDTO> getAllScripts() {
-        return scriptRepository.findAllActiveOrdered().stream()
+        // 管理员应该能看到所有剧本，包括非激活的
+        List<SystemScript> allScripts = scriptRepository.findAll();
+        return allScripts.stream()
+                .sorted((a, b) -> {
+                    // 先按isActive排序（激活的在前）
+                    if (a.getIsActive() != null && b.getIsActive() != null) {
+                        int activeCompare = Boolean.compare(b.getIsActive(), a.getIsActive());
+                        if (activeCompare != 0) return activeCompare;
+                    }
+                    // 再按sortOrder排序
+                    int orderCompare = Integer.compare(
+                            a.getSortOrder() != null ? a.getSortOrder() : 0,
+                            b.getSortOrder() != null ? b.getSortOrder() : 0
+                    );
+                    if (orderCompare != 0) return orderCompare;
+                    // 最后按ID排序
+                    return Long.compare(a.getId(), b.getId());
+                })
                 .map(SystemDTOMapper::toScriptDTO)
                 .collect(Collectors.toList());
     }
@@ -49,6 +72,78 @@ public class SystemScriptService {
         SystemScript script = scriptRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("系统剧本不存在: " + id));
         return SystemDTOMapper.toScriptDTO(script);
+    }
+
+    /**
+     * 创建系统剧本
+     */
+    @Transactional
+    public SystemScriptDTO createScript(SystemScriptDTO dto) {
+        SystemScript script = new SystemScript();
+        script.setTitle(dto.getTitle());
+        script.setDescription(dto.getDescription());
+        script.setContent(dto.getContent());
+        script.setSceneCount(dto.getSceneCount() != null ? dto.getSceneCount() : 1);
+        script.setCharacterIds(dto.getCharacterIds());
+        script.setTags(dto.getTags());
+        script.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+        script.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
+        
+        // 设置关联的SystemEra
+        if (dto.getSystemEraId() != null) {
+            SystemEra era = eraRepository.findById(dto.getSystemEraId())
+                    .orElseThrow(() -> new RuntimeException("系统场景不存在: " + dto.getSystemEraId()));
+            script.setSystemEra(era);
+        }
+        
+        SystemScript saved = scriptRepository.save(script);
+        return SystemDTOMapper.toScriptDTO(saved);
+    }
+
+    /**
+     * 更新系统剧本
+     */
+    @Transactional
+    public SystemScriptDTO updateScript(Long id, SystemScriptDTO dto) {
+        SystemScript script = scriptRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("系统剧本不存在: " + id));
+        
+        script.setTitle(dto.getTitle());
+        script.setDescription(dto.getDescription());
+        script.setContent(dto.getContent());
+        if (dto.getSceneCount() != null) {
+            script.setSceneCount(dto.getSceneCount());
+        }
+        script.setCharacterIds(dto.getCharacterIds());
+        script.setTags(dto.getTags());
+        if (dto.getIsActive() != null) {
+            script.setIsActive(dto.getIsActive());
+        }
+        if (dto.getSortOrder() != null) {
+            script.setSortOrder(dto.getSortOrder());
+        }
+        
+        // 更新关联的SystemEra
+        if (dto.getSystemEraId() != null) {
+            SystemEra era = eraRepository.findById(dto.getSystemEraId())
+                    .orElseThrow(() -> new RuntimeException("系统场景不存在: " + dto.getSystemEraId()));
+            script.setSystemEra(era);
+        } else {
+            script.setSystemEra(null);
+        }
+        
+        SystemScript updated = scriptRepository.save(script);
+        return SystemDTOMapper.toScriptDTO(updated);
+    }
+
+    /**
+     * 删除系统剧本
+     */
+    @Transactional
+    public void deleteScript(Long id) {
+        SystemScript script = scriptRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("系统剧本不存在: " + id));
+        scriptRepository.delete(script);
     }
 
     /**
@@ -165,4 +260,6 @@ public class SystemScriptService {
         return promptBuilder.toString();
     }
 }
+
+
 

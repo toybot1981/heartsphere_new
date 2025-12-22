@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { authApi, wechatApi } from '../services/api';
 import QRCode from 'qrcode';
+import { AgreementModal } from './AgreementModal';
 
 interface LoginModalProps {
   onLoginSuccess: (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => void;
@@ -52,6 +53,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(''); // 二维码图片数据URL
   const [qrState, setQrState] = useState('');
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Agreement Modal State
+  const [agreementModalType, setAgreementModalType] = useState<'terms' | 'privacy' | null>(null);
 
   // 检查是否需要邀请码和邮箱验证
   useEffect(() => {
@@ -769,10 +773,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
         
         <div className="bg-slate-950 p-4 text-center border-t border-slate-800">
              <p className="text-[10px] text-slate-600">
-                 登录即代表您同意 <span className="text-indigo-400 cursor-pointer hover:underline">《心域用户协议》</span> 及 <span className="text-indigo-400 cursor-pointer hover:underline">《隐私政策》</span>
+                 登录即代表您同意 <span 
+                   className="text-indigo-400 cursor-pointer hover:underline"
+                   onClick={() => setAgreementModalType('terms')}
+                 >《心域用户协议》</span> 及 <span 
+                   className="text-indigo-400 cursor-pointer hover:underline"
+                   onClick={() => setAgreementModalType('privacy')}
+                 >《隐私政策》</span>
              </p>
         </div>
       </div>
+
+      {/* Agreement Modal */}
+      {agreementModalType && (
+        <AgreementModal
+          type={agreementModalType}
+          onClose={() => setAgreementModalType(null)}
+        />
+      )}
     </div>
   );
 };

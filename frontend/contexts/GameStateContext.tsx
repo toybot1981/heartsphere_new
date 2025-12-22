@@ -52,24 +52,34 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     
     if (loadedState) {
       const savedSettings = (loadedState.settings || {}) as Partial<AppSettings>;
+      
+      // 从 localStorage 加载 localApiKeys（如果存在），并同步到 settings
+      const { AIConfigManager } = await import('../services/ai/config');
+      const localApiKeys = AIConfigManager.getLocalApiKeys();
+      
       const mergedSettings: AppSettings = {
         ...DEFAULT_GAME_STATE.settings,
         ...savedSettings,
         geminiConfig: {
           ...DEFAULT_GAME_STATE.settings.geminiConfig,
-          ...savedSettings.geminiConfig
+          ...savedSettings.geminiConfig,
+          // 如果 localApiKeys 中有值，优先使用（因为这是最新的）
+          apiKey: localApiKeys.gemini || savedSettings.geminiConfig?.apiKey || DEFAULT_GAME_STATE.settings.geminiConfig.apiKey
         },
         openaiConfig: {
           ...DEFAULT_GAME_STATE.settings.openaiConfig,
-          ...savedSettings.openaiConfig
+          ...savedSettings.openaiConfig,
+          apiKey: localApiKeys.openai || savedSettings.openaiConfig?.apiKey || DEFAULT_GAME_STATE.settings.openaiConfig.apiKey
         },
         qwenConfig: {
           ...DEFAULT_GAME_STATE.settings.qwenConfig,
-          ...savedSettings.qwenConfig
+          ...savedSettings.qwenConfig,
+          apiKey: localApiKeys.qwen || savedSettings.qwenConfig?.apiKey || DEFAULT_GAME_STATE.settings.qwenConfig.apiKey
         },
         doubaoConfig: {
           ...DEFAULT_GAME_STATE.settings.doubaoConfig,
-          ...savedSettings.doubaoConfig
+          ...savedSettings.doubaoConfig,
+          apiKey: localApiKeys.doubao || savedSettings.doubaoConfig?.apiKey || DEFAULT_GAME_STATE.settings.doubaoConfig.apiKey
         }
       };
 

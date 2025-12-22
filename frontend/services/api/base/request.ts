@@ -20,17 +20,6 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
   // 检查是否是 subscription-plans 的请求（用于静默处理404）
   const isSubscriptionPlansRequest = url.includes('/subscription-plans');
   
-  // 日志记录（对于 subscription-plans 的请求，静默处理）
-  if (!isSubscriptionPlansRequest) {
-    console.log(`=== [API Request] ${requestId} 开始 ===`);
-    console.log(`[${requestId}] 基本信息:`, {
-      url: fullUrl,
-      method: method,
-      hasBody: !!options?.body,
-      timestamp: new Date().toISOString()
-    });
-  }
-  
   try {
     // 1. 确保请求体正确处理
     let requestBody: string | FormData | undefined = undefined;
@@ -91,14 +80,6 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       signal: options?.signal,
     });
 
-    // 5. 调试：显示响应状态（对于 subscription-plans 的 404 错误，静默处理）
-    if (!(isSubscriptionPlansRequest && response.status === 404)) {
-      console.log(`[${requestId}] 响应状态:`, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-    }
 
     // 6. 处理错误响应
     if (!response.ok) {
@@ -141,7 +122,6 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       } else if (response.status === 401) {
         errorMessage = errorMessage || '未授权：请重新登录';
         // 清除认证 token
-        console.warn('[API] 检测到 token 验证失败，清除本地 token');
         localStorage.removeItem('auth_token');
         // 如果是管理后台相关的请求，清除 admin token
         if (url.includes('/admin/')) {
@@ -155,7 +135,6 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         errorMessage = errorMessage || '服务器内部错误，请稍后重试';
         // 如果是管理后台相关的请求且错误信息包含 token 验证失败，清除 admin token
         if (url.includes('/admin/') && (errorText.includes('token') || errorText.includes('Token') || errorText.includes('JWT'))) {
-          console.warn('[API] 检测到管理后台 token 验证失败（500错误），清除本地 token');
           localStorage.removeItem('admin_token');
           window.dispatchEvent(new CustomEvent('admin-token-expired'));
         }
@@ -169,10 +148,8 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     // 7. 检查响应是否有内容（204 No Content 等状态码没有响应体）
     const responseContentType = response.headers.get('content-type');
     
-    // 如果是 204 No Content，直接返回（不尝试读取响应体）
+      // 如果是 204 No Content，直接返回（不尝试读取响应体）
     if (response.status === 204) {
-      console.log(`[${requestId}] 请求成功，无响应体 (204 No Content)`);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
       return undefined as unknown as T;
     }
 
@@ -181,8 +158,6 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     
     // 如果响应体为空，直接返回
     if (!text || text.trim() === '') {
-      console.log(`[${requestId}] 请求成功，响应体为空`);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
       return undefined as unknown as T;
     }
 
@@ -190,30 +165,19 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     if (responseContentType && responseContentType.includes('application/json')) {
       try {
         const data = JSON.parse(text);
-        console.log(`[${requestId}] 请求成功，响应数据:`, data);
         
         // 如果响应是 ApiResponse 格式（包含 code, message, data），提取 data 部分
         if (data && typeof data === 'object' && 'data' in data && 'code' in data) {
-          console.log(`[${requestId}] 检测到 ApiResponse 格式，提取 data 字段`);
-          console.log(`[${requestId}] ApiResponse code:`, data.code, 'message:', data.message);
-          console.log(`[${requestId}] ApiResponse data:`, data.data);
-          console.log(`=== [API Request] ${requestId} 完成 ===`);
           return data.data;
         }
         
-        console.log(`=== [API Request] ${requestId} 完成 ===`);
         return data;
       } catch (e) {
         // JSON 解析失败，返回文本
-        console.warn(`[${requestId}] JSON 解析失败，返回文本:`, e);
-        console.log(`[${requestId}] 请求成功，响应文本:`, text);
-        console.log(`=== [API Request] ${requestId} 完成 ===`);
         return text as unknown as T;
       }
     } else {
       // 非 JSON 响应，返回文本
-      console.log(`[${requestId}] 请求成功，响应文本:`, text);
-      console.log(`=== [API Request] ${requestId} 完成 ===`);
       return text as unknown as T;
     }
   } catch (error: any) {

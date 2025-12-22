@@ -54,11 +54,18 @@ export const storageService = {
 
       request.onerror = (event) => {
         const error = request.error;
-        console.error("IndexedDB error:", error);
         
-        // 如果是特定错误，降级到 localStorage
+        // 如果是特定错误，降级到 localStorage（只在第一次失败时记录警告）
         if (error && (error.name === 'UnknownError' || error.name === 'QuotaExceededError')) {
-          console.warn('IndexedDB failed, falling back to localStorage');
+          if (useIndexedDB) {
+            // 只在第一次失败时记录，避免重复日志
+            console.warn('IndexedDB unavailable, using localStorage fallback');
+          }
+          useIndexedDB = false;
+          indexedDBAvailable = false;
+        } else if (error && useIndexedDB) {
+          // 其他错误只在第一次失败时记录
+          console.warn('IndexedDB error, falling back to localStorage:', error.name || 'Unknown');
           useIndexedDB = false;
           indexedDBAvailable = false;
         }
@@ -421,6 +428,19 @@ export const storageService = {
             return JSON.parse(data);
           } catch (e) {
             console.error("Failed to parse custom scene mappings from localStorage:", e);
+          }
+        }
+        return null;
+      }
+
+      // 如果已经降级到 localStorage，直接使用 localStorage
+      if (!useIndexedDB || !checkIndexedDBAvailability()) {
+        const data = localStorage.getItem('customSceneMappings');
+        if (data) {
+          try {
+            return JSON.parse(data);
+          } catch (e) {
+            return null;
           }
         }
         return null;

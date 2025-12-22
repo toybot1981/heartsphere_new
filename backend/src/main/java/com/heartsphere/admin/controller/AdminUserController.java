@@ -1,7 +1,7 @@
 package com.heartsphere.admin.controller;
 
-import com.heartsphere.entity.User;
-import com.heartsphere.repository.UserRepository;
+import com.heartsphere.admin.dto.AdminUserDTO;
+import com.heartsphere.admin.service.AdminUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,21 +12,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
+/**
+ * 管理员用户管理控制器
+ */
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController extends BaseAdminController {
 
     @Autowired
-    private UserRepository userRepository;
+    private AdminUserService adminUserService;
 
     /**
-     * 获取用户列表（分页）
+     * 获取用户列表（分页、搜索）
      */
     @GetMapping
-    public ResponseEntity<?> getUsers(
+    public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestHeader("Authorization") String authHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -35,16 +37,7 @@ public class AdminUserController extends BaseAdminController {
         validateAdmin(authHeader);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<User> users;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            // 简单搜索：按用户名、邮箱搜索
-            users = userRepository.findByUsernameContainingOrEmailContaining(
-                search.trim(), pageable
-            );
-        } else {
-            users = userRepository.findAll(pageable);
-        }
+        Page<AdminUserDTO> users = adminUserService.getUsers(pageable, search);
         
         Map<String, Object> response = new HashMap<>();
         response.put("users", users.getContent());
@@ -60,43 +53,46 @@ public class AdminUserController extends BaseAdminController {
      * 获取用户详情
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(
+    public ResponseEntity<AdminUserDTO> getUser(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable("id") Long id
     ) {
         validateAdmin(authHeader);
-        
-        Optional<User> user = userRepository.findById(id);
-        if (user.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        return ResponseEntity.ok(user.get());
+        AdminUserDTO user = adminUserService.getUserById(id);
+        return ResponseEntity.ok(user);
     }
 
     /**
      * 启用/禁用用户
      */
-    @PutMapping("/{id}/toggle-enabled")
-    public ResponseEntity<?> updateUserStatus(
+    @PutMapping("/{id}/status")
+    public ResponseEntity<AdminUserDTO> updateUserStatus(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable("id") Long id,
             @RequestBody Map<String, Boolean> request
     ) {
         validateAdmin(authHeader);
-        
-        Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        User user = userOpt.get();
         Boolean isEnabled = request.get("isEnabled");
-        if (isEnabled != null) {
-            user.setIsEnabled(isEnabled);
-            userRepository.save(user);
+        
+        if (isEnabled == null) {
+            return ResponseEntity.badRequest().build();
         }
         
+        AdminUserDTO user = adminUserService.updateUserStatus(id, isEnabled);
+        return ResponseEntity.ok(user);
+    }
+
+    /**
+     * 更新用户信息
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<AdminUserDTO> updateUser(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable("id") Long id,
+            @RequestBody AdminUserDTO dto
+    ) {
+        validateAdmin(authHeader);
+        AdminUserDTO user = adminUserService.updateUser(id, dto);
         return ResponseEntity.ok(user);
     }
 
@@ -104,17 +100,12 @@ public class AdminUserController extends BaseAdminController {
      * 删除用户
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(
+    public ResponseEntity<Void> deleteUser(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable("id") Long id
     ) {
         validateAdmin(authHeader);
-        
-        if (!userRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        userRepository.deleteById(id);
+        adminUserService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
 }

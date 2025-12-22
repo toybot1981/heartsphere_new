@@ -29,3 +29,6 @@ public class UserProfileStatisticsDTO {
     private Long unreadMails;           // 未读信件数
 }
 
+
+
+
