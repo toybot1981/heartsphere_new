@@ -9,7 +9,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { CharacterCard } from './components/CharacterCard';
 import { SceneCard } from './components/SceneCard';
 import { Character, GameState, Message, CustomScenario, AppSettings, WorldScene, JournalEntry, JournalEcho, Mail, EraMemory, DebugLog } from './types';
-import { geminiService } from './services/gemini';
+import { geminiService } from './services/gemini'; // 兼容层，逐步迁移到 aiService
+import { aiService } from './services/ai';
 import { storageService } from './services/storage';
 import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi, membershipApi, userMainStoryApi } from './services/api';
 import { syncService } from './services/syncService';
@@ -264,10 +265,11 @@ const AppContent: React.FC = () => {
     syncService.init(); // 初始化同步服务
   }, []);
 
-  // 更新gemini配置（当settings变化时）
+  // 更新AI配置（当settings变化时）
   useEffect(() => {
     if (isLoaded) {
-    geminiService.updateConfig(gameState.settings);
+      // 使用兼容层更新配置（向后兼容）
+      geminiService.updateConfig(gameState.settings);
     }
   }, [gameState.settings, isLoaded]);
 
@@ -277,11 +279,12 @@ const AppContent: React.FC = () => {
           dispatch({ type: 'ADD_DEBUG_LOG', payload: log });
       };
       
+      // 使用兼容层设置日志回调（向后兼容）
       geminiService.setLogCallback(logCallback);
       
       // 清理函数：移除回调，防止内存泄漏
       return () => {
-          geminiService.setLogCallback(() => {}); // 使用空函数代替null
+          geminiService.setLogCallback(null);
       };
   }, [dispatch]);
 

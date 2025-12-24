@@ -7,8 +7,19 @@ import com.heartsphere.entity.JournalEntry;
 import com.heartsphere.entity.Script;
 import com.heartsphere.entity.User;
 import com.heartsphere.entity.World;
+import com.heartsphere.util.ImageUrlUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class DTOMapper {
+    
+    private static ImageUrlUtils imageUrlUtils;
+    
+    @Autowired
+    public void setImageUrlUtils(ImageUrlUtils imageUrlUtils) {
+        DTOMapper.imageUrlUtils = imageUrlUtils;
+    }
     
     public static WorldDTO toWorldDTO(World world) {
         if (world == null) return null;
@@ -30,7 +41,12 @@ public class DTOMapper {
         dto.setDescription(era.getDescription());
         dto.setStartYear(era.getStartYear());
         dto.setEndYear(era.getEndYear());
-        dto.setImageUrl(era.getImageUrl());
+        // 转换图片URL（相对路径 -> 完整URL）
+        String imageUrl = era.getImageUrl();
+        if (imageUrl != null && imageUrlUtils != null) {
+            imageUrl = imageUrlUtils.toFullUrl(imageUrl);
+        }
+        dto.setImageUrl(imageUrl);
         dto.setSystemEraId(era.getSystemEraId());
         dto.setWorldId(era.getWorld() != null ? era.getWorld().getId() : null);
         dto.setUserId(era.getUser() != null ? era.getUser().getId() : null);
@@ -41,6 +57,13 @@ public class DTOMapper {
     
     public static CharacterDTO toCharacterDTO(Character character) {
         if (character == null) return null;
+        // 转换图片URL（相对路径 -> 完整URL）
+        String avatarUrl = character.getAvatarUrl();
+        String backgroundUrl = character.getBackgroundUrl();
+        if (imageUrlUtils != null) {
+            avatarUrl = imageUrlUtils.toFullUrl(avatarUrl);
+            backgroundUrl = imageUrlUtils.toFullUrl(backgroundUrl);
+        }
         return new CharacterDTO(
             character.getId(),
             character.getName(),
@@ -49,8 +72,8 @@ public class DTOMapper {
             character.getGender(),
             character.getRole(),
             character.getBio(),
-            character.getAvatarUrl(),
-            character.getBackgroundUrl(),
+            avatarUrl,  // 使用转换后的URL
+            backgroundUrl,  // 使用转换后的URL
             character.getThemeColor(),
             character.getColorAccent(),
             character.getFirstMessage(),
@@ -73,12 +96,17 @@ public class DTOMapper {
     
     public static UserDTO toUserDTO(User user) {
         if (user == null) return null;
+        // 转换头像URL（相对路径 -> 完整URL）
+        String avatar = user.getAvatar();
+        if (avatar != null && imageUrlUtils != null) {
+            avatar = imageUrlUtils.toFullUrl(avatar);
+        }
         return new UserDTO(
             user.getId(),
             user.getUsername(),
             user.getEmail(),
             user.getNickname(),
-            user.getAvatar(),
+            avatar,  // 使用转换后的URL
             user.getWechatOpenid(),
             user.getIsEnabled(),
             user.getCreatedAt(),

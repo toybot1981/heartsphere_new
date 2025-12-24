@@ -37,42 +37,42 @@
     </appender>
     
     <!-- SQL相关日志 -->
-    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+    <logger name="org.hibernate.SQL" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="SQL_FILE"/>
     </logger>
     
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="SQL_FILE"/>
     </logger>
     
-    <logger name="org.hibernate.type" level="TRACE" additivity="false">
+    <logger name="org.hibernate.type" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="SQL_FILE"/>
     </logger>
     
     <!-- 应用日志 -->
-    <logger name="com.heartsphere" level="DEBUG"/>
+    <logger name="com.heartsphere" level="INFO"/>
     
-    <!-- AI服务日志（更详细的日志） -->
-    <logger name="com.heartsphere.aiagent" level="DEBUG"/>
+    <!-- AI服务日志 -->
+    <logger name="com.heartsphere.aiagent" level="INFO"/>
     
     <!-- Spring AI日志 -->
     <logger name="org.springframework.ai" level="INFO"/>
     <logger name="com.alibaba.cloud.ai" level="INFO"/>
     
     <!-- Spring Data JPA -->
-    <logger name="org.springframework.data.jpa" level="DEBUG"/>
+    <logger name="org.springframework.data.jpa" level="INFO"/>
     
     <!-- 数据库连接池 -->
-    <logger name="com.zaxxer.hikari" level="DEBUG"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
     
     <!-- Spring Security -->
-    <logger name="org.springframework.security" level="DEBUG"/>
+    <logger name="org.springframework.security" level="INFO"/>
     
     <!-- HTTP请求 -->
-    <logger name="org.springframework.web" level="DEBUG"/>
+    <logger name="org.springframework.web" level="INFO"/>
     
     <!-- 根日志 -->
     <root level="INFO">

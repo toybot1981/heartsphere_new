@@ -3,6 +3,7 @@ package com.heartsphere.controller;
 import com.heartsphere.admin.dto.SystemEraDTO;
 import com.heartsphere.admin.entity.SystemEra;
 import com.heartsphere.admin.repository.SystemEraRepository;
+import com.heartsphere.admin.util.SystemDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,21 +23,9 @@ public class PresetEraController {
     @GetMapping
     public ResponseEntity<List<SystemEraDTO>> getPresetEras() {
         List<SystemEra> eras = systemEraRepository.findByIsActiveTrueOrderBySortOrderAsc();
+        // 使用SystemDTOMapper转换，会自动处理URL转换（相对路径 -> 完整URL）
         List<SystemEraDTO> eraDTOs = eras.stream()
-            .map(era -> {
-                SystemEraDTO dto = new SystemEraDTO();
-                dto.setId(era.getId());
-                dto.setName(era.getName());
-                dto.setDescription(era.getDescription());
-                dto.setStartYear(era.getStartYear());
-                dto.setEndYear(era.getEndYear());
-                dto.setImageUrl(era.getImageUrl());
-                dto.setIsActive(era.getIsActive());
-                dto.setSortOrder(era.getSortOrder());
-                dto.setCreatedAt(era.getCreatedAt());
-                dto.setUpdatedAt(era.getUpdatedAt());
-                return dto;
-            })
+            .map(SystemDTOMapper::toEraDTO)
             .collect(Collectors.toList());
         return ResponseEntity.ok(eraDTOs);
     }

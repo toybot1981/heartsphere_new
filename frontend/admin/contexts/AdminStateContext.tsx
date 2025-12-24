@@ -11,7 +11,8 @@ export type SectionType =
     | 'resources' 
     | 'subscription-plans' 
     | 'email-config' 
-    | 'users';
+    | 'users'
+    | 'admins';
 
 export type ViewMode = 'list' | 'edit' | 'create';
 

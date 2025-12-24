@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { adminApi, imageApi } from '../../services/api';
 import { InputGroup, TextInput } from './AdminUIComponents';
 import { useAdminState } from '../contexts/AdminStateContext';
@@ -29,6 +29,7 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
     const [editResourceTags, setEditResourceTags] = useState('');
     const [editResourceUrl, setEditResourceUrl] = useState('');
     const [isMatchingResources, setIsMatchingResources] = useState(false);
+    const listContainerRef = useRef<HTMLDivElement>(null);
 
     const loadResources = async (category?: string) => {
         if (!adminToken) return;
@@ -74,8 +75,13 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
 
     const handleSaveEdit = async () => {
         if (!adminToken || !editingResource) return;
+        
+        // 保存当前滚动位置（列表容器和窗口滚动位置）
+        const listScrollPosition = listContainerRef.current?.scrollTop || 0;
+        const windowScrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+        
         try {
-            await adminApi.resources.update(
+            const updatedResource = await adminApi.resources.update(
                 editingResource.id,
                 {
                     name: editResourceName,
@@ -86,9 +92,26 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                 },
                 adminToken
             );
-            await loadResources(resourceCategory === 'all' ? undefined : resourceCategory);
+            
+            // 局部更新：只更新列表中对应的资源项，不重新加载整个列表
+            setResources(prevResources => 
+                prevResources.map(resource => 
+                    resource.id === editingResource.id 
+                        ? { ...resource, ...updatedResource }
+                        : resource
+                )
+            );
+            
             handleCancelEdit();
             showAlert('资源更新成功', '更新成功', 'success');
+            
+            // 恢复滚动位置（使用 requestAnimationFrame 确保 DOM 更新完成）
+            requestAnimationFrame(() => {
+                if (listContainerRef.current) {
+                    listContainerRef.current.scrollTop = listScrollPosition;
+                }
+                window.scrollTo(0, windowScrollPosition);
+            });
         } catch (error: any) {
             showAlert('更新失败: ' + (error.message || '未知错误'), '更新失败', 'error');
         }
@@ -136,9 +159,41 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
         if (!adminToken) return;
         setIsMatchingResources(true);
         try {
-            // 这里应该调用后端API来匹配和更新资源
-            // await adminApi.resources.matchAndUpdate(adminToken);
-            showAlert('资源匹配和更新功能待实现', '提示', 'info');
+            const result = await adminApi.resources.matchAndUpdate(adminToken);
+            
+            // 构建结果消息
+            let message = `资源匹配和更新完成！\n\n`;
+            message += `场景匹配: ${result.eraMatchedCount}/${result.totalEras}\n`;
+            message += `角色头像匹配: ${result.characterAvatarMatchedCount}/${result.totalCharacters}\n`;
+            message += `角色背景匹配: ${result.characterBackgroundMatchedCount}/${result.totalCharacters}\n\n`;
+            
+            if (result.eraMatched.length > 0) {
+                message += `已更新场景:\n${result.eraMatched.slice(0, 5).join('\n')}`;
+                if (result.eraMatched.length > 5) {
+                    message += `\n... 还有 ${result.eraMatched.length - 5} 个场景已更新`;
+                }
+                message += '\n\n';
+            }
+            
+            if (result.characterMatched.length > 0) {
+                message += `已更新角色头像:\n${result.characterMatched.slice(0, 5).join('\n')}`;
+                if (result.characterMatched.length > 5) {
+                    message += `\n... 还有 ${result.characterMatched.length - 5} 个角色已更新`;
+                }
+                message += '\n\n';
+            }
+            
+            if (result.eraNotFound.length > 0 || result.characterNotFound.length > 0) {
+                message += `未找到匹配的资源:\n`;
+                if (result.eraNotFound.length > 0) {
+                    message += `场景: ${result.eraNotFound.length} 个\n`;
+                }
+                if (result.characterNotFound.length > 0) {
+                    message += `角色: ${result.characterNotFound.length} 个\n`;
+                }
+            }
+            
+            showAlert(message, '更新完成', 'success');
         } catch (error: any) {
             showAlert('更新失败: ' + (error.message || '未知错误'), '更新失败', 'error');
         } finally {
@@ -387,7 +442,11 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                         ) : resources.length === 0 ? (
                             <div className="text-center text-slate-500 py-8">暂无资源</div>
                         ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div 
+                                ref={listContainerRef} 
+                                className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                                style={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}
+                            >
                                 {resources.map((resource) => (
                                     <div
                                         key={resource.id}

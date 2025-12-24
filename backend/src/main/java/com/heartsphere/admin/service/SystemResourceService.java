@@ -4,6 +4,7 @@ import com.heartsphere.admin.dto.SystemResourceDTO;
 import com.heartsphere.admin.entity.SystemResource;
 import com.heartsphere.admin.repository.SystemResourceRepository;
 import com.heartsphere.service.ImageStorageService;
+import com.heartsphere.util.ImageUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class SystemResourceService {
 
     @Autowired
     private ImageStorageService imageStorageService;
+
+    @Autowired
+    private ImageUrlUtils imageUrlUtils;
 
     /**
      * 获取所有资源
@@ -140,7 +144,12 @@ public class SystemResourceService {
         SystemResourceDTO dto = new SystemResourceDTO();
         dto.setId(resource.getId());
         dto.setName(resource.getName());
-        dto.setUrl(resource.getUrl());
+        // 转换图片URL（相对路径 -> 完整URL）
+        String url = resource.getUrl();
+        if (url != null && imageUrlUtils != null) {
+            url = imageUrlUtils.toFullUrl(url);
+        }
+        dto.setUrl(url);
         dto.setCategory(resource.getCategory());
         dto.setDescription(resource.getDescription());
         dto.setPrompt(resource.getPrompt());

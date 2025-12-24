@@ -1523,4 +1523,9 @@ Instructions:
   }
 }
 
-export const geminiService = new GeminiService();
+// 导出兼容层实例（向后兼容）
+// 注意：新的代码应该使用 aiService 代替 geminiService
+export { geminiService } from './ai/geminiCompat';
+
+// 保留原始 GeminiService 类供内部使用（如果需要）
+// export const geminiService = new GeminiService();

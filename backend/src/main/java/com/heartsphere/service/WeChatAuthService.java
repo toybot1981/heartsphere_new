@@ -98,15 +98,30 @@ public class WeChatAuthService {
      * @param type 操作类型：login（登录）或 bind（绑定）
      */
     private Map<String, String> generateQrCodeUrl(Long userId, String type) {
+        String operationType = "bind".equals(type) ? "绑定" : "登录";
+        logger.info(String.format("开始生成微信%s二维码，userId=%s", operationType, userId));
+        
+        // 获取配置信息
         String appId = getAppId();
+        String appSecret = getAppSecret();
         String redirectUri = getRedirectUri();
         
+        logger.info(String.format("获取微信配置信息: appId=%s, appSecret=%s, redirectUri=%s", 
+            appId != null ? appId : "null", 
+            appSecret != null ? appSecret : "null", 
+            redirectUri));
+        
         if (appId == null || appId.trim().isEmpty()) {
+            logger.warning("微信AppID未配置，请在管理后台配置");
             throw new RuntimeException("微信AppID未配置，请在管理后台配置");
         }
         
+        // 生成state
         String state = UUID.randomUUID().toString().replace("-", "");
-        String scope = "snsapi_login"; // 网站应用使用snsapi_login
+        // 网站应用使用snsapi_login，移动应用不支持扫码登录
+        // 如果出现"Scope参数错误"错误，请检查微信开放平台应用类型是否为"网站应用"
+        String scope = "snsapi_login"; 
+        logger.info(String.format("生成微信%s二维码state: %s, scope: %s (注意：scope=snsapi_login仅适用于网站应用)", operationType, state, scope));
         
         // 微信开放平台扫码登录URL
         String qrCodeUrl = String.format(
@@ -116,6 +131,7 @@ public class WeChatAuthService {
             scope,
             state
         );
+        logger.info(String.format("构建微信%s二维码URL完成，URL长度: %d", operationType, qrCodeUrl.length()));
 
         // 初始化状态
         Map<String, Object> stateInfo = new HashMap<>();
@@ -126,11 +142,17 @@ public class WeChatAuthService {
             stateInfo.put("userId", userId);
         }
         loginStates.put(state, stateInfo);
+        logger.info(String.format("初始化微信%s状态完成，state: %s, 当前状态数: %d", operationType, state, loginStates.size()));
 
         // 清理过期状态（30分钟）
+        int beforeCleanup = loginStates.size();
         cleanupExpiredStates();
+        int afterCleanup = loginStates.size();
+        if (beforeCleanup != afterCleanup) {
+            logger.info(String.format("清理过期状态完成，清理前: %d, 清理后: %d", beforeCleanup, afterCleanup));
+        }
 
-        logger.info("生成微信" + ("bind".equals(type) ? "绑定" : "登录") + "二维码，state: " + state);
+        logger.info(String.format("生成微信%s二维码完成，state: %s, qrCodeUrl已生成", operationType, state));
         
         Map<String, String> result = new HashMap<>();
         result.put("qrCodeUrl", qrCodeUrl);
@@ -167,11 +189,25 @@ public class WeChatAuthService {
                 appId, appSecret, code
             );
 
+            logger.info(String.format("请求微信access_token，URL: %s", tokenUrl.replace(appSecret, "***")));
             Map<String, Object> tokenResponse = restTemplate.getForObject(tokenUrl, Map.class);
             if (tokenResponse == null || tokenResponse.containsKey("errcode")) {
-                logger.severe("获取access_token失败: " + tokenResponse);
+                String errorMsg = "获取access_token失败";
+                if (tokenResponse != null) {
+                    Object errcode = tokenResponse.get("errcode");
+                    Object errmsg = tokenResponse.get("errmsg");
+                    errorMsg = String.format("获取access_token失败: errcode=%s, errmsg=%s", errcode, errmsg);
+                    logger.severe(errorMsg + ", 完整响应: " + tokenResponse);
+                    
+                    // 如果是scope相关错误，提供更详细的提示
+                    if (errcode != null && (errcode.toString().equals("40029") || errmsg != null && errmsg.toString().contains("scope"))) {
+                        errorMsg = "Scope参数错误或没有Scope权限。请检查：1) 微信开放平台应用类型是否为'网站应用'；2) 是否已申请网站应用权限；3) 授权回调域名是否正确配置";
+                    }
+                } else {
+                    logger.severe("获取access_token失败: tokenResponse为null");
+                }
                 stateInfo.put("status", "error");
-                stateInfo.put("error", "获取access_token失败");
+                stateInfo.put("error", errorMsg);
                 return stateInfo;
             }
 

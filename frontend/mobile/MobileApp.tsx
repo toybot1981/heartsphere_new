@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, CustomScenario } from '../types';
-import { geminiService } from '../services/gemini'; // 仅用于配置兼容
+import { geminiService } from '../services/gemini'; // 兼容层，逐步迁移到 aiService
 import { aiService } from '../services/ai';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';

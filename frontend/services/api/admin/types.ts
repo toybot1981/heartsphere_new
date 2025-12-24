@@ -8,6 +8,7 @@ export interface AdminLoginResponse {
   username: string;
   email: string;
   adminId: number;
+  role?: 'SUPER_ADMIN' | 'ADMIN';
 }
 
 /**

@@ -61,9 +61,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack, loginEr
                     >
                         {loading ? '登录中...' : '进入系统'}
                     </Button>
-                    <p className="text-xs text-slate-500 text-center mt-2">
-                        默认账号: admin / 123456
-                    </p>
                     <button onClick={onBack} className="w-full text-xs text-slate-600 hover:text-slate-400 mt-4">返回应用首页</button>
                 </div>
             </div>

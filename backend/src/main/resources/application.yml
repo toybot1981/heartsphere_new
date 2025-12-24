@@ -95,7 +95,7 @@ app:
       type: ${IMAGE_STORAGE_TYPE:local} # local, oss, s3
       local:
         path: ${IMAGE_STORAGE_PATH:./uploads/images}
-      base-url: ${IMAGE_BASE_URL:http://localhost:8081/api/images}  # 注意：端口应与server.port一致，实际访问URL会自动添加 /files/ 前缀
+      base-url: ${IMAGE_BASE_URL:}  # 图片服务基础URL，如果未配置则自动使用当前请求的域名。格式：http://domain.com/api/images
       max-size: ${IMAGE_MAX_SIZE:10485760} # 10MB (单位：字节)
 
 # 日志配置
@@ -104,28 +104,28 @@ logging:
     # 根日志级别
     root: INFO
     # 应用包日志级别
-    com.heartsphere: DEBUG
+    com.heartsphere: INFO
     # Hibernate SQL日志
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.hibernate.type: TRACE
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+    org.hibernate.type: INFO
     # Spring Data JPA日志
-    org.springframework.data.jpa: DEBUG
+    org.springframework.data.jpa: INFO
     # 数据库连接池日志
-    com.zaxxer.hikari: DEBUG
+    com.zaxxer.hikari: INFO
     # Spring Security日志
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     # HTTP请求日志
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
     # SQL语句和参数日志
-    org.hibernate.engine.internal: DEBUG
+    org.hibernate.engine.internal: INFO
     # AI服务日志
-    com.heartsphere.aiagent: DEBUG
+    com.heartsphere.aiagent: INFO
     # Spring AI日志
     org.springframework.ai: INFO
     com.alibaba.cloud.ai: INFO
     # Netty DNS日志（用于调试DNS问题）
-    io.netty.resolver.dns: DEBUG
+    io.netty.resolver.dns: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

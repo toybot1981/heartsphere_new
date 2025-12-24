@@ -41,8 +41,8 @@ public class AdminAuthService {
                     return new RuntimeException("管理员用户名或密码错误");
                 });
 
-        logger.info("找到管理员账户: ID={}, username={}, email={}, isActive={}", 
-                admin.getId(), admin.getUsername(), admin.getEmail(), admin.getIsActive());
+        logger.info("找到管理员账户: ID={}, username={}, email={}, role={}, isActive={}", 
+                admin.getId(), admin.getUsername(), admin.getEmail(), admin.getRole(), admin.getIsActive());
 
         if (!admin.getIsActive()) {
             logger.error("管理员账号已被禁用: {}", username);
@@ -79,10 +79,22 @@ public class AdminAuthService {
         response.put("username", admin.getUsername());
         response.put("email", admin.getEmail());
         response.put("adminId", admin.getId());
+        
+        // 确保role不为null，如果为null则使用默认值
+        String role = admin.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            // 如果role为null，根据用户名判断（admin默认为SUPER_ADMIN）
+            role = "admin".equals(admin.getUsername()) ? "SUPER_ADMIN" : "ADMIN";
+            logger.warn("管理员 {} 的role字段为null，使用默认值: {}", admin.getUsername(), role);
+            // 更新数据库中的role
+            admin.setRole(role);
+            adminRepository.save(admin);
+        }
+        response.put("role", role); // 添加角色信息
 
         logger.info("========== 管理员登录成功 ==========");
-        logger.info("返回响应: adminId={}, username={}, email={}", 
-                admin.getId(), admin.getUsername(), admin.getEmail());
+        logger.info("返回响应: adminId={}, username={}, email={}, role={}", 
+                admin.getId(), admin.getUsername(), admin.getEmail(), admin.getRole());
         
         return response;
     }

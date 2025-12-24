@@ -1,6 +1,7 @@
 package com.heartsphere.controller;
 
 import com.heartsphere.service.ImageStorageService;
+import com.heartsphere.util.ImageUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -30,6 +31,9 @@ public class ImageController {
     private ImageStorageService imageStorageService;
 
     @Autowired
+    private ImageUrlUtils imageUrlUtils;
+
+    @Autowired
     private WebClient webClient;
 
     /**
@@ -48,11 +52,18 @@ public class ImageController {
         logger.info("分类: " + category);
         
         try {
-            String imageUrl = imageStorageService.saveImage(file, category);
-            logger.info("图片上传成功，URL: " + imageUrl);
+            // 保存图片，返回相对路径
+            String relativePath = imageStorageService.saveImage(file, category);
+            logger.info("图片上传成功，相对路径: " + relativePath);
+            
+            // 转换为完整URL返回给前端
+            String fullUrl = imageUrlUtils.toFullUrl(relativePath);
+            logger.info("图片完整URL: " + fullUrl);
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("url", imageUrl);
+            response.put("url", fullUrl);  // 返回完整URL给前端
+            response.put("relativePath", relativePath);  // 可选：同时返回相对路径
             response.put("message", "图片上传成功");
             logger.info("========== 图片上传请求处理完成 ==========");
             return ResponseEntity.ok(response);
@@ -86,10 +97,16 @@ public class ImageController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            String imageUrl = imageStorageService.saveBase64Image(base64Data, category);
+            // 保存图片，返回相对路径
+            String relativePath = imageStorageService.saveBase64Image(base64Data, category);
+            
+            // 转换为完整URL返回给前端
+            String fullUrl = imageUrlUtils.toFullUrl(relativePath);
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("url", imageUrl);
+            response.put("url", fullUrl);  // 返回完整URL给前端
+            response.put("relativePath", relativePath);  // 可选：同时返回相对路径
             response.put("message", "图片上传成功");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

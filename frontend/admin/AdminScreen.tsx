@@ -15,6 +15,7 @@ import { ResourcesManagement } from './components/ResourcesManagement';
 import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
 import { EmailConfigManagement } from './components/EmailConfigManagement';
 import { SettingsManagement } from './components/SettingsManagement';
+import { AdminsManagement } from './components/AdminsManagement';
 import { BillingManagement } from './components/billing';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
@@ -31,10 +32,12 @@ interface AdminScreenProps {
 // Sidebar包装组件
 const AdminSidebarWrapper: React.FC = () => {
     const { activeSection, setActiveSection } = useAdminState();
+    const { adminRole } = useAdminAuth();
     return (
         <AdminSidebar 
             activeSection={activeSection}
             onSectionChange={setActiveSection}
+            adminRole={adminRole}
         />
     );
 };
@@ -62,19 +65,20 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'subscription-plans': '会员配置管理',
             'email-config': '邮箱配置',
             'users': '用户管理',
+            'admins': '系统管理员管理',
             'settings': '系统全局设置',
             'billing': '计费管理',
         };
         return titles[activeSection] || '管理后台';
     };
 
-    return (
+        return (
         <div className="flex h-screen bg-slate-950 text-white">
             <AdminSidebarWrapper />
             <div className="flex-1 flex flex-col min-w-0">
                 <AdminHeader 
                     title={getTitle()} 
-                    onBack={onBack} 
+                onBack={onBack}
                     onLogout={handleLogout} 
                 />
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
@@ -88,19 +92,19 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             onSave={async (data, editingId) => {
                                 if (!adminToken) return;
                                 try {
-                                    const dto = {
-                                        name: data.name || '未命名场景',
-                                        description: data.description || '',
-                                        imageUrl: data.imageUrl || '',
-                                        startYear: data.startYear || null,
-                                        endYear: data.endYear || null,
-                                        isActive: data.isActive !== undefined ? data.isActive : true,
-                                        sortOrder: data.sortOrder || 0
-                                    };
-                                    if (editingId && typeof editingId === 'number') {
-                                        await adminApi.eras.update(editingId, dto, adminToken);
-                                    } else {
-                                        await adminApi.eras.create(dto, adminToken);
+                                const dto = {
+                                    name: data.name || '未命名场景',
+                                    description: data.description || '',
+                                    imageUrl: data.imageUrl || '',
+                                    startYear: data.startYear || null,
+                                    endYear: data.endYear || null,
+                                    isActive: data.isActive !== undefined ? data.isActive : true,
+                                    sortOrder: data.sortOrder || 0
+                                };
+                                if (editingId && typeof editingId === 'number') {
+                                    await adminApi.eras.update(editingId, dto, adminToken);
+                                } else {
+                                    await adminApi.eras.create(dto, adminToken);
                                     }
                                     await loadSystemData(adminToken);
                                     showAlert('保存成功', '成功', 'success');
@@ -111,7 +115,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             onDelete={async (id) => {
                                 if (!adminToken) return;
                                 try {
-                                    await adminApi.eras.delete(id, adminToken);
+                                await adminApi.eras.delete(id, adminToken);
                                     await loadSystemData(adminToken);
                                     showAlert('删除成功', '成功', 'success');
                                 } catch (error: any) {
@@ -190,7 +194,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                    await loadSystemData(adminToken);
                                 }
                             }}
                         />
@@ -225,12 +229,22 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             }}
                         />
                     )}
+                    {activeSection === 'admins' && (
+                        <AdminsManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
                     {activeSection === 'settings' && (
                         <SettingsManagement
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                                        await loadSystemData(adminToken);
                                 }
                             }}
                         />
@@ -240,14 +254,14 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                        await loadSystemData(adminToken);
                                 }
                             }}
                         />
-                    )}
-                </div>
-            </div>
-        </div>
+                                                    )}
+                                                </div>
+                                        </div>
+                                </div>
     );
 };
 

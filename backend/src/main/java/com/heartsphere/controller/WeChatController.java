@@ -15,11 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.heartsphere.utils.DTOMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/wechat")
 public class WeChatController {
+
+    private static final Logger logger = LoggerFactory.getLogger(WeChatController.class);
 
     @Autowired
     private WeChatAuthService weChatAuthService;
@@ -36,12 +40,17 @@ public class WeChatController {
     @GetMapping("/qr-code")
     public ResponseEntity<?> getQrCodeUrl() {
         try {
+            logger.info("收到生成微信登录二维码请求");
+            
             Map<String, String> result = weChatAuthService.generateQrCodeUrl();
             Map<String, Object> response = new HashMap<>();
             response.put("qrCodeUrl", result.get("qrCodeUrl"));
             response.put("state", result.get("state"));
+            
+            logger.info(String.format("微信登录二维码生成成功，state: %s", result.get("state")));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            logger.error("生成微信登录二维码失败: " + e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "生成二维码失败: " + e.getMessage()));
         }
     }
@@ -122,7 +131,10 @@ public class WeChatController {
     @GetMapping("/bind/qr-code")
     public ResponseEntity<?> getBindQrCodeUrl(Authentication authentication) {
         try {
+            logger.info("收到生成微信绑定二维码请求");
+            
             if (authentication == null || authentication.getPrincipal() == null) {
+                logger.warn("生成微信绑定二维码失败：未授权");
                 return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "未授权：请重新登录"));
             }
@@ -130,13 +142,17 @@ public class WeChatController {
             // 获取当前登录用户ID
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
+            logger.info(String.format("生成微信绑定二维码，userId: %d", userId));
 
             Map<String, String> result = weChatAuthService.generateBindQrCodeUrl(userId);
             Map<String, Object> response = new HashMap<>();
             response.put("qrCodeUrl", result.get("qrCodeUrl"));
             response.put("state", result.get("state"));
+            
+            logger.info(String.format("微信绑定二维码生成成功，userId: %d, state: %s", userId, result.get("state")));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            logger.error("生成微信绑定二维码失败: " + e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "生成绑定二维码失败: " + e.getMessage()));
         }

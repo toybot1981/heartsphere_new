@@ -29,9 +29,10 @@ public class AdminInitializationService {
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("123456")); // 默认密码
             admin.setEmail("admin@heartsphere.com");
+            admin.setRole("SUPER_ADMIN"); // 默认管理员为超级管理员
             admin.setIsActive(true);
             adminRepository.save(admin);
-            System.out.println("默认管理员账号已创建: admin / 123456");
+            System.out.println("默认超级管理员账号已创建: admin");
         }
     }
 }

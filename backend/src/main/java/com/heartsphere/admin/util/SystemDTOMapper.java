@@ -10,12 +10,24 @@ import com.heartsphere.admin.entity.SystemEra;
 import com.heartsphere.admin.entity.SystemMainStory;
 import com.heartsphere.admin.entity.SystemScript;
 import com.heartsphere.admin.entity.SystemWorld;
+import com.heartsphere.util.ImageUrlUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * 系统数据DTO转换工具类
  * 提供Entity到DTO的转换方法
+ * 注意：现在需要注入ImageUrlUtils来转换图片URL
  */
+@Component
 public class SystemDTOMapper {
+    
+    private static ImageUrlUtils imageUrlUtils;
+    
+    @Autowired
+    public void setImageUrlUtils(ImageUrlUtils imageUrlUtils) {
+        SystemDTOMapper.imageUrlUtils = imageUrlUtils;
+    }
 
     /**
      * 将SystemWorld实体转换为DTO
@@ -36,13 +48,19 @@ public class SystemDTOMapper {
      * 将SystemEra实体转换为DTO
      */
     public static SystemEraDTO toEraDTO(SystemEra era) {
+        // 转换图片URL（相对路径 -> 完整URL）
+        String imageUrl = era.getImageUrl();
+        if (imageUrlUtils != null) {
+            imageUrl = imageUrlUtils.toFullUrl(imageUrl);
+        }
+        
         return new SystemEraDTO(
                 era.getId(),
                 era.getName(),
                 era.getDescription(),
                 era.getStartYear(),
                 era.getEndYear(),
-                era.getImageUrl(),
+                imageUrl,  // 使用转换后的URL
                 era.getIsActive(),
                 era.getSortOrder(),
                 era.getCreatedAt(),
@@ -75,6 +93,14 @@ public class SystemDTOMapper {
      * 将SystemCharacter实体转换为DTO
      */
     public static SystemCharacterDTO toCharacterDTO(SystemCharacter character) {
+        // 转换图片URL（相对路径 -> 完整URL）
+        String avatarUrl = character.getAvatarUrl();
+        String backgroundUrl = character.getBackgroundUrl();
+        if (imageUrlUtils != null) {
+            avatarUrl = imageUrlUtils.toFullUrl(avatarUrl);
+            backgroundUrl = imageUrlUtils.toFullUrl(backgroundUrl);
+        }
+        
         return new SystemCharacterDTO(
                 character.getId(),
                 character.getName(),
@@ -83,8 +109,8 @@ public class SystemDTOMapper {
                 character.getGender(),
                 character.getRole(),
                 character.getBio(),
-                character.getAvatarUrl(),
-                character.getBackgroundUrl(),
+                avatarUrl,  // 使用转换后的URL
+                backgroundUrl,  // 使用转换后的URL
                 character.getThemeColor(),
                 character.getColorAccent(),
                 character.getFirstMessage(),
@@ -117,8 +143,15 @@ public class SystemDTOMapper {
         dto.setAge(story.getAge());
         dto.setRole(story.getRole());
         dto.setBio(story.getBio());
-        dto.setAvatarUrl(story.getAvatarUrl());
-        dto.setBackgroundUrl(story.getBackgroundUrl());
+        // 转换图片URL（相对路径 -> 完整URL）
+        String avatarUrl = story.getAvatarUrl();
+        String backgroundUrl = story.getBackgroundUrl();
+        if (imageUrlUtils != null) {
+            avatarUrl = imageUrlUtils.toFullUrl(avatarUrl);
+            backgroundUrl = imageUrlUtils.toFullUrl(backgroundUrl);
+        }
+        dto.setAvatarUrl(avatarUrl);
+        dto.setBackgroundUrl(backgroundUrl);
         dto.setThemeColor(story.getThemeColor());
         dto.setColorAccent(story.getColorAccent());
         dto.setFirstMessage(story.getFirstMessage());

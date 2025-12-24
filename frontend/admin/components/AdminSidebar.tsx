@@ -1,15 +1,21 @@
 import React from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'billing';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
     onSectionChange: (section: SectionType) => void;
     onResourcesLoad?: () => void;
+    adminRole?: 'SUPER_ADMIN' | 'ADMIN' | null;
 }
 
-export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSectionChange, onResourcesLoad }) => {
+export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSectionChange, onResourcesLoad, adminRole }) => {
+    // 调试日志
+    React.useEffect(() => {
+        console.log('[AdminSidebar] adminRole:', adminRole);
+    }, [adminRole]);
+    
     const handleSectionClick = (section: SectionType) => {
         onSectionChange(section);
         if (section === 'resources' && onResourcesLoad) {
@@ -65,6 +71,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                     active={activeSection === 'users'} 
                     onClick={() => handleSectionClick('users')} 
                 />
+                {adminRole === 'SUPER_ADMIN' && (
+                    <AdminSidebarItem 
+                        label="管理员管理 Admins" 
+                        icon="🔐" 
+                        active={activeSection === 'admins'} 
+                        onClick={() => handleSectionClick('admins')} 
+                    />
+                )}
                 <AdminSidebarItem 
                     label="资源管理 Resources" 
                     icon="🖼️" 

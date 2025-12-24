@@ -3,6 +3,7 @@ package com.heartsphere.controller;
 import com.heartsphere.admin.dto.SystemCharacterDTO;
 import com.heartsphere.admin.entity.SystemCharacter;
 import com.heartsphere.admin.repository.SystemCharacterRepository;
+import com.heartsphere.admin.util.SystemDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,37 +34,9 @@ public class PresetCharacterController {
             characters = systemCharacterRepository.findByIsActiveTrueOrderBySortOrderAsc();
         }
         
+        // 使用SystemDTOMapper转换，会自动处理URL转换（相对路径 -> 完整URL）
         List<SystemCharacterDTO> characterDTOs = characters.stream()
-            .map(character -> {
-                SystemCharacterDTO dto = new SystemCharacterDTO();
-                dto.setId(character.getId());
-                dto.setName(character.getName());
-                dto.setDescription(character.getDescription());
-                dto.setAge(character.getAge());
-                dto.setGender(character.getGender());
-                dto.setRole(character.getRole());
-                dto.setBio(character.getBio());
-                dto.setAvatarUrl(character.getAvatarUrl());
-                dto.setBackgroundUrl(character.getBackgroundUrl());
-                dto.setThemeColor(character.getThemeColor());
-                dto.setColorAccent(character.getColorAccent());
-                dto.setFirstMessage(character.getFirstMessage());
-                dto.setSystemInstruction(character.getSystemInstruction());
-                dto.setVoiceName(character.getVoiceName());
-                dto.setMbti(character.getMbti());
-                dto.setTags(character.getTags());
-                dto.setSpeechStyle(character.getSpeechStyle());
-                dto.setCatchphrases(character.getCatchphrases());
-                dto.setSecrets(character.getSecrets());
-                dto.setMotivations(character.getMotivations());
-                dto.setRelationships(character.getRelationships());
-                dto.setSystemEraId(character.getSystemEra() != null ? character.getSystemEra().getId() : null);
-                dto.setIsActive(character.getIsActive() != null ? character.getIsActive() : true);
-                dto.setSortOrder(character.getSortOrder());
-                dto.setCreatedAt(character.getCreatedAt());
-                dto.setUpdatedAt(character.getUpdatedAt());
-                return dto;
-            })
+            .map(SystemDTOMapper::toCharacterDTO)
             .collect(Collectors.toList());
         return ResponseEntity.ok(characterDTOs);
     }

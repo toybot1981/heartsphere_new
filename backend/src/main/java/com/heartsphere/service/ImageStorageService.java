@@ -27,8 +27,8 @@ public class ImageStorageService {
     @Value("${app.image.storage.local.path:./uploads/images}")
     private String localStoragePath;
 
-    @Value("${app.image.storage.base-url:http://localhost:8081/api/images}")
-    private String baseUrl;
+    @Value("${app.image.storage.base-url:}")
+    private String baseUrl; // 如果未配置，ImageUrlUtils会从请求中获取
 
     @Value("${app.image.storage.max-size:10485760}")
     private long maxFileSize; // 10MB default
@@ -120,11 +120,13 @@ public class ImageStorageService {
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
         logger.info("[ImageStorageService] 文件保存成功");
 
-        // 返回访问URL（使用 /files/ 前缀以匹配静态资源处理器）
+        // 返回相对路径（不以 / 开头，与 /files/ 匹配）
+        // 格式：category/year/month/filename
         String relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
-        String imageUrl = baseUrl + "/files/" + relativePath;
-        logger.info("[ImageStorageService] 返回图片URL: " + imageUrl);
-        return imageUrl;
+        logger.info("[ImageStorageService] 返回图片相对路径: " + relativePath);
+        // 注意：不再拼接baseUrl，直接返回相对路径
+        // 前端或DTO转换器需要使用 ImageUrlUtils.toFullUrl() 来拼接完整URL
+        return relativePath;
     }
 
     /**
@@ -150,10 +152,16 @@ public class ImageStorageService {
 
     /**
      * 从本地删除图片
+     * @param imagePath 图片相对路径或绝对URL
      */
-    private boolean deleteFromLocal(String imageUrl) throws IOException {
-        // 从URL中提取相对路径（支持 /files/ 前缀）
-        String relativePath = imageUrl.replace(baseUrl + "/files/", "").replace(baseUrl + "/", "");
+    private boolean deleteFromLocal(String imagePath) throws IOException {
+        // 如果是绝对URL，提取相对路径
+        String relativePath = imagePath;
+        if (imagePath != null && (imagePath.startsWith("http://") || imagePath.startsWith("https://"))) {
+            // 从URL中提取相对路径（支持 /files/ 前缀）
+            relativePath = imagePath.replace(baseUrl + "/files/", "").replace(baseUrl + "/", "");
+        }
+        
         Path filePath = Paths.get(localStoragePath, relativePath);
         
         if (Files.exists(filePath)) {
@@ -214,9 +222,12 @@ public class ImageStorageService {
         Path targetPath = categoryPath.resolve(filename);
         Files.write(targetPath, imageBytes);
 
-        // 返回访问URL（使用 /files/ 前缀以匹配静态资源处理器）
+        // 返回相对路径（不以 / 开头，与 /files/ 匹配）
+        // 格式：category/year/month/filename
         String relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
-        return baseUrl + "/files/" + relativePath;
+        // 注意：不再拼接baseUrl，直接返回相对路径
+        // 前端或DTO转换器需要使用 ImageUrlUtils.toFullUrl() 来拼接完整URL
+        return relativePath;
     }
 
     /**

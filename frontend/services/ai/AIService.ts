@@ -22,6 +22,7 @@ import {
 } from './types';
 import { AIConfigManager } from './config';
 import { adapterManager } from './AdapterManager';
+import { BusinessServiceManager } from './business/BusinessServiceManager';
 
 const API_BASE_URL = 'http://localhost:8081/api';
 
@@ -29,6 +30,18 @@ const API_BASE_URL = 'http://localhost:8081/api';
  * 统一AI服务类
  */
 export class AIService {
+  // 业务服务管理器
+  private _businessServices?: BusinessServiceManager;
+
+  /**
+   * 获取业务服务管理器（延迟初始化）
+   */
+  get businessServices(): BusinessServiceManager {
+    if (!this._businessServices) {
+      this._businessServices = new BusinessServiceManager(this);
+    }
+    return this._businessServices;
+  }
   /**
    * 生成文本
    */
@@ -142,46 +155,10 @@ export class AIService {
   /**
    * 生成角色（从提示词）
    * 统一的角色生成接口，支持所有模式和provider
+   * @deprecated 使用 businessServices.character.generateCharacterFromPrompt 代替
    */
   async generateCharacterFromPrompt(prompt: string, eraName: string): Promise<any> {
-    const systemPrompt = `You are a creative writer. Create a complete character profile for a world/era named "${eraName}".
-Output JSON only with these properties: 
-- name, age (number), role, bio
-- systemInstruction (detailed roleplay instructions)
-- firstMessage (greeting)
-- themeColor (hex), colorAccent (hex)
-- mbti (e.g. INFJ)
-- tags (array of strings, personality keywords)
-- speechStyle (description of how they talk)
-- catchphrases (array of strings, 2-3 common phrases)
-- secrets (hidden depth/secret)
-- motivations (current goal)
-
-The content MUST be in Chinese.`;
-    
-    const userPrompt = `Character concept: "${prompt}".`;
-
-    try {
-      const responseText = await this.generateTextString(userPrompt, systemPrompt, { jsonMode: true });
-      const details = JSON.parse(responseText);
-
-      // 使用占位符图片以节省成本
-      const avatarUrl = 'https://picsum.photos/seed/default_avatar/400/600';
-      const backgroundUrl = 'https://picsum.photos/seed/default_bg/1080/1920';
-
-      return {
-        id: `custom_${Date.now()}`,
-        voiceName: 'Kore',
-        ...details,
-        avatarUrl,
-        backgroundUrl,
-      };
-    } catch (error) {
-      throw new AIServiceException(
-        `角色生成失败: ${error instanceof Error ? error.message : String(error)}`,
-        'unknown'
-      );
-    }
+    return this.businessServices.character.generateCharacterFromPrompt(prompt, eraName);
   }
 
   /**
@@ -199,186 +176,66 @@ The content MUST be in Chinese.`;
 
   /**
    * 生成场景描述（基于对话历史）
+   * @deprecated 使用 businessServices.scene.generateSceneDescription 代替
    */
   async generateSceneDescription(history: Array<{role: string, text: string}>): Promise<string | null> {
-    try {
-      const prompt = "Summarize the current visual setting and atmosphere of the story based on the last few messages. Keep it concise (1-2 sentences), focusing on visual elements for image generation.";
-      const context = history.slice(-6).map(m => `${m.role}: ${m.text}`).join('\n');
-      const responseText = await this.generateTextString(`${prompt}\n\nSTORY CONTEXT:\n${context}`);
-      return responseText || null;
-    } catch (error) {
-      console.error('[AIService] 生成场景描述失败:', error);
-      return null;
-    }
+    return this.businessServices.scene.generateSceneDescription(history);
   }
 
   /**
    * 生成智慧回响（从对话历史中提取）
+   * @deprecated 使用 businessServices.dialogue.generateWisdomEcho 代替
    */
   async generateWisdomEcho(history: Array<{role: string, text: string}>, characterName: string): Promise<string | null> {
-    try {
-      const prompt = `Analyze the conversation history. Extract a single, profound, and memorable quote (max 30 words) that represents the core wisdom or emotional comfort provided by ${characterName}. Output ONLY the quote.`;
-      const context = history.map(m => `${m.role}: ${m.text}`).join('\n');
-      const responseText = await this.generateTextString(`${prompt}\n\nCONVERSATION:\n${context}`);
-      return responseText || null;
-    } catch (error) {
-      console.error('[AIService] 生成智慧回响失败:', error);
-      return null;
-    }
+    return this.businessServices.dialogue.generateWisdomEcho(history, characterName);
   }
 
   /**
    * 生成心情图片
+   * @deprecated 使用 businessServices.scene.generateMoodImage 代替
    */
   async generateMoodImage(text: string, worldStyle?: string): Promise<string | null> {
-    try {
-      // 构建提示词
-      let prompt = `A moody, atmospheric scene that captures the emotional essence of: "${text}". `;
-      if (worldStyle) {
-        prompt += `Style: ${worldStyle}. `;
-      }
-      prompt += `High quality, cinematic lighting, vibrant colors. Aspect Ratio: 16:9.`;
-
-      const response = await this.generateImage({
-        prompt,
-        aspectRatio: '16:9',
-      });
-
-      if (response.images && response.images.length > 0) {
-        return response.images[0].url || response.images[0].base64 || null;
-      }
-      return null;
-    } catch (error) {
-      console.error('[AIService] 生成心情图片失败:', error);
-      return null;
-    }
+    return this.businessServices.scene.generateMoodImage(text, worldStyle);
   }
 
   /**
    * 生成每日问候
+   * @deprecated 使用 businessServices.journal.generateDailyGreeting 代替
    */
   async generateDailyGreeting(
     recentEntries: Array<{title: string, content: string, timestamp: number}>,
     userName?: string
   ): Promise<{greeting: string, question: string} | null> {
-    try {
-      let recentEntriesContext = '';
-      if (recentEntries.length > 0) {
-        recentEntriesContext = recentEntries.slice(-3).map((entry, index) => 
-          `日记${index + 1}（${new Date(entry.timestamp).toLocaleDateString()}）：\n标题：${entry.title}\n内容：${entry.content.substring(0, 300)}${entry.content.length > 300 ? '...' : ''}`
-        ).join('\n\n');
-      } else {
-        recentEntriesContext = '暂无日记记录';
-      }
-
-      const systemInstruction = `You are a gentle, philosophical AI companion in the "HeartSphere" world.
-Your goal is to greet the user and ask a deep, thought-provoking question to help them start journaling.
-
-Context:
-- User Name: ${userName || '旅人'}
-- Recent Journal Entries (if any): 
-${recentEntriesContext}
-
-Instructions:
-1. Write a short, warm greeting (1 sentence). If they haven't written in a while, welcome them back gently.
-2. Write a single, insightful question (prompt) based on their recent themes (e.g., if they were sad, ask about healing; if happy, ask about gratitude).
-3. If no entries, ask a universal question about their current state or dreams.
-4. Output strictly in JSON format: { "greeting": "...", "prompt": "..." }
-5. Language: Chinese. Tone: Poetic, empathetic, calm.`;
-
-      const prompt = '请生成问候和问题。';
-      const responseText = await this.generateTextString(prompt, systemInstruction, { jsonMode: true });
-      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const result = JSON.parse(jsonStr);
-
-      return {
-        greeting: result.greeting || (recentEntries.length === 0 
-          ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
-          : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。'),
-        question: result.prompt || result.question || (recentEntries.length === 0
-          ? '今天有什么让你印象深刻的事吗？'
-          : '今天想记录些什么新的想法呢？')
-      };
-    } catch (error) {
-      console.error('[AIService] 生成每日问候失败:', error);
-      // 返回默认问候
-      return {
-        greeting: recentEntries.length === 0 
-          ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
-          : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
-        question: recentEntries.length === 0
-          ? '今天有什么让你印象深刻的事吗？'
-          : '今天想记录些什么新的想法呢？'
-      };
-    }
+    return this.businessServices.journal.generateDailyGreeting(recentEntries, userName);
   }
+
 
   /**
    * 生成时间信件（Chronos Letter）
+   * @deprecated 使用 businessServices.letter.generateChronosLetter 代替
    */
   async generateChronosLetter(
     sender: {name: string, role: string, systemInstruction?: string},
     userProfile: {nickname: string},
     journalEntries: Array<{title: string}>
   ): Promise<{subject: string, content: string} | null> {
-    try {
-      const randomEntry = journalEntries.length > 0 ? journalEntries[Math.floor(Math.random() * journalEntries.length)] : null;
-      const memoryContext = randomEntry ? `I remember you wrote about "${randomEntry.title}"...` : '';
-
-      const prompt = `Write a warm, personal letter to ${userProfile.nickname}.
-You haven't seen them in a while. 
-Mention something specific about their journey or the "memory" provided below to show you care.
-MEMORY CONTEXT: ${memoryContext}
-Output JSON with "subject" and "content".`;
-
-      const systemInstruction = `You are ${sender.name} (${sender.role}). ${sender.systemInstruction || ''}`;
-      const responseText = await this.generateTextString(prompt, systemInstruction, { jsonMode: true });
-      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(jsonStr);
-    } catch (error) {
-      console.error('[AIService] 生成时间信件失败:', error);
-      return null;
-    }
+    return this.businessServices.letter.generateChronosLetter(sender, userProfile, journalEntries);
   }
 
   /**
    * 从提示词生成图片
+   * @deprecated 使用 businessServices.media.generateImageFromPrompt 代替
    */
   async generateImageFromPrompt(prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '3:4' | '4:3' = '1:1'): Promise<string | null> {
-    try {
-      const response = await this.generateImage({
-        prompt,
-        aspectRatio,
-      });
-
-      if (response.images && response.images.length > 0) {
-        return response.images[0].url || response.images[0].base64 || null;
-      }
-      return null;
-    } catch (error) {
-      console.error('[AIService] 从提示词生成图片失败:', error);
-      return null;
-    }
+    return this.businessServices.media.generateImageFromPrompt(prompt, aspectRatio);
   }
 
   /**
    * 生成语音（文本转语音）
+   * @deprecated 使用 businessServices.media.generateSpeech 代替
    */
   async generateSpeech(text: string, voiceName: string = 'Kore'): Promise<string | null> {
-    try {
-      const response = await this.textToSpeech({
-        text,
-        voice: voiceName,
-      });
-
-      if (response.audio) {
-        return response.audio.base64 || response.audio.url || null;
-      }
-      return null;
-    } catch (error) {
-      console.error('[AIService] 生成语音失败:', error);
-      return null;
-    }
+    return this.businessServices.media.generateSpeech(text, voiceName);
   }
 
   /**
@@ -1616,54 +1473,102 @@ The content MUST be in Chinese. The story should be engaging, with clear charact
   /**
    * 生成角色图片
    */
+  /**
+   * 生成角色图片
+   * @deprecated 使用 businessServices.character.generateCharacterImage 代替
+   */
   async generateCharacterImage(character: {name: string, role: string, bio: string, themeColor: string}, worldStyle?: string): Promise<string | null> {
-    try {
-      const { constructCharacterAvatarPrompt } = await import('../../utils/promptConstructors');
-      const prompt = constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
-      return await this.generateImageFromPrompt(prompt, '3:4');
-    } catch (error) {
-      console.error('[AIService] 生成角色图片失败:', error);
-      return null;
-    }
+    return this.businessServices.character.generateCharacterImage(character, worldStyle);
   }
 
   /**
    * 生成镜像洞察
+   * @deprecated 使用 businessServices.journal.generateMirrorInsight 代替
    */
   async generateMirrorInsight(journalContent: string, pastEntries: string[]): Promise<string | null> {
-    try {
-      const prompt = `You are the "Mirror of Truth" (本我镜像). Analyze the user's journal entry and their past patterns (if any).
-Your goal is to provide a sharp, psychological insight about their subconscious desires, fears, or hidden strengths.
-
-Style Guidelines:
-- Be objective but supportive.
-- Be slightly mysterious, like a tarot reading or a Jungian analysis.
-- Keep it under 50 words.
-- Speak in Chinese.`;
-
-      const context = `CURRENT ENTRY: ${journalContent}\n\nPAST ENTRIES CONTEXT:\n${pastEntries.join('\n')}`;
-      const responseText = await this.generateTextString(`${prompt}\n\nCONTEXT:\n${context}`);
-      return responseText || null;
-    } catch (error) {
-      console.error('[AIService] 生成镜像洞察失败:', error);
-      return null;
-    }
+    return this.businessServices.journal.generateMirrorInsight(journalContent, pastEntries);
   }
 
   /**
    * 分析图片生成时代描述（仅支持 Gemini，因为它需要图片输入）
    * 注意：这个方法可能需要特殊处理，因为不是所有适配器都支持图片输入
    */
+  /**
+   * 分析图片生成时代信息
+   * @deprecated 使用 businessServices.media.analyzeImageForEra 代替
+   */
   async analyzeImageForEra(base64Image: string): Promise<{name: string, description: string} | null> {
-    // 这个方法需要图片输入，目前只有 Gemini 支持，所以暂时返回 null
-    // 如果需要，可以在 GeminiAdapter 中实现专门的图片分析功能
-    console.warn('[AIService] analyzeImageForEra 暂未实现，需要图片输入支持');
-    return null;
+    return this.businessServices.media.analyzeImageForEra(base64Image);
   }
 
   /**
-   * 获取风格提示词后缀（辅助方法）
+   * 生成主线剧情
+   * @deprecated 使用 businessServices.story.generateMainStory 代替
    */
+  async generateMainStory(
+    eraName: string,
+    eraDescription: string,
+    characters: Array<{name: string, role: string, bio: string}>,
+    optionalPrompt?: string
+  ): Promise<any> {
+    return this.businessServices.story.generateMainStory(eraName, eraDescription, characters, optionalPrompt);
+  }
+
+  /**
+   * 从提示词生成场景
+   * @deprecated 使用 businessServices.story.generateScenarioFromPrompt 代替
+   */
+  async generateScenarioFromPrompt(prompt: string): Promise<any> {
+    return this.businessServices.story.generateScenarioFromPrompt(prompt);
+  }
+
+  /**
+   * 根据标题、场景、简介、标签和角色生成剧本节点流程
+   * @deprecated 使用 businessServices.story.generateScriptWithCharacters 代替
+   */
+  async generateScriptWithCharacters(params: {
+    title: string;
+    sceneName: string;
+    sceneDescription?: string;
+    description?: string;
+    tags?: string;
+    characters: Array<{
+      id: string;
+      name: string;
+      role?: string;
+      bio?: string;
+    }>;
+  }): Promise<any> {
+    return this.businessServices.story.generateScriptWithCharacters(params);
+  }
+
+  /**
+   * 生成用户头像
+   * @deprecated 使用 businessServices.media.generateUserAvatar 代替
+   */
+  async generateUserAvatar(nickname: string, worldStyle?: string): Promise<string | null> {
+    return this.businessServices.media.generateUserAvatar(nickname, worldStyle);
+  }
+
+  /**
+   * 生成视频（从提示词）
+   * @deprecated 使用 generateVideo 代替
+   */
+  async generateVideoFromPrompt(prompt: string): Promise<string | null> {
+    try {
+      const response = await this.generateVideo({
+        prompt,
+        aspectRatio: '16:9',
+      });
+      if (response.videos && response.videos.length > 0) {
+        return response.videos[0].url || response.videos[0].base64 || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('[AIService] 生成视频失败:', error);
+      return null;
+    }
+  }
 }
 
 // 单例实例

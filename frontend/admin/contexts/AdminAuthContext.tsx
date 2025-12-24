@@ -5,6 +5,7 @@ import { showAlert } from '../../utils/dialog';
 interface AdminAuthContextType {
     isAuthenticated: boolean;
     adminToken: string | null;
+    adminRole: 'SUPER_ADMIN' | 'ADMIN' | null;
     username: string;
     password: string;
     loginError: string;
@@ -22,14 +23,19 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [adminToken, setAdminToken] = useState<string | null>(null);
+    const [adminRole, setAdminRole] = useState<'SUPER_ADMIN' | 'ADMIN' | null>(null);
     const [loginError, setLoginError] = useState('');
     const [loading, setLoading] = useState(false);
 
     // 检查本地存储的token
     useEffect(() => {
         const token = localStorage.getItem('admin_token');
+        const role = localStorage.getItem('admin_role') as 'SUPER_ADMIN' | 'ADMIN' | null;
         if (token) {
             setAdminToken(token);
+            if (role) {
+                setAdminRole(role);
+            }
             setIsAuthenticated(true);
         }
     }, []);
@@ -64,8 +70,18 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
         try {
             const response = await adminApi.login(finalUsername, finalPassword);
             const token = response.token;
+            const role = response.role as 'SUPER_ADMIN' | 'ADMIN' | undefined;
+            
+            console.log('[AdminAuthContext] 登录响应:', { token: token?.substring(0, 20) + '...', role, response });
             
             localStorage.setItem('admin_token', token);
+            if (role) {
+                localStorage.setItem('admin_role', role);
+                setAdminRole(role);
+                console.log('[AdminAuthContext] 角色已保存:', role);
+            } else {
+                console.warn('[AdminAuthContext] 登录响应中未包含role字段');
+            }
             setAdminToken(token);
             setIsAuthenticated(true);
             setUsername('');
@@ -81,7 +97,9 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const logout = useCallback(() => {
         localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_role');
         setAdminToken(null);
+        setAdminRole(null);
         setIsAuthenticated(false);
         setUsername('');
         setPassword('');
@@ -93,6 +111,7 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             value={{
                 isAuthenticated,
                 adminToken,
+                adminRole,
                 username,
                 password,
                 loginError,

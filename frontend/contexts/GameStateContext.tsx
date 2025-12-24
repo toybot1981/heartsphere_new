@@ -9,7 +9,7 @@ import { GameStateAction, GameStateContextType } from './types/gameState.types';
 import { gameStateReducer } from '../reducers/gameStateReducer';
 import { DEFAULT_GAME_STATE } from './constants/defaultState';
 import { storageService } from '../services/storage';
-import { geminiService } from '../services/gemini';
+import { geminiService } from '../services/gemini'; // 兼容层，逐步迁移到 aiService
 import { AppSettings, WorldScene, Character, Message } from '../types';
 
 // 创建Context

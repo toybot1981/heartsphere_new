@@ -86,6 +86,7 @@ public class AdminResourceController extends BaseAdminController {
         systemResourceService.deleteResource(id);
         return ResponseEntity.ok().build();
     }
+
 }
 
 
