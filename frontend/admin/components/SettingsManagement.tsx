@@ -139,7 +139,11 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
         if (!adminToken) return;
         try {
             const data = await adminApi.config.getWechatConfig(adminToken);
-            setWechatConfig(data);
+            // 如果 appSecret 是 "******"（隐藏的密码占位符），则设置为空字符串
+            setWechatConfig({
+                ...data,
+                appSecret: data.appSecret === '******' ? '' : data.appSecret
+            });
         } catch (error: any) {
             console.error('加载微信配置失败:', error);
         }
@@ -171,7 +175,12 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
     const handleSaveWechatConfig = async () => {
         if (!adminToken) return;
         try {
-            await adminApi.config.setWechatConfig(wechatConfig, adminToken);
+            // 如果 appSecret 是 "******"（隐藏的密码占位符），则不发送
+            const configToSave = {
+                ...wechatConfig,
+                appSecret: wechatConfig.appSecret === '******' ? undefined : wechatConfig.appSecret
+            };
+            await adminApi.config.setWechatConfig(configToSave, adminToken);
             await loadWechatConfig();
             showAlert('保存成功', '成功', 'success');
         } catch (error: any) {
@@ -475,6 +484,20 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                     
                     {/* Notion 配置 */}
                     <ConfigSection title="Notion 配置">
+                        <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs text-slate-400">配置 Notion 集成以同步笔记数据</span>
+                            <a 
+                                href="https://developers.notion.com/docs/getting-started" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            >
+                                📖 如何申请
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
                         <InputGroup label="Notion Integration Token">
                             <TextInput
                                 type="password"
@@ -494,6 +517,20 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                     
                     {/* 微信开放平台配置 */}
                     <ConfigSection title="微信开放平台配置（用于扫码登录）">
+                        <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs text-slate-400">配置微信开放平台网站应用以启用扫码登录</span>
+                            <a 
+                                href="https://open.weixin.qq.com/" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            >
+                                📖 如何申请
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
                         <InputGroup label="AppID">
                             <TextInput
                                 value={wechatConfig.appId}
@@ -525,6 +562,20 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                     
                     {/* 微信支付配置 */}
                     <ConfigSection title="微信支付配置">
+                        <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs text-slate-400">配置微信支付以启用支付功能</span>
+                            <a 
+                                href="https://pay.weixin.qq.com/" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            >
+                                📖 如何申请
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
                         <InputGroup label="AppID（商户号对应的AppID）">
                             <TextInput
                                 value={wechatPayConfig.appId}
@@ -578,6 +629,20 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                     
                     {/* 支付宝支付配置 */}
                     <ConfigSection title="支付宝支付配置">
+                        <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs text-slate-400">配置支付宝支付以启用支付功能</span>
+                            <a 
+                                href="https://open.alipay.com/" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            >
+                                📖 如何申请
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
                         <InputGroup label="应用AppID">
                             <TextInput
                                 value={alipayConfig.appId}

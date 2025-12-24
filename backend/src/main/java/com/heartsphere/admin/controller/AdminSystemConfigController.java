@@ -101,7 +101,7 @@ public class AdminSystemConfigController extends BaseAdminController {
         if (appId != null) {
             systemConfigService.setWechatAppId(appId);
         }
-        if (appSecret != null && !appSecret.isEmpty()) {
+        if (appSecret != null && !appSecret.isEmpty() && !appSecret.equals("******")) {
             systemConfigService.setWechatAppSecret(appSecret);
         }
         if (redirectUri != null) {
@@ -121,8 +121,12 @@ public class AdminSystemConfigController extends BaseAdminController {
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
         Map<String, Object> config = new HashMap<>();
-        config.put("host", systemConfigService.getEmailHost() != null ? systemConfigService.getEmailHost() : "smtp.163.com");
-        config.put("port", systemConfigService.getEmailPort() != null ? systemConfigService.getEmailPort() : "25");
+        String emailType = systemConfigService.getEmailType();
+        config.put("type", emailType != null ? emailType : "163");
+        config.put("host", systemConfigService.getEmailHost() != null ? systemConfigService.getEmailHost() : 
+            ("163".equals(emailType) ? "smtp.163.com" : "qq".equals(emailType) ? "smtp.qq.com" : "smtp.163.com"));
+        config.put("port", systemConfigService.getEmailPort() != null ? systemConfigService.getEmailPort() : 
+            ("163".equals(emailType) ? "25" : "qq".equals(emailType) ? "587" : "25"));
         config.put("username", systemConfigService.getEmailUsername() != null ? systemConfigService.getEmailUsername() : "tongyexin@163.com");
         config.put("password", systemConfigService.getEmailPassword() != null ? "******" : "");
         config.put("from", systemConfigService.getEmailFrom());
@@ -134,25 +138,49 @@ public class AdminSystemConfigController extends BaseAdminController {
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
+        String emailType = request.get("type");
         String host = request.get("host");
         String port = request.get("port");
         String username = request.get("username");
         String password = request.get("password");
         String from = request.get("from");
         
-        if (host != null) {
+        // 如果设置了邮箱类型，根据类型自动填充配置
+        if (emailType != null && !emailType.isEmpty()) {
+            systemConfigService.setEmailType(emailType);
+            
+            // 根据邮箱类型自动设置SMTP配置
+            if ("163".equals(emailType)) {
+                if (host == null || host.isEmpty()) {
+                    systemConfigService.setEmailHost("smtp.163.com");
+                }
+                if (port == null || port.isEmpty()) {
+                    systemConfigService.setEmailPort("25");
+                }
+            } else if ("qq".equals(emailType)) {
+                if (host == null || host.isEmpty()) {
+                    systemConfigService.setEmailHost("smtp.qq.com");
+                }
+                if (port == null || port.isEmpty()) {
+                    systemConfigService.setEmailPort("587");
+                }
+            }
+            // custom类型不自动填充，由用户手动配置
+        }
+        
+        if (host != null && !host.isEmpty()) {
             systemConfigService.setEmailHost(host);
         }
-        if (port != null) {
+        if (port != null && !port.isEmpty()) {
             systemConfigService.setEmailPort(port);
         }
-        if (username != null) {
+        if (username != null && !username.isEmpty()) {
             systemConfigService.setEmailUsername(username);
         }
-        if (password != null) {
+        if (password != null && !password.isEmpty() && !password.equals("******")) {
             systemConfigService.setEmailPassword(password);
         }
-        if (from != null) {
+        if (from != null && !from.isEmpty()) {
             systemConfigService.setEmailFrom(from);
         }
         
@@ -163,10 +191,14 @@ public class AdminSystemConfigController extends BaseAdminController {
         }
         
         Map<String, Object> response = new HashMap<>();
-        response.put("host", systemConfigService.getEmailHost() != null ? systemConfigService.getEmailHost() : "smtp.163.com");
-        response.put("port", systemConfigService.getEmailPort() != null ? systemConfigService.getEmailPort() : "25");
+        String currentType = systemConfigService.getEmailType();
+        response.put("type", currentType != null ? currentType : "163");
+        response.put("host", systemConfigService.getEmailHost() != null ? systemConfigService.getEmailHost() : 
+            ("163".equals(currentType) ? "smtp.163.com" : "qq".equals(currentType) ? "smtp.qq.com" : "smtp.163.com"));
+        response.put("port", systemConfigService.getEmailPort() != null ? systemConfigService.getEmailPort() : 
+            ("163".equals(currentType) ? "25" : "qq".equals(currentType) ? "587" : "25"));
         response.put("username", systemConfigService.getEmailUsername() != null ? systemConfigService.getEmailUsername() : "tongyexin@163.com");
-        response.put("password", "******");
+        response.put("password", systemConfigService.getEmailPassword() != null ? "******" : "");
         response.put("from", systemConfigService.getEmailFrom());
         return ResponseEntity.ok(response);
     }

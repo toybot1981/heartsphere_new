@@ -199,6 +199,22 @@ public class SystemConfigService {
     // ========== 邮件配置 ==========
 
     /**
+     * 获取邮箱类型
+     */
+    public String getEmailType() {
+        String type = getConfigValue(ConfigKey.EMAIL_TYPE);
+        return type != null ? type : "163"; // 默认163
+    }
+
+    /**
+     * 设置邮箱类型
+     */
+    @Transactional
+    public void setEmailType(String type) {
+        setConfigValue(ConfigKey.EMAIL_TYPE, type);
+    }
+
+    /**
      * 获取邮件服务器地址
      */
     public String getEmailHost() {

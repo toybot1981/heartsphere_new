@@ -15,6 +15,7 @@ public enum ConfigKey {
     WECHAT_REDIRECT_URI("wechat_redirect_uri", "微信OAuth回调地址", "http://localhost:8081/api/wechat/callback", String.class),
     
     // 邮件配置
+    EMAIL_TYPE("email_type", "邮箱类型：163、qq、custom", "163", String.class),
     EMAIL_HOST("email_host", "邮件服务器地址（SMTP）", null, String.class),
     EMAIL_PORT("email_port", "邮件服务器端口", null, String.class),
     EMAIL_USERNAME("email_username", "邮件服务器用户名（通常是邮箱地址）", null, String.class),
