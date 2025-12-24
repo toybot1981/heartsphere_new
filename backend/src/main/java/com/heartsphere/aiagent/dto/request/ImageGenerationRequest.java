@@ -40,4 +40,10 @@ public class ImageGenerationRequest {
     
     @Schema(description = "图片风格（可选）", example = "realistic")
     private String style;
+    
+    @Schema(description = "API基础URL（可选，用于统一接入模式）", example = "https://ark.cn-beijing.volces.com/api/v3")
+    private String baseUrl; // API基础URL，从配置表中获取
+    
+    @Schema(description = "API密钥（可选，用于统一接入模式，从模型配置表获取）", example = "xxx")
+    private String apiKey; // API密钥，从配置表中获取
 }

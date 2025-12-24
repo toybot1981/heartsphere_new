@@ -3,7 +3,7 @@ import { Button } from '../../components/Button';
 import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
 import { imageApi } from '../../services/api';
 import { ResourcePicker } from '../../components/ResourcePicker';
-import { geminiService } from '../../services/gemini';
+import { aiService } from '../../services/ai';
 import { AppSettings } from '../../types';
 import { storageService } from '../../services/storage';
 import { showConfirm } from '../../utils/dialog';
@@ -173,7 +173,7 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                 bio: c.bio || ''
             }));
 
-            const generated = await geminiService.generateMainStory(
+            const generated = await aiService.generateMainStory(
                 selectedEra.name,
                 selectedEra.description || '',
                 characterInfo,

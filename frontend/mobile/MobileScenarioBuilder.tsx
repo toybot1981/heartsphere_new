@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CustomScenario, StoryNode, StoryOption } from '../types';
 import { Button } from '../components/Button';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { showAlert, showConfirm } from '../utils/dialog';
 
 interface MobileScenarioBuilderProps {
@@ -104,7 +104,7 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
     if (!magicPrompt.trim()) return;
     setIsMagicLoading(true);
     try {
-      const scenario = await geminiService.generateScenarioFromPrompt(magicPrompt);
+      const scenario = await aiService.generateScenarioFromPrompt(magicPrompt);
       if (scenario) {
         setTitle(scenario.title);
         setDescription(scenario.description);

@@ -316,36 +316,510 @@ public class DashScopeAdapter implements ModelAdapter {
             log.debug("DashScope图片生成请求: provider={}, model={}, prompt={}", 
                 getProviderType(), request.getModel(), request.getPrompt());
             
-            // 图片生成暂时使用 MultimodalService（返回 Spring AI 的 ImageResponse，需要转换）
-            org.springframework.ai.image.ImageResponse imageResponse = multimodalService.generateImage(request.getPrompt(), null);
-            
-            // 转换为 ImageGenerationResponse
-            ImageGenerationResponse response = new ImageGenerationResponse();
-            response.setProvider(getProviderType());
-            response.setModel(request.getModel() != null ? request.getModel() : "wanx-v1");
-            
-            List<ImageGenerationResponse.Image> images = new ArrayList<>();
-            if (imageResponse.getResults() != null) {
-                for (var result : imageResponse.getResults()) {
-                    ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
-                    if (result.getOutput() != null && result.getOutput().getUrl() != null) {
-                        image.setUrl(result.getOutput().getUrl());
-                    }
-                    images.add(image);
-                }
+            // 获取 API key
+            String apiKey = getApiKey(request);
+            if (apiKey == null || apiKey.isEmpty()) {
+                throw new AIServiceException("DashScope API key 未配置");
             }
-            response.setImages(images);
             
-            ImageGenerationResponse.Usage usage = new ImageGenerationResponse.Usage();
-            usage.setImagesGenerated(images.size());
-            response.setUsage(usage);
+            // 优先使用请求中的 baseUrl（从配置表获取），如果没有则使用配置文件中的默认值
+            String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
+                ? request.getBaseUrl() 
+                : "https://dashscope.aliyuncs.com/api/v1";
+            log.debug("[DashScopeAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
-            return response;
+            // 判断使用哪个API端点
+            String model = request.getModel() != null ? request.getModel() : "wanx-v1";
+            
+            // qwen-image-plus 使用 multimodal-generation API
+            if ("qwen-image-plus".equals(model) || model.startsWith("qwen-image")) {
+                return generateImageWithMultimodalAPI(request, apiKey, effectiveBaseUrl, model);
+            } else {
+                // 其他模型使用 image-synthesis API
+                String url = effectiveBaseUrl + "/services/aigc/text2image/image-synthesis";
+                log.info("[DashScopeAdapter] 使用image-synthesis API - URL: {}, Model: {}, Prompt: {}", 
+                    url, model, request.getPrompt());
+                
+                // 构建请求体
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("model", model);
+                requestBody.put("input", Map.of("prompt", request.getPrompt()));
+                
+                // 构建参数
+                Map<String, Object> parameters = new HashMap<>();
+                if (request.getWidth() != null && request.getHeight() != null) {
+                    parameters.put("size", request.getWidth() + "*" + request.getHeight());
+                } else if (request.getAspectRatio() != null) {
+                    // 根据宽高比设置尺寸
+                    String[] ratio = request.getAspectRatio().split(":");
+                    if (ratio.length == 2) {
+                        int width = Integer.parseInt(ratio[0]) * 512;
+                        int height = Integer.parseInt(ratio[1]) * 512;
+                        parameters.put("size", width + "*" + height);
+                    }
+                } else {
+                    // 默认尺寸
+                    parameters.put("size", "1024*1024");
+                }
+                
+                if (request.getNegativePrompt() != null && !request.getNegativePrompt().isEmpty()) {
+                    parameters.put("negative_prompt", request.getNegativePrompt());
+                }
+                
+                if (request.getStyle() != null && !request.getStyle().isEmpty()) {
+                    parameters.put("style", request.getStyle());
+                }
+                
+                if (!parameters.isEmpty()) {
+                    requestBody.put("parameters", parameters);
+                }
+                
+                // 发送请求
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.set("Authorization", "Bearer " + apiKey);
+                headers.set("X-DashScope-Async", "enable"); // 启用异步模式
+                
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                
+                log.info("[DashScopeAdapter] image-synthesis请求 - URL: {}, Model: {}, RequestBody: {}", 
+                    url, model, objectMapper.writeValueAsString(requestBody));
+                
+                ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, JsonNode.class
+                );
+                
+                log.info("[DashScopeAdapter] image-synthesis响应 - Status: {}, Body: {}", 
+                    response.getStatusCode(), 
+                    response.getBody() != null ? response.getBody().toString() : "null");
+                
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    String errorMsg = response.getBody() != null 
+                        ? response.getBody().toString() 
+                        : "HTTP " + response.getStatusCode();
+                    log.error("[DashScopeAdapter] image-synthesis API调用失败 - Status: {}, Error: {}", 
+                        response.getStatusCode(), errorMsg);
+                    throw new AIServiceException("DashScope图片生成API调用失败: " + errorMsg);
+                }
+                
+                JsonNode responseBody = response.getBody();
+                if (responseBody == null) {
+                    throw new AIServiceException("DashScope图片生成API返回空响应");
+                }
+                
+                // 解析响应
+                return parseImageResponse(responseBody, request, model);
+            }
             
         } catch (Exception e) {
             log.error("DashScope图片生成失败", e);
             throw new AIServiceException("DashScope图片生成失败: " + e.getMessage(), e);
         }
+    }
+    
+    /**
+     * 解析DashScope图片生成响应
+     */
+    private ImageGenerationResponse parseImageResponse(JsonNode response, ImageGenerationRequest request, String model) {
+        ImageGenerationResponse result = new ImageGenerationResponse();
+        result.setProvider(getProviderType());
+        result.setModel(model);
+        
+        try {
+            List<ImageGenerationResponse.Image> images = new ArrayList<>();
+            
+            // DashScope 异步模式：先返回 task_id，需要轮询获取结果
+            if (response.has("output") && response.get("output").has("task_id")) {
+                String taskId = response.get("output").get("task_id").asText();
+                log.debug("DashScope图片生成任务ID: {}", taskId);
+                
+                // 轮询获取结果（最多30次，每次间隔2秒）
+                String resultUrl = "https://dashscope.aliyuncs.com/api/v1/tasks/" + taskId;
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", "Bearer " + getApiKey(request));
+                
+                for (int i = 0; i < 30; i++) {
+                    try {
+                        Thread.sleep(2000); // 等待2秒
+                        
+                        HttpEntity<String> entity = new HttpEntity<>(headers);
+                        ResponseEntity<JsonNode> taskResponse = restTemplate.exchange(
+                            resultUrl, HttpMethod.GET, entity, JsonNode.class
+                        );
+                        
+                        if (taskResponse.getStatusCode().is2xxSuccessful()) {
+                            JsonNode taskBody = taskResponse.getBody();
+                            if (taskBody == null) {
+                                log.warn("DashScope任务查询返回空响应，继续轮询");
+                                continue;
+                            }
+                            
+                            // 检查任务状态
+                            if (taskBody.has("task") && taskBody.get("task").has("status")) {
+                                String status = taskBody.get("task").get("status").asText();
+                                
+                                if ("SUCCEEDED".equals(status)) {
+                                    // 任务成功，获取图片URL
+                                    JsonNode output = taskBody.get("output");
+                                    if (output != null && output.has("results")) {
+                                        JsonNode results = output.get("results");
+                                        if (results.isArray()) {
+                                            for (JsonNode item : results) {
+                                                ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
+                                                if (item.has("url")) {
+                                                    image.setUrl(item.get("url").asText());
+                                                }
+                                                images.add(image);
+                                            }
+                                        }
+                                    }
+                                    break;
+                                } else if ("FAILED".equals(status)) {
+                                    String errorMsg = taskBody.has("message") 
+                                        ? taskBody.get("message").asText() 
+                                        : "任务失败";
+                                    throw new AIServiceException("DashScope图片生成任务失败: " + errorMsg);
+                                }
+                                // PENDING 或 RUNNING 状态，继续轮询
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new AIServiceException("轮询任务结果被中断");
+                    }
+                }
+                
+                if (images.isEmpty()) {
+                    throw new AIServiceException("DashScope图片生成超时，未获取到结果");
+                }
+            } else if (response.has("output") && response.get("output").has("results")) {
+                // 同步模式：直接返回结果
+                JsonNode results = response.get("output").get("results");
+                if (results.isArray()) {
+                    for (JsonNode item : results) {
+                        ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
+                        if (item.has("url")) {
+                            image.setUrl(item.get("url").asText());
+                        }
+                        images.add(image);
+                    }
+                }
+            }
+            
+            result.setImages(images);
+            
+            ImageGenerationResponse.Usage usage = new ImageGenerationResponse.Usage();
+            usage.setImagesGenerated(images.size());
+            result.setUsage(usage);
+            
+        } catch (Exception e) {
+            log.warn("解析DashScope图片响应失败", e);
+            result.setImages(new ArrayList<>());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 使用 multimodal-generation API 生成图片（适用于 qwen-image-plus）
+     */
+    private ImageGenerationResponse generateImageWithMultimodalAPI(ImageGenerationRequest request, 
+                                                                   String apiKey, 
+                                                                   String baseUrl, 
+                                                                   String model) {
+        try {
+            String url = baseUrl + "/services/aigc/multimodal-generation/generation";
+            
+            log.info("[DashScopeAdapter] 使用multimodal-generation API - URL: {}, Model: {}, Prompt: {}", 
+                url, model, request.getPrompt());
+            
+            // 构建请求体（multimodal-generation API 格式）
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", model);
+            
+            // 构建 input.messages 格式
+            Map<String, Object> textContent = new HashMap<>();
+            textContent.put("text", request.getPrompt());
+            
+            Map<String, Object> message = new HashMap<>();
+            message.put("role", "user");
+            message.put("content", Arrays.asList(textContent));
+            
+            Map<String, Object> input = new HashMap<>();
+            input.put("messages", Arrays.asList(message));
+            requestBody.put("input", input);
+            
+            // 构建参数
+            Map<String, Object> parameters = new HashMap<>();
+            
+            // qwen-image-plus 只支持固定尺寸：1664*928, 1472*1140, 1328*1328, 1140*1472, 928*1664
+            String[] allowedSizes = {"1664*928", "1472*1140", "1328*1328", "1140*1472", "928*1664"};
+            String selectedSize = "1328*1328"; // 默认尺寸
+            
+            if (request.getWidth() != null && request.getHeight() != null) {
+                // 如果指定了具体尺寸，检查是否在允许列表中
+                String requestedSize = request.getWidth() + "*" + request.getHeight();
+                boolean isValid = false;
+                for (String size : allowedSizes) {
+                    if (size.equals(requestedSize)) {
+                        isValid = true;
+                        selectedSize = requestedSize;
+                        break;
+                    }
+                }
+                if (!isValid) {
+                    log.warn("[DashScopeAdapter] qwen-image-plus不支持的尺寸: {}, 将使用默认尺寸: 1328*1328", requestedSize);
+                }
+            } else if (request.getAspectRatio() != null) {
+                // 根据宽高比映射到最接近的允许尺寸
+                selectedSize = mapAspectRatioToAllowedSize(request.getAspectRatio(), allowedSizes);
+                log.debug("[DashScopeAdapter] 宽高比 {} 映射到尺寸: {}", request.getAspectRatio(), selectedSize);
+            }
+            
+            parameters.put("size", selectedSize);
+            
+            if (request.getNegativePrompt() != null && !request.getNegativePrompt().isEmpty()) {
+                parameters.put("negative_prompt", request.getNegativePrompt());
+            } else {
+                parameters.put("negative_prompt", "");
+            }
+            
+            // 多模态生成API特有参数
+            parameters.put("prompt_extend", true); // 启用提示词扩展
+            parameters.put("watermark", false); // 不添加水印
+            
+            requestBody.put("parameters", parameters);
+            
+            // 发送请求
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + apiKey);
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            
+            log.info("[DashScopeAdapter] multimodal-generation请求 - URL: {}, Model: {}, RequestBody: {}", 
+                url, model, objectMapper.writeValueAsString(requestBody));
+            
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, JsonNode.class
+            );
+            
+            log.info("[DashScopeAdapter] multimodal-generation响应 - Status: {}, Body: {}", 
+                response.getStatusCode(), 
+                response.getBody() != null ? response.getBody().toString() : "null");
+            
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                String errorMsg = response.getBody() != null 
+                    ? response.getBody().toString() 
+                    : "HTTP " + response.getStatusCode();
+                log.error("[DashScopeAdapter] multimodal-generation API调用失败 - Status: {}, Error: {}", 
+                    response.getStatusCode(), errorMsg);
+                throw new AIServiceException("DashScope图片生成API调用失败: " + errorMsg);
+            }
+            
+            JsonNode responseBody = response.getBody();
+            if (responseBody == null) {
+                throw new AIServiceException("DashScope图片生成API返回空响应");
+            }
+            
+            // 解析响应（multimodal-generation 格式）
+            return parseMultimodalImageResponse(responseBody, request, model, apiKey, baseUrl);
+            
+        } catch (Exception e) {
+            log.error("[DashScopeAdapter] multimodal-generation图片生成失败", e);
+            throw new AIServiceException("DashScope图片生成失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 解析 multimodal-generation API 的响应（适用于 qwen-image-plus）
+     */
+    private ImageGenerationResponse parseMultimodalImageResponse(JsonNode response, 
+                                                                 ImageGenerationRequest request, 
+                                                                 String model,
+                                                                 String apiKey,
+                                                                 String baseUrl) {
+        ImageGenerationResponse result = new ImageGenerationResponse();
+        result.setProvider(getProviderType());
+        result.setModel(model);
+        
+        try {
+            List<ImageGenerationResponse.Image> images = new ArrayList<>();
+            
+            // multimodal-generation API 可能返回 task_id（异步模式）或直接返回结果（同步模式）
+            if (response.has("output")) {
+                JsonNode output = response.get("output");
+                
+                // 检查是否有 task_id（异步模式）
+                if (output.has("task_id")) {
+                    String taskId = output.get("task_id").asText();
+                    log.info("[DashScopeAdapter] multimodal-generation任务ID: {}", taskId);
+                    
+                    // 轮询获取结果（最多30次，每次间隔2秒）
+                    String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
+                        ? request.getBaseUrl() 
+                        : baseUrl;
+                    String resultUrl = effectiveBaseUrl + "/tasks/" + taskId;
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.set("Authorization", "Bearer " + apiKey);
+                    
+                    for (int i = 0; i < 30; i++) {
+                        try {
+                            Thread.sleep(2000); // 等待2秒
+                            
+                            HttpEntity<String> entity = new HttpEntity<>(headers);
+                            ResponseEntity<JsonNode> taskResponse = restTemplate.exchange(
+                                resultUrl, HttpMethod.GET, entity, JsonNode.class
+                            );
+                            
+                            if (taskResponse.getStatusCode().is2xxSuccessful()) {
+                                JsonNode taskBody = taskResponse.getBody();
+                                if (taskBody == null) {
+                                    log.warn("[DashScopeAdapter] multimodal-generation任务查询返回空响应，继续轮询");
+                                    continue;
+                                }
+                                
+                                log.debug("[DashScopeAdapter] multimodal-generation任务查询响应 (第{}次): {}", i + 1, taskBody.toString());
+                                
+                                // 检查任务状态
+                                // multimodal-generation API的任务响应格式可能是：
+                                // 1. task.task.status (标准格式)
+                                // 2. output.status (直接格式)
+                                // 3. status (最外层格式)
+                                String status = null;
+                                JsonNode taskOutput = null;
+                                
+                                if (taskBody.has("task") && taskBody.get("task").has("status")) {
+                                    // 标准格式：task.task.status
+                                    status = taskBody.get("task").get("status").asText();
+                                    taskOutput = taskBody.get("output");
+                                    log.debug("[DashScopeAdapter] 使用标准格式 - status={}, hasOutput={}", status, taskOutput != null);
+                                } else if (taskBody.has("output") && taskBody.get("output").has("status")) {
+                                    // 输出中直接包含状态
+                                    taskOutput = taskBody.get("output");
+                                    status = taskOutput.get("status").asText();
+                                    log.debug("[DashScopeAdapter] 使用output格式 - status={}", status);
+                                } else if (taskBody.has("status")) {
+                                    // 最外层状态
+                                    status = taskBody.get("status").asText();
+                                    taskOutput = taskBody.has("output") ? taskBody.get("output") : null;
+                                    log.debug("[DashScopeAdapter] 使用外层格式 - status={}, hasOutput={}", status, taskOutput != null);
+                                }
+                                
+                                if (status != null) {
+                                    if ("SUCCEEDED".equals(status) || "SUCCESS".equals(status)) {
+                                        // 任务成功，获取图片
+                                        if (taskOutput != null) {
+                                            images = extractImagesFromMultimodalOutput(taskOutput);
+                                            log.info("[DashScopeAdapter] multimodal-generation任务成功，提取到{}张图片", images.size());
+                                        } else {
+                                            // 尝试从整个响应中提取
+                                            images = extractImagesFromMultimodalOutput(taskBody);
+                                            log.info("[DashScopeAdapter] multimodal-generation任务成功，从响应根提取到{}张图片", images.size());
+                                        }
+                                        if (!images.isEmpty()) {
+                                            break;
+                                        } else {
+                                            log.warn("[DashScopeAdapter] 任务状态为成功但未找到图片，响应: {}", taskBody.toString());
+                                        }
+                                    } else if ("FAILED".equals(status) || "ERROR".equals(status)) {
+                                        String errorMsg = taskBody.has("message") 
+                                            ? taskBody.get("message").asText() 
+                                            : (taskBody.has("output") && taskBody.get("output").has("message")
+                                                ? taskBody.get("output").get("message").asText()
+                                                : "任务失败");
+                                        log.error("[DashScopeAdapter] multimodal-generation任务失败 - status={}, message={}", status, errorMsg);
+                                        throw new AIServiceException("DashScope图片生成任务失败: " + errorMsg);
+                                    } else {
+                                        // PENDING, RUNNING 或其他进行中状态，继续轮询
+                                        log.debug("[DashScopeAdapter] multimodal-generation任务进行中 - status={}", status);
+                                    }
+                                } else {
+                                    log.warn("[DashScopeAdapter] 无法识别任务状态格式，响应: {}", taskBody.toString());
+                                    // 尝试直接从响应中提取图片（可能是同步响应）
+                                    images = extractImagesFromMultimodalOutput(taskBody);
+                                    if (!images.isEmpty()) {
+                                        log.info("[DashScopeAdapter] 从未知格式响应中提取到{}张图片", images.size());
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new AIServiceException("轮询任务结果被中断");
+                        }
+                    }
+                    
+                    if (images.isEmpty()) {
+                        throw new AIServiceException("DashScope图片生成超时，未获取到结果");
+                    }
+                } else {
+                    // 同步模式：直接返回结果
+                    images = extractImagesFromMultimodalOutput(output);
+                }
+            }
+            
+            result.setImages(images);
+            
+            ImageGenerationResponse.Usage usage = new ImageGenerationResponse.Usage();
+            usage.setImagesGenerated(images.size());
+            result.setUsage(usage);
+            
+        } catch (Exception e) {
+            log.warn("[DashScopeAdapter] 解析multimodal-generation响应失败", e);
+            result.setImages(new ArrayList<>());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 从 multimodal-generation API 的 output 中提取图片
+     */
+    private List<ImageGenerationResponse.Image> extractImagesFromMultimodalOutput(JsonNode output) {
+        List<ImageGenerationResponse.Image> images = new ArrayList<>();
+        
+        try {
+            // multimodal-generation 响应格式：
+            // output.choices[0].message.content[] 或 output.results[]
+            if (output.has("choices") && output.get("choices").isArray()) {
+                JsonNode choices = output.get("choices");
+                if (choices.size() > 0) {
+                    JsonNode firstChoice = choices.get(0);
+                    if (firstChoice.has("message") && firstChoice.get("message").has("content")) {
+                        JsonNode content = firstChoice.get("message").get("content");
+                        if (content.isArray()) {
+                            for (JsonNode item : content) {
+                                if (item.has("image")) {
+                                    String imageUrl = item.get("image").asText();
+                                    ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
+                                    image.setUrl(imageUrl);
+                                    images.add(image);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (output.has("results") && output.get("results").isArray()) {
+                // 备用格式：results 数组
+                JsonNode results = output.get("results");
+                for (JsonNode item : results) {
+                    if (item.has("url")) {
+                        ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
+                        image.setUrl(item.get("url").asText());
+                        images.add(image);
+                    } else if (item.has("image")) {
+                        ImageGenerationResponse.Image image = new ImageGenerationResponse.Image();
+                        image.setUrl(item.get("image").asText());
+                        images.add(image);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[DashScopeAdapter] 提取multimodal-generation图片失败", e);
+        }
+        
+        return images;
     }
     
     @Override
@@ -456,9 +930,25 @@ public class DashScopeAdapter implements ModelAdapter {
     
     /**
      * 获取 API key
+     * 优先级：请求中的API key（从数据库配置获取）> 配置文件
      */
     private String getApiKey(TextGenerationRequest request) {
-        // TODO: 从管理后台配置中获取 API key
+        // 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
+        if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
+            log.debug("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）");
+            return request.getApiKey();
+        }
+        // 否则使用配置文件中的默认 API key
+        return defaultApiKey;
+    }
+    
+    private String getApiKey(ImageGenerationRequest request) {
+        // 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
+        if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
+            log.debug("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）(image)");
+            return request.getApiKey();
+        }
+        // 否则使用配置文件中的默认 API key
         return defaultApiKey;
     }
     
@@ -574,5 +1064,42 @@ public class DashScopeAdapter implements ModelAdapter {
         }
         
         return result;
+    }
+    
+    /**
+     * 将宽高比映射到 qwen-image-plus 允许的尺寸
+     * 允许的尺寸：1664*928 (16:9), 1472*1140 (4:3), 1328*1328 (1:1), 1140*1472 (3:4), 928*1664 (9:16)
+     */
+    private String mapAspectRatioToAllowedSize(String aspectRatio, String[] allowedSizes) {
+        try {
+            String[] ratio = aspectRatio.split(":");
+            if (ratio.length == 2) {
+                double widthRatio = Double.parseDouble(ratio[0]);
+                double heightRatio = Double.parseDouble(ratio[1]);
+                double aspect = widthRatio / heightRatio;
+                
+                double minDiff = Double.MAX_VALUE;
+                String bestMatch = "1328*1328"; // 默认
+                
+                for (String size : allowedSizes) {
+                    String[] dims = size.split("\\*");
+                    if (dims.length == 2) {
+                        double sizeAspect = Double.parseDouble(dims[0]) / Double.parseDouble(dims[1]);
+                        double diff = Math.abs(aspect - sizeAspect);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestMatch = size;
+                        }
+                    }
+                }
+                
+                log.debug("[DashScopeAdapter] 宽高比 {} (比例: {}) 映射到尺寸: {}", aspectRatio, aspect, bestMatch);
+                return bestMatch;
+            }
+        } catch (Exception e) {
+            log.warn("[DashScopeAdapter] 解析宽高比失败: {}, 使用默认尺寸", aspectRatio, e);
+        }
+        
+        return "1328*1328"; // 默认尺寸
     }
 }

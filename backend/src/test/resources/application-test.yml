@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -12,13 +12,25 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
   
   h2:
     console:
       enabled: true
+  
+  # 禁用Flyway迁移（测试环境使用Hibernate自动建表）
+  flyway:
+    enabled: false
+  
+  # AI配置（用于测试回退场景）
+  ai:
+    doubao:
+      api-key: 9ed07a4e-5dad-4cbc-8548-3295e7875b41
+      base-url: https://ark.cn-beijing.volces.com/api/v3
 
 logging:
   level:
     com.heartsphere: DEBUG
     org.springframework.web: DEBUG
+    com.heartsphere.aiagent: DEBUG
 

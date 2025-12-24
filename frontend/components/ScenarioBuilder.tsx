@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { CustomScenario, StoryNode, StoryOption } from '../types';
 import { Button } from './Button';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { showAlert } from '../utils/dialog';
 
 interface ScenarioBuilderProps {
@@ -79,7 +79,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({ initialScenari
     if (!magicPrompt.trim()) return;
     setIsMagicLoading(true);
     try {
-      const scenario = await geminiService.generateScenarioFromPrompt(magicPrompt);
+      const scenario = await aiService.generateScenarioFromPrompt(magicPrompt);
       if (scenario) {
         setTitle(scenario.title);
         setDescription(scenario.description);

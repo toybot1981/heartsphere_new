@@ -82,6 +82,22 @@ public class SubscriptionPlan {
     @Column(columnDefinition = "TEXT")
     private String features; // JSON格式
 
+    // 配额字段（从计费系统扩展）
+    @Column(name = "text_token_quota")
+    private Long textTokenQuota; // 文本Token配额（每月）
+
+    @Column(name = "image_generation_quota")
+    private Integer imageGenerationQuota; // 图片生成配额（每月）
+
+    @Column(name = "audio_processing_quota")
+    private Integer audioProcessingQuota; // 语音处理配额（每月，分钟）
+
+    @Column(name = "video_generation_quota")
+    private Integer videoGenerationQuota; // 视频生成配额（每月，秒）
+
+    @Column(name = "permanent_token_quota")
+    private Long permanentTokenQuota; // 永久Token配额
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

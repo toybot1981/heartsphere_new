@@ -1,7 +1,7 @@
 
 import React, { useRef } from 'react';
 import { UserProfile, JournalEntry, Character, Mail } from '../types';
-import { geminiService } from '../services/gemini';
+import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { showAlert } from '../utils/dialog';
 
 interface MobileProfileProps {
@@ -39,7 +39,7 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
   };
 
   const handleCopyPrompt = async () => {
-      const prompt = geminiService.constructUserAvatarPrompt(userProfile.nickname);
+      const prompt = constructUserAvatarPrompt(userProfile.nickname);
       try {
           await navigator.clipboard.writeText(prompt);
           showAlert("提示词已复制！", "提示", "success");

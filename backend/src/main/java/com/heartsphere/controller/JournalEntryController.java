@@ -214,6 +214,12 @@ public class JournalEntryController {
                 journalEntry.setTags(tagsObj instanceof String ? (String) tagsObj : tagsObj.toString());
             }
             
+            // 处理本我镜像（insight）
+            Object insightObj = journalEntryMap.get("insight");
+            if (insightObj != null) {
+                journalEntry.setInsight(insightObj instanceof String ? (String) insightObj : insightObj.toString());
+            }
+            
             System.out.println("JournalEntry object created: " + journalEntry);
             
             // 保存journalEntry
@@ -254,6 +260,7 @@ public class JournalEntryController {
         journalEntry.setTitle(journalEntryDTO.getTitle());
         journalEntry.setContent(journalEntryDTO.getContent());
         journalEntry.setTags(journalEntryDTO.getTags());
+        journalEntry.setInsight(journalEntryDTO.getInsight());
         journalEntry.setEntryDate(journalEntryDTO.getEntryDate());
 
         // 更新关联的世界、时代、角色

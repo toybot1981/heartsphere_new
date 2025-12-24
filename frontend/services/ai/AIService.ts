@@ -198,6 +198,190 @@ The content MUST be in Chinese.`;
   }
 
   /**
+   * 生成场景描述（基于对话历史）
+   */
+  async generateSceneDescription(history: Array<{role: string, text: string}>): Promise<string | null> {
+    try {
+      const prompt = "Summarize the current visual setting and atmosphere of the story based on the last few messages. Keep it concise (1-2 sentences), focusing on visual elements for image generation.";
+      const context = history.slice(-6).map(m => `${m.role}: ${m.text}`).join('\n');
+      const responseText = await this.generateTextString(`${prompt}\n\nSTORY CONTEXT:\n${context}`);
+      return responseText || null;
+    } catch (error) {
+      console.error('[AIService] 生成场景描述失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成智慧回响（从对话历史中提取）
+   */
+  async generateWisdomEcho(history: Array<{role: string, text: string}>, characterName: string): Promise<string | null> {
+    try {
+      const prompt = `Analyze the conversation history. Extract a single, profound, and memorable quote (max 30 words) that represents the core wisdom or emotional comfort provided by ${characterName}. Output ONLY the quote.`;
+      const context = history.map(m => `${m.role}: ${m.text}`).join('\n');
+      const responseText = await this.generateTextString(`${prompt}\n\nCONVERSATION:\n${context}`);
+      return responseText || null;
+    } catch (error) {
+      console.error('[AIService] 生成智慧回响失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成心情图片
+   */
+  async generateMoodImage(text: string, worldStyle?: string): Promise<string | null> {
+    try {
+      // 构建提示词
+      let prompt = `A moody, atmospheric scene that captures the emotional essence of: "${text}". `;
+      if (worldStyle) {
+        prompt += `Style: ${worldStyle}. `;
+      }
+      prompt += `High quality, cinematic lighting, vibrant colors. Aspect Ratio: 16:9.`;
+
+      const response = await this.generateImage({
+        prompt,
+        aspectRatio: '16:9',
+      });
+
+      if (response.images && response.images.length > 0) {
+        return response.images[0].url || response.images[0].base64 || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('[AIService] 生成心情图片失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成每日问候
+   */
+  async generateDailyGreeting(
+    recentEntries: Array<{title: string, content: string, timestamp: number}>,
+    userName?: string
+  ): Promise<{greeting: string, question: string} | null> {
+    try {
+      let recentEntriesContext = '';
+      if (recentEntries.length > 0) {
+        recentEntriesContext = recentEntries.slice(-3).map((entry, index) => 
+          `日记${index + 1}（${new Date(entry.timestamp).toLocaleDateString()}）：\n标题：${entry.title}\n内容：${entry.content.substring(0, 300)}${entry.content.length > 300 ? '...' : ''}`
+        ).join('\n\n');
+      } else {
+        recentEntriesContext = '暂无日记记录';
+      }
+
+      const systemInstruction = `You are a gentle, philosophical AI companion in the "HeartSphere" world.
+Your goal is to greet the user and ask a deep, thought-provoking question to help them start journaling.
+
+Context:
+- User Name: ${userName || '旅人'}
+- Recent Journal Entries (if any): 
+${recentEntriesContext}
+
+Instructions:
+1. Write a short, warm greeting (1 sentence). If they haven't written in a while, welcome them back gently.
+2. Write a single, insightful question (prompt) based on their recent themes (e.g., if they were sad, ask about healing; if happy, ask about gratitude).
+3. If no entries, ask a universal question about their current state or dreams.
+4. Output strictly in JSON format: { "greeting": "...", "prompt": "..." }
+5. Language: Chinese. Tone: Poetic, empathetic, calm.`;
+
+      const prompt = '请生成问候和问题。';
+      const responseText = await this.generateTextString(prompt, systemInstruction, { jsonMode: true });
+      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const result = JSON.parse(jsonStr);
+
+      return {
+        greeting: result.greeting || (recentEntries.length === 0 
+          ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+          : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。'),
+        question: result.prompt || result.question || (recentEntries.length === 0
+          ? '今天有什么让你印象深刻的事吗？'
+          : '今天想记录些什么新的想法呢？')
+      };
+    } catch (error) {
+      console.error('[AIService] 生成每日问候失败:', error);
+      // 返回默认问候
+      return {
+        greeting: recentEntries.length === 0 
+          ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
+          : '你好，我注意到你最近记录了一些想法。继续探索你的内心世界吧。',
+        question: recentEntries.length === 0
+          ? '今天有什么让你印象深刻的事吗？'
+          : '今天想记录些什么新的想法呢？'
+      };
+    }
+  }
+
+  /**
+   * 生成时间信件（Chronos Letter）
+   */
+  async generateChronosLetter(
+    sender: {name: string, role: string, systemInstruction?: string},
+    userProfile: {nickname: string},
+    journalEntries: Array<{title: string}>
+  ): Promise<{subject: string, content: string} | null> {
+    try {
+      const randomEntry = journalEntries.length > 0 ? journalEntries[Math.floor(Math.random() * journalEntries.length)] : null;
+      const memoryContext = randomEntry ? `I remember you wrote about "${randomEntry.title}"...` : '';
+
+      const prompt = `Write a warm, personal letter to ${userProfile.nickname}.
+You haven't seen them in a while. 
+Mention something specific about their journey or the "memory" provided below to show you care.
+MEMORY CONTEXT: ${memoryContext}
+Output JSON with "subject" and "content".`;
+
+      const systemInstruction = `You are ${sender.name} (${sender.role}). ${sender.systemInstruction || ''}`;
+      const responseText = await this.generateTextString(prompt, systemInstruction, { jsonMode: true });
+      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      console.error('[AIService] 生成时间信件失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 从提示词生成图片
+   */
+  async generateImageFromPrompt(prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '3:4' | '4:3' = '1:1'): Promise<string | null> {
+    try {
+      const response = await this.generateImage({
+        prompt,
+        aspectRatio,
+      });
+
+      if (response.images && response.images.length > 0) {
+        return response.images[0].url || response.images[0].base64 || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('[AIService] 从提示词生成图片失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成语音（文本转语音）
+   */
+  async generateSpeech(text: string, voiceName: string = 'Kore'): Promise<string | null> {
+    try {
+      const response = await this.textToSpeech({
+        text,
+        voice: voiceName,
+      });
+
+      if (response.audio) {
+        return response.audio.base64 || response.audio.url || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('[AIService] 生成语音失败:', error);
+      return null;
+    }
+  }
+
+  /**
    * 获取用户配置
    */
   async getUserConfig(): Promise<UserAIConfig> {
@@ -1227,6 +1411,259 @@ The content MUST be in Chinese.`;
       failedProvider
     );
   }
+
+  /**
+   * 根据标题、场景、简介、标签和角色生成剧本节点流程
+   */
+  async generateScriptWithCharacters(params: {
+    title: string;
+    sceneName: string;
+    sceneDescription?: string;
+    description?: string;
+    tags?: string;
+    characters: Array<{
+      id: string;
+      name: string;
+      role?: string;
+      bio?: string;
+    }>;
+  }): Promise<{ nodes: Record<string, any>; startNodeId: string }> {
+    try {
+      // 构建角色信息字符串
+      let characterInfo = '';
+      if (params.characters && params.characters.length > 0) {
+        characterInfo = '\n\n参与角色信息：\n';
+        params.characters.forEach(char => {
+          characterInfo += `- ${char.name}`;
+          if (char.role) characterInfo += `（${char.role}）`;
+          if (char.bio) characterInfo += `：${char.bio}`;
+          characterInfo += '\n';
+        });
+        characterInfo += '\n故事应主要围绕这些角色展开，确保他们的性格、背景和关系在故事中得到体现。';
+      }
+
+      // 构建标签信息
+      const tagsInfo = params.tags ? `\n标签：${params.tags}` : '';
+
+      // 构建场景信息
+      const sceneInfo = params.sceneDescription 
+        ? `\n场景背景：${params.sceneDescription}`
+        : '';
+
+      const userPrompt = `请根据以下信息创建一个互动视觉小说剧本的节点流程结构：
+
+剧本标题：${params.title}
+${sceneInfo}
+场景名称：${params.sceneName}
+${params.description ? `剧本简介：${params.description}` : ''}
+${tagsInfo}
+${characterInfo}
+
+请生成一个包含至少4-6个节点的分支剧情结构。每个节点应包含：
+- id: 节点唯一标识符（如 "start", "node_1", "node_2" 等）
+- title: 节点标题（简短描述）
+- prompt: 场景描述和剧情推进内容（要详细，包含对话和动作，使用中文）
+- options: 选项数组，每个选项包含 id, text（选项文本）, nextNodeId（指向的下一个节点ID）
+
+要求：
+1. 第一个节点的id必须是"start"
+2. 每个节点应该有2-3个选项分支
+3. 剧情要有逻辑性和连贯性
+4. 内容必须使用中文
+5. 确保选项能够形成合理的分支路径
+6. 故事要围绕参与角色展开，体现他们的性格特点
+
+请直接返回JSON格式，不要包含其他文本说明。JSON格式：
+{
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "title": "...",
+      "prompt": "...",
+      "options": [
+        {
+          "id": "opt_1",
+          "text": "...",
+          "nextNodeId": "node_1"
+        }
+      ]
+    },
+    "node_1": { ... }
+  }
+}`;
+
+      const systemPrompt = `You are a creative director for an interactive visual novel game.
+Generate a branching scenario structure in JSON format based on the provided information.
+The content MUST be in Chinese.`;
+
+      const responseText = await this.generateTextString(userPrompt, systemPrompt, { jsonMode: true });
+      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const scenarioData = JSON.parse(jsonStr);
+
+      // 验证并返回节点数据
+      if (!scenarioData.nodes || typeof scenarioData.nodes !== 'object') {
+        throw new Error('生成的剧本节点格式无效');
+      }
+
+      return {
+        nodes: scenarioData.nodes,
+        startNodeId: scenarioData.startNodeId || 'start'
+      };
+    } catch (error) {
+      console.error('[AIService] 生成剧本失败:', error);
+      throw new AIServiceException(
+        `生成剧本失败: ${error instanceof Error ? error.message : String(error)}`,
+        'unknown'
+      );
+    }
+  }
+
+  /**
+   * 从提示词生成场景剧本（简化版）
+   */
+  async generateScenarioFromPrompt(prompt: string): Promise<any> {
+    try {
+      const systemPrompt = `You are a creative director for an interactive visual novel game.
+Based on the user's idea, generate a branching scenario structure in JSON format.
+JSON Structure: { "title": "...", "description": "...", "startNodeId": "node_1", "nodes": { "node_1": { "id": "node_1", "title": "...", "prompt": "...", "options": [...] } } }
+Create at least 3-4 nodes with choices. The content MUST be in Chinese.`;
+
+      const responseText = await this.generateTextString(prompt, systemPrompt, { jsonMode: true });
+      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const scenarioData = JSON.parse(jsonStr);
+
+      return {
+        id: `scenario_${Date.now()}`,
+        sceneId: '',
+        author: 'AI Architect',
+        ...scenarioData
+      };
+    } catch (error) {
+      console.error('[AIService] 生成场景剧本失败:', error);
+      throw new AIServiceException(
+        `生成场景剧本失败: ${error instanceof Error ? error.message : String(error)}`,
+        'unknown'
+      );
+    }
+  }
+
+  /**
+   * 生成主线故事角色
+   */
+  async generateMainStory(
+    eraName: string,
+    eraDescription: string,
+    characters: Array<{name: string, role: string, bio: string}>,
+    optionalPrompt?: string
+  ): Promise<any> {
+    try {
+      const charactersInfo = characters.map(c => `- ${c.name} (${c.role}): ${c.bio || '无简介'}`).join('\n');
+      
+      const userPrompt = optionalPrompt 
+        ? `场景: "${eraName}"\n场景描述: ${eraDescription}\n\n预设角色:\n${charactersInfo}\n\n额外要求: ${optionalPrompt}\n\n请为这个场景生成一个完整的主线剧情序章。`
+        : `场景: "${eraName}"\n场景描述: ${eraDescription}\n\n预设角色:\n${charactersInfo}\n\n请为这个场景生成一个完整的主线剧情序章。`;
+
+      const systemPrompt = `You are a creative narrative director for an interactive story game. Create a main story prologue (主线剧情序章) for a scene/era.
+
+The prologue should:
+- Hook the player with an immersive opening scene
+- Set the atmosphere and tone
+- Introduce a key event or choice point
+- Be engaging and draw the player into the story
+
+Output JSON only with these properties:
+- name: Story title (e.g., "未完成的春日合奏", "霓虹下的忒修斯")
+- role: "叙事者" or "剧情向导"
+- bio: Brief story description (2-3 sentences)
+- firstMessage: Opening message (序幕) - should be immersive, set the scene, include an event or hook. Format: 【序幕：标题】\\n\\n[详细描述]\\n\\n[突发事件或选择提示]
+- themeColor: Tailwind color class (e.g., "indigo-500", "cyan-500")
+- colorAccent: Hex color (e.g., "#6366f1", "#06b6d4")
+- age: Number (narrator age, usually 20-30)
+- voiceName: Voice name (e.g., "Fenrir", "Charon")
+- tags: Comma-separated tags (e.g., "Narrator,Story,Adventure")
+- speechStyle: Description of narrative style (e.g., "紧张，快节奏，冷硬派" or "温柔，诗意，充满希望")
+- motivations: What drives the story forward
+
+The content MUST be in Chinese. The story should be engaging, with clear character involvement and meaningful choices.`;
+
+      const responseText = await this.generateTextString(userPrompt, systemPrompt, { jsonMode: true });
+      const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const details = JSON.parse(jsonStr);
+
+      return {
+        name: details.name || `${eraName}的主线剧情`,
+        role: details.role || '叙事者',
+        bio: details.bio || '',
+        firstMessage: details.firstMessage || '',
+        themeColor: details.themeColor || 'indigo-500',
+        colorAccent: details.colorAccent || '#6366f1',
+        age: details.age || 25,
+        voiceName: details.voiceName || 'Fenrir',
+        tags: details.tags || 'Narrator,Story',
+        speechStyle: details.speechStyle || '',
+        motivations: details.motivations || ''
+      };
+    } catch (error) {
+      console.error('[AIService] 生成主线故事失败:', error);
+      throw new AIServiceException(
+        `生成主线故事失败: ${error instanceof Error ? error.message : String(error)}`,
+        'unknown'
+      );
+    }
+  }
+
+  /**
+   * 生成角色图片
+   */
+  async generateCharacterImage(character: {name: string, role: string, bio: string, themeColor: string}, worldStyle?: string): Promise<string | null> {
+    try {
+      const { constructCharacterAvatarPrompt } = await import('../../utils/promptConstructors');
+      const prompt = constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
+      return await this.generateImageFromPrompt(prompt, '3:4');
+    } catch (error) {
+      console.error('[AIService] 生成角色图片失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成镜像洞察
+   */
+  async generateMirrorInsight(journalContent: string, pastEntries: string[]): Promise<string | null> {
+    try {
+      const prompt = `You are the "Mirror of Truth" (本我镜像). Analyze the user's journal entry and their past patterns (if any).
+Your goal is to provide a sharp, psychological insight about their subconscious desires, fears, or hidden strengths.
+
+Style Guidelines:
+- Be objective but supportive.
+- Be slightly mysterious, like a tarot reading or a Jungian analysis.
+- Keep it under 50 words.
+- Speak in Chinese.`;
+
+      const context = `CURRENT ENTRY: ${journalContent}\n\nPAST ENTRIES CONTEXT:\n${pastEntries.join('\n')}`;
+      const responseText = await this.generateTextString(`${prompt}\n\nCONTEXT:\n${context}`);
+      return responseText || null;
+    } catch (error) {
+      console.error('[AIService] 生成镜像洞察失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 分析图片生成时代描述（仅支持 Gemini，因为它需要图片输入）
+   * 注意：这个方法可能需要特殊处理，因为不是所有适配器都支持图片输入
+   */
+  async analyzeImageForEra(base64Image: string): Promise<{name: string, description: string} | null> {
+    // 这个方法需要图片输入，目前只有 Gemini 支持，所以暂时返回 null
+    // 如果需要，可以在 GeminiAdapter 中实现专门的图片分析功能
+    console.warn('[AIService] analyzeImageForEra 暂未实现，需要图片输入支持');
+    return null;
+  }
+
+  /**
+   * 获取风格提示词后缀（辅助方法）
+   */
 }
 
 // 单例实例

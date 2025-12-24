@@ -105,11 +105,11 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
-            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
-                <h2 className="text-xl font-bold text-slate-100 mb-4">用户管理</h2>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+                <h2 className="text-lg font-bold text-slate-100 mb-5">用户管理</h2>
                 
                 {/* 搜索栏 */}
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                     <TextInput
                         placeholder="搜索用户名或邮箱..."
                         value={search}
@@ -121,7 +121,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
                             setCurrentPage(0);
                             loadUsers();
                         }} 
-                        className="bg-indigo-600 hover:bg-indigo-700 text-sm"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-sm px-4 py-2"
                     >
                         搜索
                     </Button>
@@ -129,7 +129,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
 
                 {/* 统计信息 */}
                 <div className="mb-4 text-sm text-slate-400">
-                    共 {totalElements} 个用户，第 {currentPage + 1} / {totalPages || 1} 页
+                    共 {totalElements} 个用户, 第 {currentPage + 1}/{totalPages || 1} 页
                 </div>
 
                 {/* 用户列表 */}
@@ -142,23 +142,23 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
                         <table className="min-w-full text-left">
                             <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
                                 <tr>
-                                    <th className="p-4">ID</th>
-                                    <th className="p-4">用户名</th>
-                                    <th className="p-4">邮箱</th>
-                                    <th className="p-4">昵称</th>
-                                    <th className="p-4">状态</th>
-                                    <th className="p-4">注册时间</th>
-                                    <th className="p-4 text-right">操作</th>
+                                    <th className="p-3 text-left">ID</th>
+                                    <th className="p-3 text-left">用户名</th>
+                                    <th className="p-3 text-left">邮箱</th>
+                                    <th className="p-3 text-left">昵称</th>
+                                    <th className="p-3 text-left">状态</th>
+                                    <th className="p-3 text-left">注册时间</th>
+                                    <th className="p-3 text-left">操作</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                                 {users.map((user) => (
                                     <tr key={user.id} className="hover:bg-slate-800/50 transition-colors">
-                                        <td className="p-4 text-sm text-slate-400">{user.id}</td>
-                                        <td className="p-4 font-bold text-white">{user.username}</td>
-                                        <td className="p-4 text-sm text-slate-400">{user.email}</td>
-                                        <td className="p-4 text-sm text-slate-400">{user.nickname || 'N/A'}</td>
-                                        <td className="p-4">
+                                        <td className="p-3 text-sm text-slate-400">{user.id}</td>
+                                        <td className="p-3 text-sm font-medium text-white">{user.username}</td>
+                                        <td className="p-3 text-sm text-slate-400">{user.email}</td>
+                                        <td className="p-3 text-sm text-slate-400">{user.nickname || 'N/A'}</td>
+                                        <td className="p-3">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                 user.isEnabled 
                                                     ? 'bg-green-600/20 text-green-300' 
@@ -167,26 +167,28 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
                                                 {user.isEnabled ? '启用' : '禁用'}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-sm text-slate-400">
+                                        <td className="p-3 text-sm text-slate-400">
                                             {new Date(user.createdAt).toLocaleString('zh-CN')}
                                         </td>
-                                        <td className="p-4 text-right space-x-2">
-                                            <Button
-                                                onClick={() => handleToggleEnabled(user.id, user.username, user.isEnabled)}
-                                                className={`${
-                                                    user.isEnabled 
-                                                        ? 'bg-yellow-600 hover:bg-yellow-700' 
-                                                        : 'bg-green-600 hover:bg-green-700'
-                                                } text-sm`}
-                                            >
-                                                {user.isEnabled ? '禁用' : '启用'}
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleDelete(user.id, user.username)}
-                                                className="bg-red-600 hover:bg-red-700 text-sm"
-                                            >
-                                                删除
-                                            </Button>
+                                        <td className="p-3">
+                                            <div className="flex flex-col gap-2 items-end">
+                                                <button
+                                                    onClick={() => handleToggleEnabled(user.id, user.username, user.isEnabled)}
+                                                    className={`${
+                                                        user.isEnabled 
+                                                            ? 'bg-yellow-600 hover:bg-yellow-700' 
+                                                            : 'bg-green-600 hover:bg-green-700'
+                                                    } text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium`}
+                                                >
+                                                    {user.isEnabled ? '禁用' : '启用'}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(user.id, user.username)}
+                                                    className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium"
+                                                >
+                                                    删除
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

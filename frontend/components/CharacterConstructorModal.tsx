@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Character, WorldScene } from '../types';
-import { geminiService } from '../services/gemini';
 import { aiService } from '../services/ai';
 import { imageApi, characterApi } from '../services/api';
 import { Button } from './Button';
@@ -120,9 +119,10 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
     if (currentId !== previousInitialCharacterIdRef.current) {
       previousInitialCharacterIdRef.current = currentId;
       if (initialCharacter) {
+        // 编辑模式下，确保设置generatedCharacter并切换到自定义模式
         setGeneratedCharacter(initialCharacter);
-        // 编辑时默认为自定义模式，但允许切换到预置角色参考模式
         setCreationMode('custom');
+        setShowPresetCharacters(false); // 编辑模式下不显示预置角色选择界面
       } else {
         // 新建时，重置状态
         setGeneratedCharacter(null);
@@ -144,6 +144,13 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         // 使用统一的AI服务，支持所有模式和provider，具备容错能力
         const newCharacter = await aiService.generateCharacterFromPrompt(prompt, scene.name);
         if (newCharacter) {
+            // 清除占位符头像URL（picsum.photos），要求用户手动上传或生成
+            if (newCharacter.avatarUrl && newCharacter.avatarUrl.includes('picsum.photos')) {
+                newCharacter.avatarUrl = '';
+            }
+            if (newCharacter.backgroundUrl && newCharacter.backgroundUrl.includes('picsum.photos')) {
+                newCharacter.backgroundUrl = '';
+            }
             setGeneratedCharacter(newCharacter);
         } else {
             setError('角色生成失败，请调整你的想法或稍后重试。');
@@ -158,8 +165,16 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   };
 
   const updateCharacter = (field: keyof Character, value: any) => {
-      if (!generatedCharacter) return;
-      setGeneratedCharacter({ ...generatedCharacter, [field]: value });
+      // 编辑模式下，如果generatedCharacter为空，使用initialCharacter
+      const currentCharacter = generatedCharacter || initialCharacter;
+      if (!currentCharacter) return;
+      
+      // 如果当前使用的是initialCharacter，需要创建新的对象
+      if (!generatedCharacter && initialCharacter) {
+          setGeneratedCharacter({ ...initialCharacter, [field]: value });
+      } else {
+          setGeneratedCharacter({ ...currentCharacter, [field]: value });
+      }
   };
   
   const updateArrayField = (field: 'tags' | 'catchphrases', value: string) => {
@@ -197,6 +212,17 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       }
     }
     
+    // 处理头像URL：如果是picsum.photos占位符，清空它
+    let avatarUrl = presetChar.avatarUrl || '';
+    if (avatarUrl.includes('picsum.photos')) {
+      avatarUrl = '';
+    }
+    
+    let backgroundUrl = presetChar.backgroundUrl || '';
+    if (backgroundUrl.includes('picsum.photos')) {
+      backgroundUrl = '';
+    }
+    
     // 完整复制预置角色的所有字段，确保与系统预置角色表结构一致
     const character: Character = {
       id: initialCharacter ? initialCharacter.id : `preset_${presetChar.id}_${Date.now()}`,
@@ -204,8 +230,8 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       age: presetChar.age ?? 20, // 使用 ?? 确保 null 也被处理
       role: presetChar.role || '角色',
       bio: presetChar.bio || presetChar.description || '',
-      avatarUrl: presetChar.avatarUrl || '',
-      backgroundUrl: presetChar.backgroundUrl || '',
+      avatarUrl: avatarUrl,
+      backgroundUrl: backgroundUrl,
       themeColor: presetChar.themeColor || 'blue-500',
       colorAccent: presetChar.colorAccent || '#3b82f6',
       firstMessage: presetChar.firstMessage || '',
@@ -230,11 +256,21 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
 
       // 先显示预览（base64）
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
+          const base64Url = reader.result as string;
+          
+          // 对于头像，如果是手动上传的，缓存到本地
           if (type === 'avatar') {
-              updateCharacter('avatarUrl', reader.result as string);
+              try {
+                  const { imageCacheService } = await import('../utils/imageCache');
+                  const cachedUrl = await imageCacheService.cacheImage(base64Url, generatedCharacter.id);
+                  updateCharacter('avatarUrl', cachedUrl);
+              } catch (error) {
+                  console.error('缓存头像失败，使用base64:', error);
+                  updateCharacter('avatarUrl', base64Url);
+              }
           } else {
-              updateCharacter('backgroundUrl', reader.result as string);
+              updateCharacter('backgroundUrl', base64Url);
           }
       };
       reader.readAsDataURL(file);
@@ -249,12 +285,29 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       
       try {
           const token = localStorage.getItem('auth_token');
-          const result = await imageApi.uploadImage(file, 'character', token || undefined);
+          // 用户手动上传的头像使用 character/user 分类，与系统预置分开
+          const category = type === 'avatar' ? 'character/user' : 'character/user';
+          const result = await imageApi.uploadImage(file, category, token || undefined);
           
           if (result.success && result.url) {
-              // 使用服务器返回的URL替换base64预览
+              // 对于头像，如果是手动上传的，也要缓存本地URL（blob URL），优先使用本地缓存
               if (type === 'avatar') {
+                  // 如果当前使用的是blob URL（本地缓存），保留它；否则使用服务器URL
+                  const currentUrl = generatedCharacter?.avatarUrl;
+                  if (currentUrl && currentUrl.startsWith('blob:')) {
+                      // 已缓存，保留blob URL
+                      console.log('头像已缓存到本地，保留本地URL:', currentUrl);
+                  } else {
+                      // 使用服务器URL，但也缓存到本地
+                      try {
+                          const { imageCacheService } = await import('../utils/imageCache');
+                          const cachedUrl = await imageCacheService.cacheImage(result.url, generatedCharacter.id);
+                          updateCharacter('avatarUrl', cachedUrl);
+                      } catch (error) {
+                          console.error('缓存服务器头像失败，使用服务器URL:', error);
                   updateCharacter('avatarUrl', result.url);
+                      }
+                  }
               } else {
                   updateCharacter('backgroundUrl', result.url);
               }
@@ -265,7 +318,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       } catch (err: any) {
           console.error('图片上传失败:', err);
           setUploadError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
-          // 保持base64预览
+          // 保持本地缓存（blob URL或base64）
       } finally {
           if (type === 'avatar') {
               setIsUploadingAvatar(false);
@@ -279,9 +332,9 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       if (!generatedCharacter) return;
       let p = '';
       if (type === 'avatar') {
-          p = geminiService.constructCharacterAvatarPrompt(generatedCharacter.name, generatedCharacter.role, generatedCharacter.bio, generatedCharacter.themeColor, worldStyle);
+          p = constructCharacterAvatarPrompt(generatedCharacter.name, generatedCharacter.role, generatedCharacter.bio, generatedCharacter.themeColor, worldStyle);
       } else {
-          p = geminiService.constructCharacterBackgroundPrompt(generatedCharacter.name, generatedCharacter.bio, scene.name, worldStyle);
+          p = constructCharacterBackgroundPrompt(generatedCharacter.name, generatedCharacter.bio, scene.name, worldStyle);
       }
       try {
           await navigator.clipboard.writeText(p);
@@ -290,30 +343,32 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   };
 
   const renderEditor = () => {
-      if (!generatedCharacter) return null;
+      // 编辑模式下，如果generatedCharacter为空，使用initialCharacter
+      const characterToEdit = generatedCharacter || initialCharacter;
+      if (!characterToEdit) return null;
 
       return (
           <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
-             {/* 与管理后台一致的布局：两列网格 */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {/* 与管理后台一致的布局：两列网格，增加间距 */}
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  {/* 左列：基础信息 */}
-                 <div className="space-y-4">
-                     <h4 className="text-sm font-bold text-indigo-400 border-b border-indigo-900/30 pb-2">基础信息</h4>
+                 <div className="space-y-5">
+                     <h4 className="text-base font-bold text-indigo-400 border-b border-indigo-900/30 pb-2">基础信息</h4>
                      
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">姓名</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">姓名</label>
                          <div className="flex gap-2">
                              <input 
-                                 value={generatedCharacter.name} 
+                                 value={characterToEdit.name} 
                                  onChange={e => updateCharacter('name', e.target.value)} 
-                                 className="flex-1 bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                 className="flex-1 bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
                              />
                              <button
                                  onClick={async () => {
-                                     if (!generatedCharacter) return;
+                                     if (!characterToEdit) return;
                                      try {
                                          setIsLoading(true);
-                                         const prompt = `请为这个角色生成一个符合其特点的中文名字。角色信息：${generatedCharacter.role || ''}，${generatedCharacter.bio || ''}。只返回名字，不要其他内容。`;
+                                         const prompt = `请为这个角色生成一个符合其特点的中文名字。角色信息：${characterToEdit.role || ''}，${characterToEdit.bio || ''}。只返回名字，不要其他内容。`;
                                          const tempChar: Character = {
                                              id: 'temp_name_gen',
                                              name: '临时',
@@ -328,19 +383,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              firstMessage: '',
                                              voiceName: 'Kore'
                                          };
-                                         const response = await geminiService.sendMessageStream(
-                                             tempChar,
-                                             [],
-                                             prompt,
-                                             null
-                                         );
                                          let fullText = '';
-                                         for await (const chunk of response) {
-                                             const chunkText = (chunk as any).text;
-                                             if (chunkText) {
-                                                 fullText += chunkText;
+                                         await aiService.generateTextStream(
+                                             {
+                                                 prompt: prompt,
+                                                 systemInstruction: tempChar.systemInstruction,
+                                                 temperature: 0.7,
+                                             },
+                                             (chunk) => {
+                                                 if (!chunk.done && chunk.content) {
+                                                     fullText += chunk.content;
+                                                 }
                                              }
-                                         }
+                                         );
                                          const cleanName = fullText.trim().replace(/["'"]/g, '').split('\n')[0].trim();
                                          if (cleanName) {
                                              updateCharacter('name', cleanName);
@@ -355,7 +410,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                      }
                                  }}
                                  disabled={isLoading}
-                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
                                  title="AI生成名字"
                              >
                                  {isLoading ? '生成中...' : '✨ AI'}
@@ -364,49 +419,50 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      </div>
                      
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">角色定位 (Role)</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">角色定位 (Role)</label>
                          <input 
-                             value={generatedCharacter.role} 
+                             value={characterToEdit.role || ''} 
                              onChange={e => updateCharacter('role', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
                          />
                      </div>
                      
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">所属场景 (Scene)</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">所属场景 (Scene)</label>
                          <input 
                              value={scene.name} 
                              disabled
-                             className="w-full bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-sm text-gray-500 cursor-not-allowed" 
+                             className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 text-sm text-gray-500 cursor-not-allowed" 
                          />
                      </div>
                      
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">简介 (Bio)</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">简介 (Bio)</label>
                          <textarea 
-                             value={generatedCharacter.bio} 
+                             value={characterToEdit.bio || ''} 
                              onChange={e => updateCharacter('bio', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
-                             rows={3}
+                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
+                             rows={4}
                          />
                      </div>
                  </div>
 
                  {/* 右列：视觉与人设 */}
-                 <div className="space-y-4">
-                     <h4 className="text-sm font-bold text-pink-400 border-b border-pink-900/30 pb-2">视觉与人设</h4>
+                 <div className="space-y-5">
+                     <h4 className="text-base font-bold text-pink-400 border-b border-pink-900/30 pb-2">视觉与人设</h4>
                      
                      {/* 头像 */}
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">头像</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">头像</label>
                          <div className="space-y-2">
-                             <div className="flex gap-2">
+                             <div className="flex flex-col gap-2">
                                  <input 
-                                     value={generatedCharacter.avatarUrl || ''} 
+                                     value={characterToEdit.avatarUrl || ''} 
                                      onChange={e => updateCharacter('avatarUrl', e.target.value)} 
                                      placeholder="头像URL或点击上传"
-                                     className="flex-1 bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                     className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
                                  />
+                                 <div className="flex gap-2">
                                  <button 
                                      onClick={() => {
                                          const token = localStorage.getItem('auth_token');
@@ -416,17 +472,97 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              showAlert('请先登录', '提示', 'warning');
                                          }
                                      }}
-                                     className="px-2 py-1.5 text-indigo-400 hover:text-indigo-300 text-xs"
-                                 >
-                                     🖼️
+                                         className="flex-1 px-4 py-2.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 border border-indigo-700/50 rounded text-sm font-medium transition-colors"
+                                         title="选择预置头像"
+                                     >
+                                         🖼️ 选择预置
+                                     </button>
+                                     <button 
+                                         onClick={async () => {
+                                             if (!characterToEdit) return;
+                                             setIsUploadingAvatar(true);
+                                             setUploadError('');
+                                             try {
+                                                 // 生成头像
+                                                 const avatarUrl = await aiService.generateCharacterImage(
+                                                     characterToEdit,
+                                                     worldStyle
+                                                 );
+                                                 if (avatarUrl) {
+                                                     // 缓存到本地
+                                                     const { imageCacheService } = await import('../utils/imageCache');
+                                                     const cachedUrl = await imageCacheService.cacheImage(avatarUrl, characterToEdit.id);
+                                                     
+                                                     // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
+                                                     // 直接使用原始URL，不尝试上传
+                                                     if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
+                                                         updateCharacter('avatarUrl', cachedUrl);
+                                                         showAlert('头像生成成功（由于CORS限制，已使用原始URL）', '成功', 'success');
+                                                         return;
+                                                     }
+                                                     
+                                                     // 上传到服务器（使用character/user分类）
+                                                     try {
+                                                         let blob: Blob;
+                                                         
+                                                         // 如果缓存URL是blob URL，直接使用
+                                                         if (cachedUrl.startsWith('blob:')) {
+                                                             const response = await fetch(cachedUrl);
+                                                             blob = await response.blob();
+                                                         } else if (cachedUrl.startsWith('data:')) {
+                                                             // Base64 URL
+                                                             const response = await fetch(cachedUrl);
+                                                             blob = await response.blob();
+                                                         } else {
+                                                             // 这不应该发生，但为了安全起见
+                                                             throw new Error('无法获取图片数据');
+                                                         }
+                                                         
+                                                         const file = new File([blob], `character-${characterToEdit.id}-avatar-${Date.now()}.png`, { type: blob.type || 'image/png' });
+                                                         
+                                                         const token = localStorage.getItem('auth_token');
+                                                         const result = await imageApi.uploadImage(file, 'character/user', token || undefined);
+                                                         
+                                                         if (result.success && result.url) {
+                                                             // 使用服务器URL，但也保留本地缓存
+                                                             updateCharacter('avatarUrl', result.url);
+                                                             showAlert('头像生成并上传成功', '成功', 'success');
+                                                         } else {
+                                                             // 上传失败，使用本地缓存
+                                                             updateCharacter('avatarUrl', cachedUrl);
+                                                             showAlert('头像生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                         }
+                                                     } catch (uploadError) {
+                                                         console.error('上传生成的头像失败:', uploadError);
+                                                         // 上传失败，使用本地缓存
+                                                         updateCharacter('avatarUrl', cachedUrl);
+                                                         showAlert('头像生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                     }
+                                                 } else {
+                                                     showAlert('头像生成失败，请重试', '错误', 'error');
+                                                 }
+                                             } catch (error: any) {
+                                                 console.error('生成头像失败:', error);
+                                                 setUploadError('生成头像失败: ' + (error.message || '未知错误'));
+                                                 showAlert('生成头像失败: ' + (error.message || '未知错误'), '错误', 'error');
+                                             } finally {
+                                                 setIsUploadingAvatar(false);
+                                             }
+                                         }}
+                                         disabled={isUploadingAvatar || isLoading}
+                                         className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         title="AI生成头像"
+                                     >
+                                         {isUploadingAvatar ? '生成中...' : '✨ AI生成'}
                                  </button>
                                  <button 
                                      onClick={() => avatarInputRef.current?.click()} 
                                      disabled={isUploadingAvatar}
-                                     className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded disabled:opacity-50"
+                                         className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                  >
-                                     {isUploadingAvatar ? '上传中...' : '上传'}
+                                         {isUploadingAvatar ? '上传中...' : '📤 上传'}
                                  </button>
+                                 </div>
                              </div>
                              <input 
                                  type="file" 
@@ -435,9 +571,20 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  accept="image/*" 
                                  className="hidden" 
                              />
-                             {generatedCharacter.avatarUrl && (
+                             {characterToEdit.avatarUrl && !characterToEdit.avatarUrl.includes('picsum.photos') && (
                                  <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-700">
-                                     <img src={generatedCharacter.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                     <img src={characterToEdit.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                     <button 
+                                         onClick={() => updateCharacter('avatarUrl', '')} 
+                                         className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
+                                     >
+                                         ×
+                                     </button>
+                                 </div>
+                             )}
+                             {characterToEdit.avatarUrl && characterToEdit.avatarUrl.includes('picsum.photos') && (
+                                 <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-700 bg-gray-800 flex items-center justify-center">
+                                     <span className="text-xs text-gray-500">占位符</span>
                                      <button 
                                          onClick={() => updateCharacter('avatarUrl', '')} 
                                          className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
@@ -451,15 +598,16 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      
                      {/* 背景 */}
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">背景</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">背景</label>
                          <div className="space-y-2">
-                             <div className="flex gap-2">
+                             <div className="flex flex-col gap-2">
                                  <input 
-                                     value={generatedCharacter.backgroundUrl || ''} 
+                                     value={characterToEdit.backgroundUrl || ''} 
                                      onChange={e => updateCharacter('backgroundUrl', e.target.value)} 
                                      placeholder="背景URL或点击上传"
-                                     className="flex-1 bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                     className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
                                  />
+                                 <div className="flex gap-2">
                                  <button 
                                      onClick={() => {
                                          const token = localStorage.getItem('auth_token');
@@ -469,17 +617,102 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              showAlert('请先登录', '提示', 'warning');
                                          }
                                      }}
-                                     className="px-2 py-1.5 text-indigo-400 hover:text-indigo-300 text-xs"
-                                 >
-                                     🖼️
+                                         className="flex-1 px-4 py-2.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 border border-indigo-700/50 rounded text-sm font-medium transition-colors"
+                                         title="选择预置背景"
+                                     >
+                                         🖼️ 选择预置
+                                     </button>
+                                     <button 
+                                         onClick={async () => {
+                                             if (!characterToEdit) return;
+                                             setIsUploadingBackground(true);
+                                             setUploadError('');
+                                             try {
+                                                 // 生成背景
+                                                 const { constructCharacterBackgroundPrompt } = await import('../utils/promptConstructors');
+                                                 const prompt = constructCharacterBackgroundPrompt(
+                                                     characterToEdit.name,
+                                                     characterToEdit.bio || '',
+                                                     scene.name,
+                                                     worldStyle
+                                                 );
+                                                 const backgroundUrl = await aiService.generateImageFromPrompt(prompt, '16:9');
+                                                 
+                                                 if (backgroundUrl) {
+                                                     // 缓存到本地
+                                                     const { imageCacheService } = await import('../utils/imageCache');
+                                                     const cachedUrl = await imageCacheService.cacheImage(backgroundUrl, characterToEdit.id);
+                                                     
+                                                     // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
+                                                     // 直接使用原始URL，不尝试上传
+                                                     if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
+                                                         updateCharacter('backgroundUrl', cachedUrl);
+                                                         showAlert('背景生成成功（由于CORS限制，已使用原始URL）', '成功', 'success');
+                                                         return;
+                                                     }
+                                                     
+                                                     // 上传到服务器（使用character/user分类）
+                                                     try {
+                                                         let blob: Blob;
+                                                         
+                                                         // 如果缓存URL是blob URL，直接使用
+                                                         if (cachedUrl.startsWith('blob:')) {
+                                                             const response = await fetch(cachedUrl);
+                                                             blob = await response.blob();
+                                                         } else if (cachedUrl.startsWith('data:')) {
+                                                             // Base64 URL
+                                                             const response = await fetch(cachedUrl);
+                                                             blob = await response.blob();
+                                                         } else {
+                                                             // 这不应该发生，但为了安全起见
+                                                             throw new Error('无法获取图片数据');
+                                                         }
+                                                         
+                                                         const file = new File([blob], `character-${characterToEdit.id}-background-${Date.now()}.png`, { type: blob.type || 'image/png' });
+                                                         
+                                                         const token = localStorage.getItem('auth_token');
+                                                         const result = await imageApi.uploadImage(file, 'character/user', token || undefined);
+                                                         
+                                                         if (result.success && result.url) {
+                                                             // 使用服务器URL，但也保留本地缓存
+                                                             updateCharacter('backgroundUrl', result.url);
+                                                             showAlert('背景生成并上传成功', '成功', 'success');
+                                                         } else {
+                                                             // 上传失败，使用本地缓存
+                                                             updateCharacter('backgroundUrl', cachedUrl);
+                                                             showAlert('背景生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                         }
+                                                     } catch (uploadError) {
+                                                         console.error('上传生成的背景失败:', uploadError);
+                                                         // 上传失败，使用本地缓存
+                                                         updateCharacter('backgroundUrl', cachedUrl);
+                                                         showAlert('背景生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                     }
+                                                 } else {
+                                                     showAlert('背景生成失败，请重试', '错误', 'error');
+                                                 }
+                                             } catch (error: any) {
+                                                 console.error('生成背景失败:', error);
+                                                 setUploadError('生成背景失败: ' + (error.message || '未知错误'));
+                                                 showAlert('生成背景失败: ' + (error.message || '未知错误'), '错误', 'error');
+                                             } finally {
+                                                 setIsUploadingBackground(false);
+                                             }
+                                         }}
+                                         disabled={isUploadingBackground || isLoading}
+                                         className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         title="AI生成背景"
+                                     >
+                                         {isUploadingBackground ? '生成中...' : '✨ AI生成'}
                                  </button>
                                  <button 
                                      onClick={() => bgInputRef.current?.click()} 
                                      disabled={isUploadingBackground}
-                                     className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded disabled:opacity-50"
+                                         className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                  >
-                                     {isUploadingBackground ? '上传中...' : '上传'}
+                                         {isUploadingBackground ? '上传中...' : '📤 上传'}
                                  </button>
+                                 </div>
                              </div>
                              <input 
                                  type="file" 
@@ -488,9 +721,9 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  accept="image/*" 
                                  className="hidden" 
                              />
-                             {generatedCharacter.backgroundUrl && (
+                             {characterToEdit.backgroundUrl && (
                                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-700">
-                                     <img src={generatedCharacter.backgroundUrl} alt="Background" className="w-full h-full object-cover" />
+                                     <img src={characterToEdit.backgroundUrl} alt="Background" className="w-full h-full object-cover" />
                                      <button 
                                          onClick={() => updateCharacter('backgroundUrl', '')} 
                                          className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
@@ -506,27 +739,27 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      
                      {/* 第一句问候 */}
                      <div>
-                         <label className="text-xs text-gray-500 block mb-1">第一句问候</label>
+                         <label className="text-sm text-gray-400 block mb-2 font-medium">第一句问候</label>
                          <textarea 
-                             value={generatedCharacter.firstMessage || ''} 
+                             value={characterToEdit.firstMessage || ''} 
                              onChange={e => updateCharacter('firstMessage', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
-                             rows={2}
+                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
+                             rows={3}
                          />
                      </div>
                  </div>
              </div>
 
              {/* 系统指令 - 独立大区域 */}
-             <div className="mt-8">
-                 <h4 className="text-sm font-bold text-green-400 border-b border-green-900/30 pb-2 mb-4">系统指令 (System Prompt)</h4>
+             <div className="mt-10">
+                 <h4 className="text-base font-bold text-green-400 border-b border-green-900/30 pb-2 mb-4">系统指令 (System Prompt)</h4>
                  <div>
-                     <label className="text-xs text-gray-500 block mb-1">完整角色扮演指令 (Prompt)</label>
+                     <label className="text-sm text-gray-400 block mb-2 font-medium">完整角色扮演指令 (Prompt)</label>
                      <textarea 
-                         value={generatedCharacter.systemInstruction || ''} 
+                         value={characterToEdit.systemInstruction || ''} 
                          onChange={e => updateCharacter('systemInstruction', e.target.value)} 
-                         className="w-full bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-xs font-mono focus:border-indigo-500 outline-none resize-none" 
-                         rows={6}
+                         className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm font-mono focus:border-indigo-500 outline-none resize-none" 
+                         rows={8}
                      />
                  </div>
              </div>
@@ -545,7 +778,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       }}
     >
       <div className={`bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[90vh] relative ${
-        showPresetCharacters ? 'w-full max-w-5xl' : 'w-full max-w-lg'
+        showPresetCharacters ? 'w-full max-w-5xl' : 'w-full max-w-4xl'
       }`}>
         {/* 关闭按钮 */}
         <button
@@ -570,8 +803,8 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 <div className="mt-2">
                     <button
                         onClick={() => {
-                            setCreationMode('preset');
-                            setShowPresetCharacters(true);
+                            // 编辑模式下，点击参考预置角色时，直接打开资源选择器
+                            setShowAvatarResourcePicker(true);
                         }}
                         className="text-xs text-indigo-400 hover:text-indigo-300 underline"
                     >
@@ -581,7 +814,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
             )}
         </div>
 
-        {/* 预置角色选择界面 - 新建和编辑时都可以参考预置角色 */}
+        {/* 预置角色选择界面 - 仅新建时显示，编辑模式下不显示此界面 */}
         {!initialCharacter && creationMode === 'preset' && scene.systemEraId && systemCharacters.length > 0 && (
           <div className="flex-1 space-y-4 overflow-y-auto">
             <div className="flex gap-3 border-b border-gray-700 pb-3">
@@ -687,7 +920,8 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         {/* 自定义角色创建界面 - 当没有预置角色或选择了自定义模式时显示 */}
         {(!initialCharacter && !loadingSystemCharacters && creationMode === 'custom') || initialCharacter ? (
           <>
-        {!generatedCharacter && (
+        {/* 新建模式下，如果没有生成角色，显示输入框 */}
+        {!initialCharacter && !generatedCharacter && (
             <div className="flex-1 space-y-4">
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-white/80">你的想法</label>
@@ -706,9 +940,11 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
             </div>
         )}
 
-            {generatedCharacter && !isLoading && renderEditor()}
+            {/* 编辑模式下或已生成角色时，显示编辑器 */}
+            {(initialCharacter || generatedCharacter) && !isLoading && renderEditor()}
 
-            {generatedCharacter && (
+            {/* 编辑模式下或已生成角色时，显示保存按钮 */}
+            {(initialCharacter || generatedCharacter) && (
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-700/50 mt-4 shrink-0">
                 <Button variant="ghost" onClick={onClose} disabled={isLoading || isUploadingAvatar || isUploadingBackground}>取消</Button>
                 <Button onClick={handleSave} disabled={isLoading || !generatedCharacter || isUploadingAvatar || isUploadingBackground}>
@@ -722,9 +958,16 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       {showAvatarResourcePicker && (
           <ResourcePicker
               category="character"
-              onSelect={(url) => {
+              onSelect={async (url) => {
                   if (generatedCharacter) {
+                      // 如果是从ResourcePicker选择的预置头像，直接使用URL（不缓存）
+                      // 但如果是picsum.photos占位符，清空它
+                      if (url.includes('picsum.photos')) {
+                          updateCharacter('avatarUrl', '');
+                          showAlert('请选择有效的头像，不要使用占位符', '提示', 'warning');
+                      } else {
                       updateCharacter('avatarUrl', url);
+                      }
                   }
                   setShowAvatarResourcePicker(false);
               }}

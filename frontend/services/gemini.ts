@@ -2,6 +2,7 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Modality, Type } from "@google/genai";
 import { Message, Character, StoryNode, CustomScenario, UserProfile, WorldScene, JournalEcho, JournalEntry, AppSettings, AIProvider, DebugLog, DialogueStyle } from "../types";
 import { createScenarioContext } from "../constants";
+import { constructCharacterAvatarPrompt, constructUserAvatarPrompt, constructMoodPrompt } from "../utils/promptConstructors";
 
 // 根据对话风格生成风格指令
 const getDialogueStyleInstruction = (style: DialogueStyle = 'mobile-chat'): string => {
@@ -1203,57 +1204,17 @@ The content MUST be in Chinese.`;
       return null;
   }
 
-  // --- Prompt Constructors (Cost Saving) ---
-  constructEraCoverPrompt(name: string, description: string, worldStyle?: string): string {
-      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), cinematic lighting, vibrant, epic feel.';
-      return `A beautiful, high-quality vertical world illustration for a world named "${name}". The theme is: "${description}". ${styleSuffix}`;
-  }
-
-  constructCharacterAvatarPrompt(name: string, role: string, bio: string, themeColor: string, worldStyle?: string): string {
-      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes.';
-      return `High-quality vertical character portrait of ${name}. Role: ${role}. Description: ${bio}. ${styleSuffix} Centered character, abstract background matching theme color ${themeColor}.`;
-  }
-
-  constructCharacterBackgroundPrompt(name: string, bio: string, eraName: string, worldStyle?: string): string {
-      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Chinese Anime (Manhua), high quality, cinematic lighting.';
-      return `Atmospheric background scene for the world of "${eraName}". It should match the personality of a character named ${name}, described as: "${bio}". ${styleSuffix}`;
-  }
-
-  constructUserAvatarPrompt(nickname: string, worldStyle?: string): string {
-      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Modern Anime, Cyberpunk, or Dreamy Digital Art.';
-      return `Profile avatar for a user named "${nickname}". ${styleSuffix} High quality, centered face or symbol.`;
-  }
-
-  constructMoodPrompt(content: string, worldStyle?: string): string {
-      const styleSuffix = worldStyle ? this.getStylePromptSuffix(worldStyle) : 'Style: Ethereal, Dreamlike, Digital Art, vibrant colors, expressive brushstrokes.';
-      return `Abstract, artistic, high-quality illustration representing this emotion/thought: "${content.substring(0, 100)}...". ${styleSuffix}`;
-  }
-
-  // Helper method to get style prompt suffix
-  private getStylePromptSuffix(worldStyle: string): string {
-      // Import WORLD_STYLE_DESCRIPTIONS dynamically or use a switch
-      const styleMap: Record<string, string> = {
-          'anime': 'Style: Modern Chinese Anime (Manhua), vibrant colors, detailed eyes, expressive emotions, cinematic lighting.',
-          'realistic': 'Style: Photorealistic, highly detailed, realistic lighting and textures, professional photography quality.',
-          'cyberpunk': 'Style: Cyberpunk, neon lights, futuristic technology, dark aesthetic, Blade Runner inspired, high-tech low-life atmosphere.',
-          'fantasy': 'Style: Fantasy art, magical elements, epic scenes, mystical atmosphere, high fantasy aesthetic, detailed world-building.',
-          'steampunk': 'Style: Steampunk, Victorian era aesthetics, brass and copper machinery, gears and cogs, retro-futuristic technology.',
-          'minimalist': 'Style: Minimalist, clean lines, elegant simplicity, modern design, ample white space, refined aesthetics.',
-          'watercolor': 'Style: Watercolor painting, soft brushstrokes, dreamy color gradients, artistic and ethereal, flowing pigments.',
-          'oil-painting': 'Style: Oil painting, classical art, rich brushstrokes and texture, Renaissance or Baroque inspired, artistic depth.'
-      };
-      return styleMap[worldStyle] || styleMap['anime'];
-  }
+  // 提示词构造方法已迁移到 frontend/utils/promptConstructors.ts
 
   // --- Avatar Gen Wrapper (Legacy/Direct) ---
   async generateCharacterImage(character: Character, worldStyle?: string): Promise<string | null> {
-      const prompt = this.constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
+      const prompt = constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
       return this.generateImageFromPrompt(prompt, '3:4');
   }
 
   // --- User Avatar Gen ---
   async generateUserAvatar(nickname: string, worldStyle?: string): Promise<string | null> {
-      const prompt = this.constructUserAvatarPrompt(nickname, worldStyle);
+      const prompt = constructUserAvatarPrompt(nickname, worldStyle);
       return this.generateImageFromPrompt(prompt, '1:1');
   }
 
@@ -1407,7 +1368,7 @@ The content MUST be in Chinese.`;
   }
 
   async generateMoodImage(text: string, worldStyle?: string): Promise<string | null> {
-      const prompt = this.constructMoodPrompt(text, worldStyle);
+      const prompt = constructMoodPrompt(text, worldStyle);
       return this.generateImageFromPrompt(prompt, '16:9');
   }
 

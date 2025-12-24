@@ -15,6 +15,7 @@ import { ResourcesManagement } from './components/ResourcesManagement';
 import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
 import { EmailConfigManagement } from './components/EmailConfigManagement';
 import { SettingsManagement } from './components/SettingsManagement';
+import { BillingManagement } from './components/billing';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -62,6 +63,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'email-config': '邮箱配置',
             'users': '用户管理',
             'settings': '系统全局设置',
+            'billing': '计费管理',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -225,6 +227,16 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                     )}
                     {activeSection === 'settings' && (
                         <SettingsManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'billing' && (
+                        <BillingManagement
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {

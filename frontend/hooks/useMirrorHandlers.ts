@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { showAlert } from '../utils/dialog';
 
 /**
@@ -25,7 +25,7 @@ export const useMirrorHandlers = (requireAuth: (callback: () => void) => void) =
       return null;
     }
     
-    return geminiService.generateMirrorInsight(content, recentContext);
+    return aiService.generateMirrorInsight(content, recentContext);
   }, [gameState.userProfile, requireAuth]);
 
   return {

@@ -6,7 +6,7 @@ import { ScenarioBuilder } from './ScenarioBuilder';
 import { CustomScenario, StoryNode, Character, WorldScene } from '../types';
 import { scriptApi, characterApi } from '../services/api';
 import { showAlert, showConfirm } from '../utils/dialog';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 
 interface UserScriptEditorProps {
     script: any; // 后端返回的script对象
@@ -292,7 +292,7 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
             const selectedScene = scenes.find(s => s.id === formData.eraId);
             
             // 调用AI生成剧本
-            const result = await geminiService.generateScriptWithCharacters({
+            const result = await aiService.generateScriptWithCharacters({
                 title: formData.title,
                 sceneName: selectedScene?.name || '未知场景',
                 sceneDescription: selectedScene?.description,

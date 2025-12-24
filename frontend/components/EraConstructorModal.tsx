@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { WorldScene } from '../types';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
+import { constructEraCoverPrompt } from '../utils/promptConstructors';
 import { imageApi, eraApi } from '../services/api';
 import { Button } from './Button';
 import { ResourcePicker } from './ResourcePicker';
@@ -96,7 +97,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         setError('请先填写场景名称和简介。');
         return;
     }
-    const prompt = geminiService.constructEraCoverPrompt(name, description, worldStyle);
+    const prompt = constructEraCoverPrompt(name, description, worldStyle);
     try {
         await navigator.clipboard.writeText(prompt);
         showAlert('提示词已复制到剪贴板！请使用 Midjourney 或其他工具生成图片后上传。', '提示', 'success');
@@ -148,7 +149,8 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
     
     setIsLoading(true);
     try {
-        const analysis = await geminiService.analyzeImageForEra(imageUrl);
+        // analyzeImageForEra 需要图片输入，当前暂不支持，返回null
+        const analysis = await aiService.analyzeImageForEra(imageUrl);
         if (analysis) {
             setName(analysis.name);
             setDescription(analysis.description);

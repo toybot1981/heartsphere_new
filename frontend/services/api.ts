@@ -19,6 +19,17 @@ export type { UserScript, SystemScript, CreateScriptDTO, UpdateScriptDTO } from 
 export { userMainStoryApi, presetMainStoryApi, systemMainStoryApi } from './api/mainStory';
 export type { UserMainStory, SystemMainStory, CreateUserMainStoryDTO, UpdateUserMainStoryDTO } from './api/mainStory/types';
 
+// 导出计费管理API
+export { billingApi } from './api/billing';
+export type { 
+  AIProvider, 
+  AIModel, 
+  AIModelPricing, 
+  UserTokenQuota, 
+  AIUsageRecord, 
+  AICostDaily 
+} from './api/billing';
+
 const API_BASE_URL = 'http://localhost:8081/api';
 
 // 管理后台API
@@ -1863,6 +1874,164 @@ export const userProfileApi = {
 };
 
 // 世界相关API
+// 跨时空信箱API（时间信件API）
+// 注意：与EmailService（真实邮件发送）区分开
+export const chronosLetterApi = {
+  // 获取所有信件
+  getAllLetters: (token: string) => {
+    return request<Array<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+      parentLetterId?: string;
+    }>>('/chronos-letters', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 获取未读信件数量
+  getUnreadLetterCount: (token: string) => {
+    return request<{ count: number }>('/chronos-letters/unread/count', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 获取未读信件
+  getUnreadLetters: (token: string) => {
+    return request<Array<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+      parentLetterId?: string;
+    }>>('/chronos-letters/unread', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 获取单个信件
+  getLetterById: (id: string, token: string) => {
+    return request<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+      parentLetterId?: string;
+    }>(`/chronos-letters/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 创建用户反馈信件
+  createUserFeedback: (data: {
+    subject: string;
+    content: string;
+    senderId?: string;
+    senderName?: string;
+    senderAvatarUrl?: string;
+    themeColor?: string;
+  }, token: string) => {
+    return request<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+    }>('/chronos-letters', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 标记信件为已读
+  markAsRead: (id: string, token: string) => {
+    return request<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+    }>(`/chronos-letters/${id}/read`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 删除信件
+  deleteLetter: (id: string, token: string) => {
+    return request<{ message: string }>(`/chronos-letters/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 获取信件的回复
+  getLetterReplies: (id: string, token: string) => {
+    return request<Array<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderAvatarUrl: string;
+      subject: string;
+      content: string;
+      timestamp: number;
+      isRead: boolean;
+      themeColor: string;
+      type: string;
+      parentLetterId?: string;
+    }>>(`/chronos-letters/${id}/replies`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+};
+
 export const worldApi = {
   // 获取所有世界
   getAllWorlds: (token: string) => {
@@ -1950,6 +2119,8 @@ export const journalApi = {
         title: string;
         content: string;
         entryDate: string;
+        insight?: string;
+        tags?: string;
         worldId?: number;
         eraId?: number;
         characterId?: number;
@@ -2000,6 +2171,8 @@ export const journalApi = {
     title: string;
     content: string;
     entryDate?: string;
+    insight?: string;
+    tags?: string;
     worldId?: number;
     eraId?: number;
     characterId?: number;
@@ -2046,6 +2219,8 @@ export const journalApi = {
         title: string;
         content: string;
         entryDate: string;
+        insight?: string;
+        tags?: string;
         worldId?: number;
         eraId?: number;
         characterId?: number;
@@ -2058,7 +2233,9 @@ export const journalApi = {
         id: result.id,
         title: result.title,
         contentLength: result.content.length,
-        entryDate: result.entryDate
+        entryDate: result.entryDate,
+        hasInsight: !!result.insight,
+        insightLength: result.insight ? result.insight.length : 0
       });
       
       return result;
@@ -2074,6 +2251,7 @@ export const journalApi = {
     title: string;
     content: string;
     entryDate?: string;
+    insight?: string;
     tags?: string;
     worldId?: number;
     eraId?: number;
@@ -2084,7 +2262,8 @@ export const journalApi = {
       id: id,
       title: data.title,
       contentLength: data.content.length,
-      entryDate: data.entryDate
+      entryDate: data.entryDate,
+      hasInsight: !!data.insight
     });
     try {
       const result = request<{
@@ -2092,6 +2271,8 @@ export const journalApi = {
         title: string;
         content: string;
         entryDate: string;
+        insight?: string;
+        tags?: string;
         worldId?: number;
         eraId?: number;
         characterId?: number;
@@ -2538,6 +2719,30 @@ export const paymentApi = {
 };
 
 export const imageApi = {
+  /**
+   * 代理下载图片（绕过CORS限制）
+   * 通过后端代理从外部URL下载图片并返回base64 data URL
+   */
+  proxyDownload: async (url: string): Promise<{ success: boolean; dataUrl?: string; error?: string; size?: number }> => {
+    try {
+      const response = await request<{
+        success: boolean;
+        dataUrl?: string;
+        error?: string;
+        size?: number;
+      }>(`/images/proxy-download?url=${encodeURIComponent(url)}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error: any) {
+      console.error('[imageApi] 代理下载失败:', error);
+      return {
+        success: false,
+        error: error.message || '代理下载失败',
+      };
+    }
+  },
+
   // 上传图片文件
   uploadImage: (file: File, category: string = 'general', token?: string) => {
     const formData = new FormData();

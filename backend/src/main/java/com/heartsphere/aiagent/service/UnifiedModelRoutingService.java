@@ -74,7 +74,9 @@ public class UnifiedModelRoutingService {
         
         // 获取完整API key
         if (defaultModel.getId() != null) {
-            return modelConfigService.getModelConfigById(defaultModel.getId());
+            com.heartsphere.admin.entity.AIModelConfig config = 
+                modelConfigService.getModelConfigWithApiKey(defaultModel.getId());
+            return modelConfigService.toDTOWithApiKey(config);
         }
         return defaultModel;
     }

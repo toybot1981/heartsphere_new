@@ -6,12 +6,14 @@
 import { useCallback } from 'react';
 import { Character, WorldScene } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
-import { characterApi, worldApi, eraApi, userMainStoryApi } from '../services/api';
+import { characterApi, worldApi, eraApi, userMainStoryApi, imageApi } from '../services/api';
 import { syncService } from '../services/syncService';
 import { convertBackendCharacterToFrontend, convertBackendMainStoryToCharacter, convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { showSyncErrorToast } from '../utils/toast';
 import { WORLD_SCENES } from '../constants';
+import { aiService } from '../services/ai';
+import { imageCacheService } from '../utils/imageCache';
 
 /**
  * 角色操作 Hook
@@ -120,6 +122,30 @@ export const useCharacterHandlers = (
         try {
           console.log("[useCharacterHandlers] 开始同步角色到服务器");
           
+          // 处理头像URL：如果是从本地缓存（blob URL），尝试上传到服务器
+          let finalAvatarUrl = newCharacter.avatarUrl;
+          if (finalAvatarUrl && finalAvatarUrl.startsWith('blob:')) {
+            try {
+              console.log("[useCharacterHandlers] 检测到本地缓存头像，尝试上传到服务器");
+              finalAvatarUrl = await imageCacheService.uploadAndCache(
+                finalAvatarUrl,
+                newCharacter.id,
+                async (file) => {
+                  const result = await imageApi.uploadImage(file, 'character', token);
+                  return {
+                    success: result.success,
+                    url: result.url,
+                    error: result.error
+                  };
+                }
+              );
+              console.log("[useCharacterHandlers] 头像处理完成，最终URL:", finalAvatarUrl);
+            } catch (uploadError) {
+              console.warn("[useCharacterHandlers] 上传头像失败，使用本地缓存:", uploadError);
+              // 上传失败时保持使用本地缓存URL
+            }
+          }
+          
           // 获取当前场景对应的 worldId 和 eraId
           const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
             ? [...gameState.userWorldScenes, ...gameState.customScenes]
@@ -141,7 +167,7 @@ export const useCharacterHandlers = (
                 age: newCharacter.age,
                 role: newCharacter.role,
                 bio: newCharacter.bio,
-                avatarUrl: newCharacter.avatarUrl,
+                avatarUrl: finalAvatarUrl,
                 backgroundUrl: newCharacter.backgroundUrl,
                 themeColor: newCharacter.themeColor,
                 colorAccent: newCharacter.colorAccent,
@@ -167,7 +193,7 @@ export const useCharacterHandlers = (
                 await userMainStoryApi.update(createdMainStory.id, {
                   role: newCharacter.role,
                   bio: newCharacter.bio,
-                  avatarUrl: newCharacter.avatarUrl,
+                  avatarUrl: finalAvatarUrl,
                   backgroundUrl: newCharacter.backgroundUrl,
                   themeColor: newCharacter.themeColor,
                   colorAccent: newCharacter.colorAccent,
@@ -202,6 +228,7 @@ export const useCharacterHandlers = (
             // 同步角色
             const syncResult = await syncService.handleLocalDataChange('character', {
               ...newCharacter,
+              avatarUrl: finalAvatarUrl,
               description: newCharacter.bio,
               age: newCharacter.age,
               gender: newCharacter.role,
@@ -368,21 +395,78 @@ export const useCharacterHandlers = (
 
   /**
    * 生成角色头像
+   * 生成后自动下载、上传并更新角色的头像URL
    */
   const handleGenerateAvatar = useCallback(async (character: Character) => {
     if (gameState.generatingAvatarId) return;
     dispatch({ type: 'SET_GENERATING_AVATAR_ID', payload: character.id });
     try {
-      const newAvatarUrl = await geminiService.generateCharacterImage(character);
+      // 获取当前场景的世界风格
+      const worldStyle = gameState.worldStyle || 'anime';
+      
+      // 生成头像
+      const newAvatarUrl = await aiService.generateCharacterImage(character, worldStyle);
       if (newAvatarUrl) {
-        dispatch({ type: 'SET_AVATAR', payload: { characterId: character.id, avatarUrl: newAvatarUrl } });
+        // 缓存生成的头像到本地
+        const { imageCacheService } = await import('../utils/imageCache');
+        const cachedUrl = await imageCacheService.cacheImage(newAvatarUrl, character.id);
+        
+        // 更新本地显示（立即反馈）
+        dispatch({ type: 'SET_AVATAR', payload: { characterId: character.id, avatarUrl: cachedUrl } });
+        
+        // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
+        // 直接使用原始URL，不尝试上传
+        if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
+          // 更新角色的头像URL（保存角色）
+          const updatedCharacter = { ...character, avatarUrl: cachedUrl };
+          await handleSaveCharacter(updatedCharacter);
+          return;
+        }
+        
+        // 上传到服务器（使用character/user分类）
+        try {
+          let blob: Blob;
+          
+          // 如果缓存URL是blob URL，直接使用
+          if (cachedUrl.startsWith('blob:')) {
+            const response = await fetch(cachedUrl);
+            blob = await response.blob();
+          } else if (cachedUrl.startsWith('data:')) {
+            // Base64 URL
+            const response = await fetch(cachedUrl);
+            blob = await response.blob();
+          } else {
+            // 这不应该发生，但为了安全起见
+            throw new Error('无法获取图片数据');
+          }
+          
+          const file = new File([blob], `character-${character.id}-avatar-${Date.now()}.png`, { type: blob.type || 'image/png' });
+          
+          const token = localStorage.getItem('auth_token');
+          const result = await imageApi.uploadImage(file, 'character/user', token || undefined);
+          
+          if (result.success && result.url) {
+            // 使用服务器URL，更新角色的头像URL（保存角色）
+            const updatedCharacter = { ...character, avatarUrl: result.url };
+            await handleSaveCharacter(updatedCharacter);
+          } else {
+            // 上传失败，使用本地缓存，更新角色的头像URL（保存角色）
+            const updatedCharacter = { ...character, avatarUrl: cachedUrl };
+            await handleSaveCharacter(updatedCharacter);
+          }
+        } catch (uploadError) {
+          console.error('上传生成的头像失败:', uploadError);
+          // 上传失败，使用本地缓存，更新角色的头像URL（保存角色）
+          const updatedCharacter = { ...character, avatarUrl: cachedUrl };
+          await handleSaveCharacter(updatedCharacter);
+        }
       }
     } catch (e) {
       console.error("Avatar gen failed", e);
     } finally {
       dispatch({ type: 'SET_GENERATING_AVATAR_ID', payload: null });
     }
-  }, [gameState.generatingAvatarId, dispatch]);
+  }, [gameState.generatingAvatarId, gameState.worldStyle, dispatch, handleSaveCharacter]);
 
   return {
     handleSaveCharacter,

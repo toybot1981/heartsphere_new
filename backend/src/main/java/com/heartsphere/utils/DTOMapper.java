@@ -93,6 +93,7 @@ public class DTOMapper {
         dto.setTitle(entry.getTitle());
         dto.setContent(entry.getContent());
         dto.setTags(entry.getTags());
+        dto.setInsight(entry.getInsight());
         dto.setEntryDate(entry.getEntryDate());
         dto.setTimestamp(entry.getTimestamp());
         dto.setWorldId(entry.getWorld() != null ? entry.getWorld().getId() : null);

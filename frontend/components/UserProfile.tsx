@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { UserProfile as UserProfileType, JournalEntry, Character, Mail, WorldScene, GameState } from '../types';
-import { geminiService } from '../services/gemini';
+import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { showAlert } from '../utils/dialog';
 import { authApi, wechatApi, userProfileApi } from '../services/api';
 
@@ -247,7 +247,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   // 复制头像Prompt
   const handleCopyPrompt = async () => {
-    const prompt = geminiService.constructUserAvatarPrompt(userProfile.nickname);
+    const prompt = constructUserAvatarPrompt(userProfile.nickname);
     try {
       await navigator.clipboard.writeText(prompt);
       showAlert('提示词已复制！', '提示', 'success');

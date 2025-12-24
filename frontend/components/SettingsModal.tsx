@@ -3,8 +3,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { AppSettings, GameState, AIProvider, UserProfile, DialogueStyle } from '../types';
 import { Button } from './Button';
 import { storageService } from '../services/storage';
-import { geminiService } from '../services/gemini';
 import { showAlert, showConfirm } from '../utils/dialog';
+import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { AIConfigManager } from '../services/ai/config';
 import { AIMode, UserAIConfig } from '../services/ai/types';
 
@@ -150,7 +150,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
 
   const handleGetAvatarPrompt = async () => {
       if (!gameState.userProfile) return;
-      const prompt = geminiService.constructUserAvatarPrompt(gameState.userProfile.nickname);
+      const prompt = constructUserAvatarPrompt(gameState.userProfile.nickname);
       try {
           await navigator.clipboard.writeText(prompt);
           showAlert("头像提示词已复制！", "提示", "success");

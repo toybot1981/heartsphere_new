@@ -142,7 +142,10 @@ export const useAuthHandlers = ({
         
         // 更新其他状态
         dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
-        dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
+        const loginTime = Date.now();
+        dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: loginTime });
+        // 保存到localStorage，避免被状态保存覆盖
+        localStorage.setItem('lastLoginTime', loginTime.toString());
         
         // 如果是首次登录，确保跳转到 entryPoint 以显示初始化向导
         // 否则，如果当前在 profileSetup 页面，登录成功后也跳转到 entryPoint

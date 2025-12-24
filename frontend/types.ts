@@ -224,6 +224,8 @@ export interface Mail {
   timestamp: number;
   isRead: boolean;
   themeColor: string;
+  type?: string; // 信件类型：user_feedback, admin_reply, ai_generated
+  parentLetterId?: string; // 父信件ID（用于回复）
 }
 
 // Debug Logging Structure

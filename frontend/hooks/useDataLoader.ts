@@ -5,7 +5,7 @@
 
 import { useCallback, useRef } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import { worldApi, eraApi, characterApi, scriptApi, userMainStoryApi, journalApi, authApi } from '../services/api';
+import { worldApi, eraApi, characterApi, scriptApi, userMainStoryApi, journalApi, authApi, chronosLetterApi } from '../services/api';
 import { convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
 
@@ -39,7 +39,10 @@ export const useDataLoader = () => {
       );
       
       dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
-      dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
+      const loginTime = Date.now();
+      dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: loginTime });
+      // 保存到localStorage，避免被状态保存覆盖
+      localStorage.setItem('lastLoginTime', loginTime.toString());
       
       // 只有在成功加载数据后才设置标志
       if (userWorldScenes.length > 0) {
@@ -95,6 +98,16 @@ export const useDataLoader = () => {
       // 获取日记列表
       const journalEntries = await journalApi.getAllJournalEntries(token);
       
+      // 获取信件列表（只获取用户反馈和管理员回复，不包含AI生成的信件）
+      let letters: any[] = [];
+      try {
+        letters = await chronosLetterApi.getAllLetters(token);
+        console.log('[useDataLoader] 加载信件成功，数量:', letters.length);
+      } catch (error) {
+        console.error('[useDataLoader] 加载信件失败:', error);
+        // 信件加载失败不影响登录流程
+      }
+      
       // 获取世界列表 (如果登录响应中没有，则单独获取)
       const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
       
@@ -129,7 +142,23 @@ export const useDataLoader = () => {
         content: entry.content,
         timestamp: new Date(entry.entryDate).getTime(),
         imageUrl: '',
-        insight: undefined
+        insight: entry.insight || undefined,
+        tags: entry.tags || undefined
+      }))});
+      
+      // 更新信件列表（只包含用户反馈和管理员回复）
+      dispatch({ type: 'SET_MAILBOX', payload: letters.map(letter => ({
+        id: letter.id,
+        senderId: letter.senderId,
+        senderName: letter.senderName,
+        senderAvatarUrl: letter.senderAvatarUrl || '',
+        subject: letter.subject,
+        content: letter.content,
+        timestamp: letter.timestamp,
+        isRead: letter.isRead || false,
+        themeColor: letter.themeColor || '#8b5cf6',
+        type: letter.type || 'user_feedback',
+        parentLetterId: letter.parentLetterId
       }))});
       
       // 更新场景列表

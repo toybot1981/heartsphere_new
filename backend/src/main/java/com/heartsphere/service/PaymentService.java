@@ -2,6 +2,10 @@ package com.heartsphere.service;
 
 import com.heartsphere.entity.PaymentOrder;
 import com.heartsphere.entity.SubscriptionPlan;
+import com.heartsphere.payment.entity.PaymentConfig;
+import com.heartsphere.payment.service.AlipayPaymentService;
+import com.heartsphere.payment.service.PaymentConfigService;
+import com.heartsphere.payment.service.WechatPaymentService;
 import com.heartsphere.repository.PaymentOrderRepository;
 import com.heartsphere.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -24,6 +27,9 @@ public class PaymentService {
     private final PaymentOrderRepository orderRepository;
     private final SubscriptionPlanRepository planRepository;
     private final MembershipService membershipService;
+    private final AlipayPaymentService alipayPaymentService;
+    private final WechatPaymentService wechatPaymentService;
+    private final PaymentConfigService paymentConfigService;
 
     /**
      * 创建支付订单
@@ -48,18 +54,51 @@ public class PaymentService {
 
         PaymentOrder saved = orderRepository.save(order);
 
-        // 调用支付接口获取支付二维码（暂时使用模拟数据，后续集成真实支付SDK）
+        // 调用支付接口获取支付二维码或支付URL
         try {
-            // TODO: 集成微信支付和支付宝SDK
-            // 暂时返回模拟的二维码URL
-            if ("wechat".equals(paymentType)) {
-                saved.setQrCodeUrl("https://api.example.com/qrcode/wechat/" + orderNo);
-                saved.setPaymentUrl("weixin://wxpay/bizpayurl?pr=" + orderNo);
-            } else if ("alipay".equals(paymentType)) {
-                saved.setQrCodeUrl("https://api.example.com/qrcode/alipay/" + orderNo);
-                saved.setPaymentUrl("https://mapi.alipay.com/gateway.do?order=" + orderNo);
+            if ("alipay".equals(paymentType)) {
+                // 获取支付宝配置
+                PaymentConfig alipayConfig = paymentConfigService.getEnabledConfig("alipay")
+                        .orElseThrow(() -> new RuntimeException("支付宝支付未配置或未启用"));
+
+                // 生成订单标题和描述
+                String subject = plan.getName() + " - " + plan.getBillingCycle();
+                String body = "订阅计划：" + plan.getName();
+
+                // 创建扫码支付（返回二维码URL）
+                String qrCode = alipayPaymentService.createQrCodePay(
+                        alipayConfig,
+                        orderNo,
+                        plan.getPrice(),
+                        subject,
+                        body
+                );
+
+                saved.setQrCodeUrl(qrCode);
+                saved.setPaymentProvider("alipay");
+                orderRepository.save(saved);
+            } else if ("wechat".equals(paymentType)) {
+                // 获取微信支付配置
+                PaymentConfig wechatConfig = paymentConfigService.getEnabledConfig("wechat")
+                        .orElseThrow(() -> new RuntimeException("微信支付未配置或未启用"));
+
+                // 生成订单描述
+                String description = plan.getName() + " - " + plan.getBillingCycle();
+
+                // 创建扫码支付（返回二维码URL）
+                String qrCode = wechatPaymentService.createNativePay(
+                        wechatConfig,
+                        orderNo,
+                        plan.getPrice(),
+                        description
+                );
+
+                saved.setQrCodeUrl(qrCode);
+                saved.setPaymentProvider("wechat");
+                orderRepository.save(saved);
+            } else {
+                throw new RuntimeException("不支持的支付类型: " + paymentType);
             }
-            orderRepository.save(saved);
         } catch (Exception e) {
             log.error("创建支付订单失败", e);
             saved.setStatus("failed");
@@ -98,9 +137,10 @@ public class PaymentService {
         orderRepository.save(order);
 
         // 激活会员
+        Long planId = Long.valueOf(order.getPlanId());
         membershipService.activateMembership(
                 order.getUserId(),
-                order.getPlanId(),
+                planId,
                 planRepository.findById(order.getPlanId())
                         .map(SubscriptionPlan::getBillingCycle)
                         .orElse("monthly")

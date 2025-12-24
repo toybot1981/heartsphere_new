@@ -1,7 +1,7 @@
 import React from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'billing';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -94,6 +94,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                     icon="⚙️" 
                     active={activeSection === 'settings'} 
                     onClick={() => handleSectionClick('settings')} 
+                />
+                <AdminSidebarItem 
+                    label="计费管理 Billing" 
+                    icon="💳" 
+                    active={activeSection === 'billing'} 
+                    onClick={() => handleSectionClick('billing')} 
                 />
             </div>
 

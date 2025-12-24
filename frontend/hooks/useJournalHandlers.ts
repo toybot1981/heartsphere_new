@@ -61,13 +61,20 @@ export const useJournalHandlers = () => {
           if (tags) {
             apiRequestData.tags = tags;
           }
+          if (insight) {
+            apiRequestData.insight = insight;
+          }
           
           const savedEntry = await journalApi.createJournalEntry(apiRequestData, token);
           
-          // 使用 ref 获取最新的 entries，更新本地状态（使用服务器返回的ID）
+          // 使用 ref 获取最新的 entries，更新本地状态（使用服务器返回的ID和insight）
           const updatedEntries = journalEntriesRef.current.map(e => 
             e.id === newEntry.id 
-              ? { ...e, id: savedEntry.id.toString() }
+              ? { 
+                  ...e, 
+                  id: savedEntry.id.toString(),
+                  insight: savedEntry.insight || e.insight // 保留服务器返回的insight，如果没有则保留本地的
+                }
               : e
           );
           dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
@@ -102,8 +109,20 @@ export const useJournalHandlers = () => {
           if (updatedEntry.tags) {
             apiRequestData.tags = updatedEntry.tags;
           }
+          if (updatedEntry.insight) {
+            apiRequestData.insight = updatedEntry.insight;
+          }
           
-          await journalApi.updateJournalEntry(updatedEntry.id, apiRequestData, token);
+          const savedEntry = await journalApi.updateJournalEntry(updatedEntry.id, apiRequestData, token);
+          // 更新成功，同步服务器返回的insight到本地状态
+          if (savedEntry && savedEntry.insight) {
+            const finalEntries = journalEntriesRef.current.map(e => 
+              e.id === updatedEntry.id 
+                ? { ...e, insight: savedEntry.insight }
+                : e
+            );
+            dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: finalEntries });
+          }
           // 更新成功，不需要日志（根据重构要求，只保留错误日志）
         } catch (error) {
           console.error('Failed to sync journal entry with server:', error);

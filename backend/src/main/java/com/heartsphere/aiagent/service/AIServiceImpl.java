@@ -8,6 +8,7 @@ import com.heartsphere.aiagent.dto.response.*;
 import com.heartsphere.aiagent.entity.UserAIConfig;
 import com.heartsphere.aiagent.exception.AIServiceException;
 import com.heartsphere.aiagent.util.StreamResponseHandler;
+import com.heartsphere.billing.annotation.RequiresTokenQuota;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AIServiceImpl implements AIService {
     private final UnifiedModelRoutingService unifiedRoutingService;
     
     @Override
+    @RequiresTokenQuota(quotaType = "text_token", usageType = "text_generation")
     public TextGenerationResponse generateText(Long userId, TextGenerationRequest request) {
         try {
             log.debug("文本生成请求，userId={}, provider={}, model={}", 
@@ -44,6 +46,10 @@ public class AIServiceImpl implements AIService {
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());
                         log.debug("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
+                    }
+                    if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().isEmpty()) {
+                        request.setApiKey(modelConfig.getApiKey());
+                        log.debug("统一接入模式：设置apiKey（已从数据库获取）");
                     }
                     log.debug("统一接入模式：使用模型配置 provider={}, model={}", 
                         modelConfig.getProvider(), modelConfig.getModelName());
@@ -89,6 +95,7 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "text_token", usageType = "text_generation")
     public void generateTextStream(Long userId, TextGenerationRequest request, 
                                    StreamResponseHandler<TextGenerationResponse> handler) {
         try {
@@ -112,6 +119,10 @@ public class AIServiceImpl implements AIService {
                        if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                            request.setBaseUrl(modelConfig.getBaseUrl());
                            log.info("[AIServiceImpl] 统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
+                       }
+                       if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().isEmpty()) {
+                           request.setApiKey(modelConfig.getApiKey());
+                           log.info("[AIServiceImpl] 统一接入模式：设置apiKey（已从数据库获取）");
                        }
                        log.info("[AIServiceImpl] 统一接入模式：使用模型配置 provider={}, model={}", 
                            modelConfig.getProvider(), modelConfig.getModelName());
@@ -213,24 +224,49 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "image", usageType = "image_generation")
     public ImageGenerationResponse generateImage(Long userId, ImageGenerationRequest request) {
         try {
             log.debug("图片生成请求，userId={}, provider={}, model={}", 
                 userId, request.getProvider(), request.getModel());
             
-            // 确定provider（优先使用请求中的，否则使用用户配置）
-            String provider = request.getProvider();
-            if (provider == null || provider.isEmpty()) {
-                provider = configService.getUserImageProvider(userId);
-            }
-            
-            // 确定model（优先使用请求中的，否则使用用户配置）
-            if (request.getModel() == null || request.getModel().isEmpty()) {
-                request.setModel(configService.getUserImageModel(userId));
+            // 统一接入模式：如果请求中没有指定provider和model，从统一路由服务获取
+            if ((request.getProvider() == null || request.getProvider().isEmpty()) &&
+                (request.getModel() == null || request.getModel().isEmpty())) {
+                try {
+                    AIModelConfigDTO modelConfig = unifiedRoutingService.selectModel("image");
+                    request.setProvider(modelConfig.getProvider());
+                    request.setModel(modelConfig.getModelName());
+                    if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
+                        request.setBaseUrl(modelConfig.getBaseUrl());
+                        log.debug("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
+                    }
+                    if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().isEmpty()) {
+                        request.setApiKey(modelConfig.getApiKey());
+                        log.debug("统一接入模式：设置apiKey（已从数据库获取）");
+                    }
+                    log.debug("统一接入模式：使用模型配置 provider={}, model={}", 
+                        modelConfig.getProvider(), modelConfig.getModelName());
+                } catch (Exception e) {
+                    log.warn("统一接入模式路由失败，回退到用户配置: {}", e.getMessage());
+                    // 回退到用户配置
+                    String provider = configService.getUserImageProvider(userId);
+                    String model = configService.getUserImageModel(userId);
+                    request.setProvider(provider);
+                    request.setModel(model);
+                }
+            } else {
+                // 如果请求中已指定，优先使用请求中的
+                if (request.getProvider() == null || request.getProvider().isEmpty()) {
+                    request.setProvider(configService.getUserImageProvider(userId));
+                }
+                if (request.getModel() == null || request.getModel().isEmpty()) {
+                    request.setModel(configService.getUserImageModel(userId));
+                }
             }
             
             // 获取适配器
-            ModelAdapter adapter = adapterManager.getAdapter(provider);
+            ModelAdapter adapter = adapterManager.getAdapter(request.getProvider());
             
             // 调用适配器生成图片
             ImageGenerationResponse response = adapter.generateImage(request);
@@ -247,6 +283,7 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "audio", usageType = "audio_tts")
     public AudioResponse textToSpeech(Long userId, AudioRequest request) {
         try {
             // 确定provider
@@ -266,6 +303,7 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "audio", usageType = "audio_stt")
     public AudioResponse speechToText(Long userId, AudioRequest request) {
         try {
             // 确定provider
@@ -285,6 +323,7 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "video", usageType = "video_generation")
     public VideoGenerationResponse generateVideo(Long userId, VideoGenerationRequest request) {
         try {
             // 确定provider

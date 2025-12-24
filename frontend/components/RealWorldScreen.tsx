@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, MouseEvent, ChangeEvent, KeyboardEvent } from 'react';
 import { JournalEntry } from '../types';
 import { Button } from './Button';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { imageApi, tokenStorage } from '../services/api';
 import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/journalTemplates';
 import { showAlert, showConfirm } from '../utils/dialog';
@@ -176,8 +176,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         console.log("[步骤3/6] 开始自动生成图片");
         setIsGeneratingImage(true);
         try {
-            console.log("[步骤3/6] 调用geminiService.generateMoodImage生成图片");
-            const generated = await geminiService.generateMoodImage(newContent, worldStyle);
+            console.log("[步骤3/6] 调用aiService.generateMoodImage生成图片");
+            const generated = await aiService.generateMoodImage(newContent, worldStyle);
             console.log("[步骤3/6] 图片生成结果:", generated ? "[生成成功]" : "[生成失败]");
             if (generated) {
                 // 如果生成的是base64，也上传
@@ -266,7 +266,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         setNewTags([]);
         setTagInput('');
         setUploadedImageUrl(undefined);
-        setMirrorInsight(null);
+        // 注意：新建模式下不清空mirrorInsight，因为用户可能想继续使用
+        // setMirrorInsight(null);
         // 保持 isCreating = true，不关闭编辑框
         setIsEditing(false);
         setSelectedEntry(null);
@@ -339,7 +340,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           try {
               const recentEntries = entries.slice(-3);
               // generateDailyGreeting 现在保证永远不会抛出错误，总是返回默认值
-              const greeting = await geminiService.generateDailyGreeting(recentEntries, userName);
+              const greeting = await aiService.generateDailyGreeting(recentEntries, userName);
               if (greeting) {
                   setDailyGreeting(greeting);
               } else {
@@ -684,6 +685,17 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                       {entry.content}
                                   </p>
                                   
+                                  {/* Mirror Insight Display */}
+                                  {entry.insight && (
+                                      <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-800/50 rounded-lg p-3 mb-3">
+                                          <div className="flex items-center gap-2 mb-1">
+                                              <span className="text-sm">🔮</span>
+                                              <h4 className="text-cyan-400 font-bold text-xs uppercase tracking-wider">Mirror of Truth</h4>
+                                          </div>
+                                          <p className="text-cyan-100 text-xs italic leading-relaxed">"{entry.insight}"</p>
+                                      </div>
+                                  )}
+                                  
                                   {/* Tags Display */}
                                   {entry.tags && (
                                       <div className="flex flex-wrap gap-1 mb-3">
@@ -748,11 +760,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
 
           {/* Right: Editor Panel (Slide in) */}
           {isCreating && (
-              <div className="w-full md:w-[450px] bg-slate-800 rounded-xl border border-slate-700 p-6 flex flex-col shadow-2xl animate-fade-in shrink-0">
-                  <div className="flex justify-between items-center mb-6">
+              <div className="w-full md:w-[450px] bg-slate-800 rounded-xl border border-slate-700 p-6 flex flex-col shadow-2xl animate-fade-in shrink-0 h-full max-h-full overflow-hidden">
+                  <div className="flex justify-between items-center mb-4 shrink-0">
                       <div className="flex items-center gap-3">
                           <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-white text-xl">&times;</button>
-                          <h2 className="text-lg font-bold text-white">{isEditing ? '编辑日记' : '新思维'}</h2>
+                          <h2 className="text-base font-bold text-white">{isEditing ? '编辑日记' : '新思维'}</h2>
                       </div>
                       <div className="flex gap-2">
                           {/* 星星图标 - 晨间意图 */}
@@ -790,7 +802,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       </div>
                   </div>
 
-                  <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar min-h-0">
                       {/* Title - 始终可编辑，标题可选，默认为日期 */}
                       <input 
                           value={newTitle} 
@@ -830,7 +842,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           value={newContent} 
                           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewContent(e.target.value)} 
                           placeholder={newTitle === '晨间意图' || (!newTitle && !isEditing) ? "今天,我想要专注于...\n\n我期待..." : "在这里写下你的想法、困惑或梦境..."}
-                          className="w-full flex-1 min-h-[200px] bg-slate-900/30 border border-slate-600/50 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:border-cyan-500/50 outline-none resize-none leading-relaxed text-sm"
+                          className="w-full min-h-[180px] max-h-[300px] bg-slate-900/30 border border-slate-600/50 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:border-cyan-500/50 outline-none resize-y leading-relaxed text-sm"
                       />
 
                       {/* Mirror Insight Section */}
@@ -894,26 +906,29 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
                   </div>
 
-                  <div className="pt-4 mt-2 border-t border-slate-700 flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-slate-400 text-xs">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span>本我镜像</span>
-                      </div>
-                      <div className="flex gap-3">
+                  <div className="pt-3 mt-2 border-t border-slate-700 flex justify-between items-center shrink-0">
+                      <div className="flex gap-2">
                           {isEditing && (
                               <button 
                                 onClick={(e) => { if(selectedEntry) handleDeleteClick(selectedEntry.id, e); }}
-                                className="text-red-400 text-sm hover:underline"
+                                className="text-red-400 text-sm hover:underline px-2 py-1"
                               >
                                   删除
                               </button>
                           )}
-                          <Button variant="ghost" onClick={() => setIsCreating(false)} className="text-slate-300">取消</Button>
-                          <Button onClick={handleSave} disabled={isGeneratingImage} className="bg-gradient-to-r from-pink-600 to-purple-600">
+                          <button 
+                              onClick={() => setIsCreating(false)} 
+                              className="px-3 py-1.5 text-slate-300 hover:text-white text-sm transition-colors"
+                          >
+                              取消
+                          </button>
+                          <button 
+                              onClick={handleSave} 
+                              disabled={isGeneratingImage}
+                              className="px-4 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-sm rounded-lg hover:from-pink-500 hover:to-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                               {isGeneratingImage ? '生成配图中...' : '保存'}
-                          </Button>
+                          </button>
                       </div>
                   </div>
               </div>

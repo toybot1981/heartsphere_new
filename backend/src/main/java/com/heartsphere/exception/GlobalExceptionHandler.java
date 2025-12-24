@@ -166,6 +166,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理配额不足异常
+     */
+    @ExceptionHandler(com.heartsphere.billing.exception.QuotaInsufficientException.class)
+    public ResponseEntity<ApiResponse<Object>> handleQuotaInsufficientException(
+            com.heartsphere.billing.exception.QuotaInsufficientException e) {
+        log.warn("配额不足: quotaType={}, required={}, available={}", 
+                e.getQuotaType(), e.getRequired(), e.getAvailable());
+        return ResponseEntity
+                .status(HttpStatus.PAYMENT_REQUIRED)
+                .body(ApiResponse.error(402, e.getMessage()));
+    }
+
+    /**
      * 处理所有其他未捕获的异常
      */
     @ExceptionHandler(Exception.class)

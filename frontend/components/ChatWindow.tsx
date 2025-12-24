@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho, DialogueStyle } from '../types';
-import { geminiService } from '../services/gemini';
 import { aiService } from '../services/ai';
 import { AIConfigManager } from '../services/ai/config';
 import { GenerateContentResponse } from '@google/genai';
@@ -143,14 +142,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(scrollToBottom, [safeHistory, isCinematic]); 
 
-  // --- CRITICAL FIX: Reset Session on Mount ---
-  // This ensures that when we enter a chat, the Gemini Service clears any stale cache 
-  // and rebuilds the context from the passed 'history' prop.
-  useEffect(() => {
-    if (character?.id) {
-        geminiService.resetSession(character.id);
-    }
-  }, [character?.id]);
+  // Note: Session reset is no longer needed with unified AI service
+  // The aiService handles context management automatically
 
   // 存储上一次的character.id和customScenario.id，用于检测切换
   const prevCharacterIdRef = useRef<string | undefined>(character?.id);
@@ -255,10 +248,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         const generate = async () => {
             setIsGeneratingScene(true);
             try {
-                const desc = await geminiService.generateSceneDescription(history);
+                const desc = await aiService.generateSceneDescription(history);
                 if (desc) {
                     const prompt = `${desc}. Style: Modern Chinese Anime (Manhua), High Quality, Cinematic Lighting, Vibrant Colors. Aspect Ratio: 16:9.`;
-                    const img = await geminiService.generateImageFromPrompt(prompt, '16:9');
+                    const img = await aiService.generateImageFromPrompt(prompt, '16:9');
                     if (img) setSceneImageUrl(img);
                 }
             } catch (e) {
@@ -298,7 +291,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         await ctx.resume();
       }
 
-      const base64Audio = await geminiService.generateSpeech(text, character.voiceName || 'Kore');
+      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
       if (!base64Audio) throw new Error("No audio data generated");
 
       const audioBytes = decode(base64Audio);
@@ -863,7 +856,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!activeJournalEntryId || safeHistory.length < 2 || isCrystalizing) return;
     setIsCrystalizing(true);
     try {
-        const wisdom = await geminiService.generateWisdomEcho(history, character.name);
+        const wisdom = await aiService.generateWisdomEcho(history, character.name);
         if (wisdom) {
             setGeneratedEcho({
                 characterName: character.name,

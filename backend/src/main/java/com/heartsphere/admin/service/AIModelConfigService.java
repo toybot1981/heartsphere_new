@@ -67,9 +67,10 @@ public class AIModelConfigService {
      */
     @Transactional
     public AIModelConfigDTO createModelConfig(AIModelConfigDTO dto) {
-        // 如果设置为默认模型，需要先取消其他默认模型
+        // 如果设置为默认模型，需要先取消同类型的其他默认模型
+        // 确保每种类型（capability）的默认模型只能有一个
         if (dto.getIsDefault() != null && dto.getIsDefault()) {
-            clearDefaultModel(dto.getCapability());
+            clearDefaultModel(dto.getCapability(), null);
         }
         
         AIModelConfig config = new AIModelConfig();
@@ -99,9 +100,30 @@ public class AIModelConfigService {
         AIModelConfig config = modelConfigRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("AI模型配置不存在: " + id));
         
-        // 如果设置为默认模型，需要先取消其他默认模型
-        if (dto.getIsDefault() != null && dto.getIsDefault() && !config.getIsDefault()) {
-            clearDefaultModel(config.getCapability());
+        String oldCapability = config.getCapability();
+        Boolean oldIsDefault = config.getIsDefault();
+        
+        // 如果 capability 发生变化，需要处理默认模型的变更
+        if (dto.getCapability() != null && !dto.getCapability().equals(oldCapability)) {
+            // capability 改变
+            String newCapability = dto.getCapability();
+            
+            // 如果当前模型是旧 capability 的默认模型，清除旧 capability 的默认模型（排除当前模型）
+            if (oldIsDefault != null && oldIsDefault) {
+                clearDefaultModel(oldCapability, id);
+            }
+            
+            // 如果设置为新 capability 的默认模型，清除新 capability 的其他默认模型（排除当前模型）
+            if (dto.getIsDefault() != null && dto.getIsDefault()) {
+                clearDefaultModel(newCapability, id);
+            }
+        } else {
+            // capability 未改变
+            // 如果设置为默认模型，需要先取消其他默认模型（排除当前模型）
+            if (dto.getIsDefault() != null && dto.getIsDefault() && (oldIsDefault == null || !oldIsDefault)) {
+                String capability = dto.getCapability() != null ? dto.getCapability() : oldCapability;
+                clearDefaultModel(capability, id);
+            }
         }
         
         if (dto.getProvider() != null) config.setProvider(dto.getProvider());
@@ -117,8 +139,8 @@ public class AIModelConfigService {
         if (dto.getDescription() != null) config.setDescription(dto.getDescription());
         
         AIModelConfig saved = modelConfigRepository.save(config);
-        log.info("更新AI模型配置: id={}, provider={}, model={}", 
-                saved.getId(), saved.getProvider(), saved.getModelName());
+        log.info("更新AI模型配置: id={}, provider={}, model={}, capability={}", 
+                saved.getId(), saved.getProvider(), saved.getModelName(), saved.getCapability());
         return toDTO(saved);
     }
     
@@ -141,8 +163,8 @@ public class AIModelConfigService {
         AIModelConfig config = modelConfigRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("AI模型配置不存在: " + id));
         
-        // 清除同能力类型的其他默认模型
-        clearDefaultModel(config.getCapability());
+        // 清除同能力类型的其他默认模型（排除当前模型）
+        clearDefaultModel(config.getCapability(), id);
         
         // 设置当前模型为默认
         config.setIsDefault(true);
@@ -153,15 +175,30 @@ public class AIModelConfigService {
     }
     
     /**
-     * 清除指定能力类型的默认模型
+     * 清除指定能力类型的默认模型（排除指定ID的模型）
+     * 确保每种能力类型（capability）只有一个默认模型
+     * 
+     * @param capability 能力类型（text, image, audio, video）
+     * @param excludeId 要排除的模型ID（如果为null，则清除所有默认模型）
      */
-    @Transactional
-    private void clearDefaultModel(String capability) {
+    private void clearDefaultModel(String capability, Long excludeId) {
         List<AIModelConfig> defaultConfigs = modelConfigRepository
                 .findByIsDefaultTrueAndCapabilityAndIsActiveTrue(capability);
-        for (AIModelConfig config : defaultConfigs) {
-            config.setIsDefault(false);
-            modelConfigRepository.save(config);
+        
+        // 过滤掉要排除的模型
+        List<AIModelConfig> configsToClear = defaultConfigs.stream()
+                .filter(config -> excludeId == null || !config.getId().equals(excludeId))
+                .collect(Collectors.toList());
+        
+        if (!configsToClear.isEmpty()) {
+            log.debug("清除 capability={} 的 {} 个默认模型（排除ID: {}）", 
+                    capability, configsToClear.size(), excludeId);
+            for (AIModelConfig config : configsToClear) {
+                config.setIsDefault(false);
+                modelConfigRepository.save(config);
+                log.debug("已清除默认模型: id={}, provider={}, model={}", 
+                        config.getId(), config.getProvider(), config.getModelName());
+            }
         }
     }
     

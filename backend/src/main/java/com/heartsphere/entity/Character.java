@@ -34,10 +34,10 @@ public class Character {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "avatar_url")
+    @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    @Column(name = "background_url")
+    @Column(name = "background_url", length = 500)
     private String backgroundUrl;
 
     @Column(name = "theme_color")

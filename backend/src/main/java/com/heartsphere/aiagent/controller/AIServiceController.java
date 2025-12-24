@@ -197,44 +197,61 @@ public class AIServiceController {
                                 // 如果response为null，说明发生了错误
                                 if (response == null) {
                                     log.warn("[AIServiceController] /text/generate/stream - 收到null响应，可能发生了错误");
-                                    // 发送错误信息（OpenAPI格式）
-                                    String errorData = String.format(
-                                        "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"error\":{\"message\":\"AI服务调用失败，可能是网络连接问题或DNS解析失败。请稍后重试或联系管理员。\",\"type\":\"server_error\"}}",
-                                        responseId,
-                                        System.currentTimeMillis() / 1000,
-                                        model
-                                    );
-                                    emitter.send(SseEmitter.event().data(errorData));
-                                } else {
-                                    // 发送完成信号（OpenAPI格式）
-                                    if (response.getUsage() != null) {
-                                        String usageJson = String.format(
-                                            "{\"prompt_tokens\":%d,\"completion_tokens\":%d,\"total_tokens\":%d}",
-                                            response.getUsage().getInputTokens() != null ? response.getUsage().getInputTokens() : 0,
-                                            response.getUsage().getOutputTokens() != null ? response.getUsage().getOutputTokens() : 0,
-                                            response.getUsage().getTotalTokens() != null ? response.getUsage().getTotalTokens() : 0
-                                        );
-                                        String finalData = String.format(
-                                            "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":%s}",
-                                            responseId,
-                                            System.currentTimeMillis() / 1000,
-                                            model,
-                                            usageJson
-                                        );
-                                        emitter.send(SseEmitter.event().data(finalData));
-                                    } else {
-                                        String finalData = String.format(
-                                            "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}",
+                                    try {
+                                        // 发送错误信息（OpenAPI格式）
+                                        String errorData = String.format(
+                                            "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"error\":{\"message\":\"AI服务调用失败，可能是网络连接问题或DNS解析失败。请稍后重试或联系管理员。\",\"type\":\"server_error\"}}",
                                             responseId,
                                             System.currentTimeMillis() / 1000,
                                             model
                                         );
-                                        emitter.send(SseEmitter.event().data(finalData));
+                                        emitter.send(SseEmitter.event().data(errorData));
+                                    } catch (IllegalStateException e) {
+                                        log.warn("[AIServiceController] /text/generate/stream - emitter已完成，无法发送错误信息: {}", e.getMessage());
+                                    } catch (Exception e) {
+                                        log.error("[AIServiceController] /text/generate/stream - 发送错误信息失败", e);
+                                    }
+                                } else {
+                                    try {
+                                        // 发送完成信号（OpenAPI格式）
+                                        if (response.getUsage() != null) {
+                                            String usageJson = String.format(
+                                                "{\"prompt_tokens\":%d,\"completion_tokens\":%d,\"total_tokens\":%d}",
+                                                response.getUsage().getInputTokens() != null ? response.getUsage().getInputTokens() : 0,
+                                                response.getUsage().getOutputTokens() != null ? response.getUsage().getOutputTokens() : 0,
+                                                response.getUsage().getTotalTokens() != null ? response.getUsage().getTotalTokens() : 0
+                                            );
+                                            String finalData = String.format(
+                                                "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":%s}",
+                                                responseId,
+                                                System.currentTimeMillis() / 1000,
+                                                model,
+                                                usageJson
+                                            );
+                                            emitter.send(SseEmitter.event().data(finalData));
+                                        } else {
+                                            String finalData = String.format(
+                                                "{\"id\":\"%s\",\"object\":\"chat.completion.chunk\",\"created\":%d,\"model\":\"%s\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}",
+                                                responseId,
+                                                System.currentTimeMillis() / 1000,
+                                                model
+                                            );
+                                            emitter.send(SseEmitter.event().data(finalData));
+                                        }
+                                        // 完成SSE连接
+                                        emitter.complete();
+                                        log.info("[AIServiceController] /text/generate/stream - SSE流式响应完成");
+                                    } catch (IllegalStateException e) {
+                                        log.debug("[AIServiceController] /text/generate/stream - emitter已完成，无需再次发送完成信号: {}", e.getMessage());
+                                    } catch (Exception e) {
+                                        log.error("[AIServiceController] /text/generate/stream - 发送完成信号失败", e);
+                                        try {
+                                            emitter.complete();
+                                        } catch (Exception ex) {
+                                            log.debug("[AIServiceController] /text/generate/stream - 完成SSE连接失败（可能已完成）: {}", ex.getMessage());
+                                        }
                                     }
                                 }
-                                emitter.send(SseEmitter.event().data("[DONE]"));
-                                log.info("[AIServiceController] /text/generate/stream - SSE流式响应完成");
-                                emitter.complete();
                             }
                         } catch (IOException e) {
                             log.error("[AIServiceController] 发送SSE数据失败 - userId={}", userId, e);

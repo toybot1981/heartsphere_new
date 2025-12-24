@@ -1073,6 +1073,10 @@ const AppContent: React.FC = () => {
              mails={gameState.mailbox}
              onClose={() => setShowMailbox(false)}
              onMarkAsRead={handleMarkMailRead}
+             onMailAdded={(mail) => {
+               // 将新信件添加到状态中
+               dispatch({ type: 'ADD_MAIL', payload: mail });
+             }}
           />
       )}
       

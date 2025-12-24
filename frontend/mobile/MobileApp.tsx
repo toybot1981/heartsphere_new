@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, CustomScenario } from '../types';
-import { geminiService } from '../services/gemini';
+import { geminiService } from '../services/gemini'; // 仅用于配置兼容
+import { aiService } from '../services/ai';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
 import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
@@ -1010,7 +1011,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                         onExplore={(entry) => {
                             setGameState(prev => ({ ...prev, activeJournalEntryId: entry.id, currentScreen: 'sceneSelection' }));
                         }}
-                        onConsultMirror={(c, r) => geminiService.generateMirrorInsight(c, r)}
+                        onConsultMirror={(c, r) => aiService.generateMirrorInsight(c, r)}
                         autoGenerateImage={gameState.settings.autoGenerateJournalImages}
                         onSwitchToPC={handleSwitchToPCWrapper}
                         userName={gameState.userProfile?.nickname}

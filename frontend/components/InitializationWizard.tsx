@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { eraApi, characterApi, scriptApi, worldApi, presetScriptApi, presetMainStoryApi, userMainStoryApi } from '../services/api';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { Button } from './Button';
 import { showAlert } from '../utils/dialog';
 
@@ -341,7 +341,8 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         ? `请为这个角色生成一个符合其特点的中文名字。角色信息：${context || originalName}。只返回名字，不要其他内容。`
         : `请为这个剧本生成一个更有吸引力的中文标题。原标题：${originalName}。只返回标题，不要其他内容。`;
       
-      const name = await geminiService.generateText(prompt, '你是一个专业的命名助手，擅长为角色和故事起名。', false);
+      const response = await aiService.generateTextString(prompt, '你是一个专业的命名助手，擅长为角色和故事起名。');
+      const name = response.trim();
       return name.trim().replace(/["'"]/g, '');
     } catch (error) {
       console.error('AI生成名字失败:', error);

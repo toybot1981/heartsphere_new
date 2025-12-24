@@ -1,7 +1,7 @@
 import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { JournalEntry } from '../types';
 import { Button } from '../components/Button';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai';
 import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/journalTemplates';
 
 interface MobileRealWorldProps {
@@ -70,7 +70,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
           try {
               console.log("[MobileRealWorld] 开始生成每日问候");
               const recentEntries = entries.slice(-3);
-              const greeting = await geminiService.generateDailyGreeting(recentEntries, userName);
+              const greeting = await aiService.generateDailyGreeting(recentEntries, userName);
               if (greeting) {
                   setDailyGreeting(greeting);
                   console.log("[MobileRealWorld] 每日问候生成成功");
@@ -182,7 +182,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
           if (autoGenerateImage) {
               setIsGenerating(true);
               try {
-                  img = await geminiService.generateMoodImage(content);
+                  img = await aiService.generateMoodImage(content);
               } catch(e) {}
               setIsGenerating(false);
           }

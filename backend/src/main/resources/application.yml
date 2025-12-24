@@ -16,6 +16,10 @@ spring:
         options:
           model: qwen-max
           temperature: 0.7
+    # 豆包（字节跳动）配置
+    doubao:
+      api-key: 9ed07a4e-5dad-4cbc-8548-3295e7875b41
+      base-url: https://ark.cn-beijing.volces.com/api/v3
   jpa:
     hibernate:
       ddl-auto: update
