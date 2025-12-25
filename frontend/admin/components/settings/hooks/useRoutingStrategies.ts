@@ -8,7 +8,8 @@ import type { RoutingStrategy, AIModelConfig } from '../types';
 export const useRoutingStrategies = (
     adminToken: string | null,
     modelConfigs: AIModelConfig[],
-    loadModelsByProvider: (provider: string, capability: string) => Promise<void>
+    loadModelsByProvider: (provider: string, capability: string) => Promise<void>,
+    onReload?: () => void
 ) => {
     const [routingStrategies, setRoutingStrategies] = useState<RoutingStrategy[]>([]);
     const [editingStrategy, setEditingStrategy] = useState<RoutingStrategy | null>(null);
@@ -143,6 +144,7 @@ export const useRoutingStrategies = (
             setEditingStrategy(null);
             setStrategyFormData({});
             showAlert('保存成功', '成功', 'success');
+            onReload?.();
         } catch (error: any) {
             showAlert(
                 '保存失败: ' + (error.message || '未知错误'),
@@ -152,6 +154,11 @@ export const useRoutingStrategies = (
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingStrategy(null);
+        setStrategyFormData({});
     };
 
     return {
@@ -168,6 +175,7 @@ export const useRoutingStrategies = (
         handleUpdateFallbackItem,
         handleMoveFallbackItem,
         handleSaveStrategy,
+        handleCancelEdit,
     };
 };
 

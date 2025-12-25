@@ -15,24 +15,24 @@ export const AISettings: React.FC<AISettingsProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200">
+      <div className="border-b border-slate-700">
         <nav className="flex space-x-8">
           <button
             onClick={() => setActiveSubTab('models')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeSubTab === 'models'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600'
             }`}
           >
             AI模型配置
           </button>
           <button
             onClick={() => setActiveSubTab('routing')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeSubTab === 'routing'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600'
             }`}
           >
             路由策略

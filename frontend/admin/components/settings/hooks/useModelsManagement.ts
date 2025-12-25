@@ -117,6 +117,7 @@ export const useModelsManagement = (adminToken: string | null) => {
             await loadModelConfigs();
             handleCancelModel();
             showAlert('保存成功', '成功', 'success');
+            onReload?.();
         } catch (error: any) {
             showAlert(
                 '保存失败: ' + (error.message || '未知错误'),
@@ -141,6 +142,7 @@ export const useModelsManagement = (adminToken: string | null) => {
             await adminApi.aiConfig.models.delete(id, adminToken);
             await loadModelConfigs();
             showAlert('删除成功', '成功', 'success');
+            onReload?.();
         } catch (error: any) {
             showAlert(
                 '删除失败: ' + (error.message || '未知错误'),
