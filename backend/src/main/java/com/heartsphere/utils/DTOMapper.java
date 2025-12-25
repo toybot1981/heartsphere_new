@@ -121,7 +121,14 @@ public class DTOMapper {
         dto.setTitle(entry.getTitle());
         dto.setContent(entry.getContent());
         dto.setTags(entry.getTags());
-        dto.setInsight(entry.getInsight());
+        String insight = entry.getInsight();
+        dto.setInsight(insight);
+        // 添加日志记录
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DTOMapper.class.getName());
+        logger.info(String.format("[DTOMapper] toJournalEntryDTO - 转换insight字段, ID: %s, Insight: %s (长度: %s)", 
+            entry.getId(),
+            insight != null ? (insight.length() > 50 ? insight.substring(0, 50) + "..." : insight) : "null",
+            insight != null ? String.valueOf(insight.length()) : "0"));
         dto.setEntryDate(entry.getEntryDate());
         dto.setTimestamp(entry.getTimestamp());
         dto.setWorldId(entry.getWorld() != null ? entry.getWorld().getId() : null);

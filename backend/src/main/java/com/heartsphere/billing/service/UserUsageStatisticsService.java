@@ -37,13 +37,14 @@ public class UserUsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public UserUsageStatistics getUserStatistics(Long userId) {
-        // 获取用户配额
-        UserTokenQuota quota = quotaRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserTokenQuota newQuota = new UserTokenQuota();
-                    newQuota.setUserId(userId);
-                    return newQuota;
-                });
+        // 获取用户配额（只读，不创建）
+        UserTokenQuota quota = quotaRepository.findByUserId(userId).orElse(null);
+        if (quota == null) {
+            log.warn("[UserUsageStatisticsService] getUserStatistics - 用户配额不存在, userId: {}, 返回空统计", userId);
+            // 返回一个默认的空配额对象用于统计
+            quota = new UserTokenQuota();
+            quota.setUserId(userId);
+        }
 
         // 获取用户会员信息
         Optional<Membership> membershipOpt = membershipRepository.findByUserId(userId);

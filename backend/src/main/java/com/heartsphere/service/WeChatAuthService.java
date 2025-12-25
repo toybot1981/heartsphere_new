@@ -124,14 +124,21 @@ public class WeChatAuthService {
         logger.info(String.format("生成微信%s二维码state: %s, scope: %s (注意：scope=snsapi_login仅适用于网站应用)", operationType, state, scope));
         
         // 微信开放平台扫码登录URL
+        // 注意：使用URLEncoder.encode进行编码是可行的，但为了更符合OAuth2.0标准，
+        // 可以对整个redirect_uri进行URL编码。当前的编码方式是正确的。
+        String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
+        logger.info(String.format("redirect_uri编码前: %s", redirectUri));
+        logger.info(String.format("redirect_uri编码后: %s", encodedRedirectUri));
+        
         String qrCodeUrl = String.format(
             "https://open.weixin.qq.com/connect/qrconnect?appid=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s#wechat_redirect",
             appId,
-            java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8),
+            encodedRedirectUri,
             scope,
             state
         );
         logger.info(String.format("构建微信%s二维码URL完成，URL长度: %d", operationType, qrCodeUrl.length()));
+        logger.info(String.format("最终生成的微信%s二维码URL: %s", operationType, qrCodeUrl));
 
         // 初始化状态
         Map<String, Object> stateInfo = new HashMap<>();
@@ -164,10 +171,15 @@ public class WeChatAuthService {
      * 处理微信回调
      */
     public Map<String, Object> handleCallback(String code, String state) {
-        logger.info("收到微信回调，code: " + code + ", state: " + state);
+        logger.info("========== 开始处理微信回调 ==========");
+        logger.info(String.format("收到微信回调参数: code=%s, state=%s", 
+            code != null ? code : "null", 
+            state != null ? state : "null"));
 
         if (code == null || state == null) {
-            throw new RuntimeException("微信回调参数错误");
+            String errorMsg = String.format("微信回调参数错误: code=%s, state=%s", code, state);
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
         }
 
         Map<String, Object> stateInfo = loginStates.get(state);
@@ -200,8 +212,18 @@ public class WeChatAuthService {
                     logger.severe(errorMsg + ", 完整响应: " + tokenResponse);
                     
                     // 如果是scope相关错误，提供更详细的提示
-                    if (errcode != null && (errcode.toString().equals("40029") || errmsg != null && errmsg.toString().contains("scope"))) {
-                        errorMsg = "Scope参数错误或没有Scope权限。请检查：1) 微信开放平台应用类型是否为'网站应用'；2) 是否已申请网站应用权限；3) 授权回调域名是否正确配置";
+                    if (errcode != null && (errcode.toString().equals("40029") || (errmsg != null && (errmsg.toString().toLowerCase().contains("scope") || errmsg.toString().contains("权限"))))) {
+                        errorMsg = String.format(
+                            "Scope参数错误或没有Scope权限（errcode=%s, errmsg=%s）。\n" +
+                            "请按以下步骤检查：\n" +
+                            "1) 确认微信开放平台应用类型为'网站应用'（不是移动应用、小程序或公众号）\n" +
+                            "2) 确认已申请并开通'网站应用'权限\n" +
+                            "3) 确认授权回调域名配置正确（只填域名，不填协议和路径，如：example.com 或 a1b2c3d4.ngrok-free.app）\n" +
+                            "4) 确认使用的AppID和AppSecret来自'网站应用'，而不是其他类型应用\n" +
+                            "5) 如果使用ngrok等内网穿透，确保在授权回调域中填写完整的ngrok域名",
+                            errcode, errmsg != null ? errmsg : "未知"
+                        );
+                        logger.severe(errorMsg);
                     }
                 } else {
                     logger.severe("获取access_token失败: tokenResponse为null");

@@ -247,5 +247,39 @@ export const adminConfigApi = {
       },
     });
   },
+
+  /**
+   * 获取计费配额拦截开关状态
+   */
+  getQuotaEnforcement: (token: string): Promise<{ enabled: boolean; description: string }> => {
+    return request<{ enabled: boolean; description: string }>(
+      '/admin/system/config/billing/quota-enforcement',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+  },
+
+  /**
+   * 设置计费配额拦截开关
+   */
+  setQuotaEnforcement: (
+    enabled: boolean,
+    token: string
+  ): Promise<{ enabled: boolean; message: string }> => {
+    return request<{ enabled: boolean; message: string }>(
+      '/admin/system/config/billing/quota-enforcement',
+      {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  },
 };
 

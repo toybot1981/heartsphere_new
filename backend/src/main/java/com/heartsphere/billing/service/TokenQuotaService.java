@@ -25,38 +25,88 @@ public class TokenQuotaService {
     private final TokenQuotaTransactionRepository transactionRepository;
     
     /**
-     * 获取用户配额
+     * 获取用户配额（只读，如果不存在返回null）
      */
     @Transactional(readOnly = true)
     public UserTokenQuota getUserQuota(Long userId) {
+        return quotaRepository.findByUserId(userId).orElse(null);
+    }
+    
+    /**
+     * 获取用户配额（如果不存在则创建）
+     */
+    @Transactional
+    public UserTokenQuota getOrCreateUserQuota(Long userId) {
         return quotaRepository.findByUserId(userId)
             .orElseGet(() -> createUserQuota(userId));
     }
     
     /**
      * 创建用户配额（如果不存在）
+     * 使用异常处理来处理并发情况下的重复插入
      */
     @Transactional
     public UserTokenQuota createUserQuota(Long userId) {
-        UserTokenQuota quota = new UserTokenQuota();
-        quota.setUserId(userId);
-        quota.setLastResetDate(LocalDate.now());
-        return quotaRepository.save(quota);
+        log.info("[TokenQuotaService] createUserQuota - 开始创建用户配额, userId: {}", userId);
+        
+        // 先检查是否已存在（双重检查）
+        Optional<UserTokenQuota> existingQuota = quotaRepository.findByUserId(userId);
+        if (existingQuota.isPresent()) {
+            log.info("[TokenQuotaService] createUserQuota - 配额已存在, userId: {}, quotaId: {}", userId, existingQuota.get().getId());
+            return existingQuota.get();
+        }
+        
+        try {
+            UserTokenQuota quota = new UserTokenQuota();
+            quota.setUserId(userId);
+            quota.setLastResetDate(LocalDate.now());
+            UserTokenQuota saved = quotaRepository.save(quota);
+            log.info("[TokenQuotaService] createUserQuota - 配额创建成功, userId: {}, quotaId: {}", userId, saved.getId());
+            return saved;
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 如果因为唯一约束冲突而失败，说明在并发情况下另一个线程已经创建了
+            log.warn("[TokenQuotaService] createUserQuota - 创建配额时发生唯一约束冲突（可能是并发创建）, userId: {}, 错误: {}, 尝试重新查询", 
+                userId, e.getMessage());
+            // 重新查询
+            Optional<UserTokenQuota> quotaOpt = quotaRepository.findByUserId(userId);
+            if (quotaOpt.isPresent()) {
+                log.info("[TokenQuotaService] createUserQuota - 重新查询到配额, userId: {}, quotaId: {}", userId, quotaOpt.get().getId());
+                return quotaOpt.get();
+            } else {
+                log.error("[TokenQuotaService] createUserQuota - 重新查询后仍未找到配额, userId: {}", userId);
+                throw new RuntimeException("创建配额失败且重新查询未找到: " + userId, e);
+            }
+        }
     }
     
     /**
      * 检查配额是否充足
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public boolean hasEnoughQuota(Long userId, String quotaType, Long amount) {
-        UserTokenQuota quota = getUserQuota(userId);
-        return checkQuotaAvailable(quota, quotaType, amount);
+        UserTokenQuota quota = getOrCreateUserQuota(userId);
+        boolean hasEnough = checkQuotaAvailable(quota, quotaType, amount);
+        if (hasEnough) {
+            Long available = getBalanceAfter(quota, quotaType);
+            log.info("[配额检查] 配额充足: userId={}, quotaType={}, required={}, available={}", 
+                    userId, quotaType, amount, available);
+        } else {
+            Long available = getBalanceAfter(quota, quotaType);
+            log.warn("[配额检查] 配额不足: userId={}, quotaType={}, required={}, available={}", 
+                    userId, quotaType, amount, available);
+        }
+        return hasEnough;
     }
     
     /**
      * 检查配额是否可用
      */
     private boolean checkQuotaAvailable(UserTokenQuota quota, String quotaType, Long amount) {
+        // 如果配额为null，说明还没有配额，返回false
+        if (quota == null) {
+            return false;
+        }
+        
         switch (quotaType) {
             case "text_token":
                 long availableMonthly = quota.getTextTokenMonthlyQuota() - quota.getTextTokenMonthlyUsed();
@@ -90,16 +140,26 @@ public class TokenQuotaService {
      */
     @Transactional
     public boolean consumeQuota(Long userId, String quotaType, Long amount) {
+        log.info("[TokenQuotaService] consumeQuota - 开始扣除配额, userId: {}, quotaType: {}, amount: {}", userId, quotaType, amount);
+        
         // 使用悲观锁防止并发超扣
         Optional<UserTokenQuota> quotaOpt = quotaRepository.findByUserIdForUpdate(userId);
         UserTokenQuota quota;
         if (quotaOpt.isEmpty()) {
-            // 如果不存在，先创建
+            log.info("[TokenQuotaService] consumeQuota - 配额不存在，尝试创建, userId: {}", userId);
+            // 如果不存在，先创建（createUserQuota内部会处理并发情况）
             quota = createUserQuota(userId);
             // 重新查询以获取锁（因为新创建的可能还没有提交）
-            quota = quotaRepository.findByUserIdForUpdate(userId).orElse(quota);
+            quotaOpt = quotaRepository.findByUserIdForUpdate(userId);
+            if (quotaOpt.isPresent()) {
+                quota = quotaOpt.get();
+                log.info("[TokenQuotaService] consumeQuota - 重新查询到配额（带锁）, userId: {}, quotaId: {}", userId, quota.getId());
+            } else {
+                log.warn("[TokenQuotaService] consumeQuota - 重新查询仍未找到配额（带锁）, userId: {}, 使用之前创建的配额", userId);
+            }
         } else {
             quota = quotaOpt.get();
+            log.info("[TokenQuotaService] consumeQuota - 查询到现有配额, userId: {}, quotaId: {}", userId, quota.getId());
         }
         
         // 再次检查配额
@@ -108,15 +168,24 @@ public class TokenQuotaService {
             return false;
         }
         
+        // 扣除前余额
+        Long balanceBefore = getBalanceAfter(quota, quotaType);
+        
         // 扣除配额（优先使用月度配额，不足时使用永久配额）
         deductQuota(quota, quotaType, amount);
         
         // 保存配额
         quotaRepository.save(quota);
         
+        // 扣除后余额
+        Long balanceAfter = getBalanceAfter(quota, quotaType);
+        
         // 记录变动
         recordTransaction(userId, quotaType, amount, "consume", 
-            getBalanceAfter(quota, quotaType), "AI服务使用");
+            balanceAfter, "AI服务使用");
+        
+        log.info("[配额扣除] 扣除成功: userId={}, quotaType={}, amount={}, balanceBefore={}, balanceAfter={}", 
+                userId, quotaType, amount, balanceBefore, balanceAfter);
         
         return true;
     }
@@ -178,6 +247,10 @@ public class TokenQuotaService {
      * 获取余额（扣除后）
      */
     private Long getBalanceAfter(UserTokenQuota quota, String quotaType) {
+        if (quota == null) {
+            return 0L;
+        }
+        
         switch (quotaType) {
             case "text_token":
                 long monthlyAvailable = quota.getTextTokenMonthlyQuota() - quota.getTextTokenMonthlyUsed();
@@ -202,8 +275,7 @@ public class TokenQuotaService {
      */
     @Transactional
     public void grantQuota(Long userId, String quotaType, Long amount, String source, Long referenceId, String description) {
-        UserTokenQuota quota = quotaRepository.findByUserId(userId)
-            .orElseGet(() -> createUserQuota(userId));
+        UserTokenQuota quota = getOrCreateUserQuota(userId);
         
         // 增加配额
         addQuota(quota, quotaType, amount);

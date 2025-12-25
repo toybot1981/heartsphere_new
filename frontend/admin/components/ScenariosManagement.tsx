@@ -144,91 +144,6 @@ export const ScenariosManagement: React.FC<ScenariosManagementProps> = ({
         }
     };
 
-    const createDefaultScripts = async () => {
-        if (!adminToken) return;
-        const confirmed = await showConfirm('确定要为每个场景创建两个默认剧本吗？', '创建默认剧本', 'info');
-        if (!confirmed) return;
-
-        try {
-            const defaultWorldId = worlds.length > 0 ? worlds[0].id : 1;
-            const userId = worlds.find((w: any) => w.id === defaultWorldId)?.userId || 1;
-
-            let createdCount = 0;
-            for (const era of eras) {
-                const eraCharacters = characters.filter((c: any) => c.systemEraId === era.id);
-                const characterIds = eraCharacters.length > 0
-                    ? eraCharacters.slice(0, 3).map((c: any) => c.id.toString())
-                    : [];
-
-                const script1 = {
-                    title: `${era.name} - 初遇`,
-                    description: `在${era.name}的初次相遇，探索角色之间的关系。`,
-                    content: JSON.stringify({
-                        startNodeId: 'start',
-                        nodes: {
-                            start: {
-                                id: 'start',
-                                title: '初遇',
-                                prompt: characterIds.length > 0
-                                    ? `你来到了${era.name}，遇到了${characterIds.map((id: string) => {
-                                        const char = eraCharacters.find((c: any) => c.id.toString() === id);
-                                        return char?.name || '';
-                                    }).filter(Boolean).join('、')}。开始你们的对话吧。`
-                                    : `你来到了${era.name}，开始探索这个场景的故事。`,
-                                options: [],
-                            },
-                        },
-                        participatingCharacters: characterIds,
-                    }),
-                    sceneCount: 1,
-                    systemEraId: era.id,
-                    characterIds: JSON.stringify(characterIds),
-                    isActive: true,
-                    sortOrder: 0,
-                };
-
-                const script2 = {
-                    title: `${era.name} - 深入`,
-                    description: `在${era.name}的深入探索，了解更多角色背后的故事。`,
-                    content: JSON.stringify({
-                        startNodeId: 'start',
-                        nodes: {
-                            start: {
-                                id: 'start',
-                                title: '深入探索',
-                                prompt: characterIds.length > 0
-                                    ? `在${era.name}中，你与${characterIds.map((id: string) => {
-                                        const char = eraCharacters.find((c: any) => c.id.toString() === id);
-                                        return char?.name || '';
-                                    }).filter(Boolean).join('、')}的关系进一步加深。探索他们背后的故事和秘密。`
-                                    : `在${era.name}中，你开始深入了解这个场景的秘密。`,
-                                options: [],
-                            },
-                        },
-                        participatingCharacters: characterIds,
-                    }),
-                    sceneCount: 1,
-                    systemEraId: era.id,
-                    characterIds: JSON.stringify(characterIds),
-                    isActive: true,
-                    sortOrder: 0,
-                };
-
-                try {
-                    await adminApi.scripts.create(script1, adminToken);
-                    await adminApi.scripts.create(script2, adminToken);
-                    createdCount += 2;
-                } catch (err: any) {
-                    console.error(`为场景 ${era.name} 创建剧本失败:`, err);
-                }
-            }
-
-            showAlert(`成功为 ${createdCount / 2} 个场景创建了 ${createdCount} 个默认剧本`, '创建成功', 'success');
-            await onReload();
-        } catch (error: any) {
-            showAlert('创建默认剧本失败: ' + (error.message || '未知错误'), '创建失败', 'error');
-        }
-    };
 
     const filteredScripts = scripts.filter((script: any) =>
         scenarioEraFilter === 'all' || script.systemEraId === scenarioEraFilter
@@ -240,9 +155,6 @@ export const ScenariosManagement: React.FC<ScenariosManagementProps> = ({
                 <div className="flex justify-between items-center">
                     <p className="text-slate-400 text-sm">管理互动分支剧本。</p>
                     <div className="flex gap-2">
-                        <Button onClick={createDefaultScripts} className="bg-green-600 hover:bg-green-500 text-sm">
-                            为所有场景创建默认剧本
-                        </Button>
                         <Button onClick={switchToCreate} className="bg-indigo-600 hover:bg-indigo-500 text-sm">
                             + 新增剧本
                         </Button>

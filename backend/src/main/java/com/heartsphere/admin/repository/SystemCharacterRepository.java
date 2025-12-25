@@ -14,6 +14,9 @@ public interface SystemCharacterRepository extends JpaRepository<SystemCharacter
     
     @Query("SELECT c FROM SystemCharacter c WHERE c.isActive = true ORDER BY c.sortOrder ASC, c.id ASC")
     List<SystemCharacter> findAllActiveOrdered();
+    
+    @Query("SELECT c FROM SystemCharacter c WHERE c.systemEra.id = :eraId AND c.isActive = true ORDER BY c.sortOrder ASC, c.id ASC")
+    List<SystemCharacter> findBySystemEraIdAndIsActiveTrue(@org.springframework.data.repository.query.Param("eraId") Long eraId);
 }
 
 

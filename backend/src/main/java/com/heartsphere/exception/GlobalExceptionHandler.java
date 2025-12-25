@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -176,6 +177,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.PAYMENT_REQUIRED)
                 .body(ApiResponse.error(402, e.getMessage()));
+    }
+
+    /**
+     * 处理404未找到端点异常（如favicon.ico等浏览器自动请求）
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoHandlerFoundException(NoHandlerFoundException e) {
+        String requestURL = e.getRequestURL();
+        // 对于favicon.ico等常见的浏览器自动请求，静默处理，不记录错误日志
+        if (requestURL != null && (requestURL.contains("/favicon.ico") || requestURL.contains("/robots.txt"))) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "资源未找到"));
+        }
+        // 其他404请求，记录警告日志
+        log.warn("请求的端点未找到: {}", requestURL);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(404, "请求的端点未找到: " + requestURL));
     }
 
     /**

@@ -25,11 +25,14 @@ import java.util.Map;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/journal-entries")
 public class JournalEntryController {
+
+    private static final Logger logger = Logger.getLogger(JournalEntryController.class.getName());
 
     @Autowired
     private JournalEntryRepository journalEntryRepository;
@@ -75,9 +78,16 @@ public class JournalEntryController {
             journalEntries = journalEntryRepository.findByUser_Id(userDetails.getId());
         }
         
+        logger.info(String.format("[JournalEntryController] getAllJournalEntries - 查询到 %d 条记录", journalEntries.size()));
         List<JournalEntryDTO> journalEntryDTOs = journalEntries.stream()
-            .map(DTOMapper::toJournalEntryDTO)
+            .map(entry -> {
+                logger.info(String.format("[JournalEntryController] getAllJournalEntries - 处理记录 ID: %s, Insight: %s", 
+                    entry.getId(),
+                    entry.getInsight() != null ? (entry.getInsight().length() > 50 ? entry.getInsight().substring(0, 50) + "..." : entry.getInsight()) : "null"));
+                return DTOMapper.toJournalEntryDTO(entry);
+            })
             .collect(Collectors.toList());
+        logger.info(String.format("[JournalEntryController] getAllJournalEntries - 返回 %d 条DTO记录", journalEntryDTOs.size()));
         return ResponseEntity.ok(journalEntryDTOs);
     }
 
@@ -104,7 +114,15 @@ public class JournalEntryController {
             return ResponseEntity.status(403).build();
         }
 
-        return ResponseEntity.ok(DTOMapper.toJournalEntryDTO(journalEntry));
+        logger.info(String.format("[JournalEntryController] getJournalEntryById - 从数据库加载记录 ID: %s, Insight: %s", 
+            journalEntry.getId(),
+            journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
+        
+        JournalEntryDTO dto = DTOMapper.toJournalEntryDTO(journalEntry);
+        logger.info(String.format("[JournalEntryController] getJournalEntryById - DTO转换完成, Insight: %s", 
+            dto.getInsight() != null ? (dto.getInsight().length() > 50 ? dto.getInsight().substring(0, 50) + "..." : dto.getInsight()) : "null"));
+        
+        return ResponseEntity.ok(dto);
     }
 
     // 创建新记录
@@ -216,17 +234,36 @@ public class JournalEntryController {
             
             // 处理本我镜像（insight）
             Object insightObj = journalEntryMap.get("insight");
+            logger.info(String.format("[JournalEntryController] createJournalEntry - 接收到insight字段: %s (类型: %s)", 
+                insightObj != null ? "存在" : "null",
+                insightObj != null ? insightObj.getClass().getName() : "null"));
             if (insightObj != null) {
-                journalEntry.setInsight(insightObj instanceof String ? (String) insightObj : insightObj.toString());
+                String insightValue = insightObj instanceof String ? (String) insightObj : insightObj.toString();
+                journalEntry.setInsight(insightValue);
+                logger.info(String.format("[JournalEntryController] createJournalEntry - 设置insight值: %s (长度: %d)", 
+                    insightValue.length() > 100 ? insightValue.substring(0, 100) + "..." : insightValue,
+                    insightValue.length()));
+            } else {
+                logger.info("[JournalEntryController] createJournalEntry - insight字段为null，不设置");
             }
             
-            System.out.println("JournalEntry object created: " + journalEntry);
+            logger.info(String.format("[JournalEntryController] createJournalEntry - JournalEntry对象创建完成, ID: %s, Title: %s, Insight: %s", 
+                journalEntry.getId(),
+                journalEntry.getTitle(),
+                journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
             
             // 保存journalEntry
-            System.out.println("Attempting to save journal entry...");
+            logger.info("[JournalEntryController] createJournalEntry - 开始保存JournalEntry到数据库...");
             JournalEntry savedJournalEntry = journalEntryRepository.save(journalEntry);
-            System.out.println("Journal entry saved successfully: " + savedJournalEntry);
-            return ResponseEntity.ok(DTOMapper.toJournalEntryDTO(savedJournalEntry));
+            logger.info(String.format("[JournalEntryController] createJournalEntry - JournalEntry保存成功, ID: %s, Insight: %s", 
+                savedJournalEntry.getId(),
+                savedJournalEntry.getInsight() != null ? (savedJournalEntry.getInsight().length() > 50 ? savedJournalEntry.getInsight().substring(0, 50) + "..." : savedJournalEntry.getInsight()) : "null"));
+            
+            JournalEntryDTO dto = DTOMapper.toJournalEntryDTO(savedJournalEntry);
+            logger.info(String.format("[JournalEntryController] createJournalEntry - DTO转换完成, Insight: %s", 
+                dto.getInsight() != null ? (dto.getInsight().length() > 50 ? dto.getInsight().substring(0, 50) + "..." : dto.getInsight()) : "null"));
+            
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             System.out.println("Error in createJournalEntry: " + e.getMessage());
             e.printStackTrace();
@@ -237,6 +274,12 @@ public class JournalEntryController {
     // 更新指定ID的记录
     @PutMapping("/{id}")
     public ResponseEntity<JournalEntryDTO> updateJournalEntry(@PathVariable String id, @RequestBody JournalEntryDTO journalEntryDTO) {
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 接收到更新请求, ID: %s", id));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO中的insight: %s (类型: %s, 长度: %s)", 
+            journalEntryDTO.getInsight() != null ? "存在" : "null",
+            journalEntryDTO.getInsight() != null ? journalEntryDTO.getInsight().getClass().getName() : "null",
+            journalEntryDTO.getInsight() != null ? String.valueOf(journalEntryDTO.getInsight().length()) : "0"));
+        
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
@@ -252,6 +295,10 @@ public class JournalEntryController {
         JournalEntry journalEntry = journalEntryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("JournalEntry not found with id: " + id));
 
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 从数据库加载的JournalEntry, ID: %s, 当前insight: %s", 
+            journalEntry.getId(),
+            journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
+
         // 确保用户只能更新自己的记录
         if (!journalEntry.getUser().getId().equals(userDetails.getId())) {
             return ResponseEntity.status(403).build();
@@ -260,7 +307,16 @@ public class JournalEntryController {
         journalEntry.setTitle(journalEntryDTO.getTitle());
         journalEntry.setContent(journalEntryDTO.getContent());
         journalEntry.setTags(journalEntryDTO.getTags());
-        journalEntry.setInsight(journalEntryDTO.getInsight());
+        
+        // 更新insight字段
+        String newInsight = journalEntryDTO.getInsight();
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 准备更新insight, 新值: %s (长度: %s)", 
+            newInsight != null ? (newInsight.length() > 50 ? newInsight.substring(0, 50) + "..." : newInsight) : "null",
+            newInsight != null ? String.valueOf(newInsight.length()) : "0"));
+        journalEntry.setInsight(newInsight);
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - insight已设置到JournalEntry对象, 当前值: %s", 
+            journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
+        
         journalEntry.setEntryDate(journalEntryDTO.getEntryDate());
 
         // 更新关联的世界、时代、角色
@@ -297,8 +353,17 @@ public class JournalEntryController {
             journalEntry.setCharacter(null);
         }
 
+        logger.info("[JournalEntryController] updateJournalEntry - 开始保存更新后的JournalEntry到数据库...");
         JournalEntry updatedJournalEntry = journalEntryRepository.save(journalEntry);
-        return ResponseEntity.ok(DTOMapper.toJournalEntryDTO(updatedJournalEntry));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - JournalEntry保存成功, ID: %s, Insight: %s", 
+            updatedJournalEntry.getId(),
+            updatedJournalEntry.getInsight() != null ? (updatedJournalEntry.getInsight().length() > 50 ? updatedJournalEntry.getInsight().substring(0, 50) + "..." : updatedJournalEntry.getInsight()) : "null"));
+        
+        JournalEntryDTO dto = DTOMapper.toJournalEntryDTO(updatedJournalEntry);
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO转换完成, Insight: %s", 
+            dto.getInsight() != null ? (dto.getInsight().length() > 50 ? dto.getInsight().substring(0, 50) + "..." : dto.getInsight()) : "null"));
+        
+        return ResponseEntity.ok(dto);
     }
 
     // 删除指定ID的记录

@@ -45,7 +45,10 @@ public enum ConfigKey {
     ALIPAY_GATEWAY_URL("alipay_gateway_url", "支付宝网关地址（默认：https://openapi.alipay.com/gateway.do）", "https://openapi.alipay.com/gateway.do", String.class),
     
     // 其他配置
-    GUIDE_CONFIG_LINK("guide_config_link", "引导配置链接", null, String.class);
+    GUIDE_CONFIG_LINK("guide_config_link", "引导配置链接", null, String.class),
+    
+    // 计费配置
+    BILLING_QUOTA_ENFORCEMENT_ENABLED("billing_quota_enforcement_enabled", "是否启用配额拦截（开启：配额不足时禁止使用；关闭：只记账不拦截，使用资源池）", "false", Boolean.class);
     
     private final String key;
     private final String description;

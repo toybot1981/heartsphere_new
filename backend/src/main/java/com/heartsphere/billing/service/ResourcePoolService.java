@@ -84,6 +84,9 @@ public class ResourcePoolService {
     public void deductBalance(Long providerId, BigDecimal amount) {
         ProviderResourcePool pool = getOrCreatePool(providerId);
         
+        BigDecimal balanceBefore = pool.getAvailableBalance();
+        BigDecimal usedAmountBefore = pool.getUsedAmount();
+        
         BigDecimal newUsedAmount = pool.getUsedAmount().add(amount);
         BigDecimal newAvailableBalance = pool.getAvailableBalance().subtract(amount);
         
@@ -97,6 +100,11 @@ public class ResourcePoolService {
         pool.setAvailableBalance(newAvailableBalance);
         pool.setLastCheckDate(LocalDateTime.now());
         poolRepository.save(pool);
+        
+        log.info("[资源池扣除] 扣除成功: providerId={}, amount={}, balanceBefore={}, balanceAfter={}, " +
+                "usedAmountBefore={}, usedAmountAfter={}", 
+                providerId, amount, balanceBefore, newAvailableBalance, 
+                usedAmountBefore, newUsedAmount);
     }
 
     /**

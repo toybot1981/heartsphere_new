@@ -391,6 +391,36 @@ public class AdminSystemConfigController extends BaseAdminController {
         response.put("link", systemConfigService.getGuideConfigLink() != null ? systemConfigService.getGuideConfigLink() : "");
         return ResponseEntity.ok(response);
     }
+    
+    // ========== Billing Quota Enforcement Config ==========
+    @GetMapping("/billing/quota-enforcement")
+    public ResponseEntity<Map<String, Object>> getQuotaEnforcement(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        
+        boolean enabled = systemConfigService.isBillingQuotaEnforcementEnabled();
+        Map<String, Object> result = new HashMap<>();
+        result.put("enabled", enabled);
+        result.put("description", "是否启用配额拦截（开启：配额不足时禁止使用；关闭：只记账不拦截，使用资源池）");
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    @PostMapping("/billing/quota-enforcement")
+    public ResponseEntity<Map<String, Object>> setQuotaEnforcement(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        
+        boolean enabled = request.containsKey("enabled") && (Boolean) request.get("enabled");
+        systemConfigService.setBillingQuotaEnforcementEnabled(enabled);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("enabled", enabled);
+        result.put("message", "配额拦截开关已更新");
+        
+        return ResponseEntity.ok(result);
+    }
 }
 
 

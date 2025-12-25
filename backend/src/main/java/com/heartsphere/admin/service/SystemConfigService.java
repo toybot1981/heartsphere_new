@@ -551,4 +551,21 @@ public class SystemConfigService {
     public void setGuideConfigLink(String link) {
         setConfigValue(ConfigKey.GUIDE_CONFIG_LINK, link);
     }
+    
+    // ========== 计费配置 ==========
+    
+    /**
+     * 获取是否启用配额拦截
+     */
+    public boolean isBillingQuotaEnforcementEnabled() {
+        return getBooleanConfigValue(ConfigKey.BILLING_QUOTA_ENFORCEMENT_ENABLED);
+    }
+    
+    /**
+     * 设置是否启用配额拦截
+     */
+    @Transactional
+    public void setBillingQuotaEnforcementEnabled(boolean enabled) {
+        setBooleanConfigValue(ConfigKey.BILLING_QUOTA_ENFORCEMENT_ENABLED, enabled);
+    }
 }

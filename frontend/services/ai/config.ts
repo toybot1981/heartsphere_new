@@ -95,10 +95,14 @@ export class AIConfigManager {
       const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
       if (stored) {
         const config = JSON.parse(stored) as UserAIConfig;
-        return { ...DEFAULT_CONFIG, ...config };
+        const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+        console.log('[AIConfigManager] 从localStorage加载配置, mode:', mergedConfig.mode);
+        return mergedConfig;
+      } else {
+        console.log('[AIConfigManager] localStorage中没有配置，使用默认配置, mode:', DEFAULT_CONFIG.mode);
       }
     } catch (error) {
-      console.error('[AIConfigManager] Failed to load config:', error);
+      console.error('[AIConfigManager] 加载配置失败:', error);
     }
     return { ...DEFAULT_CONFIG };
   }
@@ -137,9 +141,11 @@ export class AIConfigManager {
     try {
       // 不保存API Keys到配置中
       const { localApiKeys, ...configToSave } = config;
+      console.log('[AIConfigManager] 保存配置到localStorage, mode:', configToSave.mode);
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configToSave));
+      console.log('[AIConfigManager] 配置保存成功');
     } catch (error) {
-      console.error('[AIConfigManager] Failed to save config:', error);
+      console.error('[AIConfigManager] 保存配置失败:', error);
     }
   }
 

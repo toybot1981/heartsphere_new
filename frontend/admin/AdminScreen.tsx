@@ -83,7 +83,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                 />
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
                     {activeSection === 'dashboard' && (
-                        <DashboardView gameState={gameState} onResetWorld={onResetWorld} />
+                        <DashboardView adminToken={adminToken} />
                     )}
                     {activeSection === 'eras' && (
                         <ErasManagement

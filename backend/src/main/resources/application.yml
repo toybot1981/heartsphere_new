@@ -32,6 +32,7 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
+    throw-exception-if-no-handler-found: true  # 启用抛出 NoHandlerFoundException，以便在全局异常处理器中统一处理 404 错误（如 favicon.ico）
   http:
     encoding:
       charset: UTF-8

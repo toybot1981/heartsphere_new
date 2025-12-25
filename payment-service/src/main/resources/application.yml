@@ -1,0 +1,48 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: payment-service
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/heartsphere_payment?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# SpringDoc OpenAPI 配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.heartsphere.payment: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+

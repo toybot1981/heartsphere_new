@@ -133,24 +133,37 @@ public class PricingService {
      */
     @Transactional(readOnly = true)
     public BigDecimal calculateCost(Long modelId, String usageType, Map<String, Object> usageData) {
+        BigDecimal cost;
         switch (usageType) {
             case "text_generation":
                 Integer inputTokens = (Integer) usageData.get("inputTokens");
                 Integer outputTokens = (Integer) usageData.get("outputTokens");
-                return calculateTextGenerationCost(modelId, inputTokens, outputTokens);
+                cost = calculateTextGenerationCost(modelId, inputTokens, outputTokens);
+                log.info("[费用计算] 文本生成费用: modelId={}, inputTokens={}, outputTokens={}, cost={}", 
+                        modelId, inputTokens, outputTokens, cost);
+                return cost;
                 
             case "image_generation":
                 Integer imageCount = (Integer) usageData.get("imageCount");
-                return calculateImageGenerationCost(modelId, imageCount != null ? imageCount : 1);
+                cost = calculateImageGenerationCost(modelId, imageCount != null ? imageCount : 1);
+                log.info("[费用计算] 图片生成费用: modelId={}, imageCount={}, cost={}", 
+                        modelId, imageCount != null ? imageCount : 1, cost);
+                return cost;
                 
             case "audio_tts":
             case "audio_stt":
                 Integer audioDuration = (Integer) usageData.get("audioDuration");
-                return calculateAudioCost(modelId, audioDuration);
+                cost = calculateAudioCost(modelId, audioDuration);
+                log.info("[费用计算] 音频处理费用: modelId={}, usageType={}, audioDuration={}, cost={}", 
+                        modelId, usageType, audioDuration, cost);
+                return cost;
                 
             case "video_generation":
                 Integer videoDuration = (Integer) usageData.get("videoDuration");
-                return calculateVideoCost(modelId, videoDuration);
+                cost = calculateVideoCost(modelId, videoDuration);
+                log.info("[费用计算] 视频生成费用: modelId={}, videoDuration={}, cost={}", 
+                        modelId, videoDuration, cost);
+                return cost;
                 
             default:
                 log.warn("未知的使用类型: {}", usageType);

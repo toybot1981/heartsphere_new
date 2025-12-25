@@ -44,10 +44,12 @@ public class WeChatController {
             
             Map<String, String> result = weChatAuthService.generateQrCodeUrl();
             Map<String, Object> response = new HashMap<>();
-            response.put("qrCodeUrl", result.get("qrCodeUrl"));
+            String qrCodeUrl = result.get("qrCodeUrl");
+            response.put("qrCodeUrl", qrCodeUrl);
             response.put("state", result.get("state"));
             
             logger.info(String.format("微信登录二维码生成成功，state: %s", result.get("state")));
+            logger.info(String.format("最终返回给前端的二维码URL: %s", qrCodeUrl));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("生成微信登录二维码失败: " + e.getMessage(), e);
@@ -87,31 +89,84 @@ public class WeChatController {
     @GetMapping("/callback")
     public ResponseEntity<?> callback(
             @RequestParam(required = false) String code,
-            @RequestParam(required = false) String state) {
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String error,
+            @RequestParam(required = false) String error_description,
+            jakarta.servlet.http.HttpServletRequest request) {
+        
+        // 记录所有请求参数和请求信息
+        logger.info("========== 微信回调接口收到请求 ==========");
+        logger.info(String.format("请求URL: %s", request.getRequestURL().toString()));
+        logger.info(String.format("请求URI: %s", request.getRequestURI()));
+        logger.info(String.format("查询字符串: %s", request.getQueryString()));
+        logger.info(String.format("请求方法: %s", request.getMethod()));
+        logger.info(String.format("Remote地址: %s", request.getRemoteAddr()));
+        logger.info(String.format("Remote主机: %s", request.getRemoteHost()));
+        logger.info(String.format("User-Agent: %s", request.getHeader("User-Agent")));
+        logger.info(String.format("Referer: %s", request.getHeader("Referer")));
+        logger.info("请求参数:");
+        logger.info(String.format("  code: %s", code != null ? code : "null"));
+        logger.info(String.format("  state: %s", state != null ? state : "null"));
+        logger.info(String.format("  error: %s", error != null ? error : "null"));
+        logger.info(String.format("  error_description: %s", error_description != null ? error_description : "null"));
+        
+        // 获取所有请求参数
+        java.util.Map<String, String[]> parameterMap = request.getParameterMap();
+        logger.info("所有请求参数:");
+        for (java.util.Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+            logger.info(String.format("  %s = %s", entry.getKey(), java.util.Arrays.toString(entry.getValue())));
+        }
+        
         try {
+            // 检查是否有错误参数（微信可能返回错误）
+            if (error != null) {
+                String errorMsg = String.format("微信返回错误: %s, 描述: %s", error, error_description != null ? error_description : "无描述");
+                logger.error(errorMsg);
+                return ResponseEntity.badRequest()
+                    .header("Content-Type", "text/html;charset=UTF-8")
+                    .body("<html><body><h1>登录失败</h1><p>" + errorMsg + "</p></body></html>");
+            }
+            
             if (code == null || state == null) {
-                return ResponseEntity.badRequest().body("<html><body><h1>登录失败：缺少必要参数</h1></body></html>");
+                String missingParams = "";
+                if (code == null) missingParams += "code ";
+                if (state == null) missingParams += "state ";
+                logger.warn(String.format("缺少必要参数: %s", missingParams));
+                logger.warn("可能的原因：1) 用户取消了授权；2) 微信回调时未传递参数；3) 授权回调域配置错误");
+                return ResponseEntity.badRequest()
+                    .header("Content-Type", "text/html;charset=UTF-8")
+                    .body("<html><body><h1>登录失败：缺少必要参数</h1><p>缺少参数: " + missingParams + "</p><p>可能的原因：用户取消了授权，或授权回调域配置错误</p></body></html>");
             }
 
+            logger.info(String.format("开始处理微信回调，code: %s, state: %s", code, state));
             Map<String, Object> result = weChatAuthService.handleCallback(code, state);
             
             String type = (String) result.get("type");
             String title = "bind".equals(type) ? "绑定" : "登录";
+            String status = (String) result.get("status");
             
-            if ("confirmed".equals(result.get("status"))) {
+            logger.info(String.format("微信回调处理结果: status=%s, type=%s", status, type));
+            
+            if ("confirmed".equals(status)) {
                 // 成功，返回成功页面（前端会通过轮询获取状态）
+                logger.info(String.format("微信%s成功", title));
                 return ResponseEntity.ok()
                     .header("Content-Type", "text/html;charset=UTF-8")
                     .body("<html><body><h1>" + title + "成功！</h1><p>请关闭此页面，返回应用查看结果。</p><script>setTimeout(function(){window.close();}, 2000);</script></body></html>");
             } else {
+                String errorMsg = result.get("error") != null ? result.get("error").toString() : "未知错误";
+                logger.warn(String.format("微信%s失败: %s", title, errorMsg));
                 return ResponseEntity.badRequest()
                     .header("Content-Type", "text/html;charset=UTF-8")
-                    .body("<html><body><h1>" + title + "失败</h1><p>" + result.get("error") + "</p></body></html>");
+                    .body("<html><body><h1>" + title + "失败</h1><p>" + errorMsg + "</p></body></html>");
             }
         } catch (Exception e) {
+            logger.error(String.format("处理微信回调异常: %s", e.getMessage()), e);
             return ResponseEntity.status(500)
                 .header("Content-Type", "text/html;charset=UTF-8")
                 .body("<html><body><h1>登录异常</h1><p>" + e.getMessage() + "</p></body></html>");
+        } finally {
+            logger.info("========== 微信回调接口处理完成 ==========");
         }
     }
 
@@ -146,10 +201,12 @@ public class WeChatController {
 
             Map<String, String> result = weChatAuthService.generateBindQrCodeUrl(userId);
             Map<String, Object> response = new HashMap<>();
-            response.put("qrCodeUrl", result.get("qrCodeUrl"));
+            String qrCodeUrl = result.get("qrCodeUrl");
+            response.put("qrCodeUrl", qrCodeUrl);
             response.put("state", result.get("state"));
             
             logger.info(String.format("微信绑定二维码生成成功，userId: %d, state: %s", userId, result.get("state")));
+            logger.info(String.format("最终返回给前端的绑定二维码URL: %s", qrCodeUrl));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("生成微信绑定二维码失败: " + e.getMessage(), e);

@@ -1,8 +1,9 @@
 /**
  * 用户配额管理组件
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { billingApi, UserTokenQuota } from '../../../services/api/billing';
+import { adminApi } from '../../../services/api';
 import { Button } from '../../../components/Button';
 import { InputGroup, TextInput } from '../AdminUIComponents';
 import { showAlert, showConfirm } from '../../../utils/dialog';
@@ -23,6 +24,57 @@ export const UserQuotaManagement: React.FC<UserQuotaManagementProps> = ({
     source: 'admin_grant',
     description: '',
   });
+  
+  // 配额拦截开关状态
+  const [quotaEnforcementEnabled, setQuotaEnforcementEnabled] = useState(false);
+  const [loadingSwitch, setLoadingSwitch] = useState(false);
+
+  // 加载配额拦截开关状态
+  useEffect(() => {
+    if (adminToken) {
+      loadQuotaEnforcementStatus();
+    }
+  }, [adminToken]);
+
+  const loadQuotaEnforcementStatus = async () => {
+    if (!adminToken) return;
+    try {
+      const result = await adminApi.config.getQuotaEnforcement(adminToken);
+      setQuotaEnforcementEnabled(result.enabled);
+    } catch (error: any) {
+      console.error('加载配额拦截开关状态失败:', error);
+    }
+  };
+
+  const handleToggleQuotaEnforcement = async () => {
+    if (!adminToken) return;
+    
+    const newValue = !quotaEnforcementEnabled;
+    const confirmed = await showConfirm(
+      newValue 
+        ? '确定要开启配额拦截吗？开启后，用户配额不足时将禁止使用AI服务。'
+        : '确定要关闭配额拦截吗？关闭后，用户配额不足时仍可继续使用资源池余额。',
+      newValue ? '开启配额拦截' : '关闭配额拦截',
+      'info'
+    );
+    
+    if (!confirmed) return;
+
+    setLoadingSwitch(true);
+    try {
+      await adminApi.config.setQuotaEnforcement(newValue, adminToken);
+      setQuotaEnforcementEnabled(newValue);
+      showAlert(
+        newValue ? '配额拦截已开启' : '配额拦截已关闭',
+        '成功',
+        'success'
+      );
+    } catch (error: any) {
+      showAlert('操作失败: ' + (error.message || '未知错误'), '错误', 'error');
+    } finally {
+      setLoadingSwitch(false);
+    }
+  };
 
   const handleLoadQuota = async () => {
     if (!adminToken || !userId) {
@@ -117,6 +169,46 @@ export const UserQuotaManagement: React.FC<UserQuotaManagementProps> = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-100">用户配额管理</h2>
         <p className="text-sm text-slate-400 mt-1">查询和管理用户Token配额</p>
+      </div>
+
+      {/* 配额拦截开关 */}
+      <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-slate-100 mb-2">配额拦截开关</h3>
+            <p className="text-sm text-slate-400">
+              {quotaEnforcementEnabled ? (
+                <>
+                  <span className="text-red-400 font-medium">严格模式：</span>
+                  已开启。用户配额不足时将禁止使用AI服务。
+                </>
+              ) : (
+                <>
+                  <span className="text-green-400 font-medium">宽松模式：</span>
+                  已关闭。用户配额不足时仍可继续使用，消耗资源池余额，仅记录使用情况。
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-medium ${quotaEnforcementEnabled ? 'text-red-400' : 'text-green-400'}`}>
+              {quotaEnforcementEnabled ? '已开启' : '已关闭'}
+            </span>
+            <button
+              onClick={handleToggleQuotaEnforcement}
+              disabled={loadingSwitch}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                quotaEnforcementEnabled ? 'bg-red-600' : 'bg-green-600'
+              } ${loadingSwitch ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  quotaEnforcementEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 用户查询 */}
