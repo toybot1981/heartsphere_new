@@ -9,6 +9,7 @@ import { worldApi, eraApi, characterApi, scriptApi, userMainStoryApi, journalApi
 import { convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
 import { syncService } from '../services/sync/SyncService';
+import { logger } from '../utils/logger';
 
 /**
  * 数据加载 Hook
@@ -50,7 +51,7 @@ export const useDataLoader = () => {
         hasLoadedEntryPointData.current = true;
       }
     } catch (error) {
-      console.error(`[useDataLoader ${screen}] 加载场景数据失败:`, error);
+      logger.error(`[useDataLoader ${screen}] 加载场景数据失败`, error);
       // 加载失败时重置标志，允许重试
       hasLoadedEntryPointData.current = false;
       throw error;
@@ -92,36 +93,22 @@ export const useDataLoader = () => {
       
       // 安全检查：确保 userInfo 和 userInfo.id 存在
       if (!userInfo || userInfo.id === undefined || userInfo.id === null) {
-        console.error('[useDataLoader] 用户信息无效或缺少ID:', userInfo);
+        logger.error('[useDataLoader] 用户信息无效或缺少ID', userInfo);
         throw new Error('无法获取有效的用户信息');
       }
       
       // 获取日记列表（使用同步服务：先展示本地缓存，后台查询并更新）
       const tokenForSync = token; // 保存token用于后台查询
       const localJournalEntries = await syncService.queryEntities('journal', token);
-      console.log('[useDataLoader] 从本地缓存加载日记，数量:', localJournalEntries.length);
-      console.log('[useDataLoader] queryEntities返回的原始数据:', JSON.stringify(localJournalEntries, null, 2));
-      localJournalEntries.forEach((entry, index) => {
-        console.log(`[useDataLoader] queryEntities返回的条目 ${index + 1} 原始数据:`, {
-          id: entry.id,
-          title: entry.title,
-          content: entry.content,
-          insight: entry.insight,
-          tags: entry.tags,
-          syncStatus: entry.syncStatus,
-          lastSyncTime: entry.lastSyncTime,
-          syncError: entry.syncError,
-          fullEntry: entry,
-        });
-      });
+      logger.debug(`[useDataLoader] 从本地缓存加载日记，数量: ${localJournalEntries.length}`);
       
       // 获取信件列表（只获取用户反馈和管理员回复，不包含AI生成的信件）
       let letters: any[] = [];
       try {
         letters = await chronosLetterApi.getAllLetters(token);
-        console.log('[useDataLoader] 加载信件成功，数量:', letters.length);
+        logger.debug(`[useDataLoader] 加载信件成功，数量: ${letters.length}`);
       } catch (error) {
-        console.error('[useDataLoader] 加载信件失败:', error);
+        logger.error('[useDataLoader] 加载信件失败', error);
         // 信件加载失败不影响登录流程
       }
       
@@ -153,21 +140,6 @@ export const useDataLoader = () => {
       }});
       
       // 更新日记列表（使用本地缓存数据，后台查询会自动更新）
-      console.log('========== [useDataLoader] 从缓存获取的日记条目 ==========');
-      console.log('[useDataLoader] 本地缓存条目数量:', localJournalEntries.length);
-      localJournalEntries.forEach((entry, index) => {
-        console.log(`[useDataLoader] 缓存条目 ${index + 1}:`, {
-          id: entry.id,
-          title: entry.title,
-          hasInsight: entry.insight !== undefined && entry.insight !== null,
-          insightLength: entry.insight ? entry.insight.length : 0,
-          insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-          insightValue: entry.insight,
-          syncStatus: entry.syncStatus,
-        });
-      });
-      console.log('========================================================');
-      
       const mappedEntries = localJournalEntries.map(entry => {
         // 直接使用 entry 的所有字段，不进行选择性映射
         // 这样可以确保所有字段（包括 insight, tags, syncStatus 等）都被保留
@@ -186,43 +158,10 @@ export const useDataLoader = () => {
           lastSyncTime: entry.lastSyncTime !== undefined ? entry.lastSyncTime : undefined,
           syncError: entry.syncError !== undefined ? entry.syncError : undefined,
         };
-        console.log(`[useDataLoader] 映射条目 ${entry.id}:`, {
-          originalEntry: entry,
-          mappedEntry: mapped,
-          originalInsight: entry.insight,
-          mappedInsight: mapped.insight,
-          hasInsight: mapped.insight !== undefined && mapped.insight !== null,
-          originalTags: entry.tags,
-          mappedTags: mapped.tags,
-          originalSyncStatus: entry.syncStatus,
-          mappedSyncStatus: mapped.syncStatus,
-        });
         return mapped;
       });
       
-      console.log('========== [useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES ==========');
-      console.log('[useDataLoader] 映射后的完整数据:', JSON.stringify(mappedEntries, null, 2));
-      mappedEntries.forEach((entry, index) => {
-        console.log(`[useDataLoader] dispatch前的条目 ${index + 1}:`, {
-          id: entry.id,
-          title: entry.title,
-          content: entry.content ? `长度: ${entry.content.length}` : 'null',
-          hasInsight: entry.insight !== undefined && entry.insight !== null,
-          insightType: typeof entry.insight,
-          insightValue: entry.insight,
-          insightLength: entry.insight ? entry.insight.length : 0,
-          insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-          tags: entry.tags,
-          syncStatus: entry.syncStatus,
-          lastSyncTime: entry.lastSyncTime,
-          syncError: entry.syncError,
-          timestamp: entry.timestamp,
-          imageUrl: entry.imageUrl,
-          fullEntry: entry,
-        });
-      });
-      console.log('========================================================');
-      
+      logger.debug(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES，数量: ${mappedEntries.length}`);
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
       
       // 注册查询回调，当后台查询完成时更新状态
@@ -230,23 +169,10 @@ export const useDataLoader = () => {
       if (config) {
         const originalCallback = config.onEntitiesQueried;
         config.onEntitiesQueried = (entities: any[]) => {
-          console.log('========== [useDataLoader] 后台查询完成，更新日记列表 ==========');
-          console.log('[useDataLoader] 查询到的条目数量:', entities.length);
-          entities.forEach((entry, index) => {
-            console.log(`[useDataLoader] 查询条目 ${index + 1}:`, {
-              id: entry.id,
-              title: entry.title,
-              hasInsight: entry.insight !== undefined && entry.insight !== null,
-              insightLength: entry.insight ? entry.insight.length : 0,
-              insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-              insightValue: entry.insight,
-              syncStatus: entry.syncStatus,
-            });
-          });
-          console.log('========================================================');
+          logger.debug(`[useDataLoader] 后台查询完成，更新日记列表，数量: ${entities.length}`);
           
           const mappedEntities = entities.map(entry => {
-            const mapped = {
+            return {
               id: entry.id,
               title: entry.title,
               content: entry.content,
@@ -258,38 +184,9 @@ export const useDataLoader = () => {
               lastSyncTime: entry.lastSyncTime,
               syncError: entry.syncError,
             };
-            console.log(`[useDataLoader] 后台查询映射条目 ${entry.id}:`, {
-              originalInsight: entry.insight,
-              mappedInsight: mapped.insight,
-              hasInsight: mapped.insight !== undefined && mapped.insight !== null,
-            });
-            return mapped;
           });
           
-          console.log('========== [useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES (后台查询完成) ==========');
-          console.log('[useDataLoader] 映射后的条目数量:', mappedEntities.length);
-          mappedEntities.forEach((entry, index) => {
-            console.log(`[useDataLoader] dispatch前的条目 ${index + 1} (后台查询):`, {
-              id: entry.id,
-              title: entry.title,
-              content: entry.content ? `长度: ${entry.content.length}` : 'null',
-              hasInsight: entry.insight !== undefined && entry.insight !== null,
-              insightType: typeof entry.insight,
-              insightValue: entry.insight,
-              insightLength: entry.insight ? entry.insight.length : 0,
-              insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-              tags: entry.tags,
-              syncStatus: entry.syncStatus,
-              lastSyncTime: entry.lastSyncTime,
-              syncError: entry.syncError,
-              timestamp: entry.timestamp,
-              imageUrl: entry.imageUrl,
-              fullEntry: entry,
-            });
-          });
-          console.log('[useDataLoader] dispatch前的完整数据:', JSON.stringify(mappedEntities, null, 2));
-          console.log('========================================================');
-          
+          logger.debug(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES (后台查询完成)，数量: ${mappedEntities.length}`);
           dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntities });
           if (originalCallback) {
             originalCallback(entities);
@@ -338,7 +235,7 @@ export const useDataLoader = () => {
         shouldShowInitializationWizard: isFirstLogin || gameState.currentScreen === 'profileSetup'
       };
     } catch (error) {
-      console.error('[useDataLoader] 登录成功处理失败:', error);
+      logger.error('[useDataLoader] 登录成功处理失败', error);
       throw error;
     }
   }, [dispatch]);
@@ -372,7 +269,7 @@ export const useDataLoader = () => {
       
       return true;
     } catch (error) {
-      console.error('[useDataLoader checkAuth] 认证检查失败:', error);
+      logger.error('[useDataLoader checkAuth] 认证检查失败', error);
       return false;
     }
   }, [dispatch]);

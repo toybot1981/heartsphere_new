@@ -12,3 +12,4 @@ public class UpdateSystemAdminDTO {
     private Boolean isActive;
 }
 
+

@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import java.util.logging.Logger;
 
 /**
  * 管理员初始化服务
@@ -14,6 +15,8 @@ import jakarta.annotation.PostConstruct;
  */
 @Service
 public class AdminInitializationService {
+
+    private static final Logger logger = Logger.getLogger(AdminInitializationService.class.getName());
 
     @Autowired
     private SystemAdminRepository adminRepository;
@@ -32,10 +35,8 @@ public class AdminInitializationService {
             admin.setRole("SUPER_ADMIN"); // 默认管理员为超级管理员
             admin.setIsActive(true);
             adminRepository.save(admin);
-            System.out.println("默认超级管理员账号已创建: admin");
+            logger.info("默认超级管理员账号已创建: admin");
         }
     }
 }
-
-
 

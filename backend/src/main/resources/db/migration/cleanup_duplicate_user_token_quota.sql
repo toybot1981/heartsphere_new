@@ -19,3 +19,4 @@ WHERE t1.user_id = t2.user_id
 -- GROUP BY user_id 
 -- HAVING COUNT(*) > 1;
 
+

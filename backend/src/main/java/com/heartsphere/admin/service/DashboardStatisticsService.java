@@ -44,11 +44,18 @@ public class DashboardStatisticsService {
     public DashboardStatisticsDTO getStatistics(String period) {
         DashboardStatisticsDTO dto = new DashboardStatisticsDTO();
 
-        // 总体统计
+        // 总体统计（只统计未删除的记录）
         dto.setTotalUsers(userRepository.count());
-        dto.setTotalScenes(eraRepository.count());
-        dto.setTotalScripts(scriptRepository.count());
-        dto.setTotalCharacters(characterRepository.count());
+        // 场景、剧本、角色只统计未删除的
+        dto.setTotalScenes(eraRepository.findAll().stream()
+                .filter(era -> era.getIsDeleted() == null || !era.getIsDeleted())
+                .count());
+        dto.setTotalScripts(scriptRepository.findAll().stream()
+                .filter(script -> script.getIsDeleted() == null || !script.getIsDeleted())
+                .count());
+        dto.setTotalCharacters(characterRepository.findAll().stream()
+                .filter(character -> character.getIsDeleted() == null || !character.getIsDeleted())
+                .count());
 
         // 趋势数据
         dto.setTrends(getTrendData(period));
@@ -103,7 +110,8 @@ public class DashboardStatisticsService {
         userRepository.findAll().forEach(user -> {
             if (user.getCreatedAt() != null) {
                 LocalDate createdDate = user.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String dateKey = createdDate.format(DATE_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(dateKey);
                     if (trend != null) {
@@ -113,11 +121,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计场景创建数
+        // 统计场景创建数（只统计未删除的）
         eraRepository.findAll().forEach(era -> {
-            if (era.getCreatedAt() != null) {
+            if (era.getCreatedAt() != null && (era.getIsDeleted() == null || !era.getIsDeleted())) {
                 LocalDate createdDate = era.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String dateKey = createdDate.format(DATE_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(dateKey);
                     if (trend != null) {
@@ -127,11 +136,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计剧本创建数
+        // 统计剧本创建数（只统计未删除的）
         scriptRepository.findAll().forEach(script -> {
-            if (script.getCreatedAt() != null) {
+            if (script.getCreatedAt() != null && (script.getIsDeleted() == null || !script.getIsDeleted())) {
                 LocalDate createdDate = script.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String dateKey = createdDate.format(DATE_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(dateKey);
                     if (trend != null) {
@@ -141,11 +151,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计角色创建数
+        // 统计角色创建数（只统计未删除的）
         characterRepository.findAll().forEach(character -> {
-            if (character.getCreatedAt() != null) {
+            if (character.getCreatedAt() != null && (character.getIsDeleted() == null || !character.getIsDeleted())) {
                 LocalDate createdDate = character.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String dateKey = createdDate.format(DATE_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(dateKey);
                     if (trend != null) {
@@ -182,7 +193,8 @@ public class DashboardStatisticsService {
         userRepository.findAll().forEach(user -> {
             if (user.getCreatedAt() != null) {
                 LocalDate createdDate = user.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String monthKey = createdDate.format(MONTH_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(monthKey);
                     if (trend != null) {
@@ -192,11 +204,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计场景创建数
+        // 统计场景创建数（只统计未删除的）
         eraRepository.findAll().forEach(era -> {
-            if (era.getCreatedAt() != null) {
+            if (era.getCreatedAt() != null && (era.getIsDeleted() == null || !era.getIsDeleted())) {
                 LocalDate createdDate = era.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String monthKey = createdDate.format(MONTH_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(monthKey);
                     if (trend != null) {
@@ -206,11 +219,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计剧本创建数
+        // 统计剧本创建数（只统计未删除的）
         scriptRepository.findAll().forEach(script -> {
-            if (script.getCreatedAt() != null) {
+            if (script.getCreatedAt() != null && (script.getIsDeleted() == null || !script.getIsDeleted())) {
                 LocalDate createdDate = script.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String monthKey = createdDate.format(MONTH_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(monthKey);
                     if (trend != null) {
@@ -220,11 +234,12 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计角色创建数
+        // 统计角色创建数（只统计未删除的）
         characterRepository.findAll().forEach(character -> {
-            if (character.getCreatedAt() != null) {
+            if (character.getCreatedAt() != null && (character.getIsDeleted() == null || !character.getIsDeleted())) {
                 LocalDate createdDate = character.getCreatedAt().toLocalDate();
-                if (!createdDate.isBefore(startDate) && !createdDate.isAfter(endDate)) {
+                if ((createdDate.isEqual(startDate) || createdDate.isAfter(startDate)) && 
+                    (createdDate.isEqual(endDate) || createdDate.isBefore(endDate))) {
                     String monthKey = createdDate.format(MONTH_FORMATTER);
                     DashboardStatisticsDTO.TrendData trend = trendMap.get(monthKey);
                     if (trend != null) {
@@ -271,9 +286,9 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计场景创建数
+        // 统计场景创建数（只统计未删除的）
         eraRepository.findAll().forEach(era -> {
-            if (era.getCreatedAt() != null) {
+            if (era.getCreatedAt() != null && (era.getIsDeleted() == null || !era.getIsDeleted())) {
                 int year = era.getCreatedAt().getYear();
                 if (year >= startYear && year <= endYear) {
                     String yearKey = String.valueOf(year);
@@ -285,9 +300,9 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计剧本创建数
+        // 统计剧本创建数（只统计未删除的）
         scriptRepository.findAll().forEach(script -> {
-            if (script.getCreatedAt() != null) {
+            if (script.getCreatedAt() != null && (script.getIsDeleted() == null || !script.getIsDeleted())) {
                 int year = script.getCreatedAt().getYear();
                 if (year >= startYear && year <= endYear) {
                     String yearKey = String.valueOf(year);
@@ -299,9 +314,9 @@ public class DashboardStatisticsService {
             }
         });
 
-        // 统计角色创建数
+        // 统计角色创建数（只统计未删除的）
         characterRepository.findAll().forEach(character -> {
-            if (character.getCreatedAt() != null) {
+            if (character.getCreatedAt() != null && (character.getIsDeleted() == null || !character.getIsDeleted())) {
                 int year = character.getCreatedAt().getYear();
                 if (year >= startYear && year <= endYear) {
                     String yearKey = String.valueOf(year);

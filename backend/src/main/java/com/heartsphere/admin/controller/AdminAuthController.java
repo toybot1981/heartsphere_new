@@ -7,11 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/auth")
 public class AdminAuthController {
+
+    private static final Logger logger = Logger.getLogger(AdminAuthController.class.getName());
 
     @Autowired
     private AdminAuthService adminAuthService;
@@ -19,30 +22,25 @@ public class AdminAuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AdminLoginRequest request) {
         try {
-            // 添加日志记录
-            System.out.println("========== [AdminAuthController] 管理员登录请求 ==========");
-            System.out.println("[AdminAuthController] 接收到的用户名: " + (request.getUsername() != null ? request.getUsername() : "null"));
-            System.out.println("[AdminAuthController] 接收到的密码长度: " + (request.getPassword() != null ? request.getPassword().length() : 0));
-            
+            logger.info("管理员登录请求，用户名: " + request.getUsername());
+
             if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-                System.out.println("[AdminAuthController] 错误: 用户名为空");
+                logger.warning("登录失败: 用户名为空");
                 return ResponseEntity.status(401).body(Map.of("error", "用户名不能为空"));
             }
-            
+
             if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-                System.out.println("[AdminAuthController] 错误: 密码为空");
+                logger.warning("登录失败: 密码为空");
                 return ResponseEntity.status(401).body(Map.of("error", "密码不能为空"));
             }
-            
+
             Map<String, Object> response = adminAuthService.login(request.getUsername(), request.getPassword());
-            System.out.println("[AdminAuthController] 登录成功");
+            logger.info("管理员登录成功，用户名: " + request.getUsername());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            System.out.println("[AdminAuthController] 登录失败: " + e.getMessage());
+            logger.warning("管理员登录失败: " + e.getMessage());
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
     }
 }
-
-
 

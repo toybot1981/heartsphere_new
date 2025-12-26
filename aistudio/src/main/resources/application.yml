@@ -1,0 +1,192 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: aistudio-service
+  # CORS 配置
+  web:
+    cors:
+      allowed-origins: '*'
+      allowed-methods: GET, POST, PUT, DELETE, OPTIONS
+      allowed-headers: '*'
+      allow-credentials: true
+  
+  # 数据库配置（使用 H2 内存数据库，便于测试）
+  datasource:
+    url: jdbc:h2:mem:aistudiodb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # Redis 配置（用于 ChatMemory）
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # MongoDB 配置（用于 Long-term Memory，可选）
+  mongodb:
+    host: ${MONGODB_HOST:localhost}
+    port: ${MONGODB_PORT:27017}
+    database: ${MONGODB_DB:aistudio}
+    auto-index-creation: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  # Spring AI 配置
+  ai:
+    # 通义千问 (Alibaba) - 使用 Spring AI Alibaba
+    dashscope:
+      api-key: ${ALIBABA_API_KEY:sk-a486b81e29484fcea112b2c010b7bd95}
+      chat:
+        options:
+          model: ${ALIBABA_CHAT_MODEL:qwen-max}
+          temperature: 0.7
+    
+    # OpenAI 兼容 API (可用于国内服务)
+    openai:
+      api-key: ${OPENAI_API_KEY:your-openai-api-key}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+    
+    # Ollama (本地模型)
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: llama2
+          temperature: 0.7
+
+# AI Studio 配置
+aistudio:
+  # Backend服务地址
+  backend:
+    service-url: ${BACKEND_SERVICE_URL:http://localhost:8080}
+
+  # Context Engine 配置
+  context:
+    # 默认最大 token 数量
+    default-max-tokens: 8000
+    # 默认优化策略
+    default-strategy: HYBRID
+    # ChatMemory 配置
+    chat-memory:
+      # Redis 存储的最大消息数
+      max-messages: 100
+      # 消息过期时间（天）
+      ttl-days: 7
+      # 超过限制时的压缩阈值（百分比）
+      compression-threshold: 0.7
+    # 优化器配置
+    optimizer:
+      # 摘要生成是否启用
+      summarization-enabled: true
+      # 摘要的最大 token 数
+      max-summary-tokens: 500
+
+  # 工作流配置
+  workflow:
+    max-concurrent-agents: 10
+    default-timeout: 30000 # 30秒
+    enable-persistence: true
+  
+  # 大模型配置
+  models:
+    # 文字模型
+    text:
+      default-provider: alibaba # alibaba, openai, ollama
+      default-model: qwen3-max  # 默认使用 qwen3-max
+      providers:
+        alibaba:
+          enabled: true
+          api-key: sk-a486b81e29484fcea112b2c010b7bd95
+          models:
+            - qwen3-max  # 优先使用 qwen3-max
+            - qwen-max
+            - qwen-plus
+            - qwen-turbo
+        openai:
+          enabled: true
+          models:
+            - gpt-4
+            - gpt-3.5-turbo
+        ollama:
+          enabled: false
+          models:
+            - llama2
+            - mistral
+    
+    # 图片生成模型
+    image:
+      default-provider: alibaba
+      providers:
+        alibaba:
+          enabled: true
+          models:
+            - wanx-v1
+        openai:
+          enabled: true
+          models:
+            - dall-e-3
+            - dall-e-2
+    
+    # 语音模型
+    audio:
+      default-provider: alibaba
+      providers:
+        alibaba:
+          enabled: true
+          models:
+            - paraformer-v2
+        openai:
+          enabled: true
+          models:
+            - tts-1
+            - tts-1-hd
+    
+    # 视频生成模型
+    video:
+      default-provider: alibaba
+      providers:
+        alibaba:
+          enabled: true
+          models:
+            - wanx-video
+        openai:
+          enabled: false
+
+# 高德地图配置
+amap:
+  api-key: ${AMAP_API_KEY:9173650ec101b28beabd65c0578b888c}
+
+# 日志配置
+logging:
+  level:
+    com.heartsphere.aistudio: DEBUG
+    org.springframework.ai: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+

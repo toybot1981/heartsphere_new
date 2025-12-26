@@ -190,30 +190,6 @@ export const gameStateReducer = (state: GameState, action: GameStateAction): Gam
     
     // 日记管理
     case 'SET_JOURNAL_ENTRIES':
-      console.log('========== [gameStateReducer] SET_JOURNAL_ENTRIES ==========');
-      console.log('[gameStateReducer] 接收到的条目数量:', action.payload.length);
-      console.log('[gameStateReducer] 完整的 payload:', JSON.stringify(action.payload, null, 2));
-      action.payload.forEach((entry, index) => {
-        console.log(`[gameStateReducer] 条目 ${index + 1} 详细信息:`, {
-          id: entry.id,
-          title: entry.title,
-          content: entry.content ? `长度: ${entry.content.length}` : 'null',
-          hasInsight: entry.insight !== undefined && entry.insight !== null,
-          insightType: typeof entry.insight,
-          insightValue: entry.insight,
-          insightLength: entry.insight ? entry.insight.length : 0,
-          insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-          tags: entry.tags,
-          timestamp: entry.timestamp,
-          imageUrl: entry.imageUrl,
-          syncStatus: entry.syncStatus,
-          lastSyncTime: entry.lastSyncTime,
-          syncError: entry.syncError,
-          // 打印完整的条目对象（用于调试）
-          fullEntry: entry,
-        });
-      });
-      console.log('========================================================');
       return { ...state, journalEntries: action.payload };
     
     case 'ADD_JOURNAL_ENTRY':

@@ -150,3 +150,4 @@ AIService (调用AI API)
 
 ⚠️ **重要**：`ai_model_pricing.model_id` 现在关联到 `ai_model_config.id`，但在 `AIModelPricing.java` 实体类中，`@ManyToOne` 关联的仍然是 `AIModel`。这可能会导致ORM映射问题，需要更新实体类。
 
+

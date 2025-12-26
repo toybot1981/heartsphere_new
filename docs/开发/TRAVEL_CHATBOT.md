@@ -213,7 +213,7 @@ GET /api/travel/chat/history?userId=user123
 ### 1. 重启服务
 ```bash
 lsof -ti:8082 | xargs kill -9
-cd aiagent
+cd aistudio
 mvn spring-boot:run
 ```
 

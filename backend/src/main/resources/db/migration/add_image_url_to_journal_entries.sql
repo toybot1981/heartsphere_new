@@ -2,3 +2,4 @@
 ALTER TABLE `journal_entries`
 ADD COLUMN `image_url` VARCHAR(500) NULL COMMENT '日志配图URL' AFTER `insight`;
 
+

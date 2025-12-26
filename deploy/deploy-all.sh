@@ -113,3 +113,4 @@ echo -e "${BLUE}应用目录: ${APP_HOME}${NC}"
 echo -e "${BLUE}环境变量文件: ${ENV_FILE}${NC}"
 echo -e "${GREEN}========================================${NC}"
 
+

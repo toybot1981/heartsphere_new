@@ -9,6 +9,7 @@ import com.heartsphere.aiagent.entity.UserAIConfig;
 import com.heartsphere.aiagent.exception.AIServiceException;
 import com.heartsphere.aiagent.util.StreamResponseHandler;
 import com.heartsphere.billing.annotation.RequiresTokenQuota;
+import com.heartsphere.constants.ApplicationConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -78,7 +79,7 @@ public class AIServiceImpl implements AIService {
             // 设置默认参数
             if (request.getTemperature() == null) {
                 // 可以从用户配置中获取默认温度
-                request.setTemperature(0.7);
+                request.setTemperature(ApplicationConstants.AIConstants.DEFAULT_TEMPERATURE);
             }
             
             // 获取适配器

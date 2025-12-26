@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.logging.Logger;
+
 /**
  * 命令行工具：为所有系统预置剧本添加AI旁白提示词
  * 使用方法：在application.yml中设置 heartsphere.update-scripts-prompts=true
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class UpdateScriptPromptsRunner implements CommandLineRunner {
+
+    private static final Logger logger = Logger.getLogger(UpdateScriptPromptsRunner.class.getName());
 
     @Autowired
     private SystemDataService systemDataService;
@@ -28,11 +32,10 @@ public class UpdateScriptPromptsRunner implements CommandLineRunner {
         }
 
         if (shouldUpdate) {
-            System.out.println("========== 开始更新所有系统预置剧本的AI旁白提示词 ==========");
+            logger.info("========== 开始更新所有系统预置剧本的AI旁白提示词 ==========");
             int updatedCount = systemDataService.updateAllScriptsWithPrompts();
-            System.out.println("========== 更新完成，共更新 " + updatedCount + " 个剧本 ==========");
+            logger.info("========== 更新完成，共更新 " + updatedCount + " 个剧本 ==========");
             System.exit(0);
         }
     }
 }
-

@@ -40,10 +40,10 @@ public class ImageStorageService {
             Path uploadPath = Paths.get(localStoragePath);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                System.out.println("图片上传目录已创建: " + uploadPath.toAbsolutePath());
+                logger.info("图片上传目录已创建: " + uploadPath.toAbsolutePath());
             }
         } catch (IOException e) {
-            System.err.println("创建图片上传目录失败: " + e.getMessage());
+            logger.severe("创建图片上传目录失败: " + e.getMessage());
         }
     }
 

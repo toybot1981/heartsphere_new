@@ -7,6 +7,7 @@ import { imageApi, tokenStorage } from '../services/api';
 import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/journalTemplates';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { NoteSyncModal } from './NoteSyncModal';
+import { logger } from '../utils/logger';
 
 interface RealWorldScreenProps {
   entries: JournalEntry[];
@@ -27,23 +28,9 @@ interface RealWorldScreenProps {
 export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({ 
     entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest, showNoteSync = false
 }) => {
-  // 打印从缓存获取的entries日志
+  // 日志：从缓存获取的entries
   useEffect(() => {
-    console.log('========== [RealWorldScreen] 从缓存获取的日记条目 ==========');
-    console.log('[RealWorldScreen] 条目数量:', entries.length);
-    entries.forEach((entry, index) => {
-      console.log(`[RealWorldScreen] 条目 ${index + 1}:`, {
-        id: entry.id,
-        title: entry.title,
-        hasInsight: entry.insight !== undefined && entry.insight !== null,
-        insightLength: entry.insight ? entry.insight.length : 0,
-        insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
-        insightValue: entry.insight,
-        syncStatus: entry.syncStatus,
-        lastSyncTime: entry.lastSyncTime,
-      });
-    });
-    console.log('========================================================');
+    logger.debug(`[RealWorldScreen] 加载日记条目，数量: ${entries.length}`);
   }, [entries]);
   // State for View Mode
   const [isCreating, setIsCreating] = useState(false);
@@ -77,7 +64,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   // 当 showNoteSync prop 变化时，更新按钮显示状态
   useEffect(() => {
     setSyncButtonEnabled(showNoteSync);
-    console.log('[RealWorldScreen] 笔记同步按钮显示状态更新:', showNoteSync);
+    logger.debug(`[RealWorldScreen] 笔记同步按钮显示状态: ${showNoteSync}`);
   }, [showNoteSync]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,27 +114,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   };
 
   const handleSave = async (): Promise<void> => {
-    console.log("=== [RealWorldScreen] 开始保存日志 ===");
+    logger.debug("[RealWorldScreen] 开始保存日志");
     
-    // 1. 记录保存开始时的状态
-    console.log("[步骤1/6] 保存日志初始参数:", {
-      timestamp: new Date().toISOString(),
-      newTitle: newTitle.trim(),
-      newContent: newContent.trim(),
-      uploadedImageUrl: uploadedImageUrl ? "[存在图片URL]" : "无图片",
-      autoGenerateImage: autoGenerateImage,
-      isEditing: isEditing,
-      hasSelectedEntry: !!selectedEntry,
-      selectedEntryId: selectedEntry?.id,
-      mirrorInsight: mirrorInsight ? "[存在镜像洞察]" : "无镜像洞察"
-    });
-    
-    // 2. 表单验证分支
-    console.log("[步骤2/6] 开始表单验证");
+    // 表单验证
     if (!newContent.trim()) {
-        console.error("[步骤2/6] 表单验证失败: 内容不能为空");
+        logger.warn("[RealWorldScreen] 保存失败: 内容不能为空");
         showAlert("内容不能为空", "提示", "warning");
-        console.log("=== [RealWorldScreen] 保存日志失败: 表单验证不通过 ===");
         return;
     }
     
@@ -162,35 +134,27 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     
     const finalTitle = newTitle.trim() || getDateString();
     
-    console.log("[步骤2/6] 表单验证通过，继续处理");
-    console.log("[步骤2/6] 最终标题:", finalTitle);
-    
     let finalImageUrl = uploadedImageUrl;
 
-    // 3. 图片处理分支
-    console.log("[步骤3/6] 检查图片状态");
-    // 如果uploadedImageUrl是base64，先上传
+    // 图片处理
     if (finalImageUrl && finalImageUrl.startsWith('data:')) {
-        console.log("[步骤3/6] 检测到base64图片，先上传到服务器");
+        logger.debug("[RealWorldScreen] 上传base64图片");
         setIsGeneratingImage(true);
         try {
             const token = localStorage.getItem('auth_token');
             const result = await imageApi.uploadBase64Image(finalImageUrl, 'journal', token || undefined);
             if (result.success && result.url) {
                 finalImageUrl = result.url;
-                console.log("[步骤3/6] Base64图片上传成功:", finalImageUrl);
             } else {
-                console.warn("[步骤3/6] Base64图片上传失败，使用base64");
+                logger.warn("[RealWorldScreen] Base64图片上传失败");
             }
         } catch (error) {
-            console.error("[步骤3/6] Base64图片上传异常:", error);
+            logger.error("[RealWorldScreen] Base64图片上传异常", error);
         } finally {
             setIsGeneratingImage(false);
         }
     } else if (finalImageUrl && (finalImageUrl.startsWith('http://') || finalImageUrl.startsWith('https://'))) {
-        // 如果uploadedImageUrl是外部URL（不是本地服务器URL），通过后端代理下载并上传
-        // 检查是否是本地服务器URL（localhost 或 127.0.0.1 或配置的服务器地址）
-        // 注意：所有外部URL（包括TOS临时URL、volces.com等）都需要下载并重新上传
+        // 检查是否是本地服务器URL
         const isLocalUrl = finalImageUrl.includes('localhost') || 
                           finalImageUrl.includes('127.0.0.1') || 
                           finalImageUrl.includes('api/images/files') ||
@@ -200,144 +164,97 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           finalImageUrl.startsWith('https://127.0.0.1');
         
         if (!isLocalUrl) {
-            console.log("[步骤3/6] 检测到外部URL图片（包括临时URL），必须通过后端代理下载并重新上传:", finalImageUrl);
-            console.log("[步骤3/6] URL类型判断: 是否为本地URL =", isLocalUrl);
+            logger.debug("[RealWorldScreen] 处理外部URL图片");
             setIsGeneratingImage(true);
             try {
-                // 1. 先通过后端代理下载图片
-                console.log("[步骤3/6] 步骤1: 通过后端代理下载外部图片");
                 const proxyResult = await imageApi.proxyDownload(finalImageUrl);
                 
                 if (proxyResult.success && proxyResult.dataUrl) {
-                    console.log("[步骤3/6] 步骤1完成: 后端代理下载成功，dataUrl长度:", proxyResult.dataUrl.length);
-                    
-                    // 2. 将下载的base64 data URL直接上传
-                    console.log("[步骤3/6] 步骤2: 上传base64图片到服务器");
                     const token = localStorage.getItem('auth_token');
                     const uploadResult = await imageApi.uploadBase64Image(proxyResult.dataUrl, 'journal', token || undefined);
                     
                     if (uploadResult.success && uploadResult.url) {
                         finalImageUrl = uploadResult.url;
-                        console.log("[步骤3/6] 步骤2完成: 图片上传成功，永久URL:", finalImageUrl);
+                        logger.debug("[RealWorldScreen] 外部图片处理成功");
                     } else {
-                        console.error("[步骤3/6] 步骤2失败: 图片上传失败，错误:", uploadResult.error);
+                        logger.error("[RealWorldScreen] 图片上传失败", uploadResult.error);
                         throw new Error(`图片上传失败: ${uploadResult.error || '未知错误'}`);
                     }
                 } else {
-                    console.error("[步骤3/6] 步骤1失败: 后端代理下载失败，错误:", proxyResult.error);
+                    logger.error("[RealWorldScreen] 后端代理下载失败", proxyResult.error);
                     throw new Error(`后端代理下载失败: ${proxyResult.error || '未知错误'}`);
                 }
             } catch (proxyError) {
-                console.error("[步骤3/6] 代理下载或上传过程中发生异常:", proxyError);
-                // 不再保留原始外部URL作为备用方案，因为临时URL会过期
+                logger.error("[RealWorldScreen] 代理下载或上传异常", proxyError);
                 throw new Error(`无法处理外部图片URL: ${proxyError instanceof Error ? proxyError.message : '未知错误'}`);
             } finally {
                 setIsGeneratingImage(false);
             }
-        } else {
-            console.log("[步骤3/6] 检测到本地服务器URL，直接使用:", finalImageUrl);
         }
     }
     
     // 如果还没有图片且启用了自动生成
     if (!finalImageUrl && autoGenerateImage) {
-        console.log("[步骤3/6] 开始自动生成图片");
+        logger.debug("[RealWorldScreen] 开始自动生成图片");
         setIsGeneratingImage(true);
         try {
-            console.log("[步骤3/6] 调用aiService.generateMoodImage生成图片");
             const generated = await aiService.generateMoodImage(newContent, worldStyle);
-            console.log("[步骤3/6] 图片生成结果:", generated ? "[生成成功]" : "[生成失败]");
             if (generated) {
-                // 如果生成的是base64，直接上传
                 if (generated.startsWith('data:')) {
                     const token = localStorage.getItem('auth_token');
                     const uploadResult = await imageApi.uploadBase64Image(generated, 'journal', token || undefined);
                     if (uploadResult.success && uploadResult.url) {
                         finalImageUrl = uploadResult.url;
-                        console.log("[步骤3/6] 生成的base64图片上传成功");
                     } else {
                         finalImageUrl = generated;
-                        console.log("[步骤3/6] 生成的base64图片上传失败，使用base64");
                     }
                 } else {
-                    // 如果生成的是外部URL（包括TOS临时URL），必须通过后端代理下载并上传
-                    console.log("[步骤3/6] 生成的是外部URL（可能是临时URL），必须通过后端代理下载并重新上传:", generated);
+                    // 外部URL需要下载并重新上传
                     try {
-                        // 1. 先通过后端代理下载图片
-                        console.log("[步骤3/6] 步骤1: 通过后端代理下载图片");
                         const proxyResult = await imageApi.proxyDownload(generated);
                         
                         if (proxyResult.success && proxyResult.dataUrl) {
-                            console.log("[步骤3/6] 步骤1完成: 后端代理下载成功，dataUrl长度:", proxyResult.dataUrl.length);
-                            
-                            // 2. 将下载的base64 data URL直接上传
-                            console.log("[步骤3/6] 步骤2: 上传base64图片到服务器");
                             const token = localStorage.getItem('auth_token');
                             const uploadResult = await imageApi.uploadBase64Image(proxyResult.dataUrl, 'journal', token || undefined);
                             
                             if (uploadResult.success && uploadResult.url) {
                                 finalImageUrl = uploadResult.url;
-                                console.log("[步骤3/6] 步骤2完成: 图片上传成功，永久URL:", finalImageUrl);
                             } else {
-                                console.error("[步骤3/6] 步骤2失败: 图片上传失败，错误:", uploadResult.error);
+                                logger.error("[RealWorldScreen] 生成的图片上传失败", uploadResult.error);
                                 throw new Error(`图片上传失败: ${uploadResult.error || '未知错误'}`);
                             }
                         } else {
-                            console.error("[步骤3/6] 步骤1失败: 后端代理下载失败，错误:", proxyResult.error);
+                            logger.error("[RealWorldScreen] 生成的图片下载失败", proxyResult.error);
                             throw new Error(`后端代理下载失败: ${proxyResult.error || '未知错误'}`);
                         }
                     } catch (proxyError) {
-                        console.error("[步骤3/6] 代理下载或上传过程中发生异常:", proxyError);
-                        // 不再保留原始外部URL作为备用方案，因为临时URL会过期
+                        logger.error("[RealWorldScreen] 生成的图片处理异常", proxyError);
                         throw new Error(`无法处理外部图片URL: ${proxyError instanceof Error ? proxyError.message : '未知错误'}`);
                     }
                 }
-            } else {
-                console.log("[步骤3/6] 图片生成成功，但返回为空");
             }
         } catch (e: unknown) {
-            console.error("[步骤3/6] 自动图片生成失败:", e);
+            logger.error("[RealWorldScreen] 自动图片生成失败", e);
         } finally {
             setIsGeneratingImage(false);
-            console.log("[步骤3/6] 图片生成流程结束，最终imageUrl:", finalImageUrl ? "[存在图片URL]" : "无图片");
         }
-    } else {
-        console.log("[步骤3/6] 跳过图片生成，使用已上传图片或不使用图片");
     }
 
-    // 4. 保存日志分支
-    console.log("[步骤4/6] 开始保存日志到应用状态");
+    // 保存日志
     if (isEditing && selectedEntry) {
-        console.log("[步骤4/6] 进入编辑模式保存分支");
-        console.log("[步骤4/6] 要更新的日志ID:", selectedEntry.id);
-        
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
-        // 处理insight字段：
-        // 1. 如果mirrorInsight有值（包括空字符串），使用mirrorInsight（用户可能想清空或更新）
-        // 2. 如果mirrorInsight是null，表示用户没有修改，保留原有的insight（如果有的话）
-        // 3. 如果mirrorInsight是undefined，使用undefined（显式清空）
-        // 注意：需要明确区分"未修改"（保留原值）和"显式清空"（设为null）
-        // 关键：如果用户没有修改insight，必须明确传递原有的insight值，不能传递undefined，否则后端会将其解析为null并覆盖
+        // 处理insight字段：如果用户没有修改，保留原有的insight
         let insightValue: string | undefined;
         if (mirrorInsight !== undefined) {
-            // mirrorInsight被显式设置（可能是null或字符串）
             if (mirrorInsight !== null) {
-                // 有值，使用新值
                 insightValue = mirrorInsight;
             } else {
-                // mirrorInsight是null，表示用户没有修改，保留原有的insight
                 insightValue = selectedEntry?.insight;
             }
         } else {
-            // mirrorInsight是undefined，表示用户没有修改，保留原有的insight
             insightValue = selectedEntry?.insight;
         }
         
-        console.log("[步骤4/6] insight处理逻辑:", {
-            mirrorInsight: mirrorInsight !== undefined ? (mirrorInsight !== null ? `"${mirrorInsight.substring(0, 50)}..."` : 'null') : 'undefined',
-            selectedEntryInsight: selectedEntry?.insight ? `"${selectedEntry.insight.substring(0, 50)}..."` : 'null/undefined',
-            finalInsightValue: insightValue !== undefined ? (insightValue !== null ? `"${insightValue.substring(0, 50)}..."` : 'null') : 'undefined'
-        });
         const updatedEntry = {
             ...selectedEntry,
             title: finalTitle,
@@ -347,63 +264,29 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
             tags: tagsString
         };
         
-        console.log("[步骤4/6] 准备更新的日志内容 (包含imageUrl):", {
-            id: updatedEntry.id,
-            title: updatedEntry.title,
-            contentLength: updatedEntry.content.length,
-            hasImage: !!updatedEntry.imageUrl,
-            imageUrl: updatedEntry.imageUrl ? updatedEntry.imageUrl.substring(0, 100) + '...' : 'null/undefined',
-            hasInsight: updatedEntry.insight !== undefined && updatedEntry.insight !== null,
-            insightLength: updatedEntry.insight ? updatedEntry.insight.length : 0,
-            insightValue: updatedEntry.insight ? (updatedEntry.insight.substring(0, 50) + '...') : 'null/undefined'
-        });
-        
-        console.log("[步骤4/6] 调用App.tsx中的onUpdateEntry方法");
+        logger.debug(`[RealWorldScreen] 更新日志条目: ${updatedEntry.id}`);
         onUpdateEntry(updatedEntry);
-        console.log("[步骤4/6] onUpdateEntry调用完成");
         
-        // 5. 编辑模式下，关闭编辑框
-        console.log("[步骤5/6] 开始清理表单状态（编辑模式：关闭编辑框）");
+        // 编辑模式下，关闭编辑框
         setIsCreating(false);
         setIsEditing(false);
         setSelectedEntry(null);
         setNewTags([]);
         setTagInput('');
-        console.log("[步骤5/6] 表单状态清理完成");
     } else {
-        console.log("[步骤4/6] 进入新建模式保存分支");
-        
-        console.log("[步骤4/6] 准备创建的日志内容:", {
-            title: finalTitle,
-            contentLength: newContent.length,
-            hasImage: !!finalImageUrl,
-            imageUrl: finalImageUrl ? finalImageUrl.substring(0, 100) + '...' : 'null/undefined',
-            hasInsight: !!mirrorInsight
-        });
-        
-        console.log("[步骤4/6] 调用App.tsx中的onAddEntry方法");
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
+        logger.debug("[RealWorldScreen] 创建新日志条目");
         onAddEntry(finalTitle, newContent, finalImageUrl, mirrorInsight || undefined, tagsString);
-        console.log("[步骤4/6] onAddEntry调用完成");
         
-        // 5. 新建模式下，只清空表单内容，保持编辑框打开
-        console.log("[步骤5/6] 开始清理表单状态（新建模式：保持编辑框打开）");
+        // 新建模式下，只清空表单内容，保持编辑框打开
         setNewTitle('');
         setNewContent('');
         setNewTags([]);
         setTagInput('');
         setUploadedImageUrl(undefined);
-        // 注意：新建模式下不清空mirrorInsight，因为用户可能想继续使用
-        // setMirrorInsight(null);
-        // 保持 isCreating = true，不关闭编辑框
         setIsEditing(false);
         setSelectedEntry(null);
-        console.log("[步骤5/6] 表单内容已清空，编辑框保持打开");
     }
-    
-    // 6. 保存完成
-    console.log("[步骤6/6] 日志保存流程全部完成");
-    console.log("=== [RealWorldScreen] 保存日志结束 ===");
   };
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
@@ -428,12 +311,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       if (result.success && result.url) {
         // 使用服务器返回的URL替换base64预览
         setUploadedImageUrl(result.url);
-        console.log('图片上传成功:', result.url);
+        logger.debug('图片上传成功');
       } else {
         throw new Error(result.error || '上传失败');
       }
     } catch (err: any) {
-      console.error('图片上传失败:', err);
+      logger.error('图片上传失败', err);
       setUploadError('图片上传失败: ' + (err.message || '未知错误') + '。将使用本地预览。');
       // 保持base64预览
     } finally {
@@ -484,7 +367,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           } catch (error) {
               // 这个 catch 现在不应该被触发，因为 generateDailyGreeting 不会抛出错误
               // 但为了安全起见，保留这个兜底逻辑
-              console.error("[RealWorldScreen] 生成每日问候异常（不应发生）:", error);
+              logger.error("[RealWorldScreen] 生成每日问候异常", error);
               setDailyGreeting({
                   greeting: entries.length === 0 
                       ? '欢迎来到现实记录。这里是你的内心世界，记录下每一个真实的瞬间。'
@@ -634,52 +517,28 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               {syncButtonEnabled && (
               <Button 
                   onClick={() => {
-                      console.log('========== [RealWorldScreen] 点击笔记同步按钮 ==========');
-                      console.log('[RealWorldScreen] isGuest prop:', isGuest);
-                      console.log('[RealWorldScreen] userName prop:', userName);
-                      
-                      // 检查登录状态：优先检查是否为访客模式
                       if (isGuest) {
-                          console.log('[RealWorldScreen] ❌ 检测到访客模式，阻止打开同步笔记');
+                          logger.warn('[RealWorldScreen] 访客模式，无法打开同步笔记');
                           showAlert('请先登录', '提示', 'warning');
                           return;
                       }
                       
-                      // 检查 localStorage 和 sessionStorage 中的 token
+                      // 检查 token
                       const localStorageToken = localStorage.getItem('auth_token');
                       const sessionStorageToken = sessionStorage.getItem('auth_token');
-                      
-                      console.log('[RealWorldScreen] localStorage.getItem("auth_token"):', localStorageToken ? `${localStorageToken.substring(0, 20)}...` : 'null');
-                      console.log('[RealWorldScreen] sessionStorage.getItem("auth_token"):', sessionStorageToken ? `${sessionStorageToken.substring(0, 20)}...` : 'null');
-                      
-                      // 检查所有 localStorage 和 sessionStorage 的键
-                      console.log('[RealWorldScreen] localStorage 所有键:', Object.keys(localStorage));
-                      console.log('[RealWorldScreen] sessionStorage 所有键:', Object.keys(sessionStorage));
-                      
                       let token = localStorageToken || sessionStorageToken;
                       
-                      // 如果用户已登录（非访客）但没有 token，尝试从 tokenStorage 工具中获取
                       if (!token) {
-                          console.warn('[RealWorldScreen] ⚠️ 未在存储中找到 token，尝试从 tokenStorage 获取...');
+                          logger.debug('[RealWorldScreen] 未在存储中找到 token，尝试从 tokenStorage 获取');
                           try {
                               token = tokenStorage.getToken();
-                              console.log('[RealWorldScreen] 从 tokenStorage.getToken() 获取到 token:', token ? `${token.substring(0, 20)}...` : 'null');
                           } catch (e) {
-                              console.error('[RealWorldScreen] ❌ 无法从 tokenStorage 获取 token:', e);
+                              logger.error('[RealWorldScreen] 无法从 tokenStorage 获取 token', e);
                           }
                       }
                       
-                      // 如果仍然没有 token，但用户已登录，允许打开模态框（让模态框内部处理 token 缺失）
                       if (!token) {
-                          console.error('[RealWorldScreen] ❌❌❌ 未找到 token，但用户已登录（isGuest=false）');
-                          console.error('[RealWorldScreen] 这可能是因为：');
-                          console.error('[RealWorldScreen] 1. token 被清除或过期');
-                          console.error('[RealWorldScreen] 2. token 未正确保存到 localStorage');
-                          console.error('[RealWorldScreen] 3. 浏览器隐私模式或存储被禁用');
-                          console.error('[RealWorldScreen] 允许打开同步笔记模态框，让模态框内部处理 token 缺失的情况');
-                          // 不阻止，让 NoteSyncModal 内部处理 token 缺失的情况
-                      } else {
-                          console.log('[RealWorldScreen] ✅ 找到 token，准备打开同步笔记模态框');
+                          logger.warn('[RealWorldScreen] 未找到 token，但用户已登录，允许打开同步笔记模态框');
                       }
                       
                       setShowNoteSyncModal(true);
@@ -1065,12 +924,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       {/* Note Sync Modal */}
       {showNoteSyncModal && (() => {
           const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
-          console.log('[RealWorldScreen] 打开 NoteSyncModal，token:', token ? `${token.substring(0, 20)}...` : 'empty');
+          logger.debug('[RealWorldScreen] 打开 NoteSyncModal');
           return (
               <NoteSyncModal
                   token={token}
                   onClose={() => {
-                      console.log('[RealWorldScreen] 关闭 NoteSyncModal');
+                      logger.debug('[RealWorldScreen] 关闭 NoteSyncModal');
                       setShowNoteSyncModal(false);
                   }}
               />

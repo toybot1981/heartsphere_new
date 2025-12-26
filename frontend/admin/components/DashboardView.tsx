@@ -142,22 +142,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                             {/* 用户注册趋势 */}
                             <div>
                                 <h4 className="text-sm font-bold text-slate-300 mb-3">用户注册趋势</h4>
-                                <div className="h-48 flex items-end gap-1 border-b border-slate-700" style={{ paddingBottom: '24px' }}>
+                                <div className="h-48 flex items-end gap-1 border-b border-slate-700 pb-6">
                                     {statistics.trends.map((trend, index) => {
                                         const values = statistics.trends.map(t => t.users);
                                         const maxValue = Math.max(...values, 1);
                                         const calculatedHeight = maxValue > 0 ? (trend.users / maxValue) * 100 : 0;
-                                        const height = Math.max(calculatedHeight, 2); // 最小高度2%
+                                        // 使用像素高度而不是百分比，确保小值也能显示
+                                        const chartHeight = 192; // h-48 = 192px
+                                        const pixelHeight = maxValue > 0 
+                                            ? Math.max((trend.users / maxValue) * chartHeight, 2) 
+                                            : (trend.users > 0 ? 2 : 0);
                                         const showLabel = statistics.trends.length <= 30 || index % Math.ceil(statistics.trends.length / 10) === 0;
                                         return (
                                             <div key={index} className="flex-1 flex flex-col items-center min-w-0 relative group">
-                                                <div
-                                                    className="w-full bg-indigo-500 rounded-t transition-all hover:bg-indigo-400 cursor-pointer"
-                                                    style={{ height: `${height}%`, minHeight: '2px' }}
-                                                    title={`${formatDate(trend.date)}: ${trend.users}人`}
-                                                />
+                                                {pixelHeight > 0 && (
+                                                    <>
+                                                        <div
+                                                            className="w-full bg-indigo-500 rounded-t transition-all hover:bg-indigo-400 cursor-pointer"
+                                                            style={{ height: `${pixelHeight}px` }}
+                                                        />
+                                                        {/* 悬浮提示 */}
+                                                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                            <div className="bg-slate-800 text-white text-xs rounded py-1.5 px-2.5 shadow-lg border border-slate-700 whitespace-nowrap">
+                                                                <div className="font-semibold">{formatDate(trend.date)}</div>
+                                                                <div className="text-indigo-300">用户注册: {trend.users}人</div>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 {showLabel && (
-                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-20px] whitespace-nowrap">
+                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-24px] whitespace-nowrap">
                                                         {formatDate(trend.date)}
                                                     </span>
                                                 )}
@@ -170,22 +185,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                             {/* 场景创建趋势 */}
                             <div>
                                 <h4 className="text-sm font-bold text-slate-300 mb-3">场景创建趋势</h4>
-                                <div className="h-48 flex items-end gap-1 border-b border-slate-700" style={{ paddingBottom: '24px' }}>
+                                <div className="h-48 flex items-end gap-1 border-b border-slate-700 pb-6">
                                     {statistics.trends.map((trend, index) => {
                                         const values = statistics.trends.map(t => t.scenes);
                                         const maxValue = Math.max(...values, 1);
-                                        const calculatedHeight = maxValue > 0 ? (trend.scenes / maxValue) * 100 : 0;
-                                        const height = Math.max(calculatedHeight, 2); // 最小高度2%
+                                        const chartHeight = 192;
+                                        const pixelHeight = maxValue > 0 
+                                            ? Math.max((trend.scenes / maxValue) * chartHeight, 2) 
+                                            : (trend.scenes > 0 ? 2 : 0);
                                         const showLabel = statistics.trends.length <= 30 || index % Math.ceil(statistics.trends.length / 10) === 0;
                                         return (
                                             <div key={index} className="flex-1 flex flex-col items-center min-w-0 relative group">
-                                                <div
-                                                    className="w-full bg-indigo-500 rounded-t transition-all hover:bg-indigo-400 cursor-pointer"
-                                                    style={{ height: `${height}%`, minHeight: '2px' }}
-                                                    title={`${formatDate(trend.date)}: ${trend.scenes}个`}
-                                                />
+                                                {pixelHeight > 0 && (
+                                                    <>
+                                                        <div
+                                                            className="w-full bg-indigo-500 rounded-t transition-all hover:bg-indigo-400 cursor-pointer"
+                                                            style={{ height: `${pixelHeight}px` }}
+                                                        />
+                                                        {/* 悬浮提示 */}
+                                                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                            <div className="bg-slate-800 text-white text-xs rounded py-1.5 px-2.5 shadow-lg border border-slate-700 whitespace-nowrap">
+                                                                <div className="font-semibold">{formatDate(trend.date)}</div>
+                                                                <div className="text-indigo-300">场景创建: {trend.scenes}个</div>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 {showLabel && (
-                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-20px] whitespace-nowrap">
+                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-24px] whitespace-nowrap">
                                                         {formatDate(trend.date)}
                                                     </span>
                                                 )}
@@ -198,22 +226,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                             {/* 剧本创建趋势 */}
                             <div>
                                 <h4 className="text-sm font-bold text-slate-300 mb-3">剧本创建趋势</h4>
-                                <div className="h-48 flex items-end gap-1 border-b border-slate-700" style={{ paddingBottom: '24px' }}>
+                                <div className="h-48 flex items-end gap-1 border-b border-slate-700 pb-6">
                                     {statistics.trends.map((trend, index) => {
                                         const values = statistics.trends.map(t => t.scripts);
                                         const maxValue = Math.max(...values, 1);
-                                        const calculatedHeight = maxValue > 0 ? (trend.scripts / maxValue) * 100 : 0;
-                                        const height = Math.max(calculatedHeight, 2); // 最小高度2%
+                                        const chartHeight = 192;
+                                        const pixelHeight = maxValue > 0 
+                                            ? Math.max((trend.scripts / maxValue) * chartHeight, 2) 
+                                            : (trend.scripts > 0 ? 2 : 0);
                                         const showLabel = statistics.trends.length <= 30 || index % Math.ceil(statistics.trends.length / 10) === 0;
                                         return (
                                             <div key={index} className="flex-1 flex flex-col items-center min-w-0 relative group">
-                                                <div
-                                                    className="w-full bg-pink-500 rounded-t transition-all hover:bg-pink-400 cursor-pointer"
-                                                    style={{ height: `${height}%`, minHeight: '2px' }}
-                                                    title={`${formatDate(trend.date)}: ${trend.scripts}个`}
-                                                />
+                                                {pixelHeight > 0 && (
+                                                    <>
+                                                        <div
+                                                            className="w-full bg-pink-500 rounded-t transition-all hover:bg-pink-400 cursor-pointer"
+                                                            style={{ height: `${pixelHeight}px` }}
+                                                        />
+                                                        {/* 悬浮提示 */}
+                                                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                            <div className="bg-slate-800 text-white text-xs rounded py-1.5 px-2.5 shadow-lg border border-slate-700 whitespace-nowrap">
+                                                                <div className="font-semibold">{formatDate(trend.date)}</div>
+                                                                <div className="text-pink-300">剧本创建: {trend.scripts}个</div>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 {showLabel && (
-                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-20px] whitespace-nowrap">
+                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-24px] whitespace-nowrap">
                                                         {formatDate(trend.date)}
                                                     </span>
                                                 )}
@@ -226,22 +267,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                             {/* 角色创建趋势 */}
                             <div>
                                 <h4 className="text-sm font-bold text-slate-300 mb-3">角色创建趋势</h4>
-                                <div className="h-48 flex items-end gap-1 border-b border-slate-700" style={{ paddingBottom: '24px' }}>
+                                <div className="h-48 flex items-end gap-1 border-b border-slate-700 pb-6">
                                     {statistics.trends.map((trend, index) => {
                                         const values = statistics.trends.map(t => t.characters);
                                         const maxValue = Math.max(...values, 1);
-                                        const calculatedHeight = maxValue > 0 ? (trend.characters / maxValue) * 100 : 0;
-                                        const height = Math.max(calculatedHeight, 2); // 最小高度2%
+                                        const chartHeight = 192;
+                                        const pixelHeight = maxValue > 0 
+                                            ? Math.max((trend.characters / maxValue) * chartHeight, 2) 
+                                            : (trend.characters > 0 ? 2 : 0);
                                         const showLabel = statistics.trends.length <= 30 || index % Math.ceil(statistics.trends.length / 10) === 0;
                                         return (
                                             <div key={index} className="flex-1 flex flex-col items-center min-w-0 relative group">
-                                                <div
-                                                    className="w-full bg-emerald-500 rounded-t transition-all hover:bg-emerald-400 cursor-pointer"
-                                                    style={{ height: `${height}%`, minHeight: '2px' }}
-                                                    title={`${formatDate(trend.date)}: ${trend.characters}个`}
-                                                />
+                                                {pixelHeight > 0 && (
+                                                    <>
+                                                        <div
+                                                            className="w-full bg-emerald-500 rounded-t transition-all hover:bg-emerald-400 cursor-pointer"
+                                                            style={{ height: `${pixelHeight}px` }}
+                                                        />
+                                                        {/* 悬浮提示 */}
+                                                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                            <div className="bg-slate-800 text-white text-xs rounded py-1.5 px-2.5 shadow-lg border border-slate-700 whitespace-nowrap">
+                                                                <div className="font-semibold">{formatDate(trend.date)}</div>
+                                                                <div className="text-emerald-300">角色创建: {trend.characters}个</div>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 {showLabel && (
-                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-20px] whitespace-nowrap">
+                                                    <span className="text-xs text-slate-500 mt-1 absolute bottom-[-24px] whitespace-nowrap">
                                                         {formatDate(trend.date)}
                                                     </span>
                                                 )}

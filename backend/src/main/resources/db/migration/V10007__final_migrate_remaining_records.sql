@@ -110,3 +110,4 @@ WHERE NOT EXISTS (
 GROUP BY am.model_code, am.model_name, ap.name
 ORDER BY ap.name, am.model_code;
 
+

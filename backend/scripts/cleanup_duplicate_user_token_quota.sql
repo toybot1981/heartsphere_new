@@ -36,3 +36,4 @@ FROM user_token_quota
 GROUP BY user_id 
 HAVING COUNT(*) > 1;
 
+
