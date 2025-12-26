@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { GameState, AppSettings } from '../types';
 import { storageService } from '../services/storage';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai/AIService';
 
 /**
  * 游戏状态管理Hook
@@ -60,7 +60,7 @@ export const useGameState = (defaultState: GameState) => {
         worldStyle: loadedState.worldStyle || 'anime'
       }));
       
-      geminiService.updateConfig(mergedSettings);
+      aiService.updateConfigFromAppSettings(mergedSettings);
     } else {
       geminiService.updateConfig(defaultState.settings);
     }

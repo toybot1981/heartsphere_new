@@ -100,12 +100,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // 调试日志：检查history数据
   useEffect(() => {
     console.log('[ChatWindow] history prop变化:', {
-      historyLength: history?.length || 0,
+    historyLength: history?.length || 0,
       historyType: typeof history,
       isArray: Array.isArray(history),
       safeHistoryLength: safeHistory.length,
       safeHistoryContent: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
-    });
+  });
   }, [history, safeHistory]);
   
   const [input, setInput] = useState('');
@@ -172,7 +172,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // 使用useEffect + hasInitializedHistoryRef确保不会在用户交互后重置history
   useEffect(() => {
     if (!character) return;
-    
+
     // 关键检查：
     // 1. 还没有初始化过
     // 2. history确实为空
@@ -351,15 +351,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         timestamp: Date.now() 
       };
       currentHistory = [...currentHistory, botMsg];
-      onUpdateHistory(currentHistory);
-      
+           onUpdateHistory(currentHistory);
+       
       // 更新场景状态到当前节点
       if (onUpdateScenarioState) {
         onUpdateScenarioState(node.id);
       }
        
-      // 节点处理完成，等待用户选择（如果有选项的话）
-      // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
+       // 节点处理完成，等待用户选择（如果有选项的话）
+       // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
        
     } catch (e) {
         console.error("Scenario transition failed", e);
@@ -599,7 +599,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
                       });
                       return newHistory;
-                    } else {
+          } else {
                       // 其他情况，追加新消息
                       hasAddedBotMessage = true;
                       const newHistory = [...prevHistory, msg];
@@ -617,8 +617,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               } else if (chunk.done) {
                 // 完成 - 确保完成信号能够正常处理（即使isLoading已经变为false）
                 setIsLoading(false);
-              }
-            } catch (error) {
+      }
+    } catch (error) { 
               console.error('[ChatWindow] 处理chunk时发生错误:', error);
               // 确保即使出错也能恢复加载状态
               setIsLoading(false);

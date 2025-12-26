@@ -124,12 +124,25 @@ public class WeChatAuthService {
         logger.info(String.format("生成微信%s二维码state: %s, scope: %s (注意：scope=snsapi_login仅适用于网站应用)", operationType, state, scope));
         
         // 微信开放平台扫码登录URL
-        // 注意：使用URLEncoder.encode进行编码是可行的，但为了更符合OAuth2.0标准，
-        // 可以对整个redirect_uri进行URL编码。当前的编码方式是正确的。
+        // redirect_uri参数需要进行URL编码
+        // 注意：Java的URLEncoder.encode是用于application/x-www-form-urlencoded编码的，
+        // 会对:和/进行编码（%3A和%2F），这符合OAuth2.0标准
+        // 根据微信官方文档，这种方式是正确的
+        // 使用URLEncoder进行编码（标准方式）
+        // 注意：URLEncoder.encode(String, Charset)不会抛出UnsupportedEncodingException
         String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
         logger.info(String.format("redirect_uri编码前: %s", redirectUri));
         logger.info(String.format("redirect_uri编码后: %s", encodedRedirectUri));
         
+        // 构建完整的二维码URL
+        // 微信官方文档URL格式：
+        // https://open.weixin.qq.com/connect/qrconnect?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=SCOPE&state=STATE#wechat_redirect
+        // 参数说明：
+        // - appid: 微信开放平台应用ID（必填）
+        // - redirect_uri: 授权后重定向的回调地址，需urlEncode（必填）
+        // - response_type: 返回类型，固定为code（必填）
+        // - scope: 应用授权作用域，网站应用使用snsapi_login（必填）
+        // - state: 用于保持请求和回调的状态参数，可以防止CSRF攻击（建议使用）
         String qrCodeUrl = String.format(
             "https://open.weixin.qq.com/connect/qrconnect?appid=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s#wechat_redirect",
             appId,

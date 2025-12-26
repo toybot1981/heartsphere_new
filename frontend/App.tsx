@@ -9,11 +9,12 @@ import { SettingsModal } from './components/SettingsModal';
 import { CharacterCard } from './components/CharacterCard';
 import { SceneCard } from './components/SceneCard';
 import { Character, GameState, Message, CustomScenario, AppSettings, WorldScene, JournalEntry, JournalEcho, Mail, EraMemory, DebugLog } from './types';
-import { geminiService } from './services/gemini'; // 兼容层，逐步迁移到 aiService
-import { aiService } from './services/ai';
+import { aiService } from './services/ai/AIService';
 import { storageService } from './services/storage';
 import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi, membershipApi, userMainStoryApi } from './services/api';
-import { syncService } from './services/syncService';
+import { syncService as oldSyncService } from './services/syncService';
+import { syncService } from './services/sync/SyncService';
+import { initSyncConfigs } from './services/sync/syncConfig';
 import { EraConstructorModal } from './components/EraConstructorModal';
 import { CharacterConstructorModal } from './components/CharacterConstructorModal';
 import { MainStoryEditor } from './components/MainStoryEditor';
@@ -261,15 +262,25 @@ const AppContent: React.FC = () => {
   // --- PERSISTENCE LOGIC ---
   // 注意：状态加载和保存已由GameStateProvider处理，这里只需要初始化同步服务
 
+  // 初始化同步配置和自动同步
   useEffect(() => {
-    syncService.init(); // 初始化同步服务
+    // 初始化同步配置
+    initSyncConfigs();
+    
+    // 启动自动同步（每30秒同步一次待同步的实体）
+    syncService.startAutoSync(30000);
+    
+    // 清理函数：停止自动同步
+    return () => {
+      syncService.stopAutoSync();
+    };
   }, []);
 
   // 更新AI配置（当settings变化时）
   useEffect(() => {
     if (isLoaded) {
-      // 使用兼容层更新配置（向后兼容）
-      geminiService.updateConfig(gameState.settings);
+      // 更新配置
+      aiService.updateConfigFromAppSettings(gameState.settings);
     }
   }, [gameState.settings, isLoaded]);
 
@@ -279,12 +290,12 @@ const AppContent: React.FC = () => {
           dispatch({ type: 'ADD_DEBUG_LOG', payload: log });
       };
       
-      // 使用兼容层设置日志回调（向后兼容）
-      geminiService.setLogCallback(logCallback);
+      // 设置日志回调
+      aiService.setLogCallback(logCallback);
       
       // 清理函数：移除回调，防止内存泄漏
       return () => {
-          geminiService.setLogCallback(null);
+          aiService.setLogCallback(null);
       };
   }, [dispatch]);
 

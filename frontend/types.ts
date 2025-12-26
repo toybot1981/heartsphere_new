@@ -203,6 +203,9 @@ export interface JournalEcho {
   imageUrl?: string; 
 }
 
+// 同步状态类型
+export type SyncStatus = 0 | 1 | -1; // 0: 待同步, 1: 同步成功, -1: 同步失败
+
 export interface JournalEntry {
   id: string;
   title: string;
@@ -212,6 +215,9 @@ export interface JournalEntry {
   echo?: JournalEcho; // Echoes of Wisdom
   insight?: string; // Mirror of Truth (本我镜像)
   tags?: string; // 标签（逗号分隔，如：#灵感,#梦境,#工作）
+  syncStatus?: SyncStatus; // 同步状态：0-待同步，1-同步成功，-1-同步失败
+  lastSyncTime?: number; // 最后同步时间
+  syncError?: string; // 同步错误信息
 }
 
 export interface Mail {

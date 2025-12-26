@@ -1,6 +1,7 @@
 package com.heartsphere.billing.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.heartsphere.admin.entity.AIModelConfig;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * 模型资费配置实体
+ * 注意：model_id 关联到 ai_model_config.id（管理配置表），而不是 ai_models.id（计费系统表）
  */
 @Data
 @Entity
@@ -21,7 +23,7 @@ public class AIModelPricing {
     private Long id;
 
     @Column(name = "model_id", nullable = false)
-    private Long modelId;
+    private Long modelId; // 关联到 ai_model_config.id
 
     @Column(name = "pricing_type", nullable = false, length = 50)
     private String pricingType; // input_token, output_token, image, audio_minute, video_second
@@ -52,9 +54,13 @@ public class AIModelPricing {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    /**
+     * 关联到 ai_model_config（管理配置表）
+     * 用于定价配置，model_id 指向 ai_model_config.id
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_id", insertable = false, updatable = false)
+    @JoinColumn(name = "model_id", insertable = false, updatable = false, referencedColumnName = "id")
     @JsonIgnore
-    private AIModel model;
+    private AIModelConfig modelConfig;
 }
 

@@ -129,6 +129,18 @@ public class JournalEntryController {
     @PostMapping
     public ResponseEntity<JournalEntryDTO> createJournalEntry(@RequestBody Map<String, Object> journalEntryMap) {
         System.out.println("Received createJournalEntry request with map: " + journalEntryMap);
+        logger.info("========== [JournalEntryController] createJournalEntry - 收到请求 ==========");
+        logger.info(String.format("[JournalEntryController] createJournalEntry - 请求参数Map包含的键: %s", journalEntryMap.keySet()));
+        Object rawImageUrl = journalEntryMap.get("imageUrl");
+        logger.info(String.format("[JournalEntryController] createJournalEntry - 原始imageUrl值: %s (类型: %s, 是否为null: %s)", 
+            rawImageUrl != null ? rawImageUrl.toString() : "null", 
+            rawImageUrl != null ? rawImageUrl.getClass().getName() : "null",
+            rawImageUrl == null ? "true" : "false"));
+        if (rawImageUrl != null) {
+            String imageUrlStr = rawImageUrl.toString();
+            logger.info(String.format("[JournalEntryController] createJournalEntry - imageUrl完整值: %s (长度: %d)", 
+                imageUrlStr, imageUrlStr.length()));
+        }
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || authentication.getPrincipal() == null) {
@@ -232,6 +244,27 @@ public class JournalEntryController {
                 journalEntry.setTags(tagsObj instanceof String ? (String) tagsObj : tagsObj.toString());
             }
             
+            // 处理图片URL
+            Object imageUrlObj = journalEntryMap.get("imageUrl");
+            logger.info(String.format("[JournalEntryController] createJournalEntry - 接收到imageUrl字段: %s (类型: %s)", 
+                imageUrlObj != null ? "存在" : "null",
+                imageUrlObj != null ? imageUrlObj.getClass().getName() : "null"));
+            if (imageUrlObj != null) {
+                String imageUrlValue = imageUrlObj instanceof String ? (String) imageUrlObj : imageUrlObj.toString();
+                logger.info(String.format("[JournalEntryController] createJournalEntry - 准备设置imageUrl: %s (长度: %d)", 
+                    imageUrlValue, imageUrlValue.length()));
+                journalEntry.setImageUrl(imageUrlValue);
+                // 验证设置是否成功
+                String verifyValue = journalEntry.getImageUrl();
+                logger.info(String.format("[JournalEntryController] createJournalEntry - imageUrl已设置到journalEntry对象: %s (长度: %d, 设置成功: %s)", 
+                    verifyValue != null ? verifyValue : "null",
+                    verifyValue != null ? verifyValue.length() : 0,
+                    verifyValue != null && verifyValue.equals(imageUrlValue) ? "是" : "否"));
+            } else {
+                logger.info("[JournalEntryController] createJournalEntry - imageUrl字段为null，不设置");
+                journalEntry.setImageUrl(null); // 显式设置为null
+            }
+            
             // 处理本我镜像（insight）
             Object insightObj = journalEntryMap.get("insight");
             logger.info(String.format("[JournalEntryController] createJournalEntry - 接收到insight字段: %s (类型: %s)", 
@@ -247,17 +280,46 @@ public class JournalEntryController {
                 logger.info("[JournalEntryController] createJournalEntry - insight字段为null，不设置");
             }
             
-            logger.info(String.format("[JournalEntryController] createJournalEntry - JournalEntry对象创建完成, ID: %s, Title: %s, Insight: %s", 
+            // 在保存前再次验证所有字段
+            logger.info("========== [JournalEntryController] createJournalEntry - 保存前验证 ==========");
+            logger.info(String.format("[JournalEntryController] createJournalEntry - JournalEntry对象状态: ID=%s, Title=%s", 
                 journalEntry.getId(),
-                journalEntry.getTitle(),
+                journalEntry.getTitle()));
+            logger.info(String.format("[JournalEntryController] createJournalEntry - ImageUrl状态: 值=%s, 是否为null=%s, 是否为空字符串=%s, 长度=%d", 
+                journalEntry.getImageUrl() != null ? journalEntry.getImageUrl() : "null",
+                journalEntry.getImageUrl() == null ? "true" : "false",
+                journalEntry.getImageUrl() != null && journalEntry.getImageUrl().isEmpty() ? "true" : "false",
+                journalEntry.getImageUrl() != null ? journalEntry.getImageUrl().length() : 0));
+            logger.info(String.format("[JournalEntryController] createJournalEntry - Insight: %s", 
                 journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
+            logger.info("================================================================");
             
             // 保存journalEntry
             logger.info("[JournalEntryController] createJournalEntry - 开始保存JournalEntry到数据库...");
             JournalEntry savedJournalEntry = journalEntryRepository.save(journalEntry);
-            logger.info(String.format("[JournalEntryController] createJournalEntry - JournalEntry保存成功, ID: %s, Insight: %s", 
-                savedJournalEntry.getId(),
+            
+            // 保存后立即验证
+            logger.info("========== [JournalEntryController] createJournalEntry - 保存后验证 ==========");
+            logger.info(String.format("[JournalEntryController] createJournalEntry - 保存后的JournalEntry对象: ID=%s", savedJournalEntry.getId()));
+            logger.info(String.format("[JournalEntryController] createJournalEntry - 保存后的ImageUrl: 值=%s, 是否为null=%s, 长度=%d", 
+                savedJournalEntry.getImageUrl() != null ? savedJournalEntry.getImageUrl() : "null",
+                savedJournalEntry.getImageUrl() == null ? "true" : "false",
+                savedJournalEntry.getImageUrl() != null ? savedJournalEntry.getImageUrl().length() : 0));
+            logger.info(String.format("[JournalEntryController] createJournalEntry - Insight: %s", 
                 savedJournalEntry.getInsight() != null ? (savedJournalEntry.getInsight().length() > 50 ? savedJournalEntry.getInsight().substring(0, 50) + "..." : savedJournalEntry.getInsight()) : "null"));
+            
+            // 从数据库重新加载以验证
+            JournalEntry reloadedEntry = journalEntryRepository.findById(savedJournalEntry.getId()).orElse(null);
+            if (reloadedEntry != null) {
+                logger.info(String.format("[JournalEntryController] createJournalEntry - 从数据库重新加载的记录: ID=%s", reloadedEntry.getId()));
+                logger.info(String.format("[JournalEntryController] createJournalEntry - 数据库中的ImageUrl: 值=%s, 是否为null=%s, 长度=%d", 
+                    reloadedEntry.getImageUrl() != null ? reloadedEntry.getImageUrl() : "null",
+                    reloadedEntry.getImageUrl() == null ? "true" : "false",
+                    reloadedEntry.getImageUrl() != null ? reloadedEntry.getImageUrl().length() : 0));
+            } else {
+                logger.warning("[JournalEntryController] createJournalEntry - 无法从数据库重新加载记录");
+            }
+            logger.info("================================================================");
             
             JournalEntryDTO dto = DTOMapper.toJournalEntryDTO(savedJournalEntry);
             logger.info(String.format("[JournalEntryController] createJournalEntry - DTO转换完成, Insight: %s", 
@@ -275,10 +337,16 @@ public class JournalEntryController {
     @PutMapping("/{id}")
     public ResponseEntity<JournalEntryDTO> updateJournalEntry(@PathVariable String id, @RequestBody JournalEntryDTO journalEntryDTO) {
         logger.info(String.format("[JournalEntryController] updateJournalEntry - 接收到更新请求, ID: %s", id));
-        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO中的insight: %s (类型: %s, 长度: %s)", 
-            journalEntryDTO.getInsight() != null ? "存在" : "null",
-            journalEntryDTO.getInsight() != null ? journalEntryDTO.getInsight().getClass().getName() : "null",
-            journalEntryDTO.getInsight() != null ? String.valueOf(journalEntryDTO.getInsight().length()) : "0"));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 请求体JSON中的insight字段: %s", 
+            journalEntryDTO.getInsight() != null 
+                ? (journalEntryDTO.getInsight().length() > 100 
+                    ? journalEntryDTO.getInsight().substring(0, 100) + "..." 
+                    : journalEntryDTO.getInsight()) + " (长度: " + journalEntryDTO.getInsight().length() + ")"
+                : "null或不存在"));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO对象字段详情: title=%s, content长度=%d, insight=%s", 
+            journalEntryDTO.getTitle(),
+            journalEntryDTO.getContent() != null ? journalEntryDTO.getContent().length() : 0,
+            journalEntryDTO.getInsight() != null ? "存在(长度:" + journalEntryDTO.getInsight().length() + ")" : "null"));
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
@@ -308,12 +376,41 @@ public class JournalEntryController {
         journalEntry.setContent(journalEntryDTO.getContent());
         journalEntry.setTags(journalEntryDTO.getTags());
         
+        // 更新图片URL
+        String newImageUrl = journalEntryDTO.getImageUrl();
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO中的imageUrl: 值=%s, 是否为null=%s, 长度=%d", 
+            newImageUrl != null ? newImageUrl : "null",
+            newImageUrl == null ? "true" : "false",
+            newImageUrl != null ? newImageUrl.length() : 0));
+        journalEntry.setImageUrl(newImageUrl);
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - imageUrl已设置到journalEntry对象: 值=%s", 
+            journalEntry.getImageUrl() != null ? journalEntry.getImageUrl() : "null"));
+        
         // 更新insight字段
+        // 重要：只有当DTO中的insight字段明确存在（不为null）时才更新
+        // 如果DTO中的insight为null，可能是前端未传递该字段（用户未修改），应该保留原有值
+        // 注意：这里需要区分"未传递字段"（保留原值）和"传递null"（清空值）
+        // 由于JSON序列化时undefined会被省略，如果前端传递了null，DTO中会是null
+        // 如果前端未传递字段，DTO中也会是null（Jackson默认行为）
+        // 为了安全，我们只在DTO明确包含insight字段且不为null时才更新
+        // 但实际上，如果前端想清空insight，应该传递空字符串""而不是null
         String newInsight = journalEntryDTO.getInsight();
-        logger.info(String.format("[JournalEntryController] updateJournalEntry - 准备更新insight, 新值: %s (长度: %s)", 
-            newInsight != null ? (newInsight.length() > 50 ? newInsight.substring(0, 50) + "..." : newInsight) : "null",
-            newInsight != null ? String.valueOf(newInsight.length()) : "0"));
-        journalEntry.setInsight(newInsight);
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO中的insight: %s", 
+            newInsight != null ? (newInsight.length() > 50 ? newInsight.substring(0, 50) + "..." : newInsight) + " (长度: " + newInsight.length() + ")" : "null"));
+        
+        // 如果DTO中的insight不为null，则更新（包括空字符串，表示用户想清空）
+        // 如果DTO中的insight为null，可能是前端未传递（用户未修改），保留原有值
+        if (newInsight != null) {
+            logger.info(String.format("[JournalEntryController] updateJournalEntry - 更新insight, 新值: %s (长度: %s)", 
+                newInsight.length() > 50 ? newInsight.substring(0, 50) + "..." : newInsight,
+                String.valueOf(newInsight.length())));
+            journalEntry.setInsight(newInsight);
+        } else {
+            logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO中insight为null，保留原有值: %s", 
+                journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
+            // 不更新insight，保留原有值
+        }
+        
         logger.info(String.format("[JournalEntryController] updateJournalEntry - insight已设置到JournalEntry对象, 当前值: %s", 
             journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null"));
         
@@ -354,10 +451,36 @@ public class JournalEntryController {
         }
 
         logger.info("[JournalEntryController] updateJournalEntry - 开始保存更新后的JournalEntry到数据库...");
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 保存前的JournalEntry对象状态: insight=%s (长度: %s)", 
+            journalEntry.getInsight() != null ? (journalEntry.getInsight().length() > 50 ? journalEntry.getInsight().substring(0, 50) + "..." : journalEntry.getInsight()) : "null",
+            journalEntry.getInsight() != null ? String.valueOf(journalEntry.getInsight().length()) : "0"));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 保存前的ImageUrl: 值=%s, 是否为null=%s, 长度=%d", 
+            journalEntry.getImageUrl() != null ? journalEntry.getImageUrl() : "null",
+            journalEntry.getImageUrl() == null ? "true" : "false",
+            journalEntry.getImageUrl() != null ? journalEntry.getImageUrl().length() : 0));
+        
         JournalEntry updatedJournalEntry = journalEntryRepository.save(journalEntry);
-        logger.info(String.format("[JournalEntryController] updateJournalEntry - JournalEntry保存成功, ID: %s, Insight: %s", 
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - JournalEntry.save()返回的对象: ID=%s, Insight=%s (长度: %s)", 
             updatedJournalEntry.getId(),
-            updatedJournalEntry.getInsight() != null ? (updatedJournalEntry.getInsight().length() > 50 ? updatedJournalEntry.getInsight().substring(0, 50) + "..." : updatedJournalEntry.getInsight()) : "null"));
+            updatedJournalEntry.getInsight() != null ? (updatedJournalEntry.getInsight().length() > 50 ? updatedJournalEntry.getInsight().substring(0, 50) + "..." : updatedJournalEntry.getInsight()) : "null",
+            updatedJournalEntry.getInsight() != null ? String.valueOf(updatedJournalEntry.getInsight().length()) : "0"));
+        logger.info(String.format("[JournalEntryController] updateJournalEntry - 保存后的ImageUrl: 值=%s, 是否为null=%s, 长度=%d", 
+            updatedJournalEntry.getImageUrl() != null ? updatedJournalEntry.getImageUrl() : "null",
+            updatedJournalEntry.getImageUrl() == null ? "true" : "false",
+            updatedJournalEntry.getImageUrl() != null ? updatedJournalEntry.getImageUrl().length() : 0));
+        
+        // 从数据库重新加载以验证是否真的保存了
+        JournalEntry reloadedEntry = journalEntryRepository.findById(id).orElse(null);
+        if (reloadedEntry != null) {
+            logger.info(String.format("[JournalEntryController] updateJournalEntry - 从数据库重新加载后的JournalEntry: ID=%s, Insight=%s (长度: %s)", 
+                reloadedEntry.getId(),
+                reloadedEntry.getInsight() != null ? (reloadedEntry.getInsight().length() > 50 ? reloadedEntry.getInsight().substring(0, 50) + "..." : reloadedEntry.getInsight()) : "null",
+                reloadedEntry.getInsight() != null ? String.valueOf(reloadedEntry.getInsight().length()) : "0"));
+            // 使用重新加载的实体来构建DTO，确保使用数据库中的最新值
+            updatedJournalEntry = reloadedEntry;
+        } else {
+            logger.warning(String.format("[JournalEntryController] updateJournalEntry - 警告：无法从数据库重新加载ID为%s的JournalEntry", id));
+        }
         
         JournalEntryDTO dto = DTOMapper.toJournalEntryDTO(updatedJournalEntry);
         logger.info(String.format("[JournalEntryController] updateJournalEntry - DTO转换完成, Insight: %s", 

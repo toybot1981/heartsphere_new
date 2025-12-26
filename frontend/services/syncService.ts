@@ -250,7 +250,9 @@ export const syncService = {
         return serverEntry && 
                (entry.title !== serverEntry.title || 
                 entry.content !== serverEntry.content || 
-                entry.timestamp !== serverEntry.timestamp);
+                entry.timestamp !== serverEntry.timestamp ||
+                entry.tags !== (serverEntry.tags || null) ||
+                entry.insight !== (serverEntry.insight || null));
       });
 
       // Entries to add to local (server entries not local)
@@ -263,13 +265,15 @@ export const syncService = {
             title: entry.title,
             content: entry.content,
             entryDate: new Date(entry.timestamp).toISOString(),
+            tags: entry.tags,
+            insight: entry.insight, // 包含insight字段，避免同步时丢失
             worldId: undefined, // TODO: Map local scene ID to server world ID
             eraId: undefined,
             characterId: undefined
           },
           token
         );
-        console.log('Added journal entry to server:', entry.id);
+        console.log('Added journal entry to server:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
       }
 
       // Process updates to server
@@ -280,13 +284,15 @@ export const syncService = {
             title: entry.title,
             content: entry.content,
             entryDate: new Date(entry.timestamp).toISOString(),
+            tags: entry.tags,
+            insight: entry.insight, // 包含insight字段，避免同步时覆盖为null
             worldId: undefined,
             eraId: undefined,
             characterId: undefined
           },
           token
         );
-        console.log('Updated journal entry on server:', entry.id);
+        console.log('Updated journal entry on server:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
       }
 
       // If there are new entries from server, update local state
@@ -381,6 +387,8 @@ export const syncService = {
                 title: data.title,
                 content: data.content,
                 entryDate: new Date(data.timestamp).toISOString(),
+                tags: data.tags,
+                insight: data.insight, // 包含insight字段，避免同步时覆盖为null
                 worldId: undefined,
                 eraId: undefined,
                 characterId: undefined
@@ -394,6 +402,8 @@ export const syncService = {
                 title: data.title,
                 content: data.content,
                 entryDate: new Date(data.timestamp).toISOString(),
+                tags: data.tags,
+                insight: data.insight, // 包含insight字段
                 worldId: undefined,
                 eraId: undefined,
                 characterId: undefined

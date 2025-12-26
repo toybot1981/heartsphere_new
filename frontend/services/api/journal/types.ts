@@ -10,6 +10,7 @@ export interface JournalEntry {
   entryDate: string;
   insight?: string;
   tags?: string;
+  imageUrl?: string; // 日志配图URL
   worldId?: number;
   eraId?: number;
   characterId?: number;
@@ -26,6 +27,7 @@ export interface CreateJournalEntryRequest {
   entryDate?: string;
   insight?: string;
   tags?: string;
+  imageUrl?: string; // 日志配图URL
   worldId?: number;
   eraId?: number;
   characterId?: number;
@@ -40,6 +42,7 @@ export interface UpdateJournalEntryRequest {
   entryDate?: string;
   insight?: string;
   tags?: string;
+  imageUrl?: string; // 日志配图URL
   worldId?: number;
   eraId?: number;
   characterId?: number;

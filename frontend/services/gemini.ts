@@ -1525,7 +1525,9 @@ Instructions:
 
 // 导出兼容层实例（向后兼容）
 // 注意：新的代码应该使用 aiService 代替 geminiService
-export { geminiService } from './ai/geminiCompat';
+// 已迁移到 aiService，此文件保留用于向后兼容
+// 请使用 import { aiService } from './ai/AIService' 代替
+export { aiService as geminiService } from './ai/AIService';
 
 // 保留原始 GeminiService 类供内部使用（如果需要）
 // export const geminiService = new GeminiService();

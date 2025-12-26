@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, CustomScenario } from '../types';
-import { geminiService } from '../services/gemini'; // 兼容层，逐步迁移到 aiService
-import { aiService } from '../services/ai';
+import { aiService } from '../services/ai/AIService';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
 import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
@@ -88,7 +87,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             const loaded = await storageService.loadState();
             if (loaded) {
                 setGameState(prev => ({ ...prev, ...loaded, currentScreen: loaded.userProfile ? 'realWorld' : 'profileSetup', debugLogs: [] }));
-                if (loaded.settings) geminiService.updateConfig(loaded.settings as AppSettings);
+                if (loaded.settings) aiService.updateConfigFromAppSettings(loaded.settings as AppSettings);
             }
             setIsLoaded(true);
             
@@ -103,7 +102,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     useEffect(() => {
         if (!isLoaded) return;
-        geminiService.updateConfig(gameState.settings);
+        aiService.updateConfigFromAppSettings(gameState.settings);
         const t = setTimeout(() => storageService.saveState({ ...gameState, lastLoginTime: Date.now() }), 1000);
         return () => clearTimeout(t);
     }, [gameState, isLoaded]);
@@ -619,7 +618,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             voiceName: 'Kore'
         };
 
-        geminiService.resetSession(narrator.id);
+        aiService.resetSession(narrator.id);
 
         setGameState(prev => ({
             ...prev,

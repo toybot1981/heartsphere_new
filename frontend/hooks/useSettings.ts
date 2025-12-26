@@ -6,7 +6,7 @@
 import { useCallback } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
 import { AppSettings } from '../types';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai/AIService';
 
 export const useSettings = () => {
   const { state, dispatch } = useGameState();
@@ -21,7 +21,7 @@ export const useSettings = () => {
     // 如果更新了gemini相关配置，同步更新geminiService
     if (updates.geminiConfig || updates.textProvider || updates.imageProvider) {
       const newSettings = { ...settings, ...updates };
-      geminiService.updateConfig(newSettings);
+      aiService.updateConfigFromAppSettings(newSettings);
     }
   }, [dispatch, settings]);
 

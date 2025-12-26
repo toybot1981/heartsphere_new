@@ -1,6 +1,5 @@
 package com.heartsphere.billing.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,9 +41,8 @@ public class AIModel {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "provider_id", insertable = false, updatable = false)
-    @JsonIgnore
     private AIProvider provider;
 }
 

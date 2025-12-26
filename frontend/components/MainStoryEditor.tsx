@@ -434,22 +434,28 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
         {/* 资源选择器 */}
         {showAvatarResourcePicker && (
           <ResourcePicker
-            type="image"
+            category="character"
+            token={localStorage.getItem('auth_token') || undefined}
+            useAdminApi={false}
             onSelect={(url) => {
               updateField('avatarUrl', url);
               setShowAvatarResourcePicker(false);
             }}
             onClose={() => setShowAvatarResourcePicker(false)}
+            currentUrl={mainStory.avatarUrl}
           />
         )}
         {showBackgroundResourcePicker && (
           <ResourcePicker
-            type="image"
+            category="character"
+            token={localStorage.getItem('auth_token') || undefined}
+            useAdminApi={false}
             onSelect={(url) => {
               updateField('backgroundUrl', url);
               setShowBackgroundResourcePicker(false);
             }}
             onClose={() => setShowBackgroundResourcePicker(false)}
+            currentUrl={mainStory.backgroundUrl}
           />
         )}
       </div>

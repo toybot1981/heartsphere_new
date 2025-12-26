@@ -41,7 +41,11 @@ public class AIServiceImpl implements AIService {
                 (request.getModel() == null || request.getModel().isEmpty())) {
                 try {
                     AIModelConfigDTO modelConfig = unifiedRoutingService.selectModel("text");
-                    request.setProvider(modelConfig.getProvider());
+                    // 统一转为小写，确保与适配器注册名称一致
+                    String provider = (modelConfig.getProvider() != null) 
+                        ? modelConfig.getProvider().toLowerCase() 
+                        : null;
+                    request.setProvider(provider);
                     request.setModel(modelConfig.getModelName());
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());
@@ -114,7 +118,11 @@ public class AIServiceImpl implements AIService {
                    try {
                        log.info("[AIServiceImpl] 请求未指定provider/model，尝试从统一路由服务获取");
                        AIModelConfigDTO modelConfig = unifiedRoutingService.selectModel("text");
-                       request.setProvider(modelConfig.getProvider());
+                       // 统一转为小写，确保与适配器注册名称一致
+                    String provider = (modelConfig.getProvider() != null) 
+                        ? modelConfig.getProvider().toLowerCase() 
+                        : null;
+                    request.setProvider(provider);
                        request.setModel(modelConfig.getModelName());
                        if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                            request.setBaseUrl(modelConfig.getBaseUrl());
@@ -235,7 +243,11 @@ public class AIServiceImpl implements AIService {
                 (request.getModel() == null || request.getModel().isEmpty())) {
                 try {
                     AIModelConfigDTO modelConfig = unifiedRoutingService.selectModel("image");
-                    request.setProvider(modelConfig.getProvider());
+                    // 统一转为小写，确保与适配器注册名称一致
+                    String provider = (modelConfig.getProvider() != null) 
+                        ? modelConfig.getProvider().toLowerCase() 
+                        : null;
+                    request.setProvider(provider);
                     request.setModel(modelConfig.getModelName());
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());

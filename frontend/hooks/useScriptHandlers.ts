@@ -8,7 +8,7 @@ import { CustomScenario, Character } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
 import { scriptApi } from '../services/api';
 import { syncService } from '../services/syncService';
-import { geminiService } from '../services/gemini';
+import { aiService } from '../services/ai/AIService';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { showSyncErrorToast } from '../utils/toast';
 import { WORLD_SCENES } from '../constants';
@@ -152,7 +152,7 @@ export const useScriptHandlers = () => {
       voiceName: 'Kore'
     };
 
-    geminiService.resetSession(narrator.id);
+    aiService.resetSession(narrator.id);
 
     // 检查是否是从后端加载的剧本（通过检查ID是否为数字字符串）
     const isFromBackendScript = /^\d+$/.test(scenario.id);

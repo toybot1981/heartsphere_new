@@ -10,9 +10,12 @@ const API_KEYS_STORAGE_KEY = 'ai_api_keys'; // 本地配置模式的API Keys
 
 /**
  * 默认配置
+ * 注意：默认AI接入模式为"统一接入模式"（unified）
+ * - unified: 使用后端统一管理的API配置
+ * - local: 使用本地配置的API Keys
  */
 const DEFAULT_CONFIG: UserAIConfig = {
-  mode: 'unified', // 默认使用统一接入模式
+  mode: 'unified', // 默认使用统一接入模式（统一接入模式）
   textProvider: 'gemini',
   textModel: 'gemini-2.0-flash-exp',
   imageProvider: 'gemini',
@@ -89,21 +92,31 @@ export class AIConfigManager {
 
   /**
    * 同步获取用户配置（从localStorage）
+   * 如果没有保存的配置，默认使用统一接入模式（unified）
    */
   static getUserConfigSync(): UserAIConfig {
     try {
       const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
       if (stored) {
         const config = JSON.parse(stored) as UserAIConfig;
-        const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+        // 合并默认配置和用户保存的配置（用户配置优先）
+        // 但如果用户没有明确保存过mode，使用默认的'unified'
+        const mergedConfig = { 
+          ...DEFAULT_CONFIG, 
+          ...config,
+          // 如果用户保存的配置中没有mode字段，使用默认的'unified'
+          mode: config.mode || DEFAULT_CONFIG.mode
+        };
         console.log('[AIConfigManager] 从localStorage加载配置, mode:', mergedConfig.mode);
         return mergedConfig;
       } else {
-        console.log('[AIConfigManager] localStorage中没有配置，使用默认配置, mode:', DEFAULT_CONFIG.mode);
+        // 没有保存的配置，使用默认配置（默认模式为 'unified'）
+        console.log('[AIConfigManager] localStorage中没有配置，使用默认配置, mode:', DEFAULT_CONFIG.mode, '(统一接入模式)');
       }
     } catch (error) {
-      console.error('[AIConfigManager] 加载配置失败:', error);
+      console.error('[AIConfigManager] 加载配置失败，使用默认配置:', error);
     }
+    // 返回默认配置（默认模式为 'unified'）
     return { ...DEFAULT_CONFIG };
   }
 
@@ -208,7 +221,7 @@ export class AIConfigManager {
    * 检查本地配置模式是否已配置API Key
    */
   static isLocalModeConfigured(): boolean {
-    const config = this.getUserConfig();
+    const config = this.getUserConfigSync();
     if (config.mode !== 'local') {
       return true; // 统一接入模式不需要本地配置
     }

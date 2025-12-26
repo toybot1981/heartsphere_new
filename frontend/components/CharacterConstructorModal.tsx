@@ -493,14 +493,6 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                      const { imageCacheService } = await import('../utils/imageCache');
                                                      const cachedUrl = await imageCacheService.cacheImage(avatarUrl, characterToEdit.id);
                                                      
-                                                     // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
-                                                     // 直接使用原始URL，不尝试上传
-                                                     if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
-                                                         updateCharacter('avatarUrl', cachedUrl);
-                                                         showAlert('头像生成成功（由于CORS限制，已使用原始URL）', '成功', 'success');
-                                                         return;
-                                                     }
-                                                     
                                                      // 上传到服务器（使用character/user分类）
                                                      try {
                                                          let blob: Blob;
@@ -514,8 +506,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                              const response = await fetch(cachedUrl);
                                                              blob = await response.blob();
                                                          } else {
-                                                             // 这不应该发生，但为了安全起见
-                                                             throw new Error('无法获取图片数据');
+                                                             // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
+                                                             // 通过后端代理下载，然后上传到服务器
+                                                             console.log('[CharacterConstructorModal] 缓存失败，通过后端代理下载并上传:', cachedUrl);
+                                                             const proxyResult = await imageApi.proxyDownload(cachedUrl);
+                                                             
+                                                             if (proxyResult.success && proxyResult.dataUrl) {
+                                                                 // 将 data URL 转换为 blob
+                                                                 const response = await fetch(proxyResult.dataUrl);
+                                                                 blob = await response.blob();
+                                                                 console.log('[CharacterConstructorModal] 通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
+                                                             } else {
+                                                                 throw new Error(proxyResult.error || '后端代理下载失败');
+                                                             }
                                                          }
                                                          
                                                          const file = new File([blob], `character-${characterToEdit.id}-avatar-${Date.now()}.png`, { type: blob.type || 'image/png' });
@@ -643,14 +646,6 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                      const { imageCacheService } = await import('../utils/imageCache');
                                                      const cachedUrl = await imageCacheService.cacheImage(backgroundUrl, characterToEdit.id);
                                                      
-                                                     // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
-                                                     // 直接使用原始URL，不尝试上传
-                                                     if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
-                                                         updateCharacter('backgroundUrl', cachedUrl);
-                                                         showAlert('背景生成成功（由于CORS限制，已使用原始URL）', '成功', 'success');
-                                                         return;
-                                                     }
-                                                     
                                                      // 上传到服务器（使用character/user分类）
                                                      try {
                                                          let blob: Blob;
@@ -664,8 +659,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                              const response = await fetch(cachedUrl);
                                                              blob = await response.blob();
                                                          } else {
-                                                             // 这不应该发生，但为了安全起见
-                                                             throw new Error('无法获取图片数据');
+                                                             // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
+                                                             // 通过后端代理下载，然后上传到服务器
+                                                             console.log('[CharacterConstructorModal] 背景缓存失败，通过后端代理下载并上传:', cachedUrl);
+                                                             const proxyResult = await imageApi.proxyDownload(cachedUrl);
+                                                             
+                                                             if (proxyResult.success && proxyResult.dataUrl) {
+                                                                 // 将 data URL 转换为 blob
+                                                                 const response = await fetch(proxyResult.dataUrl);
+                                                                 blob = await response.blob();
+                                                                 console.log('[CharacterConstructorModal] 背景通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
+                                                             } else {
+                                                                 throw new Error(proxyResult.error || '后端代理下载失败');
+                                                             }
                                                          }
                                                          
                                                          const file = new File([blob], `character-${characterToEdit.id}-background-${Date.now()}.png`, { type: blob.type || 'image/png' });

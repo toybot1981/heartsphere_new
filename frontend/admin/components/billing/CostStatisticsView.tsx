@@ -2,7 +2,8 @@
  * 成本统计查看组件
  */
 import React, { useState, useEffect } from 'react';
-import { billingApi, AICostDaily, AIProvider, AIModel } from '../../../services/api/billing';
+import { billingApi, AICostDaily, AIProvider } from '../../../services/api/billing';
+import type { AIModelConfig } from '../../../services/api/admin/types';
 import { Button } from '../../../components/Button';
 import { InputGroup, TextInput } from '../AdminUIComponents';
 import { showAlert } from '../../../utils/dialog';
@@ -16,7 +17,7 @@ export const CostStatisticsView: React.FC<CostStatisticsViewProps> = ({
 }) => {
   const [stats, setStats] = useState<AICostDaily[]>([]);
   const [providers, setProviders] = useState<AIProvider[]>([]);
-  const [models, setModels] = useState<AIModel[]>([]);
+  const [models, setModels] = useState<AIModelConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -35,7 +36,7 @@ export const CostStatisticsView: React.FC<CostStatisticsViewProps> = ({
     try {
       const [providersData, modelsData] = await Promise.all([
         billingApi.providers.getAll(adminToken),
-        billingApi.models.getAll(adminToken),
+        adminApi.aiConfig.models.getAll(adminToken), // 从 ai_model_config 获取模型列表
       ]);
       setProviders(providersData);
       setModels(modelsData);

@@ -47,27 +47,38 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Bean
     public WebClient webClient() {
-        // 配置连接池
+        // 配置连接池，增加连接保活时间，减少连接被关闭的可能性
         ConnectionProvider connectionProvider = ConnectionProvider.builder("webclient-pool")
             .maxConnections(500)
-            .maxIdleTime(Duration.ofSeconds(20))
-            .maxLifeTime(Duration.ofSeconds(60))
+            .maxIdleTime(Duration.ofSeconds(30)) // 增加空闲时间到30秒
+            .maxLifeTime(Duration.ofSeconds(120)) // 增加连接生命周期到120秒
             .pendingAcquireTimeout(Duration.ofSeconds(60))
             .evictInBackground(Duration.ofSeconds(120))
+            .fifo() // FIFO模式，确保连接被正确复用
             .build();
         
-        // 配置 HttpClient，优化 DNS 解析
+        // 配置 HttpClient，优化 DNS 解析和连接管理
         // 注意：DNS 配置通过 JVM 参数设置：
         // -Dio.netty.resolver.dns.queryTimeoutMillis=30000 (DNS 查询超时 30 秒)
         // -Djava.net.preferIPv4Stack=true (优先使用 IPv4)
         HttpClient httpClient = HttpClient.create(connectionProvider)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 连接超时 30 秒
+            .option(ChannelOption.SO_KEEPALIVE, true) // 启用TCP Keep-Alive
+            .option(ChannelOption.TCP_NODELAY, true) // 禁用Nagle算法，减少延迟
             .resolver(spec -> {
                 // 配置 DNS 解析器超时时间（30秒）
                 // DNS 服务器使用系统配置或 JVM 参数指定的配置
                 spec.queryTimeout(Duration.ofSeconds(30)); // DNS 查询超时 30 秒
             })
-            .responseTimeout(Duration.ofSeconds(60)); // 响应超时 60 秒
+            .responseTimeout(Duration.ofSeconds(60)) // 响应超时 60 秒
+            .doOnConnected(conn -> {
+                // 连接建立时的回调，可以记录日志
+                // log.debug("[WebClient] 连接已建立");
+            })
+            .doOnDisconnected(conn -> {
+                // 连接断开时的回调
+                // log.debug("[WebClient] 连接已断开");
+            });
         
         return WebClient.builder()
             .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(httpClient))

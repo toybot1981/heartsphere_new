@@ -179,11 +179,52 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
       } else {
           // Create
           let img = undefined;
-          if (autoGenerateImage) {
+          if (autoGenerateImage && content.trim()) {
               setIsGenerating(true);
               try {
-                  img = await aiService.generateMoodImage(content);
-              } catch(e) {}
+                  const generated = await aiService.generateMoodImage(content);
+                  if (generated) {
+                      // 如果生成的是base64，直接上传
+                      if (generated.startsWith('data:')) {
+                          const { imageApi } = await import('../services/api');
+                          const token = localStorage.getItem('auth_token');
+                          const uploadResult = await imageApi.uploadBase64Image(generated, 'journal', token || undefined);
+                          if (uploadResult.success && uploadResult.url) {
+                              img = uploadResult.url;
+                          } else {
+                              img = generated;
+                          }
+                      } else {
+                          // 如果生成的是外部URL，通过后端代理下载并上传
+                          try {
+                              const { imageApi } = await import('../services/api');
+                              const proxyResult = await imageApi.proxyDownload(generated);
+                              if (proxyResult.success && proxyResult.dataUrl) {
+                                  // 将 data URL 转换为 blob
+                                  const response = await fetch(proxyResult.dataUrl);
+                                  const blob = await response.blob();
+                                  const file = new File([blob], `journal-image-${Date.now()}.png`, { type: blob.type || 'image/png' });
+                                  
+                                  const token = localStorage.getItem('auth_token');
+                                  const uploadResult = await imageApi.uploadImage(file, 'journal', token || undefined);
+                                  
+                                  if (uploadResult.success && uploadResult.url) {
+                                      img = uploadResult.url;
+                                  } else {
+                                      img = generated;
+                                  }
+                              } else {
+                                  img = generated;
+                              }
+                          } catch (proxyError) {
+                              console.error('[MobileRealWorld] 代理下载失败:', proxyError);
+                              img = generated;
+                          }
+                      }
+                  }
+              } catch(e) {
+                  console.error('[MobileRealWorld] 生成图片失败:', e);
+              }
               setIsGenerating(false);
           }
           const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;

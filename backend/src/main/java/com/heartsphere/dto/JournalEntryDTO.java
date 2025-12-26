@@ -15,6 +15,7 @@ public class JournalEntryDTO {
     private String content;
     private String tags;
     private String insight; // 本我镜像（Mirror of Truth）分析结果
+    private String imageUrl; // 日志配图URL
     private LocalDateTime entryDate;
     private Long timestamp;
     private Long worldId;

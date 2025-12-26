@@ -24,7 +24,12 @@ export interface AIModel {
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
-  provider?: AIProvider;
+  provider?: AIProvider | {
+    id: number;
+    name: string;
+    displayName: string;
+    enabled: boolean;
+  };
 }
 
 export interface AIModelPricing {

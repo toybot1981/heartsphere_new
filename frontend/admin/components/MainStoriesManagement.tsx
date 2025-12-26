@@ -58,7 +58,7 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
     const [generateError, setGenerateError] = useState('');
     const [optionalPrompt, setOptionalPrompt] = useState('');
 
-    // 初始化 geminiService 配置
+    // 初始化 aiService 配置
     useEffect(() => {
         const loadSettings = async () => {
             try {
@@ -71,7 +71,7 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                         qwenHasKey: !!(loadedState.settings.qwenConfig?.apiKey?.trim()),
                         qwenKeyLength: loadedState.settings.qwenConfig?.apiKey?.length || 0
                     });
-                    geminiService.updateConfig(loadedState.settings);
+                    aiService.updateConfigFromAppSettings(loadedState.settings);
                     return;
                 }
                 
@@ -81,7 +81,7 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                     const parsed = JSON.parse(savedState);
                     if (parsed.settings) {
                         console.log('[MainStoriesManagement] 从 localStorage 加载配置');
-                        geminiService.updateConfig(parsed.settings);
+                        aiService.updateConfigFromAppSettings(parsed.settings);
                         return;
                     }
                 }
@@ -103,9 +103,9 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                     qwenConfig: { apiKey: '', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelName: 'qwen-max', imageModel: 'qwen-image-plus', videoModel: 'wanx-video' },
                     doubaoConfig: { apiKey: '', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', modelName: 'ep-...', imageModel: 'doubao-image-v1', videoModel: 'doubao-video-v1' }
                 };
-                geminiService.updateConfig(defaultSettings);
+                aiService.updateConfigFromAppSettings(defaultSettings);
             } catch (e) {
-                console.error('[MainStoriesManagement] 初始化 geminiService 配置失败:', e);
+                console.error('[MainStoriesManagement] 初始化 aiService 配置失败:', e);
             }
         };
         

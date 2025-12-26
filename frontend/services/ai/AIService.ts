@@ -23,6 +23,7 @@ import {
 import { AIConfigManager } from './config';
 import { adapterManager } from './AdapterManager';
 import { BusinessServiceManager } from './business/BusinessServiceManager';
+import { AppSettings, DebugLog } from '../../types';
 
 const API_BASE_URL = 'http://localhost:8081/api';
 
@@ -257,6 +258,74 @@ export class AIService {
     if (newConfig.mode === 'local') {
       adapterManager.reinitialize();
     }
+  }
+
+  /**
+   * 从 AppSettings 更新配置（兼容旧接口）
+   */
+  async updateConfigFromAppSettings(settings: AppSettings): Promise<void> {
+    // 获取当前配置，保留 mode 字段（不覆盖用户的选择）
+    const currentConfig = AIConfigManager.getUserConfigSync();
+    
+    // 将 AppSettings 转换为 UserAIConfig
+    const userConfig: Partial<UserAIConfig> = {
+      // 不设置 mode 字段，保留用户当前的选择（默认是 'unified'）
+      textProvider: settings.textProvider,
+      textModel: settings.geminiConfig?.modelName || settings.openaiConfig?.modelName || settings.qwenConfig?.modelName || settings.doubaoConfig?.modelName,
+      imageProvider: settings.imageProvider,
+      imageModel: settings.geminiConfig?.imageModel || settings.openaiConfig?.imageModel || settings.qwenConfig?.imageModel || settings.doubaoConfig?.imageModel,
+      videoProvider: settings.videoProvider,
+      videoModel: settings.geminiConfig?.videoModel || settings.openaiConfig?.videoModel || settings.qwenConfig?.videoModel || settings.doubaoConfig?.videoModel,
+      audioProvider: settings.audioProvider,
+      enableFallback: settings.enableFallback,
+      localApiKeys: {
+        gemini: settings.geminiConfig?.apiKey || undefined,
+        openai: settings.openaiConfig?.apiKey || undefined,
+        qwen: settings.qwenConfig?.apiKey || undefined,
+        doubao: settings.doubaoConfig?.apiKey || undefined,
+      },
+    };
+    
+    // 如果当前配置是 'unified'，不要覆盖为 'local'
+    if (currentConfig.mode === 'unified') {
+      // 移除 mode 字段，保持当前配置的 mode（'unified'）
+      delete userConfig.mode;
+      console.log('[AIService] 当前模式为统一接入模式，保留不覆盖');
+    }
+    
+    // 更新配置
+    await this.updateUserConfig(userConfig);
+    
+    // 更新本地 API Keys
+    if (userConfig.localApiKeys) {
+      AIConfigManager.saveLocalApiKeys(userConfig.localApiKeys as any);
+    }
+  }
+
+  // 日志回调
+  private logCallback: ((log: DebugLog) => void) | null = null;
+
+  /**
+   * 设置日志回调
+   */
+  setLogCallback(callback: ((log: DebugLog) => void) | null): void {
+    this.logCallback = callback;
+    if (callback) {
+      console.log('[AIService] 日志回调已设置');
+    } else {
+      console.log('[AIService] 日志回调已清除');
+    }
+  }
+
+  // 会话管理
+  private chatSessions: Map<string, any> = new Map();
+
+  /**
+   * 重置会话
+   */
+  resetSession(characterId: string): void {
+    this.chatSessions.delete(characterId);
+    console.log(`[AIService] 会话已重置: ${characterId}`);
   }
 
   // ========== 本地配置模式实现 ==========
@@ -676,6 +745,20 @@ export class AIService {
   // ========== 统一接入模式实现（待后端API） ==========
 
   /**
+   * 将后端返回的提供商名称转换为前端格式
+   * 处理 DASHSCOPE/qwen/QWEN -> dashscope 的转换
+   */
+  private normalizeProvider(provider: string): AIProvider {
+    const normalized = (provider || '').toLowerCase();
+    // 特殊处理：DASHSCOPE/qwen/QWEN 统一转换为 dashscope
+    if (normalized === 'qwen' || normalized === 'dashscope') {
+      return 'dashscope';
+    }
+    // 其他提供商保持不变
+    return normalized as AIProvider;
+  }
+
+  /**
    * 统一接入模式：生成文本
    */
   private async generateTextUnified(request: TextGenerationRequest): Promise<TextGenerationResponse> {
@@ -708,9 +791,10 @@ export class AIService {
 
       // 转换后端响应格式到前端格式
       const backendData = apiResponse.data;
+      
       return {
         content: backendData.content,
-        provider: backendData.provider as AIProvider,
+        provider: this.normalizeProvider(backendData.provider || ''),
         model: backendData.model,
         usage: backendData.usage ? {
           inputTokens: backendData.usage.inputTokens,
@@ -1049,7 +1133,7 @@ export class AIService {
           url: img.url,
           base64: img.base64,
         })),
-        provider: backendData.provider as AIProvider,
+        provider: this.normalizeProvider(backendData.provider || ''),
         model: backendData.model,
         usage: backendData.usage ? {
           imagesGenerated: backendData.usage.imagesGenerated,
@@ -1101,7 +1185,7 @@ export class AIService {
         audioUrl: backendData.audioUrl,
         audioBase64: backendData.audioBase64,
         duration: backendData.duration,
-        provider: backendData.provider as AIProvider,
+        provider: this.normalizeProvider(backendData.provider || ''),
         model: backendData.model,
       };
     } catch (error) {
@@ -1150,7 +1234,7 @@ export class AIService {
         audioUrl: backendData.audioUrl,
         audioBase64: backendData.audioBase64,
         duration: backendData.duration,
-        provider: backendData.provider as AIProvider,
+        provider: this.normalizeProvider(backendData.provider || ''),
         model: backendData.model,
       };
     } catch (error) {
@@ -1199,7 +1283,7 @@ export class AIService {
         videoUrl: backendData.videoUrl,
         videoId: backendData.videoId,
         status: backendData.status,
-        provider: backendData.provider as AIProvider,
+        provider: this.normalizeProvider(backendData.provider || ''),
         model: backendData.model,
         duration: backendData.duration,
       };

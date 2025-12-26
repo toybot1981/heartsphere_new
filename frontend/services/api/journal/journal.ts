@@ -78,6 +78,21 @@ export const journalApi = {
         throw new Error('Title and content are required fields');
       }
 
+      // 打印完整的请求参数
+      console.log('========== [journalApi] 创建日记 - 完整请求参数 ==========');
+      console.log('[journalApi] API端点: POST /api/journal-entries');
+      console.log('[journalApi] 请求体 (JSON):', JSON.stringify(data, null, 2));
+      console.log('[journalApi] 请求参数详情:', {
+        title: data.title,
+        content: data.content ? `长度: ${data.content.length}字符` : 'null',
+        entryDate: data.entryDate,
+        tags: (data as any).tags || 'null',
+        insight: (data as any).insight ? `长度: ${(data as any).insight.length}字符` : 'null',
+        imageUrl: (data as any).imageUrl !== undefined ? ((data as any).imageUrl ? `值: ${(data as any).imageUrl.substring(0, 100)}...` : '空字符串') : '未包含在请求中',
+      });
+      console.log('[journalApi] Token:', token ? `存在 (${token.substring(0, 20)}...)` : '不存在');
+      console.log('========================================================');
+
       // 构建requestOptions - 将data转换为JSON字符串
       const requestOptions: RequestInit = {
         method: 'POST',
@@ -110,6 +125,8 @@ export const journalApi = {
         entryDate: result.entryDate,
         hasInsight: !!result.insight,
         insightLength: result.insight ? result.insight.length : 0,
+        hasImageUrl: !!(result as any).imageUrl,
+        imageUrl: (result as any).imageUrl ? (result as any).imageUrl.substring(0, 100) + '...' : 'null',
       });
 
       return result;
@@ -142,6 +159,25 @@ export const journalApi = {
       entryDate: data.entryDate,
       hasInsight: !!data.insight,
     });
+    
+    // 打印完整的请求参数
+    console.log('========== [journalApi] 更新日记 - 完整请求参数 ==========');
+    console.log(`[journalApi] API端点: PUT /api/journal-entries/${id}`);
+    console.log('[journalApi] 请求体 (JSON):', JSON.stringify(data, null, 2));
+    console.log('[journalApi] 请求参数详情:', {
+      id: id,
+      title: data.title,
+      content: data.content ? `长度: ${data.content.length}字符` : 'null',
+      entryDate: data.entryDate,
+      tags: (data as any).tags || 'null',
+      insight: (data as any).insight !== undefined && (data as any).insight !== null
+        ? `长度: ${(data as any).insight.length}字符, 值: ${(data as any).insight.substring(0, 100)}${(data as any).insight.length > 100 ? '...' : ''}`
+        : 'null',
+      imageUrl: (data as any).imageUrl !== undefined ? ((data as any).imageUrl ? `值: ${(data as any).imageUrl.substring(0, 100)}...` : '空字符串') : '未包含在请求中',
+    });
+    console.log('[journalApi] Token:', token ? `存在 (${token.substring(0, 20)}...)` : '不存在');
+    console.log('========================================================');
+    
     try {
       const result = request<JournalEntry>(`/journal-entries/${id}`, {
         method: 'PUT',

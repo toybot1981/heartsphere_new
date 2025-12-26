@@ -47,8 +47,12 @@ public class UsageRecordService {
         record.setErrorMessage(errorMessage);
         
         usageRecordRepository.save(record);
-        log.debug("记录AI使用: userId={}, providerId={}, modelId={}, usageType={}, cost={}, tokens={}",
-            userId, providerId, modelId, usageType, costAmount, tokenConsumed);
+        log.info("[UsageRecordService] 记录AI使用: userId={}, providerId={}, modelId={}, usageType={}, " +
+                "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
+                "audioDuration={}, videoDuration={}, costAmount={}, tokenConsumed={}, status={}",
+            userId, providerId, modelId, usageType,
+            inputTokens, outputTokens, totalTokens, imageCount,
+            audioDuration, videoDuration, costAmount, tokenConsumed, status);
     }
     
     /**

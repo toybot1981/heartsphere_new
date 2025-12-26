@@ -9,7 +9,7 @@ import { GameStateAction, GameStateContextType } from './types/gameState.types';
 import { gameStateReducer } from '../reducers/gameStateReducer';
 import { DEFAULT_GAME_STATE } from './constants/defaultState';
 import { storageService } from '../services/storage';
-import { geminiService } from '../services/gemini'; // 兼容层，逐步迁移到 aiService
+import { aiService } from '../services/ai/AIService';
 import { AppSettings, WorldScene, Character, Message } from '../types';
 
 // 创建Context
@@ -115,7 +115,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         }
       });
 
-      geminiService.updateConfig(mergedSettings);
+      aiService.updateConfigFromAppSettings(mergedSettings);
     } else {
       // 即使没有保存的状态，如果有 token，也应该显示 entryPoint
       if (hasToken) {

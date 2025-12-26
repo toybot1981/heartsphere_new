@@ -5,12 +5,12 @@
 UPDATE ai_model_config SET description = NULL;
 
 -- ========== 通义千问 (Qwen) ==========
-UPDATE ai_model_config SET description = '通义千问Max模型，最强性能' WHERE provider = 'qwen' AND model_name = 'qwen-max' AND capability = 'text';
-UPDATE ai_model_config SET description = '通义千问Plus模型，平衡性能' WHERE provider = 'qwen' AND model_name = 'qwen-plus' AND capability = 'text';
-UPDATE ai_model_config SET description = '通义千问Turbo模型，快速响应' WHERE provider = 'qwen' AND model_name = 'qwen-turbo' AND capability = 'text';
-UPDATE ai_model_config SET description = '通义千问3.0 Max模型' WHERE provider = 'qwen' AND model_name = 'qwen3-max' AND capability = 'text';
-UPDATE ai_model_config SET description = '通义万相V1图片生成模型' WHERE provider = 'qwen' AND model_name = 'wanx-v1' AND capability = 'image';
-UPDATE ai_model_config SET description = '通义万相V2图片生成模型' WHERE provider = 'qwen' AND model_name = 'wanx-v2' AND capability = 'image';
+UPDATE ai_model_config SET description = '通义千问Max模型，最强性能' WHERE provider = 'dashscope' AND model_name = 'qwen-max' AND capability = 'text';
+UPDATE ai_model_config SET description = '通义千问Plus模型，平衡性能' WHERE provider = 'dashscope' AND model_name = 'qwen-plus' AND capability = 'text';
+UPDATE ai_model_config SET description = '通义千问Turbo模型，快速响应' WHERE provider = 'dashscope' AND model_name = 'qwen-turbo' AND capability = 'text';
+UPDATE ai_model_config SET description = '通义千问3.0 Max模型' WHERE provider = 'dashscope' AND model_name = 'qwen3-max' AND capability = 'text';
+UPDATE ai_model_config SET description = '通义万相V1图片生成模型' WHERE provider = 'dashscope' AND model_name = 'wanx-v1' AND capability = 'image';
+UPDATE ai_model_config SET description = '通义万相V2图片生成模型' WHERE provider = 'dashscope' AND model_name = 'wanx-v2' AND capability = 'image';
 
 -- ========== 豆包 (Doubao) ==========
 UPDATE ai_model_config SET description = '豆包Pro 4K模型' WHERE provider = 'doubao' AND model_name = 'doubao-pro-4k' AND capability = 'text';

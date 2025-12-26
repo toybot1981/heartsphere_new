@@ -176,6 +176,7 @@ public class DashScopeAdapter implements ModelAdapter {
             
             // 使用 WebClient 处理流式响应
             // 使用 DataBuffer 并按行分割 SSE 数据
+            // 添加重试机制处理连接错误
             Flux<String> responseFlux = webClient.post()
                 .uri(url)
                 .header("Authorization", "Bearer " + apiKey)
@@ -183,6 +184,32 @@ public class DashScopeAdapter implements ModelAdapter {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToFlux(DataBuffer.class)
+                .retryWhen(reactor.util.retry.Retry.backoff(3, java.time.Duration.ofSeconds(1))
+                    .filter(throwable -> {
+                        // 仅对连接相关的错误进行重试
+                        String message = throwable.getMessage() != null 
+                            ? throwable.getMessage().toLowerCase() 
+                            : "";
+                        boolean shouldRetry = message.contains("connection refused") ||
+                            message.contains("connection reset") ||
+                            message.contains("connection timeout") ||
+                            message.contains("connection closed") ||
+                            message.contains("connection reset by peer") ||
+                            throwable instanceof java.net.ConnectException ||
+                            throwable instanceof java.net.SocketTimeoutException;
+                        
+                        if (shouldRetry) {
+                            log.warn("[DashScopeAdapter] 检测到连接错误，将重试: {}", throwable.getMessage());
+                        }
+                        return shouldRetry;
+                    })
+                    .doBeforeRetry(retrySignal -> {
+                        log.warn("[DashScopeAdapter] 准备重试流式请求 - 重试次数: {}/3", retrySignal.totalRetries() + 1);
+                    })
+                    .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
+                        log.error("[DashScopeAdapter] 流式请求重试耗尽，最终失败 - 总重试次数: {}", retrySignal.totalRetries());
+                        return retrySignal.failure();
+                    }))
                 .map(buffer -> {
                     byte[] bytes = new byte[buffer.readableByteCount()];
                     buffer.read(bytes);

@@ -118,56 +118,47 @@ public class AIBillingAspect {
             return joinPoint.proceed();
         }
         
-        // 查找模型ID
-        Optional<Long> modelIdOpt = modelLookupService.findModelId(finalProvider, finalModelCode);
+        // 获取定价使用的模型ID（使用ai_model_config的ID）
+        Optional<Long> pricingModelIdOpt = Optional.empty();
+        if (finalModelConfig != null && finalModelConfig.getId() != null) {
+            pricingModelIdOpt = Optional.of(finalModelConfig.getId());
+            log.info("[计费] 使用模型配置ID作为定价模型ID: modelConfigId={}", finalModelConfig.getId());
+        }
+        
+        // 如果无法获取模型配置ID，无法继续计费
+        if (pricingModelIdOpt.isEmpty()) {
+            log.warn("[计费] 无法获取模型配置ID，跳过计费: provider={}, model={}", finalProvider, finalModelCode);
+            return joinPoint.proceed();
+        }
+        
+        // 查找计费系统中的provider（用于资源池管理）
         Optional<Long> providerIdOpt = modelLookupService.findProviderId(finalProvider);
         
-        // 如果模型不存在，尝试自动创建
-        if (modelIdOpt.isEmpty() || providerIdOpt.isEmpty()) {
-            log.info("[计费] 模型配置不存在，尝试自动创建: provider={}, model={}", finalProvider, finalModelCode);
-            
+        // 如果计费系统中的provider不存在，尝试自动创建
+        if (providerIdOpt.isEmpty()) {
+            log.info("[计费] 计费系统中的provider不存在，尝试自动创建: provider={}", finalProvider);
             try {
-                // 确定capability和modelType
-                String capability = finalModelConfig != null && finalModelConfig.getCapability() != null 
-                    ? finalModelConfig.getCapability() 
-                    : getCapabilityFromUsageType(usageType);
-                String modelType = getModelTypeFromCapability(capability);
-                
                 // 创建或获取provider
                 String providerDisplayName = getProviderDisplayName(finalProvider);
                 com.heartsphere.billing.entity.AIProvider aiProvider = 
                     modelLookupService.findOrCreateProvider(finalProvider, providerDisplayName);
-                
-                // 创建或获取model（使用modelName作为显示名称）
-                String modelDisplayName = (finalModelConfig != null && finalModelConfig.getModelName() != null) 
-                    ? finalModelConfig.getModelName() 
-                    : finalModelCode;
-                com.heartsphere.billing.entity.AIModel aiModel = 
-                    modelLookupService.findOrCreateModel(
-                        aiProvider.getId(), 
-                        finalModelCode, 
-                        modelDisplayName, 
-                        modelType
-                    );
-                
-                modelIdOpt = Optional.of(aiModel.getId());
                 providerIdOpt = Optional.of(aiProvider.getId());
                 
-                log.info("[计费] 自动创建模型配置成功: providerId={}, modelId={}, provider={}, model={}, modelType={}", 
-                        providerIdOpt.get(), modelIdOpt.get(), finalProvider, finalModelCode, modelType);
+                log.info("[计费] 自动创建provider成功: providerId={}, provider={}", 
+                        providerIdOpt.get(), finalProvider);
             } catch (Exception e) {
-                log.error("[计费] 自动创建模型配置失败: provider={}, model={}, error={}", 
-                        finalProvider, finalModelCode, e.getMessage(), e);
-                log.warn("未找到模型配置，跳过计费: provider={}, model={}", finalProvider, finalModelCode);
-                // 如果创建失败，仍然允许调用，但不计费
-                return joinPoint.proceed();
+                log.error("[计费] 自动创建provider失败: provider={}, error={}", 
+                        finalProvider, e.getMessage(), e);
+                // 如果创建失败，仍然允许调用，但使用默认值
+                providerIdOpt = Optional.of(0L);
             }
         }
         
-        Long modelId = modelIdOpt.get();
         Long providerId = providerIdOpt.get();
+        Long modelId = pricingModelIdOpt.get(); // 统一使用 ai_model_config.id
         
-        log.info("[计费] 模型配置查找成功: modelId={}, providerId={}", modelId, providerId);
+        log.info("[计费] 模型配置查找成功: modelId={} (ai_model_config), providerId={}", 
+                modelId, providerId);
         
         // 检查资源池余额（在配额检查之前）
         java.util.Optional<com.heartsphere.billing.entity.ProviderResourcePool> poolOpt = 
@@ -404,26 +395,6 @@ public class AIBillingAspect {
         }
     }
     
-    /**
-     * 从capability获取modelType
-     */
-    private String getModelTypeFromCapability(String capability) {
-        if (capability == null) {
-            return "text";
-        }
-        switch (capability.toLowerCase()) {
-            case "text":
-                return "text";
-            case "image":
-                return "image";
-            case "audio":
-                return "audio";
-            case "video":
-                return "video";
-            default:
-                return "text";
-        }
-    }
     
     /**
      * 获取provider的显示名称
@@ -589,12 +560,21 @@ public class AIBillingAspect {
                 }
             } else if (result instanceof ImageGenerationResponse) {
                 ImageGenerationResponse response = (ImageGenerationResponse) result;
+                log.info("[计费] 处理图像生成响应: hasUsage={}, hasImages={}", 
+                    response.getUsage() != null, response.getImages() != null);
+                
                 if (response.getUsage() != null && response.getUsage().getImagesGenerated() != null) {
                     imageCount = response.getUsage().getImagesGenerated();
                     tokenConsumed = imageCount.longValue();
+                    log.info("[计费] 从usage中提取图像数量: imageCount={}, tokenConsumed={}", 
+                        imageCount, tokenConsumed);
                 } else if (response.getImages() != null) {
                     imageCount = response.getImages().size();
                     tokenConsumed = imageCount.longValue();
+                    log.info("[计费] 从images列表中提取图像数量: imageCount={}, tokenConsumed={}", 
+                        imageCount, tokenConsumed);
+                } else {
+                    log.warn("[计费] 图像生成响应中未找到usage或images，无法确定图像数量");
                 }
             } else if (result instanceof AudioResponse) {
                 // 音频处理时长估算
@@ -614,13 +594,25 @@ public class AIBillingAspect {
             usageData.put("audioDuration", audioDuration);
             usageData.put("videoDuration", videoDuration);
             
-            BigDecimal costAmount = pricingService.calculateCost(modelId, usageType, usageData);
-            log.info("[计费] 费用计算完成: userId={}, modelId={}, usageType={}, costAmount={}, " +
-                    "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
-                    "audioDuration={}, videoDuration={}, success={}",
-                    userId, modelId, usageType, costAmount,
-                    inputTokens, outputTokens, totalTokens, imageCount,
-                    audioDuration, videoDuration, success);
+            // 使用定价模型ID（ai_model_config的ID）计算费用
+            BigDecimal costAmount = BigDecimal.ZERO;
+            try {
+                log.info("[计费] 开始计算费用: userId={}, modelId={}, usageType={}, " +
+                        "imageCount={}", userId, modelId, usageType, imageCount);
+                costAmount = pricingService.calculateCost(modelId, usageType, usageData);
+                log.info("[计费] 费用计算完成: userId={}, modelId={}, usageType={}, costAmount={}, " +
+                        "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
+                        "audioDuration={}, videoDuration={}, success={}",
+                        userId, modelId, usageType, costAmount,
+                        inputTokens, outputTokens, totalTokens, imageCount,
+                        audioDuration, videoDuration, success);
+            } catch (Exception e) {
+                log.error("[计费] 费用计算失败: userId={}, modelId={}, usageType={}, " +
+                        "imageCount={}, error={}", userId, modelId, usageType, imageCount, 
+                        e.getMessage(), e);
+                // 费用计算失败时，仍然记录使用情况，但费用为0
+                costAmount = BigDecimal.ZERO;
+            }
             
             // 扣除配额（如果成功）
             // 先检查用户配额是否充足，如果充足则扣除用户配额，否则只使用资源池
@@ -650,7 +642,15 @@ public class AIBillingAspect {
                 }
             }
             
-            // 记录使用记录
+            // 记录使用记录（使用 ai_model_config 的模型ID）
+            log.info("[计费] 准备记录使用情况: userId={}, providerId={}, modelId={}, usageType={}, " +
+                    "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
+                    "audioDuration={}, videoDuration={}, costAmount={}, tokenConsumed={}, status={}",
+                    userId, providerId, modelId, usageType,
+                    inputTokens, outputTokens, totalTokens, imageCount,
+                    audioDuration, videoDuration, costAmount, tokenConsumed,
+                    success ? "success" : "failed");
+            
             usageRecordService.recordUsage(
                 userId, providerId, modelId, usageType,
                 inputTokens, outputTokens, totalTokens,
@@ -659,8 +659,10 @@ public class AIBillingAspect {
                 success ? "success" : "failed",
                 errorMessage
             );
-            log.info("[计费] 使用记录已保存: userId={}, providerId={}, modelId={}, usageType={}, status={}", 
-                    userId, providerId, modelId, usageType, success ? "success" : "failed");
+            log.info("[计费] 使用记录已保存: userId={}, providerId={}, modelId={}, usageType={}, " +
+                    "imageCount={}, tokenConsumed={}, status={}", 
+                    userId, providerId, modelId, usageType, imageCount, tokenConsumed,
+                    success ? "success" : "failed");
             
             // 扣除资源池余额（如果成功）
             // 资源池余额总是需要扣除，因为这是实际产生的成本

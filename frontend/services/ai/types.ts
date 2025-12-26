@@ -6,7 +6,7 @@
 /**
  * AI提供商类型
  */
-export type AIProvider = 'gemini' | 'openai' | 'qwen' | 'doubao';
+export type AIProvider = 'gemini' | 'openai' | 'qwen' | 'dashscope' | 'doubao';
 
 /**
  * AI模式类型

@@ -45,7 +45,14 @@ const AdminSidebarWrapper: React.FC = () => {
 // 内部组件：使用Context
 const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorld, onBack }) => {
     const { adminToken, logout } = useAdminAuth();
-    const { activeSection } = useAdminState();
+    const { activeSection, setSettingsTab } = useAdminState();
+    
+    // 当切换到settings时，确保默认显示'general' tab
+    React.useEffect(() => {
+        if (activeSection === 'settings') {
+            setSettingsTab('general');
+        }
+    }, [activeSection, setSettingsTab]);
     const { systemWorlds, systemEras, systemCharacters, systemScripts, systemMainStories, loadSystemData } = useAdminData(adminToken);
 
     const handleLogout = () => {

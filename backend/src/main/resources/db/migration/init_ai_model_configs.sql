@@ -1,20 +1,20 @@
 -- 初始化主流AI模型配置
 -- 包括：通义千问(qwen)、豆包(doubao)、Google Gemini、OpenAI GPT
 
--- ========== 通义千问 (DashScope/Qwen) ==========
+-- ========== 通义千问 (DashScope) ==========
 -- 文本生成模型
 INSERT INTO ai_model_config (provider, model_name, capability, api_key, base_url, model_params, is_default, priority, cost_per_token, is_active, description, created_at, updated_at)
 VALUES 
-('qwen', 'qwen-max', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', TRUE, 1, 0.000012, TRUE, '通义千问Max模型，最强性能', NOW(), NOW()),
-('qwen', 'qwen-plus', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 2, 0.000008, TRUE, '通义千问Plus模型，平衡性能', NOW(), NOW()),
-('qwen', 'qwen-turbo', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 3, 0.000003, TRUE, '通义千问Turbo模型，快速响应', NOW(), NOW()),
-('qwen', 'qwen3-max', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 1, 0.000012, TRUE, '通义千问3.0 Max模型', NOW(), NOW());
+('dashscope', 'qwen-max', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', TRUE, 1, 0.000012, TRUE, '通义千问Max模型，最强性能', NOW(), NOW()),
+('dashscope', 'qwen-plus', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 2, 0.000008, TRUE, '通义千问Plus模型，平衡性能', NOW(), NOW()),
+('dashscope', 'qwen-turbo', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 3, 0.000003, TRUE, '通义千问Turbo模型，快速响应', NOW(), NOW()),
+('dashscope', 'qwen3-max', 'text', '', 'https://dashscope.aliyuncs.com/api/v1', '{"temperature": 0.7, "max_tokens": 2000}', FALSE, 1, 0.000012, TRUE, '通义千问3.0 Max模型', NOW(), NOW());
 
 -- 图片生成模型
 INSERT INTO ai_model_config (provider, model_name, capability, api_key, base_url, model_params, is_default, priority, cost_per_token, is_active, description, created_at, updated_at)
 VALUES 
-('qwen', 'wanx-v1', 'image', '', 'https://dashscope.aliyuncs.com/api/v1', '{"size": "1024x1024", "n": 1}', TRUE, 1, 0.0008, TRUE, '通义万相V1图片生成模型', NOW(), NOW()),
-('qwen', 'wanx-v2', 'image', '', 'https://dashscope.aliyuncs.com/api/v1', '{"size": "1024x1024", "n": 1}', FALSE, 2, 0.0008, TRUE, '通义万相V2图片生成模型', NOW(), NOW());
+('dashscope', 'wanx-v1', 'image', '', 'https://dashscope.aliyuncs.com/api/v1', '{"size": "1024x1024", "n": 1}', TRUE, 1, 0.0008, TRUE, '通义万相V1图片生成模型', NOW(), NOW()),
+('dashscope', 'wanx-v2', 'image', '', 'https://dashscope.aliyuncs.com/api/v1', '{"size": "1024x1024", "n": 1}', FALSE, 2, 0.0008, TRUE, '通义万相V2图片生成模型', NOW(), NOW());
 
 -- ========== 豆包 (Volcengine Doubao) ==========
 -- 文本生成模型
@@ -58,24 +58,24 @@ VALUES
 ('openai', 'dall-e-2', 'image', '', 'https://api.openai.com/v1', '{"size": "1024x1024", "n": 1}', FALSE, 2, 0.0002, TRUE, 'OpenAI DALL-E 2图片生成模型', NOW(), NOW());
 
 -- ========== 初始化路由策略 ==========
--- 文本生成路由策略（单一模式，默认使用qwen-max）
+-- 文本生成路由策略（单一模式，默认使用dashscope的qwen-max）
 INSERT INTO ai_routing_strategy (capability, strategy_type, config_json, is_active, description, created_at, updated_at)
 VALUES 
 ('text', 'single', '{"defaultProvider": "qwen", "defaultModel": "qwen-max"}', TRUE, '文本生成使用单一模式，默认qwen-max', NOW(), NOW());
 
--- 图片生成路由策略（单一模式，默认使用wanx-v1）
+-- 图片生成路由策略（单一模式，默认使用dashscope的wanx-v1）
 INSERT INTO ai_routing_strategy (capability, strategy_type, config_json, is_active, description, created_at, updated_at)
 VALUES 
-('image', 'single', '{"defaultProvider": "qwen", "defaultModel": "wanx-v1"}', TRUE, '图片生成使用单一模式，默认wanx-v1', NOW(), NOW());
+('image', 'single', '{"defaultProvider": "dashscope", "defaultModel": "wanx-v1"}', TRUE, '图片生成使用单一模式，默认wanx-v1', NOW(), NOW());
 
 -- 音频处理路由策略（单一模式）
 INSERT INTO ai_routing_strategy (capability, strategy_type, config_json, is_active, description, created_at, updated_at)
 VALUES 
-('audio', 'single', '{"defaultProvider": "qwen", "defaultModel": "qwen-max"}', TRUE, '音频处理使用单一模式', NOW(), NOW());
+('audio', 'single', '{"defaultProvider": "dashscope", "defaultModel": "qwen-max"}', TRUE, '音频处理使用单一模式', NOW(), NOW());
 
 -- 视频生成路由策略（单一模式）
 INSERT INTO ai_routing_strategy (capability, strategy_type, config_json, is_active, description, created_at, updated_at)
 VALUES 
-('video', 'single', '{"defaultProvider": "qwen", "defaultModel": "qwen-max"}', TRUE, '视频生成使用单一模式', NOW(), NOW());
+('video', 'single', '{"defaultProvider": "dashscope", "defaultModel": "qwen-max"}', TRUE, '视频生成使用单一模式', NOW(), NOW());
 
 

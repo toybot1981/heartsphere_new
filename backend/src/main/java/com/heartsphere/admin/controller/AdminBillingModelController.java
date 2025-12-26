@@ -1,104 +1,61 @@
 package com.heartsphere.admin.controller;
 
-import com.heartsphere.billing.entity.AIModel;
-import com.heartsphere.billing.repository.AIModelRepository;
+import com.heartsphere.admin.dto.AIModelConfigDTO;
+import com.heartsphere.admin.service.AIModelConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * 计费管理 - 模型管理控制器
+ * 计费管理 - 模型管理控制器（已废弃，重定向到模型配置服务）
+ * 注意：此控制器现在返回 ai_model_config 的数据，而不是 ai_models
+ * 
+ * @deprecated 请使用 /api/admin/ai-config/models 接口
  */
 @RestController
 @RequestMapping("/api/admin/billing/models")
+@Deprecated
 public class AdminBillingModelController extends BaseAdminController {
 
     @Autowired
-    private AIModelRepository modelRepository;
+    private AIModelConfigService modelConfigService;
 
+    /**
+     * 获取所有模型（从 ai_model_config 获取）
+     */
     @GetMapping
-    public ResponseEntity<List<AIModel>> getAllModels(
-            @RequestParam(required = false) Long providerId,
+    public ResponseEntity<List<AIModelConfigDTO>> getAllModels(
+            @RequestParam(required = false) String provider,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
         
-        if (providerId != null) {
-            return ResponseEntity.ok(modelRepository.findByProviderId(providerId));
+        List<AIModelConfigDTO> models = modelConfigService.getAllModelConfigs();
+        
+        // 如果指定了provider，进行过滤
+        if (provider != null && !provider.isEmpty()) {
+            String providerUpper = provider.toUpperCase();
+            models = models.stream()
+                    .filter(model -> model.getProvider().equalsIgnoreCase(providerUpper))
+                    .toList();
         }
-        return ResponseEntity.ok(modelRepository.findAll());
+        
+        return ResponseEntity.ok(models);
     }
 
+    /**
+     * 根据ID获取模型（从 ai_model_config 获取）
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<AIModel> getModelById(
-            @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        validateAdmin(authHeader);
-        return modelRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public ResponseEntity<AIModel> createModel(
-            @RequestBody Map<String, Object> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        validateAdmin(authHeader);
-        
-        AIModel model = new AIModel();
-        model.setProviderId(((Number) request.get("providerId")).longValue());
-        model.setModelCode((String) request.get("modelCode"));
-        model.setModelName((String) request.get("modelName"));
-        model.setModelType((String) request.get("modelType"));
-        if (request.containsKey("enabled")) {
-            model.setEnabled((Boolean) request.get("enabled"));
-        } else {
-            model.setEnabled(true);
-        }
-        
-        return ResponseEntity.ok(modelRepository.save(model));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<AIModel> updateModel(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        validateAdmin(authHeader);
-        
-        return modelRepository.findById(id)
-                .map(model -> {
-                    if (request.containsKey("providerId")) {
-                        model.setProviderId(((Number) request.get("providerId")).longValue());
-                    }
-                    if (request.containsKey("modelCode")) {
-                        model.setModelCode((String) request.get("modelCode"));
-                    }
-                    if (request.containsKey("modelName")) {
-                        model.setModelName((String) request.get("modelName"));
-                    }
-                    if (request.containsKey("modelType")) {
-                        model.setModelType((String) request.get("modelType"));
-                    }
-                    if (request.containsKey("enabled")) {
-                        model.setEnabled((Boolean) request.get("enabled"));
-                    }
-                    return ResponseEntity.ok(modelRepository.save(model));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteModel(
+    public ResponseEntity<AIModelConfigDTO> getModelById(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
         
-        if (modelRepository.existsById(id)) {
-            modelRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
+        AIModelConfigDTO modelConfig = modelConfigService.getModelConfigById(id);
+        if (modelConfig != null) {
+            return ResponseEntity.ok(modelConfig);
         }
         return ResponseEntity.notFound().build();
     }

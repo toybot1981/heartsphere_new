@@ -2,7 +2,8 @@
  * 使用记录查看组件
  */
 import React, { useState, useEffect } from 'react';
-import { billingApi, AIUsageRecord, AIProvider, AIModel } from '../../../services/api/billing';
+import { billingApi, AIUsageRecord, AIProvider } from '../../../services/api/billing';
+import type { AIModelConfig } from '../../../services/api/admin/types';
 import { Button } from '../../../components/Button';
 import { InputGroup, TextInput } from '../AdminUIComponents';
 import { showAlert } from '../../../utils/dialog';
@@ -16,7 +17,7 @@ export const UsageRecordsView: React.FC<UsageRecordsViewProps> = ({
 }) => {
   const [records, setRecords] = useState<AIUsageRecord[]>([]);
   const [providers, setProviders] = useState<AIProvider[]>([]);
-  const [models, setModels] = useState<AIModel[]>([]);
+  const [models, setModels] = useState<AIModelConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -39,7 +40,7 @@ export const UsageRecordsView: React.FC<UsageRecordsViewProps> = ({
     try {
       const [providersData, modelsData] = await Promise.all([
         billingApi.providers.getAll(adminToken),
-        billingApi.models.getAll(adminToken),
+        adminApi.aiConfig.models.getAll(adminToken), // 从 ai_model_config 获取模型列表
       ]);
       setProviders(providersData);
       setModels(modelsData);

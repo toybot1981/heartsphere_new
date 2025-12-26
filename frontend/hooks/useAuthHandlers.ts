@@ -117,15 +117,34 @@ export const useAuthHandlers = ({
             phoneNumber: method === 'password' ? identifier : undefined,
         }});
         
-        // 更新日记列表
+        // 更新日记列表（保留所有字段，包括 insight、tags、syncStatus 等）
         dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: journalEntries.map(entry => ({
             id: entry.id, // 直接使用后端返回的字符串id
             title: entry.title,
             content: entry.content,
             timestamp: new Date(entry.entryDate).getTime(),
-            imageUrl: '',
-            insight: undefined
+            imageUrl: entry.imageUrl || '',
+            insight: entry.insight || undefined, // 保留 insight 字段
+            tags: entry.tags || undefined, // 保留 tags 字段
+            syncStatus: 1 as any, // 从服务器加载的数据默认为已同步
+            lastSyncTime: Date.now(),
+            syncError: undefined,
         }))});
+        
+        console.log('========== [useAuthHandlers] 准备dispatch SET_JOURNAL_ENTRIES (登录成功) ==========');
+        console.log('[useAuthHandlers] 映射后的条目数量:', journalEntries.length);
+        journalEntries.forEach((entry, index) => {
+          console.log(`[useAuthHandlers] dispatch前的条目 ${index + 1}:`, {
+            id: entry.id,
+            title: entry.title,
+            hasInsight: entry.insight !== undefined && entry.insight !== null,
+            insightValue: entry.insight,
+            insightLength: entry.insight ? entry.insight.length : 0,
+            tags: entry.tags,
+            syncStatus: 1,
+          });
+        });
+        console.log('========================================================');
         
         // 更新场景列表
         dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
@@ -507,14 +526,36 @@ export const useAuthHandlers = ({
               avatarUrl: userInfo.avatar || '',
               isGuest: false,
           }});
-          dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: journalEntries.map(entry => ({
+          // 更新日记列表（保留所有字段，包括 insight、tags、syncStatus 等）
+          const mappedEntries = journalEntries.map(entry => ({
               id: entry.id, // 直接使用后端返回的字符串id
               title: entry.title,
               content: entry.content,
               timestamp: new Date(entry.entryDate).getTime(),
-              imageUrl: '',
-              insight: undefined
-          }))});
+              imageUrl: entry.imageUrl || '',
+              insight: entry.insight || undefined, // 保留 insight 字段
+              tags: entry.tags || undefined, // 保留 tags 字段
+              syncStatus: 1 as any, // 从服务器加载的数据默认为已同步
+              lastSyncTime: Date.now(),
+              syncError: undefined,
+          }));
+          
+          console.log('========== [useAuthHandlers] 准备dispatch SET_JOURNAL_ENTRIES (微信登录成功) ==========');
+          console.log('[useAuthHandlers] 映射后的条目数量:', mappedEntries.length);
+          mappedEntries.forEach((entry, index) => {
+            console.log(`[useAuthHandlers] dispatch前的条目 ${index + 1}:`, {
+              id: entry.id,
+              title: entry.title,
+              hasInsight: entry.insight !== undefined && entry.insight !== null,
+              insightValue: entry.insight,
+              insightLength: entry.insight ? entry.insight.length : 0,
+              tags: entry.tags,
+              syncStatus: 1,
+            });
+          });
+          console.log('========================================================');
+          
+          dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
           dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
           // 如果有选中的场景ID，确保它存在于后端数据中，否则选择第一个场景
           const newSelectedSceneId = userWorldScenes.length > 0 

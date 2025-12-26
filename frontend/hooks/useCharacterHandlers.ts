@@ -414,15 +414,6 @@ export const useCharacterHandlers = (
         // 更新本地显示（立即反馈）
         dispatch({ type: 'SET_AVATAR', payload: { characterId: character.id, avatarUrl: cachedUrl } });
         
-        // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
-        // 直接使用原始URL，不尝试上传
-        if (!cachedUrl.startsWith('blob:') && !cachedUrl.startsWith('data:')) {
-          // 更新角色的头像URL（保存角色）
-          const updatedCharacter = { ...character, avatarUrl: cachedUrl };
-          await handleSaveCharacter(updatedCharacter);
-          return;
-        }
-        
         // 上传到服务器（使用character/user分类）
         try {
           let blob: Blob;
@@ -436,8 +427,20 @@ export const useCharacterHandlers = (
             const response = await fetch(cachedUrl);
             blob = await response.blob();
           } else {
-            // 这不应该发生，但为了安全起见
-            throw new Error('无法获取图片数据');
+            // 如果返回的是原始URL（非blob URL），说明缓存失败（通常是CORS限制）
+            // 通过后端代理下载，然后上传到服务器
+            console.log('[handleGenerateAvatar] 缓存失败，通过后端代理下载并上传:', cachedUrl);
+            const { imageApi } = await import('../services/api');
+            const proxyResult = await imageApi.proxyDownload(cachedUrl);
+            
+            if (proxyResult.success && proxyResult.dataUrl) {
+              // 将 data URL 转换为 blob
+              const response = await fetch(proxyResult.dataUrl);
+              blob = await response.blob();
+              console.log('[handleGenerateAvatar] 通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
+            } else {
+              throw new Error(proxyResult.error || '后端代理下载失败');
+            }
           }
           
           const file = new File([blob], `character-${character.id}-avatar-${Date.now()}.png`, { type: blob.type || 'image/png' });

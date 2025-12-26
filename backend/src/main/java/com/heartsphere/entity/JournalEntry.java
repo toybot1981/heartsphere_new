@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "journal_entries")
+@org.hibernate.annotations.DynamicUpdate  // 只更新变更的字段，避免NULL覆盖
 public class JournalEntry {
     @Id
     private String id;
@@ -36,6 +37,9 @@ public class JournalEntry {
 
     @Column(columnDefinition = "TEXT")
     private String insight; // 本我镜像（Mirror of Truth）分析结果
+
+    @Column(name = "image_url", length = 2000)
+    private String imageUrl; // 日志配图URL
 
     @Column(name = "entry_date")
     private LocalDateTime entryDate;

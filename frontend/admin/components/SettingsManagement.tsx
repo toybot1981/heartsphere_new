@@ -6,26 +6,11 @@ import { useAdminState } from '../contexts/AdminStateContext';
 import { useAdminData } from '../hooks/useAdminData';
 import { showAlert, showConfirm } from '../../utils/dialog';
 import { GeneralSettings } from './settings/GeneralSettings';
-import { AISettings } from './settings/AISettings';
+import { RoutingStrategies } from './settings/RoutingStrategies';
 
 interface SettingsManagementProps {
     adminToken: string | null;
     onReload: () => Promise<void>;
-}
-
-interface AIModelConfig {
-    id?: number;
-    provider: string;
-    modelName: string;
-    capability: 'text' | 'image' | 'audio' | 'video';
-    apiKey: string;
-    baseUrl?: string;
-    modelParams?: string;
-    isDefault: boolean;
-    priority: number;
-    costPerToken?: number;
-    isActive: boolean;
-    description?: string;
 }
 
 interface RoutingStrategy {
@@ -55,10 +40,12 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
     const { settingsTab, setSettingsTab } = useAdminState();
     const { notionConfig, loadSystemData } = useAdminData(adminToken);
     
-    // AI模型配置状态
-    const [modelConfigs, setModelConfigs] = useState<AIModelConfig[]>([]);
-    const [editingModel, setEditingModel] = useState<AIModelConfig | null>(null);
-    const [modelFormData, setModelFormData] = useState<Partial<AIModelConfig>>({});
+    // 如果settingsTab未设置或不是有效的tab，默认显示'general'
+    useEffect(() => {
+        if (!settingsTab || (settingsTab !== 'general' && settingsTab !== 'routing')) {
+            setSettingsTab('general');
+        }
+    }, [settingsTab, setSettingsTab]);
     
     // 路由策略状态
     const [routingStrategies, setRoutingStrategies] = useState<RoutingStrategy[]>([]);
@@ -66,14 +53,6 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
     const [strategyFormData, setStrategyFormData] = useState<Partial<RoutingStrategy>>({});
     
     const [loading, setLoading] = useState(false);
-    const [activeSubTab, setActiveSubTab] = useState<'models' | 'routing'>('models');
-    
-    // 用于存储每个能力类型和提供商的可用模型列表
-    const [availableModels, setAvailableModels] = useState<Record<string, Record<string, AIModelConfig[]>>>({});
-    
-    // API Key申请引导模态框状态
-    const [showApiKeyGuide, setShowApiKeyGuide] = useState(false);
-    const [guideProvider, setGuideProvider] = useState<string>('');
     
     // 微信开放平台配置状态
     const [wechatConfig, setWechatConfig] = useState<{ appId: string; appSecret: string; redirectUri: string }>({
@@ -102,17 +81,6 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
         gatewayUrl: 'https://openapi.alipay.com/gateway.do',
     });
 
-    // 加载模型配置
-    const loadModelConfigs = async () => {
-        if (!adminToken) return;
-        try {
-            const data = await adminApi.aiConfig.models.getAll(adminToken);
-            setModelConfigs(data);
-        } catch (error: any) {
-            showAlert('加载模型配置失败: ' + (error.message || '未知错误'), '加载失败', 'error');
-        }
-    };
-
     // 加载路由策略
     const loadRoutingStrategies = async () => {
         if (!adminToken) return;
@@ -125,8 +93,7 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
     };
 
     useEffect(() => {
-        if (adminToken && settingsTab === 'models') {
-            loadModelConfigs();
+        if (adminToken && settingsTab === 'routing') {
             loadRoutingStrategies();
         }
         if (adminToken && settingsTab === 'general') {
@@ -214,11 +181,12 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
         }
     };
 
-    // 加载指定提供商和能力类型的模型列表
+    // 加载指定提供商和能力类型的模型列表（用于路由策略）
+    const [availableModels, setAvailableModels] = useState<Record<string, Record<string, any[]>>>({});
+    
     const loadModelsByProvider = async (provider: string, capability: string) => {
         if (!adminToken || !provider || !capability) return;
         
-        const key = `${capability}_${provider}`;
         if (availableModels[capability]?.[provider]) {
             return; // 已加载，不需要重复加载
         }
@@ -234,82 +202,6 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
             }));
         } catch (error: any) {
             console.error('加载模型列表失败:', error);
-        }
-    };
-
-    // 模型配置管理
-    const handleCreateModel = () => {
-        setModelFormData({
-            provider: 'gemini',
-            modelName: '',
-            capability: 'text',
-            apiKey: '',
-            baseUrl: '',
-            modelParams: '',
-            isDefault: false,
-            priority: 0,
-            costPerToken: 0,
-            isActive: true,
-        });
-        setEditingModel({ id: undefined, ...modelFormData } as AIModelConfig);
-    };
-
-    const handleEditModel = (model: AIModelConfig) => {
-        setModelFormData({ ...model });
-        setEditingModel(model);
-    };
-
-    const handleCancelModel = () => {
-        setEditingModel(null);
-        setModelFormData({});
-    };
-
-    const handleSaveModel = async () => {
-        if (!adminToken) return;
-        if (!modelFormData.provider || !modelFormData.modelName || !modelFormData.capability) {
-            showAlert('请填写提供商、模型名称和能力类型', '缺少参数', 'warning');
-            return;
-        }
-        
-        setLoading(true);
-        try {
-            if (editingModel?.id) {
-                await adminApi.aiConfig.models.update(editingModel.id, modelFormData, adminToken);
-            } else {
-                await adminApi.aiConfig.models.create(modelFormData as AIModelConfig, adminToken);
-            }
-            await loadModelConfigs();
-            handleCancelModel();
-            showAlert('保存成功', '成功', 'success');
-        } catch (error: any) {
-            showAlert('保存失败: ' + (error.message || '未知错误'), '保存失败', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteModel = async (id: number) => {
-        if (!adminToken) return;
-        const confirmed = await showConfirm('确定要删除这个模型配置吗？', '删除模型配置', 'danger');
-        if (!confirmed) return;
-        
-        try {
-            await adminApi.aiConfig.models.delete(id, adminToken);
-            await loadModelConfigs();
-            showAlert('删除成功', '成功', 'success');
-        } catch (error: any) {
-            showAlert('删除失败: ' + (error.message || '未知错误'), '删除失败', 'error');
-        }
-    };
-
-    const handleSetDefaultModel = async (id: number) => {
-        if (!adminToken) return;
-        try {
-            await adminApi.aiConfig.models.setDefault(id, adminToken);
-            await loadModelConfigs();
-            showAlert('已设置为默认模型', '成功', 'success');
-        } catch (error: any) {
-            showAlert('设置失败: ' + (error.message || '未知错误'), '设置失败', 'error');
         }
     };
 
@@ -467,14 +359,14 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                         通用设置
                     </button>
                     <button
-                        onClick={() => setSettingsTab('models')}
+                        onClick={() => setSettingsTab('routing')}
                         className={`px-4 py-2 rounded-lg transition-colors ${
-                            settingsTab === 'models'
+                            settingsTab === 'routing'
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                     >
-                        AI模型配置
+                        路由策略
                     </button>
                 </div>
             </div>
@@ -484,9 +376,9 @@ export const SettingsManagement: React.FC<SettingsManagementProps> = ({
                 <GeneralSettings adminToken={adminToken} onReload={onReload} />
             )}
 
-            {/* AI模型配置 */}
-            {settingsTab === 'models' && (
-                <AISettings adminToken={adminToken} onReload={onReload} />
+            {/* 路由策略 */}
+            {settingsTab === 'routing' && (
+                <RoutingStrategies adminToken={adminToken} onReload={onReload} />
             )}
         </div>
     );

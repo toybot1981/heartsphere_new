@@ -1,5 +1,7 @@
 package com.heartsphere.billing.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.heartsphere.admin.entity.AIModelConfig;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
 
 /**
  * AI使用记录实体
+ * 注意：model_id 现在关联到 ai_model_config.id（管理配置表）
  */
 @Data
 @Entity
@@ -25,7 +28,15 @@ public class AIUsageRecord {
     private Long providerId;
 
     @Column(name = "model_id", nullable = false)
-    private Long modelId;
+    private Long modelId; // 关联到 ai_model_config.id
+
+    /**
+     * 关联到 ai_model_config（管理配置表）
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "model_id", insertable = false, updatable = false, referencedColumnName = "id")
+    @JsonIgnore
+    private AIModelConfig modelConfig;
 
     @Column(name = "usage_type", nullable = false, length = 50)
     private String usageType; // text_generation, image_generation, audio_tts, audio_stt, video_generation

@@ -17,7 +17,7 @@ public interface AIModelPricingRepository extends JpaRepository<AIModelPricing, 
            "AND p.isActive = true " +
            "AND p.effectiveDate <= :now " +
            "AND (p.expiryDate IS NULL OR p.expiryDate > :now) " +
-           "ORDER BY p.effectiveDate DESC")
+           "ORDER BY p.effectiveDate DESC, p.id DESC")
     Optional<AIModelPricing> findActivePricing(
         @Param("modelId") Long modelId,
         @Param("pricingType") String pricingType,

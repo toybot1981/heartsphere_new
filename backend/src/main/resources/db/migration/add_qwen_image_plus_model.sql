@@ -14,7 +14,7 @@ INSERT INTO ai_model_config (
     created_at,
     updated_at
 ) VALUES (
-    'qwen',
+    'dashscope',
     'qwen-image-plus',
     'image',
     'sk-a486b81e29484fcea112b2c010b7bd95',

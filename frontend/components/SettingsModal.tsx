@@ -71,7 +71,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
       const config = await AIConfigManager.getUserConfig();
       const keys = AIConfigManager.getLocalApiKeys();
       console.log('[SettingsModal] 加载AI配置, mode:', config.mode);
-      setAiConfig(config);
+      // 确保如果没有配置，默认使用统一接入模式
+      if (!config.mode || config.mode === 'local' && !localStorage.getItem('ai_service_config')) {
+        // 如果localStorage中没有保存过配置，强制使用统一接入模式
+        const defaultConfig = { ...config, mode: 'unified' as AIMode };
+        setAiConfig(defaultConfig);
+        // 保存默认配置
+        await AIConfigManager.saveUserConfig(defaultConfig);
+      } else {
+        setAiConfig(config);
+      }
       setLocalApiKeys(keys);
     };
     loadConfig();

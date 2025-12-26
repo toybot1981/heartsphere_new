@@ -5,7 +5,7 @@ import { adminApi } from '../../../../services/api';
 import { showAlert, showConfirm } from '../../../../utils/dialog';
 import type { AIModelConfig } from '../types';
 
-export const useModelsManagement = (adminToken: string | null) => {
+export const useModelsManagement = (adminToken: string | null, onReload?: () => void) => {
     const [modelConfigs, setModelConfigs] = useState<AIModelConfig[]>([]);
     const [editingModel, setEditingModel] = useState<AIModelConfig | null>(null);
     const [modelFormData, setModelFormData] = useState<Partial<AIModelConfig>>({});

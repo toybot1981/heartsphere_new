@@ -20,8 +20,8 @@ interface AdminStateContextType {
     // Navigation
     activeSection: SectionType;
     setActiveSection: (section: SectionType) => void;
-    settingsTab: 'general' | 'models';
-    setSettingsTab: (tab: 'general' | 'models' | 'email') => void;
+    settingsTab: 'general' | 'routing' | 'models';
+    setSettingsTab: (tab: 'general' | 'routing' | 'models' | 'email') => void;
     
     // CRUD State
     viewMode: ViewMode;
@@ -58,7 +58,7 @@ const AdminStateContext = createContext<AdminStateContextType | undefined>(undef
 
 export const AdminStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [activeSection, setActiveSection] = useState<SectionType>('dashboard');
-    const [settingsTab, setSettingsTab] = useState<'general' | 'models' | 'email'>('models');
+    const [settingsTab, setSettingsTab] = useState<'general' | 'routing' | 'models'>('general');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showScenarioBuilder, setShowScenarioBuilder] = useState(false);

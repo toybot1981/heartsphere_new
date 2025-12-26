@@ -27,6 +27,24 @@ interface RealWorldScreenProps {
 export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({ 
     entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest, showNoteSync = false
 }) => {
+  // 打印从缓存获取的entries日志
+  useEffect(() => {
+    console.log('========== [RealWorldScreen] 从缓存获取的日记条目 ==========');
+    console.log('[RealWorldScreen] 条目数量:', entries.length);
+    entries.forEach((entry, index) => {
+      console.log(`[RealWorldScreen] 条目 ${index + 1}:`, {
+        id: entry.id,
+        title: entry.title,
+        hasInsight: entry.insight !== undefined && entry.insight !== null,
+        insightLength: entry.insight ? entry.insight.length : 0,
+        insightPreview: entry.insight ? entry.insight.substring(0, 50) + '...' : 'null/undefined',
+        insightValue: entry.insight,
+        syncStatus: entry.syncStatus,
+        lastSyncTime: entry.lastSyncTime,
+      });
+    });
+    console.log('========================================================');
+  }, [entries]);
   // State for View Mode
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -169,6 +187,56 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         } finally {
             setIsGeneratingImage(false);
         }
+    } else if (finalImageUrl && (finalImageUrl.startsWith('http://') || finalImageUrl.startsWith('https://'))) {
+        // 如果uploadedImageUrl是外部URL（不是本地服务器URL），通过后端代理下载并上传
+        // 检查是否是本地服务器URL（localhost 或 127.0.0.1 或配置的服务器地址）
+        // 注意：所有外部URL（包括TOS临时URL、volces.com等）都需要下载并重新上传
+        const isLocalUrl = finalImageUrl.includes('localhost') || 
+                          finalImageUrl.includes('127.0.0.1') || 
+                          finalImageUrl.includes('api/images/files') ||
+                          finalImageUrl.startsWith('http://localhost') ||
+                          finalImageUrl.startsWith('https://localhost') ||
+                          finalImageUrl.startsWith('http://127.0.0.1') ||
+                          finalImageUrl.startsWith('https://127.0.0.1');
+        
+        if (!isLocalUrl) {
+            console.log("[步骤3/6] 检测到外部URL图片（包括临时URL），必须通过后端代理下载并重新上传:", finalImageUrl);
+            console.log("[步骤3/6] URL类型判断: 是否为本地URL =", isLocalUrl);
+            setIsGeneratingImage(true);
+            try {
+                // 1. 先通过后端代理下载图片
+                console.log("[步骤3/6] 步骤1: 通过后端代理下载外部图片");
+                const proxyResult = await imageApi.proxyDownload(finalImageUrl);
+                
+                if (proxyResult.success && proxyResult.dataUrl) {
+                    console.log("[步骤3/6] 步骤1完成: 后端代理下载成功，dataUrl长度:", proxyResult.dataUrl.length);
+                    
+                    // 2. 将下载的base64 data URL直接上传
+                    console.log("[步骤3/6] 步骤2: 上传base64图片到服务器");
+                    const token = localStorage.getItem('auth_token');
+                    const uploadResult = await imageApi.uploadBase64Image(proxyResult.dataUrl, 'journal', token || undefined);
+                    
+                    if (uploadResult.success && uploadResult.url) {
+                        finalImageUrl = uploadResult.url;
+                        console.log("[步骤3/6] 步骤2完成: 图片上传成功，永久URL:", finalImageUrl);
+                    } else {
+                        console.error("[步骤3/6] 步骤2失败: 图片上传失败，错误:", uploadResult.error);
+                        throw new Error(`图片上传失败: ${uploadResult.error || '未知错误'}`);
+                    }
+                } else {
+                    console.error("[步骤3/6] 步骤1失败: 后端代理下载失败，错误:", proxyResult.error);
+                    throw new Error(`后端代理下载失败: ${proxyResult.error || '未知错误'}`);
+                }
+            } catch (proxyError) {
+                console.error("[步骤3/6] 代理下载或上传过程中发生异常:", proxyError);
+                // 不再保留原始外部URL作为备用方案，因为临时URL会过期
+                throw new Error(`无法处理外部图片URL: ${proxyError instanceof Error ? proxyError.message : '未知错误'}`);
+            } finally {
+                setIsGeneratingImage(false);
+            }
+        } else {
+            console.log("[步骤3/6] 检测到本地服务器URL，直接使用:", finalImageUrl);
+        }
     }
     
     // 如果还没有图片且启用了自动生成
@@ -180,7 +248,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
             const generated = await aiService.generateMoodImage(newContent, worldStyle);
             console.log("[步骤3/6] 图片生成结果:", generated ? "[生成成功]" : "[生成失败]");
             if (generated) {
-                // 如果生成的是base64，也上传
+                // 如果生成的是base64，直接上传
                 if (generated.startsWith('data:')) {
                     const token = localStorage.getItem('auth_token');
                     const uploadResult = await imageApi.uploadBase64Image(generated, 'journal', token || undefined);
@@ -192,8 +260,37 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                         console.log("[步骤3/6] 生成的base64图片上传失败，使用base64");
                     }
                 } else {
-                    finalImageUrl = generated;
-                    console.log("[步骤3/6] 图片生成成功，使用生成的图片URL");
+                    // 如果生成的是外部URL（包括TOS临时URL），必须通过后端代理下载并上传
+                    console.log("[步骤3/6] 生成的是外部URL（可能是临时URL），必须通过后端代理下载并重新上传:", generated);
+                    try {
+                        // 1. 先通过后端代理下载图片
+                        console.log("[步骤3/6] 步骤1: 通过后端代理下载图片");
+                        const proxyResult = await imageApi.proxyDownload(generated);
+                        
+                        if (proxyResult.success && proxyResult.dataUrl) {
+                            console.log("[步骤3/6] 步骤1完成: 后端代理下载成功，dataUrl长度:", proxyResult.dataUrl.length);
+                            
+                            // 2. 将下载的base64 data URL直接上传
+                            console.log("[步骤3/6] 步骤2: 上传base64图片到服务器");
+                            const token = localStorage.getItem('auth_token');
+                            const uploadResult = await imageApi.uploadBase64Image(proxyResult.dataUrl, 'journal', token || undefined);
+                            
+                            if (uploadResult.success && uploadResult.url) {
+                                finalImageUrl = uploadResult.url;
+                                console.log("[步骤3/6] 步骤2完成: 图片上传成功，永久URL:", finalImageUrl);
+                            } else {
+                                console.error("[步骤3/6] 步骤2失败: 图片上传失败，错误:", uploadResult.error);
+                                throw new Error(`图片上传失败: ${uploadResult.error || '未知错误'}`);
+                            }
+                        } else {
+                            console.error("[步骤3/6] 步骤1失败: 后端代理下载失败，错误:", proxyResult.error);
+                            throw new Error(`后端代理下载失败: ${proxyResult.error || '未知错误'}`);
+                        }
+                    } catch (proxyError) {
+                        console.error("[步骤3/6] 代理下载或上传过程中发生异常:", proxyError);
+                        // 不再保留原始外部URL作为备用方案，因为临时URL会过期
+                        throw new Error(`无法处理外部图片URL: ${proxyError instanceof Error ? proxyError.message : '未知错误'}`);
+                    }
                 }
             } else {
                 console.log("[步骤3/6] 图片生成成功，但返回为空");
@@ -215,21 +312,50 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         console.log("[步骤4/6] 要更新的日志ID:", selectedEntry.id);
         
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
+        // 处理insight字段：
+        // 1. 如果mirrorInsight有值（包括空字符串），使用mirrorInsight（用户可能想清空或更新）
+        // 2. 如果mirrorInsight是null，表示用户没有修改，保留原有的insight（如果有的话）
+        // 3. 如果mirrorInsight是undefined，使用undefined（显式清空）
+        // 注意：需要明确区分"未修改"（保留原值）和"显式清空"（设为null）
+        // 关键：如果用户没有修改insight，必须明确传递原有的insight值，不能传递undefined，否则后端会将其解析为null并覆盖
+        let insightValue: string | undefined;
+        if (mirrorInsight !== undefined) {
+            // mirrorInsight被显式设置（可能是null或字符串）
+            if (mirrorInsight !== null) {
+                // 有值，使用新值
+                insightValue = mirrorInsight;
+            } else {
+                // mirrorInsight是null，表示用户没有修改，保留原有的insight
+                insightValue = selectedEntry?.insight;
+            }
+        } else {
+            // mirrorInsight是undefined，表示用户没有修改，保留原有的insight
+            insightValue = selectedEntry?.insight;
+        }
+        
+        console.log("[步骤4/6] insight处理逻辑:", {
+            mirrorInsight: mirrorInsight !== undefined ? (mirrorInsight !== null ? `"${mirrorInsight.substring(0, 50)}..."` : 'null') : 'undefined',
+            selectedEntryInsight: selectedEntry?.insight ? `"${selectedEntry.insight.substring(0, 50)}..."` : 'null/undefined',
+            finalInsightValue: insightValue !== undefined ? (insightValue !== null ? `"${insightValue.substring(0, 50)}..."` : 'null') : 'undefined'
+        });
         const updatedEntry = {
             ...selectedEntry,
             title: finalTitle,
             content: newContent,
             imageUrl: finalImageUrl,
-            insight: mirrorInsight || undefined,
+            insight: insightValue,
             tags: tagsString
         };
         
-        console.log("[步骤4/6] 准备更新的日志内容:", {
+        console.log("[步骤4/6] 准备更新的日志内容 (包含imageUrl):", {
             id: updatedEntry.id,
             title: updatedEntry.title,
             contentLength: updatedEntry.content.length,
             hasImage: !!updatedEntry.imageUrl,
-            hasInsight: !!updatedEntry.insight
+            imageUrl: updatedEntry.imageUrl ? updatedEntry.imageUrl.substring(0, 100) + '...' : 'null/undefined',
+            hasInsight: updatedEntry.insight !== undefined && updatedEntry.insight !== null,
+            insightLength: updatedEntry.insight ? updatedEntry.insight.length : 0,
+            insightValue: updatedEntry.insight ? (updatedEntry.insight.substring(0, 50) + '...') : 'null/undefined'
         });
         
         console.log("[步骤4/6] 调用App.tsx中的onUpdateEntry方法");
@@ -251,6 +377,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
             title: finalTitle,
             contentLength: newContent.length,
             hasImage: !!finalImageUrl,
+            imageUrl: finalImageUrl ? finalImageUrl.substring(0, 100) + '...' : 'null/undefined',
             hasInsight: !!mirrorInsight
         });
         

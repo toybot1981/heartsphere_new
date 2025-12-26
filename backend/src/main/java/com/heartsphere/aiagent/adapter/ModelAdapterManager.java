@@ -41,7 +41,7 @@ public class ModelAdapterManager {
     
     /**
      * 获取适配器
-     * @param provider 提供商名称（支持别名）
+     * @param provider 提供商名称（支持别名，不区分大小写）
      * @return 适配器实例
      * @throws IllegalArgumentException 如果提供商不支持
      */
@@ -50,14 +50,17 @@ public class ModelAdapterManager {
             throw new IllegalArgumentException("提供商名称不能为空");
         }
         
+        // 统一转为小写处理（适配器注册时使用小写）
+        String normalizedProvider = provider.toLowerCase();
+        
         // 先尝试直接查找
-        ModelAdapter adapter = adapters.get(provider);
+        ModelAdapter adapter = adapters.get(normalizedProvider);
         
         // 如果找不到，尝试通过别名查找
-        if (adapter == null && PROVIDER_ALIASES.containsKey(provider)) {
-            String actualProvider = PROVIDER_ALIASES.get(provider);
+        if (adapter == null && PROVIDER_ALIASES.containsKey(normalizedProvider)) {
+            String actualProvider = PROVIDER_ALIASES.get(normalizedProvider);
             adapter = adapters.get(actualProvider);
-            log.debug("通过别名映射找到适配器: {} -> {}", provider, actualProvider);
+            log.debug("通过别名映射找到适配器: {} -> {} -> {}", provider, normalizedProvider, actualProvider);
         }
         
         if (adapter == null) {
