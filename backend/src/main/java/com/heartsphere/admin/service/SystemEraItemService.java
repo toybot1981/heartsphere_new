@@ -1,5 +1,7 @@
 package com.heartsphere.admin.service;
 
+import com.heartsphere.admin.dto.SystemEraItemDTO;
+import com.heartsphere.admin.entity.SystemEra;
 import com.heartsphere.admin.entity.SystemEraItem;
 import com.heartsphere.admin.repository.SystemEraItemRepository;
 import com.heartsphere.admin.repository.SystemEraRepository;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 系统预置时代物品服务
@@ -23,17 +27,54 @@ public class SystemEraItemService {
     private SystemEraRepository systemEraRepository;
 
     /**
-     * 获取所有系统物品
+     * 获取所有系统物品（包含场景名称）
      */
-    public List<SystemEraItem> getAllItems() {
-        return itemRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+    public List<SystemEraItemDTO> getAllItems() {
+        List<SystemEraItem> items = itemRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+        return convertToDTOsWithEraNames(items);
     }
 
     /**
-     * 根据系统时代ID获取物品
+     * 根据系统时代ID获取物品（包含场景名称）
      */
-    public List<SystemEraItem> getItemsBySystemEraId(Long systemEraId) {
-        return itemRepository.findBySystemEraIdAndIsDeletedFalseAndIsActiveTrue(systemEraId);
+    public List<SystemEraItemDTO> getItemsBySystemEraId(Long systemEraId) {
+        List<SystemEraItem> items = itemRepository.findBySystemEraIdAndIsDeletedFalseAndIsActiveTrue(systemEraId);
+        return convertToDTOsWithEraNames(items);
+    }
+
+    /**
+     * 转换物品列表为DTO列表，并填充场景名称
+     */
+    private List<SystemEraItemDTO> convertToDTOsWithEraNames(List<SystemEraItem> items) {
+        // 获取所有相关的系统时代
+        List<Long> eraIds = items.stream()
+                .map(SystemEraItem::getSystemEraId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> eraNameMap = systemEraRepository.findAllById(eraIds).stream()
+                .collect(Collectors.toMap(SystemEra::getId, SystemEra::getName));
+
+        // 转换为DTO并填充场景名称
+        return items.stream().map(item -> {
+            SystemEraItemDTO dto = new SystemEraItemDTO();
+            dto.setId(item.getId());
+            dto.setName(item.getName());
+            dto.setItemId(item.getItemId());
+            dto.setDescription(item.getDescription());
+            dto.setSystemEraId(item.getSystemEraId());
+            dto.setSystemEraName(item.getSystemEraId() != null ? eraNameMap.get(item.getSystemEraId()) : null);
+            dto.setIconUrl(item.getIconUrl());
+            dto.setItemType(item.getItemType());
+            dto.setTags(item.getTags());
+            dto.setSortOrder(item.getSortOrder());
+            dto.setIsActive(item.getIsActive());
+            dto.setIsDeleted(item.getIsDeleted());
+            dto.setCreatedAt(item.getCreatedAt());
+            dto.setUpdatedAt(item.getUpdatedAt());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     /**

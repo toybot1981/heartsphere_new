@@ -1,5 +1,6 @@
 package com.heartsphere.admin.controller;
 
+import com.heartsphere.admin.dto.SystemEraItemDTO;
 import com.heartsphere.admin.entity.SystemEraItem;
 import com.heartsphere.admin.service.SystemEraItemService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class AdminSystemEraItemController extends BaseAdminController {
      * 获取所有系统物品
      */
     @GetMapping
-    public ResponseEntity<List<SystemEraItem>> getAllItems(
+    public ResponseEntity<List<SystemEraItemDTO>> getAllItems(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
         return ResponseEntity.ok(itemService.getAllItems());
@@ -32,7 +33,7 @@ public class AdminSystemEraItemController extends BaseAdminController {
      * 根据系统时代ID获取物品
      */
     @GetMapping("/era/{systemEraId}")
-    public ResponseEntity<List<SystemEraItem>> getItemsBySystemEraId(
+    public ResponseEntity<List<SystemEraItemDTO>> getItemsBySystemEraId(
             @PathVariable Long systemEraId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);

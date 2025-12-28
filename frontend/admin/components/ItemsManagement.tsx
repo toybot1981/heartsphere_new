@@ -343,9 +343,7 @@ export const ItemsManagement: React.FC<ItemsManagementProps> = ({
                                             {item.itemType ? ITEM_TYPES.find(t => t.value === item.itemType)?.label || item.itemType : '-'}
                                         </td>
                                         <td className="py-3 px-4 text-slate-400">
-                                            {item.eraName || 
-                                             (item.systemEraId && systemEras.find(e => e.id === item.systemEraId)?.name) || 
-                                             '全局'}
+                                            {item.eraName || item.systemEraName || '全局'}
                                         </td>
                                         <td className="py-3 px-4">
                                             <span className={`px-2 py-1 rounded text-xs ${item.isActive ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>

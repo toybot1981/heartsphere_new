@@ -1,5 +1,7 @@
 package com.heartsphere.admin.service;
 
+import com.heartsphere.admin.dto.SystemEraEventDTO;
+import com.heartsphere.admin.entity.SystemEra;
 import com.heartsphere.admin.entity.SystemEraEvent;
 import com.heartsphere.admin.repository.SystemEraEventRepository;
 import com.heartsphere.admin.repository.SystemEraRepository;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 系统预置时代事件服务
@@ -23,17 +27,53 @@ public class SystemEraEventService {
     private SystemEraRepository systemEraRepository;
 
     /**
-     * 获取所有系统事件
+     * 获取所有系统事件（包含场景名称）
      */
-    public List<SystemEraEvent> getAllEvents() {
-        return eventRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+    public List<SystemEraEventDTO> getAllEvents() {
+        List<SystemEraEvent> events = eventRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+        return convertToDTOsWithEraNames(events);
     }
 
     /**
-     * 根据系统时代ID获取事件
+     * 根据系统时代ID获取事件（包含场景名称）
      */
-    public List<SystemEraEvent> getEventsBySystemEraId(Long systemEraId) {
-        return eventRepository.findBySystemEraIdAndIsDeletedFalseAndIsActiveTrue(systemEraId);
+    public List<SystemEraEventDTO> getEventsBySystemEraId(Long systemEraId) {
+        List<SystemEraEvent> events = eventRepository.findBySystemEraIdAndIsDeletedFalseAndIsActiveTrue(systemEraId);
+        return convertToDTOsWithEraNames(events);
+    }
+
+    /**
+     * 转换事件列表为DTO列表，并填充场景名称
+     */
+    private List<SystemEraEventDTO> convertToDTOsWithEraNames(List<SystemEraEvent> events) {
+        // 获取所有相关的系统时代
+        List<Long> eraIds = events.stream()
+                .map(SystemEraEvent::getSystemEraId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        Map<Long, String> eraNameMap = systemEraRepository.findAllById(eraIds).stream()
+                .collect(Collectors.toMap(SystemEra::getId, SystemEra::getName));
+
+        // 转换为DTO并填充场景名称
+        return events.stream().map(event -> {
+            SystemEraEventDTO dto = new SystemEraEventDTO();
+            dto.setId(event.getId());
+            dto.setName(event.getName());
+            dto.setEventId(event.getEventId());
+            dto.setDescription(event.getDescription());
+            dto.setSystemEraId(event.getSystemEraId());
+            dto.setSystemEraName(event.getSystemEraId() != null ? eraNameMap.get(event.getSystemEraId()) : null);
+            dto.setIconUrl(event.getIconUrl());
+            dto.setTags(event.getTags());
+            dto.setSortOrder(event.getSortOrder());
+            dto.setIsActive(event.getIsActive());
+            dto.setIsDeleted(event.getIsDeleted());
+            dto.setCreatedAt(event.getCreatedAt());
+            dto.setUpdatedAt(event.getUpdatedAt());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     /**

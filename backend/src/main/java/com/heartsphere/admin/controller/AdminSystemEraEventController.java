@@ -1,5 +1,6 @@
 package com.heartsphere.admin.controller;
 
+import com.heartsphere.admin.dto.SystemEraEventDTO;
 import com.heartsphere.admin.entity.SystemEraEvent;
 import com.heartsphere.admin.service.SystemEraEventService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class AdminSystemEraEventController extends BaseAdminController {
      * 获取所有系统事件
      */
     @GetMapping
-    public ResponseEntity<List<SystemEraEvent>> getAllEvents(
+    public ResponseEntity<List<SystemEraEventDTO>> getAllEvents(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
         return ResponseEntity.ok(eventService.getAllEvents());
@@ -32,7 +33,7 @@ public class AdminSystemEraEventController extends BaseAdminController {
      * 根据系统时代ID获取事件
      */
     @GetMapping("/era/{systemEraId}")
-    public ResponseEntity<List<SystemEraEvent>> getEventsBySystemEraId(
+    public ResponseEntity<List<SystemEraEventDTO>> getEventsBySystemEraId(
             @PathVariable Long systemEraId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);

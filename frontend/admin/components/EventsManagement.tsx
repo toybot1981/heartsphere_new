@@ -313,9 +313,7 @@ export const EventsManagement: React.FC<EventsManagementProps> = ({
                                         <td className="py-3 px-4 text-slate-100">{event.name}</td>
                                         <td className="py-3 px-4 text-slate-400 font-mono text-sm">{event.eventId}</td>
                                         <td className="py-3 px-4 text-slate-400">
-                                            {event.eraName || 
-                                             (event.systemEraId && systemEras.find(e => e.id === event.systemEraId)?.name) || 
-                                             '全局'}
+                                            {event.eraName || event.systemEraName || '全局'}
                                         </td>
                                         <td className="py-3 px-4">
                                             <span className={`px-2 py-1 rounded text-xs ${event.isActive ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
