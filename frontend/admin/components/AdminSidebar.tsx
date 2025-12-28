@@ -1,7 +1,7 @@
 import React from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -56,6 +56,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                     icon="📜" 
                     active={activeSection === 'scenarios'} 
                     onClick={() => handleSectionClick('scenarios')} 
+                />
+                <AdminSidebarItem 
+                    label="剧本事件 Events" 
+                    icon="🎯" 
+                    active={activeSection === 'events'} 
+                    onClick={() => handleSectionClick('events')} 
+                />
+                <AdminSidebarItem 
+                    label="剧本物品 Items" 
+                    icon="🎁" 
+                    active={activeSection === 'items'} 
+                    onClick={() => handleSectionClick('items')} 
                 />
                 <AdminSidebarItem 
                     label="主线剧情 Main Story" 

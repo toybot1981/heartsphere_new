@@ -1,8 +1,8 @@
 package com.heartsphere.billing.service;
 
+import com.heartsphere.admin.entity.AIModelConfig;
+import com.heartsphere.admin.repository.AIModelConfigRepository;
 import com.heartsphere.billing.entity.ProviderResourcePool;
-import com.heartsphere.billing.repository.AIModelRepository;
-import com.heartsphere.billing.repository.AIModelPricingRepository;
 import com.heartsphere.billing.repository.AIProviderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class QuotaCalculationService {
     
     private final ResourcePoolService resourcePoolService;
     private final AIProviderRepository providerRepository;
-    private final AIModelRepository modelRepository;
+    private final AIModelConfigRepository modelConfigRepository;
     private final PricingService pricingService;
     
     /**
@@ -64,14 +64,19 @@ public class QuotaCalculationService {
         
         // 2. 计算每个用户的配额成本
         // 获取一个文本模型和一个图片模型来计算平均成本
-        var textModels = modelRepository.findByProviderId(provider.getId())
+        String providerNameLower = providerName.toLowerCase();
+        var textModels = modelConfigRepository.findAll()
                 .stream()
-                .filter(m -> "text".equals(m.getModelType()))
+                .filter(m -> providerNameLower.equals(m.getProvider().toLowerCase()) && 
+                            "text".equals(m.getCapability()) && 
+                            (m.getIsActive() == null || m.getIsActive()))
                 .toList();
         
-        var imageModels = modelRepository.findByProviderId(provider.getId())
+        var imageModels = modelConfigRepository.findAll()
                 .stream()
-                .filter(m -> "image".equals(m.getModelType()))
+                .filter(m -> providerNameLower.equals(m.getProvider().toLowerCase()) && 
+                            "image".equals(m.getCapability()) && 
+                            (m.getIsActive() == null || m.getIsActive()))
                 .toList();
         
         BigDecimal textCostPerUser = BigDecimal.ZERO;
@@ -79,20 +84,20 @@ public class QuotaCalculationService {
         
         // 计算文本Token成本（使用平均价格或第一个模型的价格）
         if (!textModels.isEmpty()) {
-            var model = textModels.get(0);
+            AIModelConfig model = textModels.get(0);
             try {
                 // 假设输入和输出各占50%
                 long inputTokens = textTokenPerUser / 2;
                 long outputTokens = textTokenPerUser / 2;
                 
-                // 使用定价服务计算成本
+                // 使用定价服务计算成本（使用ai_model_config的ID）
                 var usageData = new HashMap<String, Object>();
                 usageData.put("inputTokens", (int) inputTokens);
                 usageData.put("outputTokens", (int) outputTokens);
                 
                 textCostPerUser = pricingService.calculateCost(model.getId(), "text_generation", usageData);
                 result.put("textCostPerUser", textCostPerUser);
-                result.put("textModelUsed", model.getModelCode());
+                result.put("textModelUsed", model.getModelName());
             } catch (Exception e) {
                 log.warn("计算文本Token成本失败: modelId={}, error={}", 
                         textModels.get(0).getId(), e.getMessage());
@@ -107,14 +112,14 @@ public class QuotaCalculationService {
         
         // 计算图片生成成本
         if (!imageModels.isEmpty() && imageCountPerUser > 0) {
-            var model = imageModels.get(0);
+            AIModelConfig model = imageModels.get(0);
             try {
                 var usageData = new HashMap<String, Object>();
                 usageData.put("imageCount", imageCountPerUser);
                 
                 imageCostPerUser = pricingService.calculateCost(model.getId(), "image_generation", usageData);
                 result.put("imageCostPerUser", imageCostPerUser);
-                result.put("imageModelUsed", model.getModelCode());
+                result.put("imageModelUsed", model.getModelName());
             } catch (Exception e) {
                 log.warn("计算图片生成成本失败: modelId={}, error={}", 
                         imageModels.get(0).getId(), e.getMessage());

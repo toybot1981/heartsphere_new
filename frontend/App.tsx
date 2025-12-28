@@ -869,9 +869,21 @@ const AppContent: React.FC = () => {
             onUpdateHistory={handleUpdateHistory}
             onUpdateScenarioState={(nodeId) => {
               const newScenarioState = gameState.currentScenarioState 
-                ? { ...gameState.currentScenarioState, currentNodeId: nodeId }
-                : { scenarioId: gameState.selectedScenarioId || '', currentNodeId: nodeId };
+                ? { 
+                    ...gameState.currentScenarioState, 
+                    currentNodeId: nodeId,
+                    // 如果没有startTime，设置它
+                    startTime: gameState.currentScenarioState.startTime || Date.now(),
+                  }
+                : { 
+                    scenarioId: gameState.selectedScenarioId || '', 
+                    currentNodeId: nodeId,
+                    startTime: Date.now(),
+                  };
               dispatch({ type: 'SET_CURRENT_SCENARIO_STATE', payload: newScenarioState });
+            }}
+            onUpdateScenarioStateData={(updates) => {
+              dispatch({ type: 'UPDATE_SCENARIO_STATE', payload: updates });
             }}
             onBack={handleChatBack}
             participatingCharacters={(() => {
@@ -895,16 +907,41 @@ const AppContent: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      {gameState.currentScreen === 'builder' && (
-          <ScenarioBuilder 
-            initialScenario={editingScenarioLocal}
-            onSave={handleSaveScenario}
-            onCancel={() => {
-              dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'characterSelection' });
-              dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: null });
-            }}
-          />
-      )}
+      {gameState.currentScreen === 'builder' && (() => {
+          // 获取参与剧本的角色列表
+          let participatingChars: Character[] = [];
+          if (editingScenarioLocal) {
+            const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+              ? [...gameState.userWorldScenes, ...gameState.customScenes]
+              : [...WORLD_SCENES, ...gameState.customScenes];
+            const scene = allScenes.find(s => s.id === editingScenarioLocal.sceneId);
+            if (scene) {
+              const allChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
+              if (editingScenarioLocal.participatingCharacters) {
+                participatingChars = editingScenarioLocal.participatingCharacters
+                  .map(charId => allChars.find(c => c.id === charId))
+                  .filter((char): char is Character => char !== undefined);
+              } else {
+                // 如果没有指定参与角色，使用场景中的所有角色
+                participatingChars = allChars;
+              }
+            }
+          }
+          
+          return (
+            <ScenarioBuilder 
+              initialScenario={editingScenarioLocal}
+              onSave={handleSaveScenario}
+              onCancel={() => {
+                dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'characterSelection' });
+                dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: null });
+              }}
+              sceneId={editingScenarioLocal?.sceneId}
+              participatingCharacters={editingScenarioLocal?.participatingCharacters}
+              allCharacters={participatingChars}
+            />
+          );
+        })()}
 
       {/* 用户剧本编辑页面 */}
       {gameState.editingScript && (() => {

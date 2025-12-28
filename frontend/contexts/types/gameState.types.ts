@@ -64,7 +64,8 @@ export type GameStateAction =
   | { type: 'SET_ACTIVE_JOURNAL_ENTRY_ID'; payload: string | null }
   
   // 当前剧本状态
-  | { type: 'SET_CURRENT_SCENARIO_STATE'; payload: { scenarioId: string; currentNodeId: string } | undefined }
+  | { type: 'SET_CURRENT_SCENARIO_STATE'; payload: { scenarioId: string; currentNodeId: string; favorability?: Record<string, number>; events?: string[]; items?: string[]; visitedNodes?: string[]; currentTime?: number; startTime?: number } | undefined }
+  | { type: 'UPDATE_SCENARIO_STATE'; payload: { favorability?: Record<string, number>; events?: string[]; items?: string[]; visitedNodes?: string[]; currentTime?: number } }
   
   // 设置
   | { type: 'SET_SETTINGS'; payload: AppSettings }

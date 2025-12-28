@@ -103,7 +103,7 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
             );
             
             handleCancelEdit();
-            showAlert('资源更新成功', '更新成功', 'success');
+            // 保存成功后，右侧列表会更新显示新的图片，无需提示框
             
             // 恢复滚动位置（使用 requestAnimationFrame 确保 DOM 更新完成）
             requestAnimationFrame(() => {
@@ -322,7 +322,7 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                                                         const url = await uploadImage(file, 'general');
                                                         if (url) {
                                                             setEditResourceUrl(url);
-                                                            showAlert('图片上传成功', '上传成功', 'success');
+                                                            // 上传成功后，图片会在预览框中显示，无需提示框
                                                         } else {
                                                             showAlert('图片上传失败：未返回URL', '上传失败', 'error');
                                                         }

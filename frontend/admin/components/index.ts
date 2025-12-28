@@ -14,5 +14,7 @@ export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
 export { EmailConfigManagement } from './EmailConfigManagement';
 export { SettingsManagement } from './SettingsManagement';
 export { PlaceholderManagement } from './PlaceholderManagement';
+export { EventsManagement } from './EventsManagement';
+export { ItemsManagement } from './ItemsManagement';
 
 

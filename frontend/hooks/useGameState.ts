@@ -62,7 +62,7 @@ export const useGameState = (defaultState: GameState) => {
       
       aiService.updateConfigFromAppSettings(mergedSettings);
     } else {
-      geminiService.updateConfig(defaultState.settings);
+      aiService.updateConfigFromAppSettings(defaultState.settings);
     }
     setIsLoaded(true);
   }, [defaultState]);

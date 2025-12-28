@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { billingApi, AICostDaily, AIProvider } from '../../../services/api/billing';
+import { adminApi } from '../../../services/api/admin';
 import type { AIModelConfig } from '../../../services/api/admin/types';
 import { Button } from '../../../components/Button';
 import { InputGroup, TextInput } from '../AdminUIComponents';
@@ -80,6 +81,28 @@ export const CostStatisticsView: React.FC<CostStatisticsViewProps> = ({
       modelId: '',
     });
     setTimeout(loadStats, 100);
+  };
+
+  const handleAggregate = async () => {
+    if (!adminToken) return;
+    if (!confirm('确定要汇总最近30天的成本数据吗？这可能需要一些时间。')) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const result = await billingApi.cost.aggregate(adminToken, { days: 30 });
+      if (result.success) {
+        showAlert(result.message, '成功', 'success');
+        // 汇总完成后重新加载统计数据
+        setTimeout(loadStats, 1000);
+      } else {
+        showAlert(result.message || '汇总失败', '错误', 'error');
+      }
+    } catch (error: any) {
+      showAlert('汇总失败: ' + (error.message || '未知错误'), '错误', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getProviderName = (providerId: number) => {
@@ -162,6 +185,14 @@ export const CostStatisticsView: React.FC<CostStatisticsViewProps> = ({
         <div className="flex gap-3">
           <Button onClick={handleSearch}>查询</Button>
           <Button variant="ghost" onClick={handleReset}>重置</Button>
+          <Button 
+            variant="ghost" 
+            onClick={handleAggregate}
+            className="ml-auto"
+            title="汇总最近30天的成本数据"
+          >
+            汇总数据
+          </Button>
         </div>
       </div>
 

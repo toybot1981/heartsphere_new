@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>心域温度感系统演示</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    @import url('./src/tokens.css');
+    
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    
+    /* 滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary, #F5F0E8);
+      border-radius: var(--radius-full);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-warm-beige-dark, #D4C4B8);
+      border-radius: var(--radius-full);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-warm-beige, #F5F0E8);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <!-- 温度感系统演示 -->
+  <div id="demo-container" class="min-h-screen bg-gradient-to-br from-warm-pink-lightest to-calm-blue-lightest p-6">
+    <!-- 加载提示 -->
+    <div id="loading" class="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
+      <div class="text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-warm-pink to-warm-pink-light animate-pulse"></div>
+        <p class="text-lg text-text-primary">正在加载演示...</p>
+      </div>
+    </div>
+    
+    <!-- 主要内容区域 -->
+    <div id="main-content" class="hidden max-w-6xl mx-auto">
+      <!-- 标题 -->
+      <div class="text-center mb-12">
+        <h1 class="text-hero font-title font-bold mb-2 bg-gradient-to-r from-warm-pink to-calm-blue bg-clip-text text-transparent">
+          心域温度感系统演示
+        </h1>
+        <p class="text-body text-text-secondary">
+          展示温暖、友好的交互体验 ✨
+        </p>
+      </div>
+      
+      <!-- 角色展示区 -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+        <h2 class="text-h2 font-semibold text-text-primary mb-4">E-SOUL 角色</h2>
+        <p class="text-body text-text-secondary mb-6">
+          看看我如何根据你的情绪和对话内容做出反应 💙
+        </p>
+        
+        <div class="flex flex-col md:flex-row items-center justify-center gap-8 py-8">
+          <!-- 角色表情展示 -->
+          <div class="flex-shrink-0">
+            <div class="relative inline-flex items-center justify-center rounded-full bg-gradient-to-br from-warm-pink-lightest/50 to-calm-blue-lightest/50" style="width: 150px; height: 150px;">
+              <div class="text-6xl transition-all duration-300" id="character-emoji">😊</div>
+              <div class="absolute inset-0 rounded-full blur-xl opacity-30 bg-warm-pink animate-pulse"></div>
+            </div>
+          </div>
+          
+          <!-- 控制按钮 -->
+          <div class="space-y-4 w-full max-w-sm">
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">设置情绪</label>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="setEmotion('happy')" class="emotion-btn px-4 py-2 rounded-lg border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+                  😊 开心
+                </button>
+                <button onclick="setEmotion('sad')" class="emotion-btn px-4 py-2 rounded-lg border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+                  😔 难过
+                </button>
+                <button onclick="setEmotion('anxious')" class="emotion-btn px-4 py-2 rounded-lg border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+                  😰 焦虑
+                </button>
+                <button onclick="setEmotion('calm')" class="emotion-btn px-4 py-2 rounded-lg border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+                  😌 平静
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">角色动作</label>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="triggerAction('waving')" class="action-btn px-4 py-2 rounded-lg border-2 border-calm-blue text-calm-blue hover:bg-calm-blue-lightest transition-all text-sm">
+                  👋 挥手
+                </button>
+                <button onclick="triggerAction('nodding')" class="action-btn px-4 py-2 rounded-lg border-2 border-calm-blue text-calm-blue hover:bg-calm-blue-lightest transition-all text-sm">
+                  👆 点头
+                </button>
+                <button onclick="triggerAction('shaking')" class="action-btn px-4 py-2 rounded-lg border-2 border-calm-blue text-calm-blue hover:bg-calm-blue-lightest transition-all text-sm">
+                  👈 摇头
+                </button>
+                <button onclick="triggerAction('thinking')" class="action-btn px-4 py-2 rounded-lg border-2 border-calm-blue text-calm-blue hover:bg-calm-blue-lightest transition-all text-sm">
+                  🤔 思考
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- UI组件展示 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- 按钮展示 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <h2 class="text-h3 font-semibold text-text-primary mb-4">按钮样式</h2>
+          <div class="space-y-4">
+            <button class="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-warm-pink to-warm-pink-light text-white shadow-md hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all">
+              主要按钮
+            </button>
+            <button class="w-full px-6 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest active:scale-95 transition-all">
+              次要按钮
+            </button>
+            <button class="w-full px-6 py-3 rounded-lg bg-transparent text-warm-pink hover:text-warm-pink-light hover:bg-warm-pink-lightest/30 transition-all">
+              文本按钮
+            </button>
+          </div>
+        </div>
+        
+        <!-- 加载状态展示 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <h2 class="text-h3 font-semibold text-text-primary mb-4">加载状态</h2>
+          <div class="space-y-4">
+            <button onclick="testLoading()" class="w-full px-6 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all">
+              测试加载动画
+            </button>
+            
+            <div id="loading-demo" class="hidden">
+              <div class="flex items-center justify-center gap-3 py-4">
+                <div class="w-10 h-10 relative">
+                  <div class="absolute inset-0 rounded-full border-4 border-warm-pink-light/20 animate-pulse"></div>
+                  <div class="absolute inset-2 rounded-full border-4 border-warm-pink border-t-transparent animate-spin"></div>
+                  <div class="absolute inset-1/2 -m-2 w-4 h-4 bg-warm-pink rounded-full animate-pulse"></div>
+                </div>
+                <span class="text-body text-text-secondary">正在生成内容...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Toast通知展示 -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h2 class="text-h3 font-semibold text-text-primary mb-4">Toast通知</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button onclick="showToast('success', '操作成功！')" class="px-4 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+            ✅ 成功
+          </button>
+          <button onclick="showToast('error', '出错了！')" class="px-4 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+            ❌ 错误
+          </button>
+          <button onclick="showToast('warning', '警告！')" class="px-4 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+            ⚠️ 警告
+          </button>
+          <button onclick="showToast('info', '提示信息')" class="px-4 py-3 rounded-lg bg-white border-2 border-warm-pink text-warm-pink hover:bg-warm-pink-lightest transition-all text-sm">
+            💡 信息
+          </button>
+        </div>
+      </div>
+      
+      <!-- 页脚 -->
+      <div class="text-center py-8">
+        <p class="text-body text-text-secondary">
+          温度感系统 V1.0 | 基于心域设计规范
+        </p>
+        <p class="text-xs text-text-tertiary mt-2">
+          查看文档: <a href="/docs/开发/温度感系统使用指南.md" target="_blank" class="text-calm-blue hover:underline">使用指南</a>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 角色表情映射
+    const expressionEmojis = {
+      happy: '😊',
+      sad: '😔',
+      anxious: '😰',
+      calm: '😌',
+      neutral: '😐',
+      thinking: '🤔',
+      surprised: '😲'
+    };
+    
+    // 设置表情
+    function setEmotion(emotion) {
+      const emoji = expressionEmojis[emotion];
+      const emojiEl = document.getElementById('character-emoji');
+      if (emojiEl) {
+        emojiEl.style.transform = 'scale(0.8)';
+        emojiEl.style.opacity = '0';
+        
+        setTimeout(() => {
+          emojiEl.textContent = emoji;
+          emojiEl.style.transform = 'scale(1)';
+          emojiEl.style.opacity = '1';
+        }, 200);
+      }
+      
+      showToast('info', `情绪已设置为: ${emotion}`);
+    }
+    
+    // 触发动作
+    function triggerAction(action) {
+      const emojiEl = document.getElementById('character-emoji');
+      if (emojiEl) {
+        // 模拟动作动画
+        let animation = '';
+        switch(action) {
+          case 'waving':
+            animation = 'translateX(0) rotate(0) → translateX(10px) rotate(-20deg) → translateX(-10px) rotate(20deg) → translateX(0) rotate(0)';
+            break;
+          case 'nodding':
+            animation = 'translateY(0) rotate(0) → translateY(10px) rotate(10deg) → translateY(0) rotate(0)';
+            break;
+          case 'shaking':
+            animation = 'rotate(0) → rotate(-8deg) → rotate(8deg) → rotate(0)';
+            break;
+          case 'thinking':
+            animation = 'scale(1) → scale(1.1) → scale(1)';
+            break;
+        }
+        
+        emojiEl.style.transition = 'transform 0.5s ease-in-out';
+        emojiEl.style.transform = 'scale(1.2)';
+        
+        setTimeout(() => {
+          emojiEl.style.transform = 'scale(1)';
+        }, 300);
+        
+        showToast('info', `动作触发: ${action}`);
+      }
+    }
+    
+    // 测试加载
+    function testLoading() {
+      const loadingDemo = document.getElementById('loading-demo');
+      if (loadingDemo) {
+        loadingDemo.classList.remove('hidden');
+        setTimeout(() => {
+          loadingDemo.classList.add('hidden');
+        }, 3000);
+      }
+    }
+    
+    // 显示Toast
+    function showToast(type, message) {
+      // 移除现有的toast
+      const existingToasts = document.querySelectorAll('.toast-notification');
+      existingToasts.forEach(toast => toast.remove());
+      
+      // 创建新的toast
+      const toast = document.createElement('div');
+      toast.className = `toast-notification fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border-2 shadow-md transition-all duration-300`;
+      
+      const colors = {
+        success: 'bg-success/10 border-success/30 text-success',
+        error: 'bg-warm-pink/10 border-warm-pink/30 text-warm-pink',
+        warning: 'bg-warning/10 border-warning/30 text-warning',
+        info: 'bg-calm-blue/10 border-calm-blue/30 text-calm-blue'
+      };
+      
+      const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: '💡'
+      };
+      
+      toast.classList.add(...colors[type].split(' '));
+      toast.innerHTML = `
+        <span class="text-lg">${icons[type]}</span>
+        <span class="text-body font-medium">${message}</span>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // 3秒后自动移除
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // 初始化：隐藏加载提示
+    window.onload = function() {
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        const mainContent = document.getElementById('main-content');
+        
+        if (loading && mainContent) {
+          loading.classList.add('hidden');
+          mainContent.classList.remove('hidden');
+          
+          // 显示欢迎消息
+          const hour = new Date().getHours();
+          let greeting = '';
+          if (hour >= 5 && hour < 9) {
+            greeting = '早上好！新的一天开始了呢 ✨';
+          } else if (hour >= 9 && hour < 12) {
+            greeting = '上午好！今天过得怎么样？';
+          } else if (hour >= 12 && hour < 14) {
+            greeting = '中午好！吃饭了吗？';
+          } else if (hour >= 14 && hour < 18) {
+            greeting = '下午好！今天下午有什么安排吗？';
+          } else if (hour >= 18 && hour < 22) {
+            greeting = '晚上好！今天过得怎么样？';
+          } else {
+            greeting = '这么晚了还在呀，要注意休息哦 ✨';
+          }
+          
+          showToast('info', greeting);
+        }
+      }, 1000);
+    };
+  </script>
+</body>
+</html>
+

@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS ai_model_pricing (
   is_active BOOLEAN DEFAULT TRUE COMMENT '是否生效',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (model_id) REFERENCES ai_models(id),
+  FOREIGN KEY (model_id) REFERENCES ai_model_config(id),
   INDEX idx_model_effective (model_id, effective_date, is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模型资费配置表';
 
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS ai_usage_records (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (provider_id) REFERENCES ai_providers(id),
-  FOREIGN KEY (model_id) REFERENCES ai_models(id),
+  FOREIGN KEY (model_id) REFERENCES ai_model_config(id),
   INDEX idx_user_created (user_id, created_at),
   INDEX idx_provider_created (provider_id, created_at),
   INDEX idx_model_created (model_id, created_at)

@@ -121,7 +121,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       if (hasToken) {
         dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
       }
-      geminiService.updateConfig(DEFAULT_GAME_STATE.settings);
+      aiService.updateConfigFromAppSettings(DEFAULT_GAME_STATE.settings);
     }
   }, []);
 
@@ -199,10 +199,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // 设置相关方法
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     dispatch({ type: 'UPDATE_SETTINGS', payload: updates });
-    // 更新gemini配置
+    // 更新AI服务配置
     if (updates.geminiConfig || updates.textProvider || updates.imageProvider) {
       const newSettings = { ...state.settings, ...updates };
-      geminiService.updateConfig(newSettings);
+      aiService.updateConfigFromAppSettings(newSettings);
     }
   }, [state.settings]);
 

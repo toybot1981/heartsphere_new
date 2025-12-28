@@ -1143,8 +1143,19 @@ export class AIService {
       if (error instanceof AIServiceException) {
         throw error;
       }
+      
+      // 检查是否是连接错误
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+          errorMessage.includes('NetworkError')) {
+        throw new AIServiceException(
+          '无法连接到后端服务，请确保后端服务已启动（端口 8081）。如果后端运行在不同端口，请检查配置。'
+        );
+      }
+      
       throw new AIServiceException(
-        `图片生成失败: ${error instanceof Error ? error.message : String(error)}`
+        `图片生成失败: ${errorMessage}`
       );
     }
   }

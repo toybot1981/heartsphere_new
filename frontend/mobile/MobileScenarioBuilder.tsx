@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CustomScenario, StoryNode, StoryOption } from '../types';
+import { CustomScenario, StoryNode, StoryOption, StoryOptionEffect, StoryOptionCondition } from '../types';
 import { Button } from '../components/Button';
 import { aiService } from '../services/ai';
 import { showAlert, showConfirm } from '../utils/dialog';
@@ -51,10 +51,10 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
     updateNode(nodeId, 'options', [...node.options, newOption]);
   };
 
-  const updateOption = (nodeId: string, optIdx: number, field: keyof StoryOption, value: string) => {
+  const updateOption = (nodeId: string, optIdx: number, field: keyof StoryOption, value: any) => {
     const node = nodes[nodeId];
     const newOpts = [...node.options];
-    newOpts.splice(optIdx, 1);
+    newOpts[optIdx] = { ...newOpts[optIdx], [field]: value };
     updateNode(nodeId, 'options', newOpts);
   };
 
@@ -63,6 +63,50 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
     const newOpts = [...node.options];
     newOpts.splice(optIdx, 1);
     updateNode(nodeId, 'options', newOpts);
+  };
+
+  // 状态影响管理
+  const addEffect = (nodeId: string, optionIdx: number) => {
+    const newEffect: StoryOptionEffect = { type: 'favorability', target: '', value: 0 };
+    const option = nodes[nodeId].options[optionIdx];
+    const currentEffects = option.effects || [];
+    updateOption(nodeId, optionIdx, 'effects', [...currentEffects, newEffect]);
+  };
+
+  const updateEffect = (nodeId: string, optionIdx: number, effectIdx: number, field: keyof StoryOptionEffect, value: any) => {
+    const option = nodes[nodeId].options[optionIdx];
+    const currentEffects = [...(option.effects || [])];
+    currentEffects[effectIdx] = { ...currentEffects[effectIdx], [field]: value };
+    updateOption(nodeId, optionIdx, 'effects', currentEffects);
+  };
+
+  const deleteEffect = (nodeId: string, optionIdx: number, effectIdx: number) => {
+    const option = nodes[nodeId].options[optionIdx];
+    const currentEffects = [...(option.effects || [])];
+    currentEffects.splice(effectIdx, 1);
+    updateOption(nodeId, optionIdx, 'effects', currentEffects);
+  };
+
+  // 条件管理
+  const addCondition = (nodeId: string, optionIdx: number) => {
+    const newCondition: StoryOptionCondition = { type: 'favorability', target: '', operator: '>=', value: 0 };
+    const option = nodes[nodeId].options[optionIdx];
+    const currentConditions = option.conditions || [];
+    updateOption(nodeId, optionIdx, 'conditions', [...currentConditions, newCondition]);
+  };
+
+  const updateCondition = (nodeId: string, optionIdx: number, conditionIdx: number, field: keyof StoryOptionCondition, value: any) => {
+    const option = nodes[nodeId].options[optionIdx];
+    const currentConditions = [...(option.conditions || [])];
+    currentConditions[conditionIdx] = { ...currentConditions[conditionIdx], [field]: value };
+    updateOption(nodeId, optionIdx, 'conditions', currentConditions);
+  };
+
+  const deleteCondition = (nodeId: string, optionIdx: number, conditionIdx: number) => {
+    const option = nodes[nodeId].options[optionIdx];
+    const currentConditions = [...(option.conditions || [])];
+    currentConditions.splice(conditionIdx, 1);
+    updateOption(nodeId, optionIdx, 'conditions', currentConditions);
   };
 
   const deleteNode = (nodeId: string) => {
@@ -147,14 +191,161 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                   </div>
 
                   <div>
+                      <label className="text-xs text-purple-400 font-bold mb-2 block">节点类型</label>
+                      <div className="flex flex-col gap-2 mb-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`nodeType-${node.id}`}
+                            value="fixed"
+                            checked={(node.nodeType || 'fixed') === 'fixed'}
+                            onChange={() => updateNode(node.id, 'nodeType', 'fixed')}
+                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                          />
+                          <span className="text-xs text-white">固定内容</span>
+                          <span className="text-[10px] text-slate-500">(直接显示预设内容)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`nodeType-${node.id}`}
+                            value="ai-dynamic"
+                            checked={node.nodeType === 'ai-dynamic'}
+                            onChange={() => updateNode(node.id, 'nodeType', 'ai-dynamic')}
+                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                          />
+                          <span className="text-xs text-white">AI动态生成</span>
+                          <span className="text-[10px] text-slate-500">(AI根据提示词生成内容)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`nodeType-${node.id}`}
+                            value="ending"
+                            checked={node.nodeType === 'ending'}
+                            onChange={() => updateNode(node.id, 'nodeType', 'ending')}
+                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                          />
+                          <span className="text-xs text-white">结局节点</span>
+                          <span className="text-[10px] text-slate-500">(剧本的结局)</span>
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-slate-500">
+                        {(node.nodeType || 'fixed') === 'ai-dynamic' 
+                          ? '✨ AI会根据提示词动态生成对话内容，每次体验略有不同。' 
+                          : (node.nodeType === 'ending')
+                          ? '🎯 结局节点，会在内容前显示【结局】标记。'
+                          : '直接使用预设的提示词内容作为节点内容，保持一致性。'}
+                      </p>
+                  </div>
+
+                  <div>
                       <label className="text-xs text-indigo-400 font-bold mb-1 block">AI 剧情指令 (Prompt)</label>
-                      <p className="text-[10px] text-slate-500 mb-2">描述这一幕发生的事情，AI将据此生成旁白。</p>
+                      <p className="text-[10px] text-slate-500 mb-2">
+                        {(node.nodeType || 'fixed') === 'ai-dynamic' 
+                          ? '描述这一幕发生的事情，AI将根据此场景描述生成符合角色性格的对话和旁白。'
+                          : '描述这一幕发生的事情，AI将据此生成旁白。'}
+                      </p>
                       <textarea 
                         value={node.prompt} 
                         onChange={(e) => updateNode(node.id, 'prompt', e.target.value)}
                         className="w-full h-40 bg-slate-800 border border-slate-700 rounded-xl p-4 text-white focus:border-indigo-500 outline-none resize-none leading-relaxed"
                         placeholder="例如：樱有些害羞地低下了头，递给你一封信..."
                       />
+                  </div>
+
+                  {/* 多角色对话编辑 */}
+                  <div>
+                      <label className="text-xs text-cyan-400 font-bold mb-1 block">多角色对话（可选）</label>
+                      <p className="text-[10px] text-slate-500 mb-2">设置多个角色在此节点的对话，按顺序显示</p>
+                      <div className="space-y-2 mb-2">
+                          {(node.multiCharacterDialogue || []).map((dialogue, idx) => (
+                              <div key={idx} className="bg-slate-800 p-2 rounded-xl border border-slate-700 flex gap-2 items-center flex-wrap">
+                                  <input
+                                      type="text"
+                                      value={dialogue.characterId}
+                                      onChange={(e) => {
+                                          const newDialogue = [...(node.multiCharacterDialogue || [])];
+                                          newDialogue[idx] = { ...newDialogue[idx], characterId: e.target.value };
+                                          updateNode(node.id, 'multiCharacterDialogue', newDialogue);
+                                      }}
+                                      placeholder="角色ID"
+                                      className="w-24 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                  />
+                                  <input
+                                      type="number"
+                                      value={dialogue.order || idx + 1}
+                                      onChange={(e) => {
+                                          const newDialogue = [...(node.multiCharacterDialogue || [])];
+                                          newDialogue[idx] = { ...newDialogue[idx], order: parseInt(e.target.value) || idx + 1 };
+                                          updateNode(node.id, 'multiCharacterDialogue', newDialogue);
+                                      }}
+                                      placeholder="顺序"
+                                      className="w-12 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                  />
+                                  <input
+                                      type="text"
+                                      value={dialogue.content}
+                                      onChange={(e) => {
+                                          const newDialogue = [...(node.multiCharacterDialogue || [])];
+                                          newDialogue[idx] = { ...newDialogue[idx], content: e.target.value };
+                                          updateNode(node.id, 'multiCharacterDialogue', newDialogue);
+                                      }}
+                                      placeholder="对话内容"
+                                      className="flex-1 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none min-w-[120px]"
+                                  />
+                                  <button
+                                      onClick={() => {
+                                          const newDialogue = [...(node.multiCharacterDialogue || [])];
+                                          newDialogue.splice(idx, 1);
+                                          updateNode(node.id, 'multiCharacterDialogue', newDialogue);
+                                      }}
+                                      className="text-slate-500 hover:text-red-400 text-sm px-1"
+                                  >
+                                      ×
+                                  </button>
+                              </div>
+                          ))}
+                      </div>
+                      <button
+                          onClick={() => {
+                              const newDialogue = [...(node.multiCharacterDialogue || []), { characterId: '', content: '', order: (node.multiCharacterDialogue?.length || 0) + 1 }];
+                              updateNode(node.id, 'multiCharacterDialogue', newDialogue);
+                          }}
+                          className="text-[10px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded border border-cyan-500/30"
+                      >
+                          + 添加角色对话
+                      </button>
+                  </div>
+
+                  {/* 时间系统编辑 */}
+                  <div>
+                      <label className="text-xs text-orange-400 font-bold mb-1 block">时间限制（可选）</label>
+                      <p className="text-[10px] text-slate-500 mb-2">设置节点的时间限制，超时后自动跳转</p>
+                      <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                              <input
+                                  type="number"
+                                  min="0"
+                                  value={node.timeLimit || ''}
+                                  onChange={(e) => updateNode(node.id, 'timeLimit', e.target.value ? parseInt(e.target.value) : undefined)}
+                                  placeholder="限时（秒）"
+                                  className="w-full text-[10px] bg-slate-800 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                              />
+                          </div>
+                          {node.timeLimit && (
+                              <select
+                                  value={node.timeoutNodeId || ''}
+                                  onChange={(e) => updateNode(node.id, 'timeoutNodeId', e.target.value || undefined)}
+                                  className="flex-1 text-[10px] bg-slate-800 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                              >
+                                  <option value="">超时跳转节点</option>
+                                  {Object.values(nodes).map((n: StoryNode) => (
+                                      <option key={n.id} value={n.id}>{n.title}</option>
+                                  ))}
+                              </select>
+                          )}
+                      </div>
                   </div>
 
                   <div>
@@ -187,6 +378,135 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                               <option key={n.id} value={n.id}>{n.title}</option>
                                           ))}
                                       </select>
+                                  </div>
+                                  {/* 状态影响编辑 */}
+                                  <div className="mt-2 pt-2 border-t border-slate-700">
+                                      <div className="flex justify-between items-center mb-1">
+                                          <span className="text-[10px] text-yellow-400 font-bold">状态影响</span>
+                                          <button 
+                                            onClick={() => addEffect(node.id, idx)} 
+                                            className="text-[9px] bg-yellow-900/30 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30"
+                                          >
+                                              + 添加
+                                          </button>
+                                      </div>
+                                      {(!opt.effects || opt.effects.length === 0) ? (
+                                          <p className="text-[10px] text-slate-500 italic">未设置（可选）</p>
+                                      ) : (
+                                          <div className="space-y-1.5">
+                                              {opt.effects.map((effect, effectIdx) => (
+                                                  <div key={effectIdx} className="bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex gap-1.5 items-center">
+                                                      <select
+                                                          value={effect.type}
+                                                          onChange={(e) => updateEffect(node.id, idx, effectIdx, 'type', e.target.value)}
+                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                      >
+                                                          <option value="favorability">好感度</option>
+                                                          <option value="event">事件</option>
+                                                          <option value="item">物品</option>
+                                                      </select>
+                                                      <input
+                                                          type="text"
+                                                          value={effect.target}
+                                                          onChange={(e) => updateEffect(node.id, idx, effectIdx, 'target', e.target.value)}
+                                                          placeholder={effect.type === 'favorability' ? '角色ID' : effect.type === 'event' ? '事件ID' : '物品ID'}
+                                                          className="flex-1 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                      />
+                                                      {effect.type === 'favorability' && (
+                                                          <input
+                                                              type="number"
+                                                              value={effect.value ?? 0}
+                                                              onChange={(e) => updateEffect(node.id, idx, effectIdx, 'value', parseInt(e.target.value) || 0)}
+                                                              placeholder="±值"
+                                                              className="w-16 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          />
+                                                      )}
+                                                      <button
+                                                          onClick={() => deleteEffect(node.id, idx, effectIdx)}
+                                                          className="text-slate-500 hover:text-red-400 text-xs px-0.5"
+                                                      >
+                                                          ×
+                                                      </button>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                  </div>
+                                  {/* 条件编辑 */}
+                                  <div className="mt-2 pt-2 border-t border-slate-700">
+                                      <div className="flex justify-between items-center mb-1">
+                                          <span className="text-[10px] text-blue-400 font-bold">显示条件</span>
+                                          <button 
+                                            onClick={() => addCondition(node.id, idx)} 
+                                            className="text-[9px] bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30"
+                                          >
+                                              + 添加
+                                          </button>
+                                      </div>
+                                      {(!opt.conditions || opt.conditions.length === 0) ? (
+                                          <p className="text-[10px] text-slate-500 italic">未设置（默认显示）</p>
+                                      ) : (
+                                          <div className="space-y-1.5">
+                                              {opt.conditions.map((condition, conditionIdx) => (
+                                                  <div key={conditionIdx} className="bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex gap-1.5 items-center flex-wrap">
+                                                      <select
+                                                          value={condition.type}
+                                                          onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'type', e.target.value)}
+                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                      >
+                                                          <option value="favorability">好感度</option>
+                                                          <option value="event">事件</option>
+                                                          <option value="item">物品</option>
+                                                          <option value="time">时间</option>
+                                                      </select>
+                                                      <input
+                                                          type="text"
+                                                          value={condition.target}
+                                                          onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'target', e.target.value)}
+                                                          placeholder={condition.type === 'favorability' ? '角色ID' : condition.type === 'event' ? '事件ID' : condition.type === 'item' ? '物品ID' : '时间ID'}
+                                                          className="flex-1 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none min-w-[80px]"
+                                                      />
+                                                      <select
+                                                          value={condition.operator}
+                                                          onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'operator', e.target.value)}
+                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                      >
+                                                          {(condition.type === 'favorability' || condition.type === 'time') && (
+                                                              <>
+                                                                  <option value=">=">{'>='}</option>
+                                                                  <option value="<=">{'<='}</option>
+                                                                  <option value=">">{'>'}</option>
+                                                                  <option value="<">{'<'}</option>
+                                                                  <option value="==">{'=='}</option>
+                                                                  <option value="!=">{'!='}</option>
+                                                              </>
+                                                          )}
+                                                          {(condition.type === 'event' || condition.type === 'item') && (
+                                                              <>
+                                                                  <option value="has">拥有</option>
+                                                                  <option value="not_has">不拥有</option>
+                                                              </>
+                                                          )}
+                                                      </select>
+                                                      {(condition.type === 'favorability' || condition.type === 'time') && (
+                                                          <input
+                                                              type="number"
+                                                              value={condition.value ?? 0}
+                                                              onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'value', parseFloat(e.target.value) || 0)}
+                                                              placeholder="值"
+                                                              className="w-16 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          />
+                                                      )}
+                                                      <button
+                                                          onClick={() => deleteCondition(node.id, idx, conditionIdx)}
+                                                          className="text-slate-500 hover:text-red-400 text-xs px-0.5"
+                                                      >
+                                                          ×
+                                                      </button>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
                                   </div>
                               </div>
                           ))}

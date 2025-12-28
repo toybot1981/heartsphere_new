@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { billingApi, AIUsageRecord, AIProvider } from '../../../services/api/billing';
+import { adminApi } from '../../../services/api/admin';
 import type { AIModelConfig } from '../../../services/api/admin/types';
 import { Button } from '../../../components/Button';
 import { InputGroup, TextInput } from '../AdminUIComponents';
@@ -31,8 +32,15 @@ export const UsageRecordsView: React.FC<UsageRecordsViewProps> = ({
   });
 
   useEffect(() => {
-    loadProvidersAndModels();
-    loadRecords();
+    if (adminToken) {
+      loadProvidersAndModels();
+    }
+  }, [adminToken]);
+
+  useEffect(() => {
+    if (adminToken) {
+      loadRecords();
+    }
   }, [adminToken, page]);
 
   const loadProvidersAndModels = async () => {
@@ -44,8 +52,10 @@ export const UsageRecordsView: React.FC<UsageRecordsViewProps> = ({
       ]);
       setProviders(providersData);
       setModels(modelsData);
+      console.log('加载提供商和模型数据:', { providers: providersData.length, models: modelsData.length });
     } catch (error: any) {
       console.error('加载数据失败:', error);
+      showAlert('加载提供商和模型数据失败: ' + (error.message || '未知错误'), '错误', 'error');
     }
   };
 
@@ -96,11 +106,19 @@ export const UsageRecordsView: React.FC<UsageRecordsViewProps> = ({
   };
 
   const getProviderName = (providerId: number) => {
-    return providers.find(p => p.id === providerId)?.displayName || `ID:${providerId}`;
+    if (!providers || providers.length === 0) {
+      return `ID:${providerId}`;
+    }
+    const provider = providers.find(p => p.id === providerId);
+    return provider?.displayName || provider?.name || `ID:${providerId}`;
   };
 
   const getModelName = (modelId: number) => {
-    return models.find(m => m.id === modelId)?.modelName || `ID:${modelId}`;
+    if (!models || models.length === 0) {
+      return `ID:${modelId}`;
+    }
+    const model = models.find(m => m.id === modelId);
+    return model?.modelName || `ID:${modelId}`;
   };
 
   const getUsageTypeLabel = (type: string) => {

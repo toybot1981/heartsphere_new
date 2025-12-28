@@ -27,9 +27,12 @@ export const AdminHeader: React.FC<{ title: string; onBack: () => void; onLogout
     </div>
 );
 
-export const InputGroup: React.FC<{ label: string; subLabel?: string; children: React.ReactNode }> = ({ label, subLabel, children }) => (
+export const InputGroup: React.FC<{ label: string; subLabel?: string; required?: boolean; children: React.ReactNode }> = ({ label, subLabel, required, children }) => (
     <div className="mb-4">
-        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</label>
+        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+            {label}
+            {required && <span className="text-red-400 ml-1">*</span>}
+        </label>
         {subLabel && <p className="text-[10px] text-slate-500 mb-2">{subLabel}</p>}
         {children}
     </div>

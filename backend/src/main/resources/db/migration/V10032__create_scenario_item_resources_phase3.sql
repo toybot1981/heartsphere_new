@@ -1,0 +1,38 @@
+-- 第三阶段：为未来科幻场景的物品创建资源记录（包含AI图片生成提示词）
+-- 场景：未来世界、赛博朋克都市、废土世界
+
+SET NAMES utf8mb4;
+
+-- ========== 未来世界 - 物品资源 ==========
+INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `prompt`, `tags`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
+('能量核心（物品）', 'placeholder://item/item_future_energy_core.jpg', 'item', '提供能源的能量核心', 'Energy core, futuristic energy source, glowing energy device, sci-fi technology, realistic style, high quality, detailed energy core, advanced technology, futuristic energy device appearance', '未来,能源,物品', NULL, NOW(), NOW()),
+('全息投影器（物品）', 'placeholder://item/item_future_hologram.jpg', 'item', '可投射全息影像的设备', 'Holographic projector, futuristic hologram device, 3D projector, sci-fi technology, realistic style, high quality, detailed projector, advanced holographic device, futuristic projector design', '未来,科技,物品', NULL, NOW(), NOW()),
+('量子通讯器（物品）', 'placeholder://item/item_future_quantum_comm.jpg', 'item', '即时量子通讯设备', 'Quantum communicator, instant communication device, futuristic comm device, sci-fi technology, realistic style, high quality, detailed communicator, advanced comm device, futuristic communication tool', '未来,通讯,物品', NULL, NOW(), NOW()),
+('记忆芯片（物品）', 'placeholder://item/item_future_memory_chip.jpg', 'item', '存储记忆的芯片', 'Memory chip, data storage chip, futuristic memory device, sci-fi technology, realistic style, high quality, detailed chip, advanced memory storage, futuristic chip design', '未来,记忆,物品', NULL, NOW(), NOW()),
+('悬浮滑板（物品）', 'placeholder://item/item_future_hoverboard.jpg', 'item', '可悬浮的滑板', 'Hoverboard, floating skateboard, futuristic transportation, sci-fi vehicle, realistic style, high quality, detailed hoverboard, advanced hover technology, futuristic hoverboard design', '未来,交通,物品', NULL, NOW(), NOW()),
+('智能眼镜（物品）', 'placeholder://item/item_future_smart_glasses.jpg', 'item', '增强现实智能眼镜', 'Smart glasses, AR glasses, augmented reality glasses, futuristic eyewear, realistic style, high quality, detailed smart glasses, advanced AR technology, futuristic glasses design', '未来,智能,物品', NULL, NOW(), NOW()),
+('医疗纳米机器人（物品）', 'placeholder://item/item_future_nanobots.jpg', 'item', '用于治疗的纳米机器人', 'Medical nanobots, healing nanobots, futuristic medical device, sci-fi medicine, realistic style, high quality, detailed nanobots, advanced medical technology, futuristic medical device appearance', '未来,医疗,物品', NULL, NOW(), NOW()),
+('时间胶囊（物品）', 'placeholder://item/item_future_time_capsule.jpg', 'item', '可存储物品的时间胶囊', 'Time capsule, temporal storage device, futuristic storage, sci-fi container, realistic style, high quality, detailed capsule, advanced storage technology, futuristic capsule design', '未来,存储,物品', NULL, NOW(), NOW());
+
+-- ========== 赛博朋克都市 - 物品资源 ==========
+INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `prompt`, `tags`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
+('义体植入（物品）', 'placeholder://item/item_cyberpunk_implant.jpg', 'item', '身体改造的义体部件', 'Cybernetic implant, body modification, cyberpunk augmentation, futuristic implant, realistic style, high quality, detailed implant, advanced cybernetic technology, cyberpunk implant design', '赛博朋克,义体,物品', NULL, NOW(), NOW()),
+('黑客芯片（物品）', 'placeholder://item/item_cyberpunk_hack_chip.jpg', 'item', '用于网络入侵的芯片', 'Hack chip, hacking device, cyberpunk hacking tool, network intrusion chip, realistic style, high quality, detailed chip, advanced hacking technology, cyberpunk chip design', '赛博朋克,黑客,物品', NULL, NOW(), NOW()),
+('霓虹灯广告牌（物品）', 'placeholder://item/item_cyberpunk_neon_sign.jpg', 'item', '赛博朋克风格的霓虹灯', 'Neon sign, cyberpunk neon light, glowing neon advertisement, futuristic sign, realistic style, high quality, detailed neon sign, vibrant neon colors, cyberpunk aesthetic design', '赛博朋克,霓虹,物品', NULL, NOW(), NOW()),
+('虚拟货币（物品）', 'placeholder://item/item_cyberpunk_crypto.jpg', 'item', '数字货币或加密货币', 'Cryptocurrency, digital currency, virtual money, cyberpunk currency, realistic style, high quality, detailed currency, digital currency design, futuristic money appearance', '赛博朋克,货币,物品', NULL, NOW(), NOW()),
+('数据卡（物品）', 'placeholder://item/item_cyberpunk_data_card.jpg', 'item', '存储重要数据的卡片', 'Data card, information storage card, cyberpunk data device, digital data card, realistic style, high quality, detailed card, advanced data storage, cyberpunk card design', '赛博朋克,数据,物品', NULL, NOW(), NOW()),
+('机械手臂（物品）', 'placeholder://item/item_cyberpunk_arm.jpg', 'item', '可替换的机械手臂', 'Mechanical arm, robotic arm, cyberpunk prosthesis, bionic arm, realistic style, high quality, detailed mechanical arm, advanced robotics, cyberpunk arm design', '赛博朋克,义体,物品', NULL, NOW(), NOW()),
+('电子烟（物品）', 'placeholder://item/item_cyberpunk_vape.jpg', 'item', '赛博朋克风格的电子烟', 'Electronic cigarette, vape, cyberpunk smoking device, futuristic vape, realistic style, high quality, detailed vape, cyberpunk aesthetic, futuristic smoking device design', '赛博朋克,物品,物品', NULL, NOW(), NOW()),
+('虚拟现实头盔（物品）', 'placeholder://item/item_cyberpunk_vr_helmet.jpg', 'item', '沉浸式VR头盔', 'VR helmet, virtual reality headset, cyberpunk VR device, immersive VR headset, realistic style, high quality, detailed helmet, advanced VR technology, cyberpunk VR design', '赛博朋克,VR,物品', NULL, NOW(), NOW());
+
+-- ========== 废土世界 - 物品资源 ==========
+INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `prompt`, `tags`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
+('防辐射服（物品）', 'placeholder://item/item_wasteland_rad_suit.jpg', 'item', '防止辐射的防护服', 'Radiation suit, protective suit, post-apocalyptic gear, wasteland protection, realistic style, high quality, detailed suit, rugged protective gear, wasteland suit design', '废土,防护,物品', NULL, NOW(), NOW()),
+('废料（物品）', 'placeholder://item/item_wasteland_scrap.jpg', 'item', '可以回收利用的废料', 'Scrap metal, junk materials, wasteland resources, post-apocalyptic scrap, realistic style, high quality, detailed scrap, rusted materials, wasteland scrap appearance', '废土,废料,物品', NULL, NOW(), NOW()),
+('净水器（物品）', 'placeholder://item/item_wasteland_water_filter.jpg', 'item', '净化水源的设备', 'Water purifier, water filter, survival equipment, wasteland water device, realistic style, high quality, detailed purifier, rugged water filter, post-apocalyptic filter design', '废土,生存,物品', NULL, NOW(), NOW()),
+('燃料（物品）', 'placeholder://item/item_wasteland_fuel.jpg', 'item', '珍贵的燃料', 'Fuel, gasoline, precious fuel, wasteland resource, realistic style, high quality, detailed fuel container, valuable resource, post-apocalyptic fuel appearance', '废土,燃料,物品', NULL, NOW(), NOW()),
+('自制武器（物品）', 'placeholder://item/item_wasteland_weapon.jpg', 'item', '用废料制作的自制武器', 'Improvised weapon, homemade weapon, wasteland weapon, post-apocalyptic weapon, realistic style, high quality, detailed weapon, rugged homemade weapon, wasteland weapon design', '废土,武器,物品', NULL, NOW(), NOW()),
+('医疗包（物品）', 'placeholder://item/item_wasteland_medkit.jpg', 'item', '急救医疗包', 'Medkit, first aid kit, medical supplies, wasteland medicine, realistic style, high quality, detailed medkit, survival medical kit, post-apocalyptic medical supplies', '废土,医疗,物品', NULL, NOW(), NOW()),
+('食物罐头（物品）', 'placeholder://item/item_wasteland_canned_food.jpg', 'item', '保存的食物罐头', 'Canned food, preserved food, survival food, wasteland supplies, realistic style, high quality, detailed canned food, post-apocalyptic food, valuable food resource', '废土,食物,物品', NULL, NOW(), NOW()),
+('地图（物品）', 'placeholder://item/item_wasteland_map.jpg', 'item', '标注危险区域的地图', 'Wasteland map, survival map, danger zone map, post-apocalyptic map, realistic style, high quality, detailed map, annotated survival map, wasteland navigation map', '废土,地图,物品', NULL, NOW(), NOW());
+

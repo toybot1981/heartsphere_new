@@ -8,7 +8,30 @@
       "Bash(npm test:*)",
       "Bash(mv:*)",
       "Bash(find:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(if:*)",
+      "Bash(then cat /tmp/claude/-Users-admin-Workspace-heartsphere-new/tasks/b36c1c1.output)",
+      "Bash(else echo \"No output file\")",
+      "Bash(fi:*)",
+      "Bash(mvn compile:*)",
+      "Bash(mvn dependency:tree:*)",
+      "Bash(pkill:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(mvn package:*)",
+      "Bash(python3:*)",
+      "Bash(SESSION_ID=\"af4148d4-2a8c-40c9-922d-8a2e790b9bb4\":*)",
+      "Bash(test:*)",
+      "Bash(lsof:*)",
+      "Bash(npm install:*)",
+      "Bash(ps:*)",
+      "Bash(npx vite:*)",
+      "Bash(node node_modules/vite/bin/vite.js:*)",
+      "Bash(xargs:*)",
+      "Bash(mysql:*)",
+      "Bash(pip3 install:*)"
     ]
   }
 }

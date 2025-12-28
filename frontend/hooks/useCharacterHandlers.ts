@@ -6,7 +6,7 @@
 import { useCallback } from 'react';
 import { Character, WorldScene } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
-import { characterApi, worldApi, eraApi, userMainStoryApi, imageApi } from '../services/api';
+import { characterApi, worldApi, eraApi, userMainStoryApi, imageApi, scriptApi } from '../services/api';
 import { syncService } from '../services/syncService';
 import { convertBackendCharacterToFrontend, convertBackendMainStoryToCharacter, convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert, showConfirm } from '../utils/dialog';
@@ -264,13 +264,17 @@ export const useCharacterHandlers = (
             const worlds = await worldApi.getAllWorlds(token);
             const eras = await eraApi.getAllEras(token);
             
+            // 加载剧本数据，确保剧本内容能正常显示
+            const scripts = await scriptApi.getAllScripts(token);
+            console.log(`[useCharacterHandlers] 获取到 ${scripts.length} 个剧本`);
+            
             // 使用数据转换工具
             const userMainStories = await userMainStoryApi.getAll(token);
             const updatedUserWorldScenes = convertErasToWorldScenes(
               worlds,
               eras,
               updatedCharacters,
-              undefined, // scripts
+              scripts, // 传递剧本数据
               userMainStories
             );
             

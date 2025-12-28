@@ -83,7 +83,15 @@ export class AIConfigManager {
           }
         }
       } catch (error) {
-        console.warn('[AIConfigManager] Failed to fetch config from backend, using local config:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        // 如果是连接错误，提供更详细的提示
+        if (errorMessage.includes('Failed to fetch') || 
+            errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+            errorMessage.includes('NetworkError')) {
+          console.warn('[AIConfigManager] 无法连接到后端服务，使用本地配置。请确保后端服务已启动（端口 8081）');
+        } else {
+          console.warn('[AIConfigManager] Failed to fetch config from backend, using local config:', error);
+        }
       }
     }
     

@@ -131,24 +131,31 @@ public class AIBillingAspect {
             return joinPoint.proceed();
         }
         
-        // 查找计费系统中的provider（用于资源池管理）
-        Optional<Long> providerIdOpt = modelLookupService.findProviderId(finalProvider);
+        // 从模型配置中获取正确的provider名称（确保provider和model的对应关系正确）
+        String actualProvider = finalProvider;
+        if (finalModelConfig != null && finalModelConfig.getProvider() != null && !finalModelConfig.getProvider().isEmpty()) {
+            actualProvider = finalModelConfig.getProvider();
+            log.info("[计费] 使用模型配置中的provider: {} (原provider: {})", actualProvider, finalProvider);
+        }
+        
+        // 查找计费系统中的provider（使用模型配置中的provider名称）
+        Optional<Long> providerIdOpt = modelLookupService.findProviderId(actualProvider);
         
         // 如果计费系统中的provider不存在，尝试自动创建
         if (providerIdOpt.isEmpty()) {
-            log.info("[计费] 计费系统中的provider不存在，尝试自动创建: provider={}", finalProvider);
+            log.info("[计费] 计费系统中的provider不存在，尝试自动创建: provider={}", actualProvider);
             try {
                 // 创建或获取provider
-                String providerDisplayName = getProviderDisplayName(finalProvider);
+                String providerDisplayName = getProviderDisplayName(actualProvider);
                 com.heartsphere.billing.entity.AIProvider aiProvider = 
-                    modelLookupService.findOrCreateProvider(finalProvider, providerDisplayName);
+                    modelLookupService.findOrCreateProvider(actualProvider, providerDisplayName);
                 providerIdOpt = Optional.of(aiProvider.getId());
                 
                 log.info("[计费] 自动创建provider成功: providerId={}, provider={}", 
-                        providerIdOpt.get(), finalProvider);
+                        providerIdOpt.get(), actualProvider);
             } catch (Exception e) {
                 log.error("[计费] 自动创建provider失败: provider={}, error={}", 
-                        finalProvider, e.getMessage(), e);
+                        actualProvider, e.getMessage(), e);
                 // 如果创建失败，仍然允许调用，但使用默认值
                 providerIdOpt = Optional.of(0L);
             }

@@ -18,7 +18,7 @@ export const useSettings = () => {
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     dispatch({ type: 'UPDATE_SETTINGS', payload: updates });
     
-    // 如果更新了gemini相关配置，同步更新geminiService
+    // 如果更新了AI相关配置，同步更新aiService
     if (updates.geminiConfig || updates.textProvider || updates.imageProvider) {
       const newSettings = { ...settings, ...updates };
       aiService.updateConfigFromAppSettings(newSettings);
@@ -69,7 +69,7 @@ export const useSettings = () => {
     };
     
     dispatch({ type: 'SET_SETTINGS', payload: defaultSettings });
-    geminiService.updateConfig(defaultSettings);
+    aiService.updateConfigFromAppSettings(defaultSettings);
   }, [dispatch]);
 
   return {

@@ -633,7 +633,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                                         // 保存API Keys
                                         AIConfigManager.saveLocalApiKeys(localApiKeys);
                                         
-                                        // 同步 localApiKeys 到 settings 的各个 config 中，以便 geminiService 可以读取
+                                        // 同步 localApiKeys 到 settings 的各个 config 中，以便 aiService 可以读取
                                         const updatedSettings: AppSettings = {
                                             ...settings,
                                             geminiConfig: {

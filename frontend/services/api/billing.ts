@@ -361,6 +361,28 @@ export const billingApi = {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
+    aggregate: (token: string, params?: {
+      date?: string;
+      days?: number;
+    }) => {
+      let url = `${BASE_PATH}/cost/aggregate`;
+      const queryParams = new URLSearchParams();
+      if (params?.date) queryParams.append('date', params.date);
+      if (params?.days) queryParams.append('days', params.days.toString());
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
+      }
+      return request<{ success: boolean; message: string }>(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    aggregateRange: (token: string, startDate: string, endDate: string) => {
+      return request<{ success: boolean; message: string }>(`${BASE_PATH}/cost/aggregate/range?startDate=${startDate}&endDate=${endDate}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
   },
 
   // 用户配额管理

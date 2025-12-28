@@ -40,5 +40,16 @@ public interface AIUsageRecordRepository extends JpaRepository<AIUsageRecord, Lo
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
+    
+    /**
+     * 查询指定日期范围内的成功使用记录（用于成本统计汇总）
+     */
+    @Query("SELECT r FROM AIUsageRecord r WHERE r.status = 'success' " +
+           "AND r.createdAt >= :startDate AND r.createdAt <= :endDate " +
+           "ORDER BY r.createdAt ASC")
+    List<AIUsageRecord> findSuccessRecordsByDateRange(
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
+    );
 }
 

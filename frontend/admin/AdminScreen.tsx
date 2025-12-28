@@ -10,6 +10,8 @@ import { MainStoriesManagement } from './components/MainStoriesManagement';
 import { UsersManagement } from './components/UsersManagement';
 import { CharactersManagement } from './components/CharactersManagement';
 import { ScenariosManagement } from './components/ScenariosManagement';
+import { EventsManagement } from './components/EventsManagement';
+import { ItemsManagement } from './components/ItemsManagement';
 import { InviteCodesManagement } from './components/InviteCodesManagement';
 import { ResourcesManagement } from './components/ResourcesManagement';
 import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
@@ -66,6 +68,8 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'eras': '场景管理',
             'characters': 'E-Soul 角色数据库',
             'scenarios': '互动剧本库',
+            'events': '剧本事件管理',
+            'items': '剧本物品管理',
             'main-stories': '主线剧情管理',
             'invite-codes': '邀请码管理',
             'resources': '资源管理',
@@ -188,6 +192,30 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             eras={systemEras}
                             characters={systemCharacters}
                             worlds={systemWorlds}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'events' && (
+                        <EventsManagement
+                            eras={systemEras}
+                            systemEras={systemEras}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'items' && (
+                        <ItemsManagement
+                            eras={systemEras}
+                            systemEras={systemEras}
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {

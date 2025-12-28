@@ -223,6 +223,33 @@ export const gameStateReducer = (state: GameState, action: GameStateAction): Gam
     case 'SET_CURRENT_SCENARIO_STATE':
       return { ...state, currentScenarioState: action.payload };
     
+    case 'UPDATE_SCENARIO_STATE': {
+      if (!state.currentScenarioState) {
+        // 如果没有当前剧本状态，无法更新
+        return state;
+      }
+      const { favorability, events, items, visitedNodes, currentTime } = action.payload;
+      return {
+        ...state,
+        currentScenarioState: {
+          ...state.currentScenarioState,
+          favorability: favorability 
+            ? { ...(state.currentScenarioState.favorability || {}), ...favorability }
+            : state.currentScenarioState.favorability,
+          events: events 
+            ? [...(state.currentScenarioState.events || []), ...events.filter(e => !state.currentScenarioState?.events?.includes(e))]
+            : state.currentScenarioState.events,
+          items: items 
+            ? [...(state.currentScenarioState.items || []), ...items.filter(i => !state.currentScenarioState?.items?.includes(i))]
+            : state.currentScenarioState.items,
+          visitedNodes: visitedNodes
+            ? [...(state.currentScenarioState.visitedNodes || []), ...visitedNodes.filter(n => !state.currentScenarioState?.visitedNodes?.includes(n))]
+            : state.currentScenarioState.visitedNodes,
+          currentTime: currentTime !== undefined ? currentTime : state.currentScenarioState.currentTime,
+        }
+      };
+    }
+    
     // 设置
     case 'SET_SETTINGS':
       return { ...state, settings: action.payload };

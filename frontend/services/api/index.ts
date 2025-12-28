@@ -13,6 +13,9 @@ export * from './api/script';
 // 主线剧情模块
 export * from './api/mainStory';
 
+// 剧本事件和物品模块
+export * from './api/scenario';
+
 // 注意：其他模块（auth, world, journal, membership等）仍在 api.ts 中
 // 后续会逐步迁移到模块化结构
 

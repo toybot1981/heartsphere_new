@@ -42,10 +42,26 @@ export interface Message {
   timestamp: number;
 }
 
+export interface StoryOptionEffect {
+  type: 'favorability' | 'event' | 'item';
+  target: string; // 角色ID（favorability）或事件ID（event）或物品ID（item）
+  value?: number; // 好感度变化值（仅用于 favorability，可以是正数或负数）
+}
+
+export interface StoryOptionCondition {
+  type: 'favorability' | 'event' | 'item' | 'time';
+  target: string; // 角色ID（favorability）或事件ID（event）或物品ID（item）或时间ID（time）
+  operator: '>=' | '<=' | '==' | '!=' | '>' | '<' | 'has' | 'not_has'; // 比较运算符
+  value?: number | string; // 比较值（favorability用数字，其他用字符串）
+}
+
 export interface StoryOption {
   id: string;
   text: string;
   nextNodeId: string;
+  effects?: StoryOptionEffect[]; // 选择此选项时的状态影响
+  conditions?: StoryOptionCondition[]; // 显示此选项需要满足的条件（所有条件都需要满足）
+  hidden?: boolean; // 如果为true，即使条件满足也不显示（用于隐藏选项）
 }
 
 export interface StoryNode {
@@ -56,6 +72,25 @@ export interface StoryNode {
   options: StoryOption[];
   characterIds?: string[]; // 该节点涉及的角色ID列表
   focusCharacterId?: string; // 该节点主要聚焦的角色ID
+  nodeType?: 'fixed' | 'ai-dynamic' | 'ending'; // 节点类型：fixed=固定内容，ai-dynamic=AI动态生成，ending=结局节点
+  // 多角色对话支持
+  multiCharacterDialogue?: Array<{
+    characterId: string;
+    content: string; // 该角色的对话内容
+    order?: number; // 显示顺序
+  }>;
+  // 随机事件
+  randomEvents?: Array<{
+    id: string;
+    probability: number; // 0-1之间的概率
+    effect: StoryOptionEffect; // 触发的事件效果
+  }>;
+  // 时间系统
+  timeLimit?: number; // 限时时间（秒），如果设置，超过时间后自动跳转到timeoutNodeId
+  timeoutNodeId?: string; // 超时后跳转的节点ID
+  // AI辅助选项生成
+  aiGenerateOptions?: boolean; // 是否使用AI生成额外选项
+  aiOptionPrompt?: string; // AI生成选项的提示词
 }
 
 export interface CustomScenario {
@@ -194,6 +229,7 @@ export interface UserProfile {
   phoneNumber?: string;
   isGuest: boolean; // True if not logged in/registered
   wechatOpenid?: string; // 微信OpenID，用于判断是否已绑定微信
+  isFounder?: boolean; // 是否为心域创始人
 }
 
 export interface JournalEcho {
@@ -272,6 +308,15 @@ export interface GameState {
   currentScenarioState?: {
     scenarioId: string;
     currentNodeId: string;
+    // 状态追踪
+    favorability?: Record<string, number>; // 角色ID -> 好感度值（0-100）
+    events?: string[]; // 已触发的事件ID列表
+    items?: string[]; // 已收集的物品ID列表
+    // 时间系统
+    startTime?: number; // 剧本开始时间（时间戳）
+    currentTime?: number; // 当前时间（时间戳，相对于startTime的秒数）
+    // 探索地图（用于可视化）
+    visitedNodes?: string[]; // 已访问的节点ID列表
   };
   settings: AppSettings;
   mailbox: Mail[]; // Chronos Mailbox
