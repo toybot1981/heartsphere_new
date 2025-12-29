@@ -1,0 +1,144 @@
+package com.heartsphere.memory.model.character;
+
+import com.heartsphere.memory.model.MemoryImportance;
+import com.heartsphere.memory.model.MemorySource;
+import com.heartsphere.memory.model.MemoryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 角色与用户交互记忆
+ * 存储角色与用户的对话历史、用户偏好、情感互动等
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "character_interaction_memories")
+public class CharacterInteractionMemory {
+    
+    @Id
+    private String id;
+    
+    /**
+     * 角色ID
+     */
+    private String characterId;
+    
+    /**
+     * 用户ID
+     */
+    private String userId;
+    
+    /**
+     * 场景切片ID（可选）
+     */
+    private String eraId;
+    
+    /**
+     * 交互记忆类型
+     * CONVERSATION_TOPIC: 对话话题
+     * USER_PREFERENCE: 用户偏好
+     * EMOTIONAL_EXPERIENCE: 情感经历
+     * IMPORTANT_MOMENT: 重要时刻
+     */
+    private MemoryType type;
+    
+    /**
+     * 重要性
+     */
+    private MemoryImportance importance;
+    
+    /**
+     * 记忆内容
+     */
+    private String content;
+    
+    /**
+     * 交互会话ID
+     */
+    private String interactionSessionId;
+    
+    /**
+     * 交互时间
+     */
+    private Instant interactionTime;
+    
+    /**
+     * 交互类型
+     */
+    private InteractionType interactionType;
+    
+    /**
+     * 用户相关数据
+     * 用户偏好、习惯等
+     */
+    private Map<String, Object> userRelatedData;
+    
+    /**
+     * 结构化数据
+     */
+    private Map<String, Object> structuredData;
+    
+    /**
+     * 标签
+     */
+    private List<String> tags;
+    
+    /**
+     * 扩展元数据
+     */
+    private Map<String, Object> metadata;
+    
+    /**
+     * 创建时间
+     */
+    private Instant createdAt;
+    
+    /**
+     * 最后访问时间
+     */
+    private Instant lastAccessedAt;
+    
+    /**
+     * 访问次数
+     */
+    private Integer accessCount;
+    
+    /**
+     * 记忆来源
+     */
+    private MemorySource source;
+    
+    /**
+     * 来源ID
+     */
+    private String sourceId;
+    
+    /**
+     * 置信度
+     */
+    private Double confidence;
+    
+    /**
+     * 交互类型枚举
+     */
+    public enum InteractionType {
+        CONVERSATION,  // 对话
+        ACTION,        // 操作
+        EVENT,         // 事件
+        EMOTION        // 情感
+    }
+}
+

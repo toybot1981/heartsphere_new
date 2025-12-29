@@ -18,6 +18,7 @@ import { adminUsersApi } from './users';
 import { adminSystemAdminsApi } from './admins';
 import { adminDashboardApi } from './dashboard';
 import { adminPresetScriptsApi } from './presetScripts';
+import { apiKeysApi } from './apiKeys';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -37,6 +38,7 @@ export {
   adminSystemAdminsApi,
   adminDashboardApi,
   adminPresetScriptsApi,
+  apiKeysApi,
 };
 
 // 为了向后兼容，创建一个包含所有旧接口的 adminApi 对象
@@ -89,5 +91,8 @@ export const adminApi = {
 
   // 预置剧本生成
   presetScripts: adminPresetScriptsApi,
+
+  // API Key管理
+  apiKeys: apiKeysApi,
 };
 

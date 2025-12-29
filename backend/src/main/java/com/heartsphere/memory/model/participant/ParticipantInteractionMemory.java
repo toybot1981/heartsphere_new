@@ -1,0 +1,140 @@
+package com.heartsphere.memory.model.participant;
+
+import com.heartsphere.memory.model.MemoryImportance;
+import com.heartsphere.memory.model.MemorySource;
+import com.heartsphere.memory.model.MemoryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 参与者交互记忆
+ * 存储参与者之间的交互历史、协作记忆、事件记忆等
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "participant_interaction_memories")
+public class ParticipantInteractionMemory {
+    
+    @Id
+    private String id;
+    
+    /**
+     * 参与者ID
+     */
+    private String participantId;
+    
+    /**
+     * 关联的参与者ID
+     */
+    private String relatedParticipantId;
+    
+    /**
+     * 场景ID
+     */
+    private String sceneId;
+    
+    /**
+     * 记忆类型
+     */
+    private MemoryType type;
+    
+    /**
+     * 重要性
+     */
+    private MemoryImportance importance;
+    
+    /**
+     * 记忆内容
+     */
+    private String content;
+    
+    /**
+     * 交互类型
+     */
+    private InteractionType interactionType;
+    
+    /**
+     * 交互会话ID
+     */
+    private String interactionSessionId;
+    
+    /**
+     * 交互时间
+     */
+    private Instant interactionTime;
+    
+    /**
+     * 协作类型（如果是协作交互）
+     */
+    private String collaborationType;
+    
+    /**
+     * 协作结果（如果是协作交互）
+     */
+    private String collaborationResult;
+    
+    /**
+     * 结构化数据
+     */
+    private Map<String, Object> structuredData;
+    
+    /**
+     * 标签
+     */
+    private List<String> tags;
+    
+    /**
+     * 来源
+     */
+    private MemorySource source;
+    
+    /**
+     * 置信度
+     */
+    private Double confidence;
+    
+    /**
+     * 创建时间
+     */
+    private Instant createdAt;
+    
+    /**
+     * 最后访问时间
+     */
+    private Instant lastAccessedAt;
+    
+    /**
+     * 访问次数
+     */
+    private Integer accessCount;
+    
+    /**
+     * 元数据
+     */
+    private Map<String, Object> metadata;
+    
+    /**
+     * 交互类型枚举
+     */
+    public enum InteractionType {
+        CONVERSATION,  // 对话
+        COLLABORATION, // 协作
+        EVENT,         // 事件
+        GAME,          // 游戏
+        SHARE          // 分享
+    }
+}
+

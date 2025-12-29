@@ -9,6 +9,7 @@ export { UsersManagement } from './UsersManagement';
 export { CharactersManagement } from './CharactersManagement';
 export { ScenariosManagement } from './ScenariosManagement';
 export { InviteCodesManagement } from './InviteCodesManagement';
+export { ApiKeysManagement } from './ApiKeysManagement';
 export { ResourcesManagement } from './ResourcesManagement';
 export { SubscriptionPlansManagement } from './SubscriptionPlansManagement';
 export { EmailConfigManagement } from './EmailConfigManagement';

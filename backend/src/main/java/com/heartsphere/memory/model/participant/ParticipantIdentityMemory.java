@@ -1,0 +1,86 @@
+package com.heartsphere.memory.model.participant;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 参与者身份记忆
+ * 存储参与者在系统中的身份、角色、权限等信息
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "participant_identity_memories")
+public class ParticipantIdentityMemory {
+    
+    @Id
+    private String id;
+    
+    /**
+     * 参与者ID
+     */
+    private String participantId;
+    
+    /**
+     * 场景ID（可选）
+     */
+    private String sceneId;
+    
+    /**
+     * 身份描述
+     */
+    private String identity;
+    
+    /**
+     * 角色（单个）
+     */
+    private String role;
+    
+    /**
+     * 角色列表（多个角色）
+     */
+    private List<String> roles;
+    
+    /**
+     * 资料信息
+     */
+    private Map<String, Object> profile;
+    
+    /**
+     * 权限列表
+     */
+    private List<String> permissions;
+    
+    /**
+     * 创建时间
+     */
+    private Instant createdAt;
+    
+    /**
+     * 更新时间
+     */
+    private Instant updatedAt;
+    
+    /**
+     * 最后访问时间
+     */
+    private Instant lastAccessedAt;
+    
+    /**
+     * 元数据
+     */
+    private Map<String, Object> metadata;
+}
+

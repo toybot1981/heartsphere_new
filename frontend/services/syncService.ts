@@ -242,57 +242,116 @@ export const syncService = {
       const localEntryMap = new Map(localEntries.map(entry => [entry.id, entry]));
 
       // Entries to add to server (local entries not on server)
-      const entriesToAdd = localEntries.filter(entry => !serverEntryMap.has(entry.id));
+      // 修复：只同步待同步(syncStatus=0)或同步失败(syncStatus=-1)的条目
+      // 跳过已同步(syncStatus=1)的条目，避免重复保存
+      // 同时跳过临时ID且正在被handleAddJournalEntry处理的条目（syncStatus=0的临时ID条目）
+      const entriesToAdd = localEntries.filter(entry => {
+        // 如果条目已同步，不需要再次保存
+        if (entry.syncStatus === 1) {
+          return false;
+        }
+        // 如果条目不在服务器上，且是待同步或同步失败状态，需要添加
+        if (!serverEntryMap.has(entry.id)) {
+          // 对于临时ID（entry_或e_开头）且syncStatus=0的条目，说明正在被handleAddJournalEntry处理
+          // 应该跳过，让handleAddJournalEntry自己处理，避免重复保存
+          if ((entry.id.startsWith('entry_') || entry.id.startsWith('e_')) && entry.syncStatus === 0) {
+            console.log('[syncJournalEntries] 跳过正在处理的临时条目:', entry.id);
+            return false;
+          }
+          return true;
+        }
+        return false;
+      });
       
       // Entries to update on server (local entries that have changed)
+      // 修复：只更新已同步但内容有变化的条目，跳过临时ID的条目
       const entriesToUpdate = localEntries.filter(entry => {
+        // 跳过临时ID的条目（这些条目应该通过create处理，而不是update）
+        if (entry.id.startsWith('entry_') || entry.id.startsWith('e_')) {
+          return false;
+        }
         const serverEntry = serverEntryMap.get(entry.id);
-        return serverEntry && 
-               (entry.title !== serverEntry.title || 
-                entry.content !== serverEntry.content || 
-                entry.timestamp !== serverEntry.timestamp ||
-                entry.tags !== (serverEntry.tags || null) ||
-                entry.insight !== (serverEntry.insight || null));
+        if (!serverEntry) {
+          return false;
+        }
+        // 只更新已同步但内容有变化的条目
+        return entry.syncStatus === 1 && (
+          entry.title !== serverEntry.title || 
+          entry.content !== serverEntry.content || 
+          entry.timestamp !== serverEntry.timestamp ||
+          entry.tags !== (serverEntry.tags || null) ||
+          entry.insight !== (serverEntry.insight || null)
+        );
       });
 
       // Entries to add to local (server entries not local)
       const entriesToLocalAdd = formattedServerEntries.filter(entry => !localEntryMap.has(entry.id));
 
       // Process additions to server
+      // 修复：添加去重检查，避免重复保存
+      if (entriesToAdd.length > 0) {
+        console.log(`[syncJournalEntries] 准备添加 ${entriesToAdd.length} 个日记条目到服务器`);
+      }
       for (const entry of entriesToAdd) {
-        await journalApi.createJournalEntry(
-          {
-            title: entry.title,
-            content: entry.content,
-            entryDate: new Date(entry.timestamp).toISOString(),
-            tags: entry.tags,
-            insight: entry.insight, // 包含insight字段，避免同步时丢失
-            worldId: undefined, // TODO: Map local scene ID to server world ID
-            eraId: undefined,
-            characterId: undefined
-          },
-          token
-        );
-        console.log('Added journal entry to server:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
+        try {
+          // 再次检查：如果条目已同步，跳过
+          if (entry.syncStatus === 1) {
+            console.log(`[syncJournalEntries] 跳过已同步的条目: ${entry.id}`);
+            continue;
+          }
+          
+          await journalApi.createJournalEntry(
+            {
+              title: entry.title,
+              content: entry.content,
+              entryDate: new Date(entry.timestamp).toISOString(),
+              tags: entry.tags,
+              insight: entry.insight, // 包含insight字段，避免同步时丢失
+              worldId: undefined, // TODO: Map local scene ID to server world ID
+              eraId: undefined,
+              characterId: undefined
+            },
+            token
+          );
+          console.log('[syncJournalEntries] 成功添加日记条目到服务器:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
+        } catch (error) {
+          console.error(`[syncJournalEntries] 添加日记条目失败: ${entry.id}`, error);
+          // 继续处理其他条目，不中断整个同步过程
+        }
       }
 
       // Process updates to server
+      // 修复：添加日志和错误处理
+      if (entriesToUpdate.length > 0) {
+        console.log(`[syncJournalEntries] 准备更新 ${entriesToUpdate.length} 个日记条目`);
+      }
       for (const entry of entriesToUpdate) {
-        await journalApi.updateJournalEntry(
-          entry.id,
-          {
-            title: entry.title,
-            content: entry.content,
-            entryDate: new Date(entry.timestamp).toISOString(),
-            tags: entry.tags,
-            insight: entry.insight, // 包含insight字段，避免同步时覆盖为null
-            worldId: undefined,
-            eraId: undefined,
-            characterId: undefined
-          },
-          token
-        );
-        console.log('Updated journal entry on server:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
+        try {
+          // 再次检查：确保不是临时ID
+          if (entry.id.startsWith('entry_') || entry.id.startsWith('e_')) {
+            console.log(`[syncJournalEntries] 跳过临时ID的条目: ${entry.id}`);
+            continue;
+          }
+          
+          await journalApi.updateJournalEntry(
+            entry.id,
+            {
+              title: entry.title,
+              content: entry.content,
+              entryDate: new Date(entry.timestamp).toISOString(),
+              tags: entry.tags,
+              insight: entry.insight, // 包含insight字段，避免同步时覆盖为null
+              worldId: undefined,
+              eraId: undefined,
+              characterId: undefined
+            },
+            token
+          );
+          console.log('[syncJournalEntries] 成功更新日记条目:', entry.id, entry.insight ? `(包含insight, 长度: ${entry.insight.length})` : '(无insight)');
+        } catch (error) {
+          console.error(`[syncJournalEntries] 更新日记条目失败: ${entry.id}`, error);
+          // 继续处理其他条目，不中断整个同步过程
+        }
       }
 
       // If there are new entries from server, update local state

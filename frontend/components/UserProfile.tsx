@@ -3,6 +3,7 @@ import { UserProfile as UserProfileType, JournalEntry, Character, Mail, WorldSce
 import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { showAlert } from '../utils/dialog';
 import { authApi, wechatApi, userProfileApi } from '../services/api';
+import { ShareButton } from './heartconnect/ShareButton';
 
 interface UserProfileProps {
   userProfile: UserProfileType;
@@ -59,6 +60,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     profile: true,
     statistics: false, // 默认折叠，只显示入口
     myContent: false,
+    share: false, // 心域共享区域，默认折叠
   });
   
   // 微信绑定相关状态
@@ -655,6 +657,28 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* 心域共享区域 */}
+        <div 
+          className="bg-gray-900/50 rounded-xl border border-gray-800 mb-3"
+        >
+          <div 
+            className="p-3 flex items-center justify-between cursor-pointer"
+            onClick={() => toggleSection('share')}
+          >
+            <h3 className="text-sm font-bold text-white">🔗 心域共享</h3>
+            <span className="text-gray-500">{expandedSections.share ? '▼' : '▶'}</span>
+          </div>
+          
+          {expandedSections.share && (
+            <div className="p-3 pt-0" onClick={(e) => e.stopPropagation()}>
+              <p className="text-xs text-gray-400 mb-3">
+                分享你的心域，让其他人可以体验你的世界和场景
+              </p>
+              <ShareButton variant="button" className="w-full" />
             </div>
           )}
         </div>

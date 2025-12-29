@@ -34,6 +34,7 @@ public class BillingInitializationService {
         AIProvider dashscopeProvider = initOrGetProvider("dashscope", "阿里云通义千问", true);
         AIProvider geminiProvider = initOrGetProvider("gemini", "Google Gemini", true);
         AIProvider zhipuProvider = initOrGetProvider("zhipu", "智谱AI", true);
+        AIProvider bigmodelProvider = initOrGetProvider("bigmodel", "智谱AI BigModel", true);
         AIProvider doubaoProvider = initOrGetProvider("doubao", "字节跳动豆包", true);
 
         // 2. 为每个提供商初始化资源池
@@ -41,6 +42,7 @@ public class BillingInitializationService {
         resourcePoolService.getOrCreatePool(dashscopeProvider.getId());
         resourcePoolService.getOrCreatePool(geminiProvider.getId());
         resourcePoolService.getOrCreatePool(zhipuProvider.getId());
+        resourcePoolService.getOrCreatePool(bigmodelProvider.getId());
         resourcePoolService.getOrCreatePool(doubaoProvider.getId());
         log.info("资源池初始化完成");
 

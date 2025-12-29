@@ -6,13 +6,17 @@ export type SectionType =
     | 'characters' 
     | 'scenarios' 
     | 'main-stories'
-    | 'invite-codes' 
+    | 'invite-codes'
+    | 'api-keys'
     | 'settings' 
     | 'resources' 
     | 'subscription-plans' 
     | 'email-config' 
     | 'users'
-    | 'admins';
+    | 'admins'
+    | 'billing'
+    | 'events'
+    | 'items';
 
 export type ViewMode = 'list' | 'edit' | 'create';
 

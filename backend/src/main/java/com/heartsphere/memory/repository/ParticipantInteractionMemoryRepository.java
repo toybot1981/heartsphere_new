@@ -1,0 +1,53 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.participant.ParticipantInteractionMemory;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * 参与者交互记忆Repository
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface ParticipantInteractionMemoryRepository extends MongoRepository<ParticipantInteractionMemory, String> {
+    
+    /**
+     * 根据参与者ID查找所有交互记忆
+     */
+    List<ParticipantInteractionMemory> findByParticipantIdOrderByInteractionTimeDesc(String participantId);
+    
+    /**
+     * 根据参与者ID和关联参与者ID查找交互记忆
+     */
+    List<ParticipantInteractionMemory> findByParticipantIdAndRelatedParticipantIdOrderByInteractionTimeDesc(
+        String participantId, String relatedParticipantId);
+    
+    /**
+     * 根据场景ID查找所有交互记忆
+     */
+    List<ParticipantInteractionMemory> findBySceneIdOrderByInteractionTimeDesc(String sceneId);
+    
+    /**
+     * 根据参与者ID和场景ID查找交互记忆
+     */
+    List<ParticipantInteractionMemory> findByParticipantIdAndSceneIdOrderByInteractionTimeDesc(
+        String participantId, String sceneId);
+    
+    /**
+     * 根据交互类型查找交互记忆
+     */
+    List<ParticipantInteractionMemory> findByParticipantIdAndInteractionTypeOrderByInteractionTimeDesc(
+        String participantId, ParticipantInteractionMemory.InteractionType interactionType);
+    
+    /**
+     * 根据时间范围查找交互记忆
+     */
+    @Query("{ 'participantId': ?0, 'interactionTime': { $gte: ?1, $lte: ?2 } }")
+    List<ParticipantInteractionMemory> findByParticipantIdAndInteractionTimeBetween(
+        String participantId, Instant startTime, Instant endTime);
+}
+

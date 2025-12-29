@@ -46,6 +46,32 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       headers['Content-Type'] = contentType;
     }
     
+    // 2.3. 添加认证token（如果存在）
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (err) {
+      // 静默处理，不影响正常请求
+      console.debug('获取认证token失败:', err);
+    }
+    
+    // 2.5. 添加体验模式标识（如果存在）
+    try {
+      const experienceMode = sessionStorage.getItem('experience_mode');
+      if (experienceMode) {
+        const data = JSON.parse(experienceMode);
+        if (data.shareConfigId) {
+          headers['X-Experience-Mode'] = 'true';
+          headers['X-Share-Config-Id'] = data.shareConfigId.toString();
+        }
+      }
+    } catch (err) {
+      // 静默处理，不影响正常请求
+      console.debug('解析体验模式数据失败:', err);
+    }
+    
     // 3. 合并自定义headers
     if (options?.headers) {
       if (options.headers instanceof Headers) {

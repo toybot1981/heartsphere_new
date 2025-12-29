@@ -1,7 +1,7 @@
 import React from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -102,6 +102,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                     icon="🎫" 
                     active={activeSection === 'invite-codes'} 
                     onClick={() => handleSectionClick('invite-codes')} 
+                />
+                <AdminSidebarItem 
+                    label="API Key管理" 
+                    icon="🔑" 
+                    active={activeSection === 'api-keys'} 
+                    onClick={() => handleSectionClick('api-keys')} 
                 />
                 <AdminSidebarItem 
                     label="会员配置 Plans" 

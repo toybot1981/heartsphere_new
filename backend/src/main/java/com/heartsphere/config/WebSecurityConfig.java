@@ -1,6 +1,7 @@
 package com.heartsphere.config;
 
 import com.heartsphere.security.JwtAuthenticationFilter;
+import com.heartsphere.security.ApiKeyAuthenticationFilter;
 import com.heartsphere.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,9 @@ public class WebSecurityConfig {
 
     @Autowired
     UserDetailsServiceImpl userDetailsService;
+    
+    @Autowired
+    ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -98,6 +102,10 @@ public class WebSecurityConfig {
         // 这样可以确保JWT token在匿名认证之前被处理
         // 使用addFilterBefore确保JWT过滤器在匿名认证过滤器之前执行
         http.addFilterBefore(jwtAuthenticationFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+        
+        // 添加API Key认证过滤器 - 在JWT过滤器之后执行
+        // 如果JWT认证失败，尝试使用API Key认证
+        http.addFilterAfter(apiKeyAuthenticationFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

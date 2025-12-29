@@ -452,18 +452,28 @@ public class AIServiceController {
 
     /**
      * 从Authentication中获取用户ID
+     * 支持JWT认证和API Key认证
      */
     private Long getCurrentUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalArgumentException("未授权：请重新登录");
+            throw new IllegalArgumentException("未授权：请提供有效的认证信息（JWT Token或API Key）");
         }
         
         if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new IllegalArgumentException("未授权：请重新登录");
+            throw new IllegalArgumentException("未授权：请提供有效的认证信息（JWT Token或API Key）");
         }
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
+        Long userId = userDetails.getId();
+        
+        // 如果是负数ID，表示是通过API Key认证（没有关联用户）
+        // 对于API Key认证，如果有关联用户则使用关联用户ID，否则使用0表示系统调用
+        if (userId < 0) {
+            // API Key认证但没有关联用户，使用0表示系统调用
+            return 0L;
+        }
+        
+        return userId;
     }
 
     /**

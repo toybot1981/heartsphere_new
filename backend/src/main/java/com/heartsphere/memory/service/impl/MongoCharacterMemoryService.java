@@ -1,0 +1,513 @@
+package com.heartsphere.memory.service.impl;
+
+import com.heartsphere.memory.model.MemoryType;
+import com.heartsphere.memory.model.character.*;
+import com.heartsphere.memory.repository.*;
+import com.heartsphere.memory.service.CharacterMemoryService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * MongoDB角色记忆服务实现
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MongoCharacterMemoryService implements CharacterMemoryService {
+    
+    private final MongoTemplate mongoTemplate;
+    private final CharacterSelfMemoryRepository selfMemoryRepository;
+    private final CharacterInteractionMemoryRepository interactionMemoryRepository;
+    private final CharacterSceneMemoryRepository sceneMemoryRepository;
+    private final CharacterRelationshipMemoryRepository relationshipMemoryRepository;
+    
+    // ========== 角色自身记忆 ==========
+    
+    @Override
+    public CharacterSelfMemory saveCharacterSelfMemory(CharacterSelfMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        memory.setUpdatedAt(Instant.now());
+        memory.setLastAccessedAt(Instant.now());
+        if (memory.getAccessCount() == null) {
+            memory.setAccessCount(0);
+        }
+        CharacterSelfMemory saved = selfMemoryRepository.save(memory);
+        log.debug("保存角色自身记忆: characterId={}, memoryId={}", memory.getCharacterId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public CharacterSelfMemory getCharacterSelfMemory(String memoryId) {
+        Optional<CharacterSelfMemory> memory = selfMemoryRepository.findById(memoryId);
+        memory.ifPresent(m -> {
+            m.setAccessCount((m.getAccessCount() != null ? m.getAccessCount() : 0) + 1);
+            m.setLastAccessedAt(Instant.now());
+            selfMemoryRepository.save(m);
+        });
+        return memory.orElse(null);
+    }
+    
+    @Override
+    public List<CharacterSelfMemory> getCharacterSelfMemories(String characterId) {
+        return selfMemoryRepository.findByCharacterId(characterId);
+    }
+    
+    @Override
+    public List<CharacterSelfMemory> getCharacterSelfMemoriesByType(String characterId, MemoryType type) {
+        return selfMemoryRepository.findByCharacterIdAndType(characterId, type);
+    }
+    
+    @Override
+    public CharacterSelfMemory updateCharacterSelfMemory(String memoryId, CharacterSelfMemory memory) {
+        CharacterSelfMemory existing = getCharacterSelfMemory(memoryId);
+        if (existing != null) {
+            memory.setId(memoryId);
+            memory.setUpdatedAt(Instant.now());
+            return saveCharacterSelfMemory(memory);
+        }
+        return null;
+    }
+    
+    @Override
+    public void deleteCharacterSelfMemory(String memoryId) {
+        selfMemoryRepository.deleteById(memoryId);
+        log.debug("删除角色自身记忆: memoryId={}", memoryId);
+    }
+    
+    // ========== 角色与用户交互记忆 ==========
+    
+    @Override
+    public CharacterInteractionMemory saveInteractionMemory(CharacterInteractionMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        if (memory.getInteractionTime() == null) {
+            memory.setInteractionTime(Instant.now());
+        }
+        memory.setLastAccessedAt(Instant.now());
+        if (memory.getAccessCount() == null) {
+            memory.setAccessCount(0);
+        }
+        CharacterInteractionMemory saved = interactionMemoryRepository.save(memory);
+        log.debug("保存角色交互记忆: characterId={}, userId={}, memoryId={}", 
+            memory.getCharacterId(), memory.getUserId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public CharacterInteractionMemory getInteractionMemory(String memoryId) {
+        Optional<CharacterInteractionMemory> memory = interactionMemoryRepository.findById(memoryId);
+        memory.ifPresent(m -> {
+            m.setAccessCount((m.getAccessCount() != null ? m.getAccessCount() : 0) + 1);
+            m.setLastAccessedAt(Instant.now());
+            interactionMemoryRepository.save(m);
+        });
+        return memory.orElse(null);
+    }
+    
+    @Override
+    public List<CharacterInteractionMemory> getInteractionMemories(String characterId, String userId) {
+        Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "interactionTime"));
+        return interactionMemoryRepository.findByCharacterIdAndUserIdOrderByInteractionTimeDesc(
+            characterId, userId, pageable);
+    }
+    
+    @Override
+    public List<CharacterInteractionMemory> getInteractionMemories(
+        String characterId, String userId, String eraId) {
+        if (eraId == null || eraId.isEmpty()) {
+            return getInteractionMemories(characterId, userId);
+        }
+        Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "interactionTime"));
+        return interactionMemoryRepository.findByCharacterIdAndUserIdAndEraIdOrderByInteractionTimeDesc(
+            characterId, userId, eraId, pageable);
+    }
+    
+    @Override
+    public CharacterInteractionMemory updateInteractionMemory(
+        String memoryId, CharacterInteractionMemory memory) {
+        CharacterInteractionMemory existing = getInteractionMemory(memoryId);
+        if (existing != null) {
+            memory.setId(memoryId);
+            return saveInteractionMemory(memory);
+        }
+        return null;
+    }
+    
+    @Override
+    public void deleteInteractionMemory(String memoryId) {
+        interactionMemoryRepository.deleteById(memoryId);
+        log.debug("删除角色交互记忆: memoryId={}", memoryId);
+    }
+    
+    // ========== 角色场景记忆 ==========
+    
+    @Override
+    public CharacterSceneMemory saveSceneMemory(CharacterSceneMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        memory.setUpdatedAt(Instant.now());
+        memory.setLastAccessedAt(Instant.now());
+        if (memory.getAccessCount() == null) {
+            memory.setAccessCount(0);
+        }
+        CharacterSceneMemory saved = sceneMemoryRepository.save(memory);
+        log.debug("保存角色场景记忆: characterId={}, eraId={}, memoryId={}", 
+            memory.getCharacterId(), memory.getEraId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public CharacterSceneMemory getSceneMemory(String memoryId) {
+        Optional<CharacterSceneMemory> memory = sceneMemoryRepository.findById(memoryId);
+        memory.ifPresent(m -> {
+            m.setAccessCount((m.getAccessCount() != null ? m.getAccessCount() : 0) + 1);
+            m.setLastAccessedAt(Instant.now());
+            sceneMemoryRepository.save(m);
+        });
+        return memory.orElse(null);
+    }
+    
+    @Override
+    public List<CharacterSceneMemory> getSceneMemories(String characterId, String eraId) {
+        Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return sceneMemoryRepository.findByCharacterIdAndEraIdOrderByCreatedAtDesc(characterId, eraId, pageable);
+    }
+    
+    @Override
+    public List<CharacterSceneMemory> getSceneMemories(String characterId) {
+        return sceneMemoryRepository.findByCharacterId(characterId);
+    }
+    
+    @Override
+    public List<CharacterSceneMemory> getInheritableSceneMemories(String characterId) {
+        return sceneMemoryRepository.findByCharacterIdAndInheritableTrue(characterId);
+    }
+    
+    @Override
+    public CharacterSceneMemory updateSceneMemory(String memoryId, CharacterSceneMemory memory) {
+        CharacterSceneMemory existing = getSceneMemory(memoryId);
+        if (existing != null) {
+            memory.setId(memoryId);
+            memory.setUpdatedAt(Instant.now());
+            return saveSceneMemory(memory);
+        }
+        return null;
+    }
+    
+    @Override
+    public void deleteSceneMemory(String memoryId) {
+        sceneMemoryRepository.deleteById(memoryId);
+        log.debug("删除角色场景记忆: memoryId={}", memoryId);
+    }
+    
+    // ========== 角色关系记忆 ==========
+    
+    @Override
+    public CharacterRelationshipMemory saveRelationshipMemory(CharacterRelationshipMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        memory.setUpdatedAt(Instant.now());
+        if (memory.getInteractionCount() == null) {
+            memory.setInteractionCount(0);
+        }
+        if (memory.getInteractions() == null) {
+            memory.setInteractions(new ArrayList<>());
+        }
+        if (memory.getRelationshipHistory() == null) {
+            memory.setRelationshipHistory(new ArrayList<>());
+        }
+        CharacterRelationshipMemory saved = relationshipMemoryRepository.save(memory);
+        log.debug("保存角色关系记忆: characterId={}, relatedCharacterId={}, memoryId={}", 
+            memory.getCharacterId(), memory.getRelatedCharacterId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public CharacterRelationshipMemory getRelationshipMemory(String memoryId) {
+        return relationshipMemoryRepository.findById(memoryId).orElse(null);
+    }
+    
+    @Override
+    public CharacterRelationshipMemory getRelationshipMemory(
+        String characterId, String relatedCharacterId) {
+        return relationshipMemoryRepository
+            .findByCharacterIdAndRelatedCharacterId(characterId, relatedCharacterId)
+            .orElse(null);
+    }
+    
+    @Override
+    public List<CharacterRelationshipMemory> getAllRelationships(String characterId) {
+        Pageable pageable = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "strength"));
+        return relationshipMemoryRepository.findByCharacterIdOrderByStrengthDesc(characterId, pageable);
+    }
+    
+    @Override
+    public List<CharacterRelationshipMemory> getRelationshipsByType(
+        String characterId, CharacterRelationshipMemory.RelationshipType relationshipType) {
+        return relationshipMemoryRepository.findByCharacterIdAndRelationshipType(characterId, relationshipType);
+    }
+    
+    @Override
+    public CharacterRelationshipMemory updateRelationshipStrength(
+        String characterId, String relatedCharacterId, double strength) {
+        CharacterRelationshipMemory relationship = getRelationshipMemory(characterId, relatedCharacterId);
+        if (relationship != null) {
+            CharacterRelationshipMemory.RelationshipType oldType = relationship.getRelationshipType();
+            Double oldStrength = relationship.getStrength();
+            
+            relationship.setStrength(strength);
+            relationship.setUpdatedAt(Instant.now());
+            relationship.setLastInteractedAt(Instant.now());
+            
+            // 记录关系变化
+            CharacterRelationshipMemory.RelationshipChange change = 
+                CharacterRelationshipMemory.RelationshipChange.builder()
+                    .oldStrength(oldStrength)
+                    .newStrength(strength)
+                    .oldType(oldType)
+                    .newType(determineRelationshipType(strength))
+                    .timestamp(Instant.now())
+                    .build();
+            
+            relationship.getRelationshipHistory().add(change);
+            
+            return saveRelationshipMemory(relationship);
+        }
+        return null;
+    }
+    
+    @Override
+    public CharacterRelationshipMemory addInteractionToRelationship(
+        String characterId, String relatedCharacterId,
+        CharacterRelationshipMemory.InteractionRecord interaction) {
+        CharacterRelationshipMemory relationship = getRelationshipMemory(characterId, relatedCharacterId);
+        if (relationship != null) {
+            if (relationship.getInteractions() == null) {
+                relationship.setInteractions(new ArrayList<>());
+            }
+            relationship.getInteractions().add(interaction);
+            relationship.setInteractionCount(relationship.getInteractionCount() + 1);
+            relationship.setLastInteractedAt(Instant.now());
+            if (relationship.getFirstMetAt() == null) {
+                relationship.setFirstMetAt(Instant.now());
+            }
+            return saveRelationshipMemory(relationship);
+        }
+        return null;
+    }
+    
+    @Override
+    public void deleteRelationshipMemory(String memoryId) {
+        relationshipMemoryRepository.deleteById(memoryId);
+        log.debug("删除角色关系记忆: memoryId={}", memoryId);
+    }
+    
+    // ========== 记忆检索 ==========
+    
+    @Override
+    public List<CharacterMemory> retrieveRelevantMemories(
+        String characterId, String query, int limit) {
+        // 简化实现：从各种记忆类型中搜索
+        List<CharacterMemory> results = new ArrayList<>();
+        
+        // 搜索自身记忆
+        try {
+            Pageable pageable = PageRequest.of(0, limit);
+            List<CharacterSelfMemory> selfMemories = selfMemoryRepository
+                .searchByCharacterIdAndText(characterId, query, pageable);
+            results.addAll(selfMemories.stream()
+                .map(m -> new CharacterMemoryImpl(m))
+                .collect(Collectors.toList()));
+        } catch (Exception e) {
+            log.warn("搜索自身记忆失败: {}", e.getMessage());
+        }
+        
+        // 搜索交互记忆
+        try {
+            Pageable pageable = PageRequest.of(0, limit);
+            List<CharacterInteractionMemory> interactionMemories = interactionMemoryRepository
+                .findByCharacterId(characterId, pageable).getContent();
+            results.addAll(interactionMemories.stream()
+                .filter(m -> m.getContent() != null && m.getContent().contains(query))
+                .limit(limit)
+                .map(m -> new CharacterMemoryImpl(m))
+                .collect(Collectors.toList()));
+        } catch (Exception e) {
+            log.warn("搜索交互记忆失败: {}", e.getMessage());
+        }
+        
+        // 按相关性排序并限制数量
+        return results.stream()
+            .sorted((a, b) -> Double.compare(
+                b.getRelevance(query),
+                a.getRelevance(query)))
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<CharacterMemory> retrieveMemoriesByContext(
+        String characterId, Map<String, Object> context, int limit) {
+        // 简化实现：根据上下文查询
+        List<CharacterMemory> results = new ArrayList<>();
+        
+        Query query = new Query();
+        query.addCriteria(Criteria.where("characterId").is(characterId));
+        context.forEach((key, value) -> {
+            query.addCriteria(Criteria.where(key).is(value));
+        });
+        query.with(PageRequest.of(0, limit));
+        
+        // 可以从各种记忆类型中查询
+        // 这里简化处理，实际应该根据context中的类型字段决定查询哪个集合
+        
+        return results;
+    }
+    
+    // ========== 角色记忆画像 ==========
+    
+    @Override
+    public CharacterMemoryProfile getCharacterMemoryProfile(String characterId) {
+        List<CharacterSelfMemory> selfMemories = getCharacterSelfMemories(characterId);
+        List<CharacterInteractionMemory> interactionMemories = 
+            interactionMemoryRepository.findByCharacterId(characterId, PageRequest.of(0, 100)).getContent();
+        List<CharacterSceneMemory> sceneMemories = getSceneMemories(characterId);
+        List<CharacterRelationshipMemory> relationshipMemories = getAllRelationships(characterId);
+        
+        // 统计信息
+        Set<String> interactedUsers = interactionMemories.stream()
+            .map(CharacterInteractionMemory::getUserId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        
+        Set<String> activeScenes = sceneMemories.stream()
+            .map(CharacterSceneMemory::getEraId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        
+        CharacterMemoryProfile.Statistics statistics = CharacterMemoryProfile.Statistics.builder()
+            .totalSelfMemories(selfMemories.size())
+            .totalInteractionMemories(interactionMemories.size())
+            .totalSceneMemories(sceneMemories.size())
+            .totalRelationships(relationshipMemories.size())
+            .totalInteractedUsers(interactedUsers.size())
+            .totalActiveScenes(activeScenes.size())
+            .build();
+        
+        return CharacterMemoryProfile.builder()
+            .characterId(characterId)
+            .selfMemories(selfMemories)
+            .interactionMemories(interactionMemories)
+            .sceneMemories(sceneMemories)
+            .relationshipMemories(relationshipMemories)
+            .statistics(statistics)
+            .build();
+    }
+    
+    // ========== 辅助方法 ==========
+    
+    /**
+     * 根据关系强度确定关系类型
+     */
+    private CharacterRelationshipMemory.RelationshipType determineRelationshipType(double strength) {
+        if (strength >= 0.8) {
+            return CharacterRelationshipMemory.RelationshipType.FRIEND;
+        } else if (strength >= 0.6) {
+            return CharacterRelationshipMemory.RelationshipType.ACQUAINTANCE;
+        } else if (strength >= 0.4) {
+            return CharacterRelationshipMemory.RelationshipType.COLLEAGUE;
+        } else {
+            return CharacterRelationshipMemory.RelationshipType.UNKNOWN;
+        }
+    }
+    
+    /**
+     * CharacterMemory实现类
+     */
+    private static class CharacterMemoryImpl implements CharacterMemory {
+        private final Object memory;
+        private final String id;
+        private final String characterId;
+        private final MemoryType type;
+        private final String content;
+        private final Instant timestamp;
+        
+        public CharacterMemoryImpl(CharacterSelfMemory memory) {
+            this.memory = memory;
+            this.id = memory.getId();
+            this.characterId = memory.getCharacterId();
+            this.type = memory.getType();
+            this.content = memory.getContent();
+            this.timestamp = memory.getCreatedAt();
+        }
+        
+        public CharacterMemoryImpl(CharacterInteractionMemory memory) {
+            this.memory = memory;
+            this.id = memory.getId();
+            this.characterId = memory.getCharacterId();
+            this.type = memory.getType();
+            this.content = memory.getContent();
+            this.timestamp = memory.getInteractionTime();
+        }
+        
+        @Override
+        public String getId() {
+            return id;
+        }
+        
+        @Override
+        public String getCharacterId() {
+            return characterId;
+        }
+        
+        @Override
+        public MemoryType getType() {
+            return type;
+        }
+        
+        @Override
+        public String getContent() {
+            return content;
+        }
+        
+        @Override
+        public Double getRelevance(String query) {
+            if (content == null || query == null) {
+                return 0.0;
+            }
+            // 简单的关键词匹配相关性计算
+            String lowerContent = content.toLowerCase();
+            String lowerQuery = query.toLowerCase();
+            if (lowerContent.contains(lowerQuery)) {
+                return 0.8;
+            }
+            // 可以进一步优化为更复杂的相关性计算
+            return 0.3;
+        }
+        
+        @Override
+        public Instant getTimestamp() {
+            return timestamp;
+        }
+    }
+}
+

@@ -1,0 +1,39 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.participant.ParticipantPreference;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 参与者偏好Repository
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface ParticipantPreferenceRepository extends MongoRepository<ParticipantPreference, String> {
+    
+    /**
+     * 根据参与者ID和键查找偏好
+     */
+    Optional<ParticipantPreference> findByParticipantIdAndKey(String participantId, String key);
+    
+    /**
+     * 根据参与者ID和场景ID和键查找偏好
+     */
+    Optional<ParticipantPreference> findByParticipantIdAndSceneIdAndKey(
+        String participantId, String sceneId, String key);
+    
+    /**
+     * 根据参与者ID查找所有偏好
+     */
+    List<ParticipantPreference> findByParticipantIdOrderByUpdatedAtDesc(String participantId);
+    
+    /**
+     * 根据参与者ID和场景ID查找所有偏好
+     */
+    List<ParticipantPreference> findByParticipantIdAndSceneIdOrderByUpdatedAtDesc(
+        String participantId, String sceneId);
+}
+

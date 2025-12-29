@@ -1,6 +1,7 @@
 package com.heartsphere.aiagent.service;
 
 import com.heartsphere.admin.dto.AIModelConfigDTO;
+import com.heartsphere.admin.service.AIModelConfigService;
 import com.heartsphere.aiagent.adapter.ModelAdapter;
 import com.heartsphere.aiagent.adapter.ModelAdapterManager;
 import com.heartsphere.aiagent.dto.request.*;
@@ -28,6 +29,7 @@ public class AIServiceImpl implements AIService {
     private final ModelAdapterManager adapterManager;
     private final AIConfigService configService;
     private final UnifiedModelRoutingService unifiedRoutingService;
+    private final AIModelConfigService modelConfigService;
     
     @Override
     @RequiresTokenQuota(quotaType = "text_token", usageType = "text_generation")
@@ -73,6 +75,28 @@ public class AIServiceImpl implements AIService {
                 }
                 if (request.getModel() == null || request.getModel().isEmpty()) {
                     request.setModel(configService.getUserTextModel(userId));
+                }
+                
+                // 即使请求中已指定provider和model，也需要从数据库获取API key和baseUrl
+                try {
+                    com.heartsphere.admin.entity.AIModelConfig modelConfig = 
+                        modelConfigService.getModelConfigWithApiKey(
+                            request.getProvider(), 
+                            request.getModel(), 
+                            "text"
+                        );
+                    if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().trim().isEmpty()) {
+                        request.setApiKey(modelConfig.getApiKey());
+                        log.debug("统一接入模式：从数据库获取并设置apiKey（provider={}, model={}）", 
+                            request.getProvider(), request.getModel());
+                    }
+                    if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().trim().isEmpty()) {
+                        request.setBaseUrl(modelConfig.getBaseUrl());
+                        log.debug("统一接入模式：从数据库获取并设置baseUrl={}", modelConfig.getBaseUrl());
+                    }
+                } catch (Exception e) {
+                    log.warn("获取模型配置失败（provider={}, model={}），将继续使用默认配置: {}", 
+                        request.getProvider(), request.getModel(), e.getMessage());
                 }
             }
             
@@ -155,6 +179,28 @@ public class AIServiceImpl implements AIService {
                     String model = configService.getUserTextModel(userId);
                     request.setModel(model);
                     log.info("[AIServiceImpl] 请求未指定model，使用用户配置 model={}", model);
+                }
+                
+                // 即使请求中已指定provider和model，也需要从数据库获取API key和baseUrl
+                try {
+                    com.heartsphere.admin.entity.AIModelConfig modelConfig = 
+                        modelConfigService.getModelConfigWithApiKey(
+                            request.getProvider(), 
+                            request.getModel(), 
+                            "text"
+                        );
+                    if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().trim().isEmpty()) {
+                        request.setApiKey(modelConfig.getApiKey());
+                        log.info("[AIServiceImpl] 从数据库获取并设置apiKey（provider={}, model={}）", 
+                            request.getProvider(), request.getModel());
+                    }
+                    if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().trim().isEmpty()) {
+                        request.setBaseUrl(modelConfig.getBaseUrl());
+                        log.info("[AIServiceImpl] 从数据库获取并设置baseUrl={}", modelConfig.getBaseUrl());
+                    }
+                } catch (Exception e) {
+                    log.warn("[AIServiceImpl] 获取模型配置失败（provider={}, model={}），将继续使用默认配置: {}", 
+                        request.getProvider(), request.getModel(), e.getMessage());
                 }
             }
             

@@ -7,6 +7,18 @@ import { GenerateContentResponse } from '@google/genai';
 import { Button } from './Button';
 import { showAlert } from '../utils/dialog';
 import { createScenarioContext } from '../constants';
+import { useTemperatureEngine } from '../services/temperature-engine';
+import { useEmotionSystem } from '../services/emotion-system';
+import { useMemorySystem } from '../services/memory-system';
+import { EmotionMemoryFusion } from '../services/emotion-memory-fusion';
+import { MemorySource } from '../services/memory-system/types/MemoryTypes';
+import { useCompanionSystem } from '../services/companion-system/hooks/useCompanionSystem';
+import { useGrowthSystem } from '../services/growth-system/hooks/useGrowthSystem';
+import { useCompanionMemorySystem } from '../services/companion-memory/hooks/useCompanionMemorySystem';
+import { CelebrationProvider } from './growth/CelebrationProvider';
+import { CareMessageNotification } from './companion/CareMessageNotification';
+import { EmojiPicker } from './emoji/EmojiPicker';
+import { CardMaker } from './card/CardMaker';
 
 // --- Audio Decoding Helpers (Raw PCM) ---
 function decode(base64: string) {
@@ -119,8 +131,112 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(character?.backgroundUrl || null);
   const [isGeneratingScene, setIsGeneratingScene] = useState(false);
+  
+  // 温度感引擎集成
+  const { engine, state: engineState, isReady: engineReady } = useTemperatureEngine({
+    enabled: true,
+    plugins: {
+      enabled: ['greeting', 'expression', 'dialogue'],
+    },
+  });
+
+  // 情绪感知系统集成
+  const emotionSystem = useEmotionSystem({
+    enabled: true,
+    fusionEnabled: true,
+    storageEnabled: true,
+    autoAnalysis: true,
+    userId: userProfile?.id || 0,
+  });
+
+  // 记忆系统集成
+  const memorySystem = useMemorySystem({
+    enabled: true,
+    autoExtraction: true,
+    userId: userProfile?.id || 0,
+  });
+
+  // 情绪记忆融合系统
+  const [emotionMemoryFusion, setEmotionMemoryFusion] = React.useState<EmotionMemoryFusion | null>(null);
+
+  React.useEffect(() => {
+    if (emotionSystem.system && memorySystem.system) {
+      const fusion = new EmotionMemoryFusion(
+        emotionSystem.system,
+        memorySystem.system
+      );
+      setEmotionMemoryFusion(fusion);
+    }
+  }, [emotionSystem.system, memorySystem.system]);
+
+  // 陪伴式交互系统集成
+  const companionSystem = useCompanionSystem({
+    enabled: true,
+    proactiveCare: {
+      enabled: true,
+      scheduledGreeting: {
+        type: 'scheduled_greeting',
+        timeSlots: [
+          { hour: 7, minute: 0, greetingType: 'morning', enabled: true },
+          { hour: 12, minute: 0, greetingType: 'afternoon', enabled: true },
+          { hour: 18, minute: 0, greetingType: 'evening', enabled: true },
+          { hour: 21, minute: 0, greetingType: 'night', enabled: true },
+        ],
+      },
+      inactivity: {
+        type: 'inactivity',
+        thresholds: [
+          { duration: 24, careLevel: 'gentle', messageTemplate: '好久不见，想你了～' },
+          { duration: 72, careLevel: 'moderate', messageTemplate: '好几天没见了，最近还好吗？' },
+          { duration: 168, careLevel: 'strong', messageTemplate: '一周没见了，想和你聊聊～' },
+        ],
+      },
+      specialTime: {
+        type: 'special_time',
+        specialTimes: [
+          { timeRange: [23, 6], careType: 'late_night', messageTemplate: '这么晚了还在呀，要注意休息哦 💙' },
+          { timeRange: [0, 24], dayOfWeek: [0, 6], careType: 'weekend', messageTemplate: '周末愉快！有什么计划吗？' },
+          { timeRange: [22, 2], careType: 'lonely_hour', messageTemplate: '夜深了，如果你感到孤单，我在这里陪着你 🌙' },
+        ],
+      },
+      negativeEmotion: {
+        type: 'negative_emotion',
+        emotionTypes: ['sad', 'anxious', 'angry', 'lonely', 'tired', 'confused'],
+        intensityThreshold: 'moderate',
+        durationThreshold: 1,
+        careInterval: 2,
+      },
+    },
+    userId: userProfile?.id || 0,
+  });
+
+  // 从陪伴系统中解构关怀消息
+  const { careMessages, markAsRead: markCareMessageAsRead } = companionSystem;
+
+  // 处理关怀消息关闭
+  const handleDismissCareMessage = (messageId: string) => {
+    markCareMessageAsRead(messageId);
+  };
+
+  // 成长记录系统集成
+  const growthSystem = useGrowthSystem({
+    enabled: true,
+    userId: userProfile?.id || 0,
+    autoRecord: true,
+  });
+
+  // 陪伴记忆系统集成
+  const companionMemorySystem = useCompanionMemorySystem({
+    enabled: true,
+    userId: userProfile?.id || 0,
+    autoRecord: true,
+    recordConversations: true,
+    recordMilestones: true,
+    recordEmotions: true,
+  });
   
   // Cinematic Mode State
   const [isCinematic, setIsCinematic] = useState(false);
@@ -725,17 +841,78 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setInput('');
     setIsLoading(true);
     
+    // 温度感引擎：分析用户情绪
+    if (engine && engineReady) {
+      try {
+        const emotion = await engine.analyzeEmotion({
+          text: userText,
+        });
+        console.log('[ChatWindow] 温度感引擎情绪分析:', emotion);
+      } catch (error) {
+        console.error('[ChatWindow] 温度感引擎情绪分析失败:', error);
+      }
+    }
+
+    // 情绪感知系统：分析情绪
+    let emotionAnalysisResult = null;
+    if (emotionSystem.isReady) {
+      try {
+        emotionAnalysisResult = await emotionSystem.analyzeEmotion(userText, 'conversation');
+        console.log('[ChatWindow] 情绪感知系统分析:', emotionAnalysisResult);
+        
+        // 记录情绪记忆
+        if (companionMemorySystem.isReady && emotionAnalysisResult) {
+          companionMemorySystem.recordEmotionMemory(
+            emotionAnalysisResult.primaryEmotion,
+            emotionAnalysisResult.intensity,
+            userText
+          ).catch((error) => {
+            console.error('[ChatWindow] 记录情绪记忆失败:', error);
+          });
+        }
+      } catch (error) {
+        console.error('[ChatWindow] 情绪感知系统分析失败:', error);
+      }
+    }
+
+    // 记忆系统：提取记忆
+    if (memorySystem.isReady) {
+      try {
+        const memories = await memorySystem.extractAndSave(
+          userText,
+          MemorySource.CONVERSATION,
+          userMsg.id
+        );
+        console.log('[ChatWindow] 提取的记忆:', memories);
+        
+        // 记录成长数据（记忆数量）
+        if (growthSystem.isReady && memories.length > 0) {
+          growthSystem.recordGrowth({ memoryCount: memories.length }).catch((error) => {
+            console.error('[ChatWindow] 记录成长数据失败:', error);
+          });
+        }
+      } catch (error) {
+        console.error('[ChatWindow] 记忆提取失败:', error);
+      }
+    }
+    
+    // 更新最后互动时间（陪伴系统）
+    if (companionSystem.isReady) {
+      companionSystem.updateLastInteractionTime();
+    }
+    
+    // 记录成长数据（对话次数）
+    if (growthSystem.isReady) {
+      growthSystem.recordGrowth({ conversationCount: 1 }).catch((error) => {
+        console.error('[ChatWindow] 记录成长数据失败:', error);
+      });
+    }
+    
     const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: userText, timestamp: Date.now() };
     const tempBotId = `bot_${Date.now()}`;
     
     // 使用函数式更新，确保获取最新的history状态
     // 注意：用户消息需要立即添加到history，这样后续的响应才能正确追加
-    console.log('[ChatWindow] ========== 开始添加用户消息 ==========');
-    console.log('[ChatWindow] 当前history prop:', {
-      historyLength: safeHistory.length,
-      history: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
-    });
-    console.log('[ChatWindow] 要添加的用户消息:', userMsg);
     
     // 先构建包含用户消息的完整历史，用于后续AI调用
     // 这样可以确保AI调用时包含用户消息，即使prop还没更新
@@ -753,22 +930,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       // 检查用户消息是否已经存在（防止重复添加）
       const userMsgExists = prev.some(m => m.id === userMsg.id);
       if (userMsgExists) {
-        console.log('[ChatWindow] 用户消息已存在，跳过重复添加');
         return prev;
       }
       
       const newHistory = [...prev, userMsg];
-      console.log('[ChatWindow] 用户消息已添加到history:', {
-        prevLength: prev.length,
-        newLength: newHistory.length,
-        userMsgId: userMsg.id,
-        userMsgText: userMsg.text.substring(0, 50),
-        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-      });
       return newHistory;
     });
-    
-    console.log('[ChatWindow] ========== 用户消息添加完成 ==========');
     
     try {
       // 检查当前配置模式
@@ -822,6 +989,65 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           allRoles: historyMessages.map(m => m.role)
         });
         
+        // 温度感引擎：计算温度感
+        let currentTemperature = null;
+        if (engine && engineReady) {
+          try {
+            const emotion = await engine.analyzeEmotion({ text: userText });
+            const hour = new Date().getHours();
+            const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : 
+                             hour >= 12 && hour < 18 ? 'afternoon' :
+                             hour >= 18 && hour < 22 ? 'evening' : 'night';
+            
+            currentTemperature = await engine.calculateTemperature({
+              userEmotion: emotion.type,
+              context: {
+                timeOfDay,
+                device: 'desktop',
+                userActivity: {
+                  sessionDuration: Date.now() - (scenarioState?.startTime || Date.now()),
+                  messageCount: historyWithUserMsg.length,
+                  lastInteraction: 1000,
+                },
+                conversation: {
+                  length: historyWithUserMsg.length,
+                  sentiment: emotion.type === 'happy' ? 'positive' : emotion.type === 'sad' ? 'negative' : 'neutral',
+                },
+              },
+            });
+            console.log('[ChatWindow] 温度感计算:', currentTemperature);
+            
+            // 根据温度感调整UI
+            if (currentTemperature) {
+              await engine.adjustTemperature(currentTemperature.level, {
+                elements: ['button', '.card', 'input'],
+                animation: true,
+              });
+            }
+          } catch (error) {
+            console.error('[ChatWindow] 温度感计算失败:', error);
+          }
+        }
+        
+        // 获取相关记忆用于上下文
+        let relevantMemories: any[] = [];
+        if (memorySystem.isReady && emotionMemoryFusion) {
+          try {
+            relevantMemories = await memorySystem.getRelevantMemories(userText, 3);
+            console.log('[ChatWindow] 相关记忆:', relevantMemories);
+            
+            // 将记忆添加到系统指令中
+            if (relevantMemories.length > 0) {
+              const memoryContext = relevantMemories
+                .map(m => `- ${m.content}`)
+                .join('\n');
+              systemInstruction += `\n\n[用户记忆]\n${memoryContext}`;
+            }
+          } catch (error) {
+            console.error('[ChatWindow] 获取相关记忆失败:', error);
+          }
+        }
+
         // 使用统一AI服务
         // 为当前请求创建独立的状态，避免闭包捕获旧请求的状态
         const currentRequestId = tempBotId; // 使用tempBotId作为请求ID
@@ -872,41 +1098,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
                     const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
                     
-                    console.log('[ChatWindow] 更新机器人消息:', {
-                      prevHistoryLength: prevHistory.length,
-                      lastMsgId: lastMsg?.id,
-                      lastMsgRole: lastMsg?.role,
-                      currentRequestId,
-                      isLastMsgOurs,
-                      hasAddedBotMessage,
-                      userMsgExists,
-                      allMsgIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
-                    });
-                    
                     if (!hasAddedBotMessage && !isLastMsgOurs) {
                       // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory, msg];
-                      console.log('[ChatWindow] 添加机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
+                      return [...prevHistory, msg];
                     } else if (isLastMsgOurs) {
                       // 最后一条是我们的消息，更新它
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory.slice(0, -1), msg];
-                      console.log('[ChatWindow] 更新机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
-          } else {
+                      return [...prevHistory.slice(0, -1), msg];
+                    } else {
                       // 其他情况，追加新消息
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory, msg];
-                      console.log('[ChatWindow] 追加机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
+                      return [...prevHistory, msg];
                     }
                   } catch (error) {
                     console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
@@ -917,6 +1120,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               } else if (chunk.done) {
                 // 完成 - 确保完成信号能够正常处理（即使isLoading已经变为false）
                 setIsLoading(false);
+                
+                // 温度感引擎：通知消息接收（异步处理，不阻塞）
+                if (engine && engineReady && requestFullResponseText) {
+                  engine.getPluginManager()?.dispatchEvent('messageReceived', {
+                    message: requestFullResponseText,
+                    context: { character: character.name },
+                  }).catch((error) => {
+                    console.error('[ChatWindow] 通知消息接收失败:', error);
+                  });
+                }
+
+                // 记忆系统：从AI回复中提取记忆
+                if (memorySystem.isReady && requestFullResponseText) {
+                  memorySystem.extractAndSave(
+                    requestFullResponseText,
+                    MemorySource.CONVERSATION,
+                    currentRequestId
+                  ).catch((error) => {
+                    console.error('[ChatWindow] 从AI回复提取记忆失败:', error);
+                  });
+                }
       }
     } catch (error) { 
               console.error('[ChatWindow] 处理chunk时发生错误:', error);
@@ -1020,41 +1244,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
                     const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
                     
-                    console.log('[ChatWindow] 更新机器人消息:', {
-                      prevHistoryLength: prevHistory.length,
-                      lastMsgId: lastMsg?.id,
-                      lastMsgRole: lastMsg?.role,
-                      currentRequestId,
-                      isLastMsgOurs,
-                      hasAddedBotMessage,
-                      userMsgExists,
-                      allMsgIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
-                    });
-                    
                     if (!hasAddedBotMessage && !isLastMsgOurs) {
                       // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory, msg];
-                      console.log('[ChatWindow] 添加机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
+                      return [...prevHistory, msg];
                     } else if (isLastMsgOurs) {
                       // 最后一条是我们的消息，更新它
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory.slice(0, -1), msg];
-                      console.log('[ChatWindow] 更新机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
+                      return [...prevHistory.slice(0, -1), msg];
                     } else {
                       // 其他情况，追加新消息
                       hasAddedBotMessage = true;
-                      const newHistory = [...prevHistory, msg];
-                      console.log('[ChatWindow] 追加机器人消息，新history长度:', newHistory.length, {
-                        allMsgIds: newHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      return newHistory;
+                      return [...prevHistory, msg];
                     }
                   } catch (error) {
                     console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
@@ -1703,6 +1904,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </button>
       )}
 
+      {/* 关怀消息通知 */}
+      {careMessages.map((message) => (
+        <CareMessageNotification
+          key={message.id}
+          message={message}
+          onDismiss={handleDismissCareMessage}
+        />
+      ))}
+
       {/* Main Chat Area */}
       <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
         
@@ -1729,18 +1939,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             const isUserMsg = msg.role === 'user';
             const willBeHidden = isCinematic && isUserMsg;
             
-            // 只在开发时输出详细日志（避免日志过多）
-            if (index < 3 || safeHistory.length - index <= 2 || isUserMsg) {
-              console.log(`[ChatWindow] 渲染消息 ${index}/${safeHistory.length - 1}:`, {
-                id: msg.id,
-                role: msg.role,
-                textPreview: msg.text.substring(0, 50),
-                isUser: isUserMsg,
-                isCinematic: isCinematic,
-                willBeHidden: willBeHidden,
-                fullHistory: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
-              });
-            }
             
             return (
               <div 
@@ -1842,6 +2040,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   ) : (
                     /* 普通文本输入模式 */
                     <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
+                       {/* 表情按钮 */}
+                       <button
+                         onClick={() => setShowEmojiPicker(true)}
+                         disabled={isLoading}
+                         className="mr-2 p-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         title="选择表情"
+                       >
+                         <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-5 w-5"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                         >
+                           <path
+                             strokeLinecap="round"
+                             strokeLinejoin="round"
+                             strokeWidth={2}
+                             d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                           />
+                         </svg>
+                       </button>
                        <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="输入你的消息..." className="flex-1 bg-transparent border-none text-white placeholder-white/40 focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base" rows={1} disabled={isLoading} />
                        
                        {/* 语音输入按钮 */}
@@ -1873,6 +2093,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
         </div>
       </div>
+
+      {/* 表情选择器 */}
+      {showEmojiPicker && (
+        <EmojiPicker
+          userId={userProfile?.id || 0}
+          onSelect={(emoji) => {
+            setInput((prev) => prev + emoji.code);
+            setShowEmojiPicker(false);
+          }}
+          onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
     </div>
   );
 };

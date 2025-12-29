@@ -13,6 +13,7 @@ import { ScenariosManagement } from './components/ScenariosManagement';
 import { EventsManagement } from './components/EventsManagement';
 import { ItemsManagement } from './components/ItemsManagement';
 import { InviteCodesManagement } from './components/InviteCodesManagement';
+import { ApiKeysManagement } from './components/ApiKeysManagement';
 import { ResourcesManagement } from './components/ResourcesManagement';
 import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
 import { EmailConfigManagement } from './components/EmailConfigManagement';
@@ -230,6 +231,16 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             onReload={async () => {
                                 if (adminToken) {
                                                     await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'api-keys' && (
+                        <ApiKeysManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
                                 }
                             }}
                         />
