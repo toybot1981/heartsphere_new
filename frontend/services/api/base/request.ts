@@ -1,6 +1,7 @@
 // 基础请求函数，用于处理与后端的通信
 
-const API_BASE_URL = 'http://localhost:8081/api';
+import { getSharedModeState } from './sharedModeState';
+import { API_BASE_URL } from '../config';
 
 export interface RequestOptions extends RequestInit {
   signal?: AbortSignal;
@@ -36,66 +37,107 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       }
     }
     
-    // 2. 构建headers对象
-    const headers: Record<string, string> = {
-      'Accept': 'application/json'
-    };
+    // 2. 构建Headers对象（直接使用Headers而不是普通对象）
+    const headers = new Headers();
+    headers.set('Accept', 'application/json');
     
     // 只在需要时设置Content-Type (不是FormData)
     if (contentType) {
-      headers['Content-Type'] = contentType;
+      headers.set('Content-Type', contentType);
     }
     
     // 2.3. 添加认证token（如果存在）
     try {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers.set('Authorization', `Bearer ${token}`);
       }
     } catch (err) {
       // 静默处理，不影响正常请求
       console.debug('获取认证token失败:', err);
     }
     
-    // 2.5. 添加体验模式标识（如果存在）
-    try {
-      const experienceMode = sessionStorage.getItem('experience_mode');
-      if (experienceMode) {
-        const data = JSON.parse(experienceMode);
-        if (data.shareConfigId) {
-          headers['X-Experience-Mode'] = 'true';
-          headers['X-Share-Config-Id'] = data.shareConfigId.toString();
+    // 2.5. 添加共享模式标识（如果存在且接口需要）
+    // 只在需要共享模式上下文的接口上添加请求头
+    const needsSharedMode = url.includes('/quick-connect/') || 
+                           url.includes('/heartconnect/shared/') ||
+                           (url.includes('/heartconnect/config/') && !url.includes('/heartconnect/config/by-code/')) ||
+                           url.includes('/heartconnect/connection/');
+    
+    // 明确不需要共享模式的接口
+    const excludesSharedMode = url.includes('/auth/') ||
+                               url.includes('/admin/') ||
+                               url.includes('/favorites/') ||
+                               url.includes('/access-history/') ||
+                               url.includes('/heartconnect/config/by-code/');
+    
+    if (needsSharedMode && !excludesSharedMode) {
+      try {
+        const sharedModeState = getSharedModeState();
+        if (sharedModeState.shareConfigId) {
+          headers.set('X-Shared-Mode', 'true');
+          headers.set('X-Share-Config-Id', sharedModeState.shareConfigId.toString());
         }
+      } catch (err) {
+        // 静默处理，不影响正常请求
+        console.error('[request] 检查共享模式时发生错误:', err);
       }
-    } catch (err) {
-      // 静默处理，不影响正常请求
-      console.debug('解析体验模式数据失败:', err);
     }
     
-    // 3. 合并自定义headers
+    // 3. 合并自定义headers（保护共享模式请求头不被覆盖）
     if (options?.headers) {
       if (options.headers instanceof Headers) {
         options.headers.forEach((value, key) => {
           const lowerKey = key.toLowerCase();
-          if (lowerKey !== 'content-type' && lowerKey !== 'accept') {
-            headers[key] = value;
+          // 保护共享模式请求头和系统请求头
+          if (lowerKey !== 'content-type' && 
+              lowerKey !== 'accept' && 
+              lowerKey !== 'x-shared-mode' && 
+              lowerKey !== 'x-share-config-id') {
+            headers.set(key, value);
           }
         });
       } else if (typeof options.headers === 'object' && options.headers !== null) {
         const customHeaders = options.headers as Record<string, unknown>;
         Object.entries(customHeaders).forEach(([key, value]) => {
           const lowerKey = key.toLowerCase();
-          if (lowerKey !== 'content-type' && lowerKey !== 'accept' && value != null) {
-            headers[key] = String(value);
+          // 保护共享模式请求头和系统请求头
+          if (lowerKey !== 'content-type' && 
+              lowerKey !== 'accept' && 
+              lowerKey !== 'x-shared-mode' && 
+              lowerKey !== 'x-share-config-id' && 
+              value != null) {
+            headers.set(key, String(value));
           }
         });
       }
     }
+    
+    // 3.5. 在实际调用API之前打印传输参数和请求头
+    console.log(`[request] ========== API调用信息 ==========`);
+    console.log(`[request] URL: ${fullUrl}`);
+    console.log(`[request] Method: ${method}`);
+    console.log(`[request] 请求头:`, Object.fromEntries(headers.entries()));
+    if (requestBody) {
+      if (requestBody instanceof FormData) {
+        console.log(`[request] Body: FormData (${requestBody instanceof FormData ? '是' : '否'})`);
+      } else {
+        try {
+          const bodyStr = typeof requestBody === 'string' ? requestBody : JSON.stringify(requestBody);
+          console.log(`[request] Body:`, bodyStr.length > 500 ? bodyStr.substring(0, 500) + '...' : bodyStr);
+        } catch (e) {
+          console.log(`[request] Body: [无法序列化]`);
+        }
+      }
+    } else {
+      console.log(`[request] Body: null`);
+    }
+    console.log(`[request] ========== API调用信息结束 ==========`);
 
     // 4. 发送请求
     const response = await fetch(fullUrl, {
       method,
-      headers,
+      headers: headers, // 直接使用 Headers 对象
       body: requestBody,
       credentials: options?.credentials || 'include',
       cache: options?.cache || 'no-cache',
@@ -115,9 +157,13 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       try {
         errorText = await response.text();
         
-        // 对于 subscription-plans 的 404 错误，静默处理（不输出错误日志）
+        // 对于某些特定的404错误，静默处理（不输出错误日志）
         const isSubscriptionPlans404 = response.status === 404 && url.includes('/subscription-plans');
-        if (!isSubscriptionPlans404) {
+        const isShareConfigNotFound = response.status === 404 && (
+          url.includes('/heartconnect/config/my') || 
+          url.includes('/heartconnect/config/by-code')
+        );
+        if (!isSubscriptionPlans404 && !isShareConfigNotFound) {
           console.error(`[${requestId}] 错误响应文本:`, errorText);
         }
         
@@ -140,11 +186,30 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         throw new Error('Not Found');
       }
       
+      // 对于共享配置不存在的404，使用更友好的错误消息
+      const isShareConfigNotFound = response.status === 404 && (
+        url.includes('/heartconnect/config/my') || 
+        url.includes('/heartconnect/config/by-code')
+      ) && (errorMessage && (
+        errorMessage.includes('共享配置不存在') ||
+        errorMessage.includes('共享码不存在')
+      ));
+      
       // 根据状态码提供更友好的错误信息
       if (response.status === 403) {
         errorMessage = errorMessage || '权限不足：您没有权限执行此操作';
       } else if (response.status === 404) {
-        errorMessage = errorMessage || '资源不存在或已被删除';
+        // 对于某些特定的404错误，不记录为错误（如共享配置不存在是正常情况）
+        const isShareConfigNotFound = errorMessage && (
+          errorMessage.includes('共享配置不存在') ||
+          errorMessage.includes('共享码不存在')
+        );
+        if (isShareConfigNotFound) {
+          // 静默处理，不输出错误日志
+          console.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
+        } else {
+          errorMessage = errorMessage || '资源不存在或已被删除';
+        }
       } else if (response.status === 401) {
         errorMessage = errorMessage || '未授权：请重新登录';
         // 清除认证 token
@@ -207,8 +272,16 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       return text as unknown as T;
     }
   } catch (error: any) {
-    if (!isSubscriptionPlansRequest) {
+    // 对于某些特定的404错误，不记录为错误（如共享配置不存在是正常情况）
+    const isShareConfigNotFound = error?.message && (
+      error.message.includes("共享配置不存在") ||
+      error.message.includes("共享码不存在")
+    );
+    
+    if (!isSubscriptionPlansRequest && !isShareConfigNotFound) {
       console.error(`[${requestId}] 请求异常:`, error);
+    } else if (isShareConfigNotFound) {
+      console.debug(`[${requestId}] 资源不存在（正常情况）:`, error.message);
     }
     throw error;
   }

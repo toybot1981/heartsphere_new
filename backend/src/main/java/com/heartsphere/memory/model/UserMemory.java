@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "user_memories")
 public class UserMemory {
     @Id
     private String id;
@@ -92,4 +90,6 @@ public class UserMemory {
      */
     private Map<String, Object> metadata;
 }
+
+
 

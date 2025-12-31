@@ -1,0 +1,344 @@
+package com.heartsphere.memory.service.impl;
+
+import com.heartsphere.memory.model.participant.*;
+import com.heartsphere.memory.repository.*;
+import com.heartsphere.memory.service.ParticipantMemoryService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
+import org.springframework.data.mongodb.core.query.TextQuery;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * MongoDB参与者记忆服务实现
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MongoParticipantMemoryService implements ParticipantMemoryService {
+    
+    private final MongoTemplate mongoTemplate;
+    private final ParticipantIdentityMemoryRepository identityMemoryRepository;
+    private final ParticipantInteractionMemoryRepository interactionMemoryRepository;
+    private final ParticipantRelationshipRepository relationshipRepository;
+    private final ParticipantPreferenceRepository preferenceRepository;
+    private final ParticipantSceneMemoryRepository sceneMemoryRepository;
+    
+    // ========== 参与者身份记忆 ==========
+    
+    @Override
+    public ParticipantIdentityMemory saveIdentityMemory(ParticipantIdentityMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        memory.setUpdatedAt(Instant.now());
+        memory.setLastAccessedAt(Instant.now());
+        ParticipantIdentityMemory saved = identityMemoryRepository.save(memory);
+        log.debug("保存参与者身份记忆: participantId={}, memoryId={}", memory.getParticipantId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public ParticipantIdentityMemory getIdentityMemory(String participantId) {
+        Optional<ParticipantIdentityMemory> memory = identityMemoryRepository.findByParticipantId(participantId);
+        memory.ifPresent(m -> {
+            m.setLastAccessedAt(Instant.now());
+            identityMemoryRepository.save(m);
+        });
+        return memory.orElse(null);
+    }
+    
+    @Override
+    public ParticipantIdentityMemory getIdentityMemory(String participantId, String sceneId) {
+        Optional<ParticipantIdentityMemory> memory = identityMemoryRepository.findByParticipantIdAndSceneId(participantId, sceneId);
+        memory.ifPresent(m -> {
+            m.setLastAccessedAt(Instant.now());
+            identityMemoryRepository.save(m);
+        });
+        return memory.orElse(null);
+    }
+    
+    @Override
+    public ParticipantIdentityMemory updateIdentityMemory(String participantId, ParticipantIdentityMemory memory) {
+        ParticipantIdentityMemory existing = getIdentityMemory(participantId);
+        if (existing != null) {
+            memory.setId(existing.getId());
+            memory.setParticipantId(participantId);
+            return saveIdentityMemory(memory);
+        }
+        return saveIdentityMemory(memory);
+    }
+    
+    // ========== 参与者交互记忆 ==========
+    
+    @Override
+    public ParticipantInteractionMemory saveInteractionMemory(ParticipantInteractionMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        if (memory.getInteractionTime() == null) {
+            memory.setInteractionTime(Instant.now());
+        }
+        if (memory.getLastAccessedAt() == null) {
+            memory.setLastAccessedAt(Instant.now());
+        }
+        if (memory.getAccessCount() == null) {
+            memory.setAccessCount(0);
+        }
+        ParticipantInteractionMemory saved = interactionMemoryRepository.save(memory);
+        log.debug("保存参与者交互记忆: participantId={}, relatedParticipantId={}, memoryId={}",
+            memory.getParticipantId(), memory.getRelatedParticipantId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public List<ParticipantInteractionMemory> getInteractionMemories(String participantId) {
+        return interactionMemoryRepository.findByParticipantIdOrderByInteractionTimeDesc(participantId);
+    }
+    
+    @Override
+    public List<ParticipantInteractionMemory> getInteractionMemories(String participantId, String relatedParticipantId) {
+        return interactionMemoryRepository.findByParticipantIdAndRelatedParticipantIdOrderByInteractionTimeDesc(
+            participantId, relatedParticipantId);
+    }
+    
+    @Override
+    public List<ParticipantInteractionMemory> getInteractionMemoriesByScene(String participantId, String sceneId) {
+        return interactionMemoryRepository.findByParticipantIdAndSceneIdOrderByInteractionTimeDesc(participantId, sceneId);
+    }
+    
+    @Override
+    public List<ParticipantInteractionMemory> getInteractionMemoriesByType(
+        String participantId, ParticipantInteractionMemory.InteractionType interactionType) {
+        return interactionMemoryRepository.findByParticipantIdAndInteractionTypeOrderByInteractionTimeDesc(
+            participantId, interactionType);
+    }
+    
+    // ========== 参与者关系 ==========
+    
+    @Override
+    public ParticipantRelationship saveRelationship(ParticipantRelationship relationship) {
+        if (relationship.getCreatedAt() == null) {
+            relationship.setCreatedAt(Instant.now());
+        }
+        relationship.setUpdatedAt(Instant.now());
+        if (relationship.getInteractionCount() == null) {
+            relationship.setInteractionCount(0);
+        }
+        ParticipantRelationship saved = relationshipRepository.save(relationship);
+        log.debug("保存参与者关系: participantId={}, relatedParticipantId={}, type={}",
+            relationship.getParticipantId(), relationship.getRelatedParticipantId(), relationship.getRelationshipType());
+        return saved;
+    }
+    
+    @Override
+    public ParticipantRelationship getRelationship(String participantId, String relatedParticipantId) {
+        Optional<ParticipantRelationship> relationship = relationshipRepository.findByParticipantIdAndRelatedParticipantId(
+            participantId, relatedParticipantId);
+        return relationship.orElse(null);
+    }
+    
+    @Override
+    public List<ParticipantRelationship> getAllRelationships(String participantId) {
+        return relationshipRepository.findByParticipantIdOrderByStrengthDesc(participantId);
+    }
+    
+    @Override
+    public List<ParticipantRelationship> getRelationshipsByType(
+        String participantId, ParticipantRelationship.RelationshipType relationshipType) {
+        return relationshipRepository.findByParticipantIdAndRelationshipTypeOrderByStrengthDesc(participantId, relationshipType);
+    }
+    
+    @Override
+    public ParticipantRelationship updateRelationshipStrength(
+        String participantId, String relatedParticipantId, double strength) {
+        ParticipantRelationship relationship = getRelationship(participantId, relatedParticipantId);
+        if (relationship != null) {
+            // 记录关系变化历史
+            if (relationship.getRelationshipHistory() == null) {
+                relationship.setRelationshipHistory(new ArrayList<>());
+            }
+            ParticipantRelationship.RelationshipChange change = ParticipantRelationship.RelationshipChange.builder()
+                .oldStrength(relationship.getStrength())
+                .newStrength(strength)
+                .oldType(relationship.getRelationshipType())
+                .newType(relationship.getRelationshipType())
+                .timestamp(Instant.now())
+                .build();
+            relationship.getRelationshipHistory().add(change);
+            
+            relationship.setStrength(strength);
+            relationship.setUpdatedAt(Instant.now());
+            return saveRelationship(relationship);
+        }
+        return null;
+    }
+    
+    @Override
+    public void incrementInteractionCount(String participantId, String relatedParticipantId) {
+        ParticipantRelationship relationship = getRelationship(participantId, relatedParticipantId);
+        if (relationship != null) {
+            relationship.setInteractionCount((relationship.getInteractionCount() != null ? relationship.getInteractionCount() : 0) + 1);
+            relationship.setLastInteractedAt(Instant.now());
+            saveRelationship(relationship);
+        }
+    }
+    
+    // ========== 参与者偏好 ==========
+    
+    @Override
+    public ParticipantPreference savePreference(ParticipantPreference preference) {
+        // 检查是否已存在
+        Optional<ParticipantPreference> existing;
+        if (preference.getSceneId() != null) {
+            existing = preferenceRepository.findByParticipantIdAndSceneIdAndKey(
+                preference.getParticipantId(), preference.getSceneId(), preference.getKey());
+        } else {
+            existing = preferenceRepository.findByParticipantIdAndKey(
+                preference.getParticipantId(), preference.getKey());
+        }
+        
+        if (existing.isPresent()) {
+            // 更新现有偏好
+            ParticipantPreference existingPref = existing.get();
+            existingPref.setValue(preference.getValue());
+            existingPref.setType(preference.getType());
+            existingPref.setConfidence(preference.getConfidence());
+            existingPref.setUpdatedAt(Instant.now());
+            existingPref.setAccessCount((existingPref.getAccessCount() != null ? existingPref.getAccessCount() : 0) + 1);
+            return preferenceRepository.save(existingPref);
+        } else {
+            // 创建新偏好
+            preference.setUpdatedAt(Instant.now());
+            preference.setAccessCount(0);
+            return preferenceRepository.save(preference);
+        }
+    }
+    
+    @Override
+    public ParticipantPreference getPreference(String participantId, String key) {
+        Optional<ParticipantPreference> preference = preferenceRepository.findByParticipantIdAndKey(participantId, key);
+        preference.ifPresent(p -> {
+            p.setAccessCount((p.getAccessCount() != null ? p.getAccessCount() : 0) + 1);
+            preferenceRepository.save(p);
+        });
+        return preference.orElse(null);
+    }
+    
+    @Override
+    public ParticipantPreference getPreference(String participantId, String sceneId, String key) {
+        Optional<ParticipantPreference> preference = preferenceRepository.findByParticipantIdAndSceneIdAndKey(
+            participantId, sceneId, key);
+        preference.ifPresent(p -> {
+            p.setAccessCount((p.getAccessCount() != null ? p.getAccessCount() : 0) + 1);
+            preferenceRepository.save(p);
+        });
+        return preference.orElse(null);
+    }
+    
+    @Override
+    public List<ParticipantPreference> getAllPreferences(String participantId) {
+        return preferenceRepository.findByParticipantIdOrderByUpdatedAtDesc(participantId);
+    }
+    
+    @Override
+    public List<ParticipantPreference> getPreferencesByScene(String participantId, String sceneId) {
+        return preferenceRepository.findByParticipantIdAndSceneIdOrderByUpdatedAtDesc(participantId, sceneId);
+    }
+    
+    // ========== 参与者场景记忆 ==========
+    
+    @Override
+    public ParticipantSceneMemory saveSceneMemory(ParticipantSceneMemory memory) {
+        if (memory.getCreatedAt() == null) {
+            memory.setCreatedAt(Instant.now());
+        }
+        memory.setUpdatedAt(Instant.now());
+        memory.setLastAccessedAt(Instant.now());
+        if (memory.getAccessCount() == null) {
+            memory.setAccessCount(0);
+        }
+        ParticipantSceneMemory saved = sceneMemoryRepository.save(memory);
+        log.debug("保存参与者场景记忆: participantId={}, sceneId={}, memoryId={}",
+            memory.getParticipantId(), memory.getSceneId(), saved.getId());
+        return saved;
+    }
+    
+    @Override
+    public List<ParticipantSceneMemory> getSceneMemories(String participantId, String sceneId) {
+        return sceneMemoryRepository.findByParticipantIdAndSceneIdOrderByCreatedAtDesc(participantId, sceneId);
+    }
+    
+    @Override
+    public List<ParticipantSceneMemory> getSceneMemoriesByScene(String sceneId) {
+        return sceneMemoryRepository.findBySceneIdOrderByCreatedAtDesc(sceneId);
+    }
+    
+    @Override
+    public List<ParticipantSceneMemory> getAllSceneMemories(String participantId) {
+        return sceneMemoryRepository.findByParticipantIdOrderByCreatedAtDesc(participantId);
+    }
+    
+    // ========== 记忆检索 ==========
+    
+    @Override
+    public List<ParticipantMemory> retrieveRelevantMemories(String participantId, String query, int limit) {
+        List<ParticipantMemory> results = new ArrayList<>();
+        
+        // 从交互记忆中检索
+        TextCriteria criteria = TextCriteria.forDefaultLanguage().matching(query);
+        Query textQuery = TextQuery.queryText(criteria).sortByScore();
+        textQuery.addCriteria(Criteria.where("participantId").is(participantId));
+        textQuery.limit(limit);
+        
+        List<ParticipantInteractionMemory> interactionMemories = mongoTemplate.find(
+            textQuery, ParticipantInteractionMemory.class);
+        
+        results.addAll(interactionMemories.stream().map(m -> new ParticipantMemory() {
+            @Override
+            public String getId() { return m.getId(); }
+            @Override
+            public String getParticipantId() { return m.getParticipantId(); }
+            @Override
+            public String getContent() { return m.getContent(); }
+            @Override
+            public String getType() { return "INTERACTION"; }
+        }).collect(Collectors.toList()));
+        
+        // 从场景记忆中检索
+        Query sceneQuery = TextQuery.queryText(criteria).sortByScore();
+        sceneQuery.addCriteria(Criteria.where("participantId").is(participantId));
+        sceneQuery.limit(limit);
+        
+        List<ParticipantSceneMemory> sceneMemories = mongoTemplate.find(
+            sceneQuery, ParticipantSceneMemory.class);
+        
+        results.addAll(sceneMemories.stream().map(m -> new ParticipantMemory() {
+            @Override
+            public String getId() { return m.getId(); }
+            @Override
+            public String getParticipantId() { return m.getParticipantId(); }
+            @Override
+            public String getContent() { return m.getContent(); }
+            @Override
+            public String getType() { return "SCENE"; }
+        }).collect(Collectors.toList()));
+        
+        return results.stream().limit(limit).collect(Collectors.toList());
+    }
+}
+
+
+

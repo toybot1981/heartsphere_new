@@ -44,3 +44,5 @@ echo "📊 服务状态:"
 echo "Redis: $(redis-cli ping 2>/dev/null || echo '未连接')"
 echo "MongoDB: $(pgrep -f mongod > /dev/null && echo '运行中' || echo '未运行')"
 
+
+

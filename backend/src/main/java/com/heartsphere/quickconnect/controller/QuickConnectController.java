@@ -1,6 +1,7 @@
 package com.heartsphere.quickconnect.controller;
 
 import com.heartsphere.dto.ApiResponse;
+import com.heartsphere.heartconnect.context.SharedModeContext;
 import com.heartsphere.quickconnect.dto.GetQuickConnectCharactersResponse;
 import com.heartsphere.quickconnect.dto.SearchCharactersResponse;
 import com.heartsphere.quickconnect.service.QuickConnectService;
@@ -41,12 +42,33 @@ public class QuickConnectController {
         logger.info(String.format("========== [QuickConnectController] 获取快速连接列表 ========== filter: %s, sortBy: %s, search: %s", 
                 filter, sortBy, search));
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long userId = userDetails.getId();
+        // 检查是否处于共享模式
+        logger.info("========== [QuickConnectController] 检查共享模式上下文 ==========");
+        boolean isActive = SharedModeContext.isActive();
+        Long shareConfigId = SharedModeContext.getShareConfigId();
+        Long ownerId = SharedModeContext.getOwnerId();
+        Long visitorId = SharedModeContext.getVisitorId();
+        
+        logger.info(String.format("[QuickConnectController] SharedModeContext.isActive(): %s", isActive));
+        logger.info(String.format("[QuickConnectController] shareConfigId: %s", shareConfigId));
+        logger.info(String.format("[QuickConnectController] ownerId: %s", ownerId));
+        logger.info(String.format("[QuickConnectController] visitorId: %s", visitorId));
+        
+        if (isActive && ownerId != null) {
+            logger.info(String.format("[QuickConnectController] ✅ 共享模式激活 - ownerId: %d, visitorId: %d, 使用ownerId查询角色列表", 
+                    ownerId, visitorId));
+        } else {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            ownerId = userDetails.getId();
+            visitorId = ownerId; // 正常模式下，访问者就是自己
+            logger.info(String.format("[QuickConnectController] 正常模式或共享模式未激活 - ownerId: %d, visitorId: %d", ownerId, visitorId));
+        }
+        
+        logger.info(String.format("[QuickConnectController] 调用 getQuickConnectCharacters - ownerId: %d, visitorId: %d", ownerId, visitorId));
         
         GetQuickConnectCharactersResponse response = quickConnectService.getQuickConnectCharacters(
-                userId, filter, sceneId, sortBy, limit, offset, search);
+                ownerId, visitorId, filter, sceneId, sortBy, limit, offset, search);
         
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -62,13 +84,35 @@ public class QuickConnectController {
         
         logger.info(String.format("========== [QuickConnectController] 搜索E-SOUL ========== query: %s, filter: %s", query, filter));
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long userId = userDetails.getId();
+        // 检查是否处于共享模式
+        logger.info("========== [QuickConnectController] 检查共享模式上下文（搜索） ==========");
+        boolean isActive = SharedModeContext.isActive();
+        Long shareConfigId = SharedModeContext.getShareConfigId();
+        Long ownerId = SharedModeContext.getOwnerId();
+        Long visitorId = SharedModeContext.getVisitorId();
         
-        SearchCharactersResponse response = quickConnectService.searchCharacters(userId, query, filter, limit);
+        logger.info(String.format("[QuickConnectController] SharedModeContext.isActive(): %s", isActive));
+        logger.info(String.format("[QuickConnectController] shareConfigId: %s", shareConfigId));
+        logger.info(String.format("[QuickConnectController] ownerId: %s", ownerId));
+        logger.info(String.format("[QuickConnectController] visitorId: %s", visitorId));
+        
+        if (isActive && ownerId != null) {
+            logger.info(String.format("[QuickConnectController] ✅ 共享模式激活 - ownerId: %d, visitorId: %d, 使用ownerId搜索角色", 
+                    ownerId, visitorId));
+        } else {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            ownerId = userDetails.getId();
+            visitorId = ownerId; // 正常模式下，访问者就是自己
+            logger.info(String.format("[QuickConnectController] 正常模式或共享模式未激活 - ownerId: %d, visitorId: %d", ownerId, visitorId));
+        }
+        
+        logger.info(String.format("[QuickConnectController] 调用 searchCharacters - ownerId: %d, visitorId: %d, query: %s", 
+                ownerId, visitorId, query));
+        SearchCharactersResponse response = quickConnectService.searchCharacters(ownerId, visitorId, query, filter, limit);
         
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
+
 

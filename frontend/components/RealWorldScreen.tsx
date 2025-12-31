@@ -8,12 +8,14 @@ import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/jour
 import { showAlert, showConfirm } from '../utils/dialog';
 import { NoteSyncModal } from './NoteSyncModal';
 import { logger } from '../utils/logger';
+import { useJournalHandlers } from '../hooks/useJournalHandlers';
+import { JournalMemoryModal } from './memory/JournalMemoryModal';
+import { useGameState } from '../contexts/GameStateContext';
+import { authApi } from '../services/api';
+import { JournalPreviewModal } from './JournalPreviewModal';
 
 interface RealWorldScreenProps {
   entries: JournalEntry[];
-  onAddEntry: (title: string, content: string, imageUrl?: string, insight?: string, tags?: string) => void;
-  onUpdateEntry: (entry: JournalEntry) => void;
-  onDeleteEntry: (id: string) => void;
   onExplore: (entry: JournalEntry) => void;
   onChatWithCharacter: (characterName: string) => void;
   onBack: () => void;
@@ -26,8 +28,12 @@ interface RealWorldScreenProps {
 }
 
 export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({ 
-    entries, onAddEntry, onUpdateEntry, onDeleteEntry, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest, showNoteSync = false
+    entries, onExplore, onChatWithCharacter, onBack, onConsultMirror, autoGenerateImage, worldStyle, userName, isGuest, showNoteSync = false
 }) => {
+  // 使用 useJournalHandlers Hook 处理日记操作
+  const { handleAddJournalEntry, handleUpdateJournalEntry, handleDeleteJournalEntry } = useJournalHandlers();
+  // 获取gameState以访问userProfile
+  const { state: gameState } = useGameState();
   // 日志：从缓存获取的entries
   useEffect(() => {
     logger.debug(`[RealWorldScreen] 加载日记条目，数量: ${entries.length}`);
@@ -48,6 +54,9 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   
   // Daily Greeting State
   const [dailyGreeting, setDailyGreeting] = useState<{greeting: string, question?: string, prompt?: string} | null>(null);
@@ -105,7 +114,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       e.stopPropagation();
       const confirmed = await showConfirm('确定要删除这篇日记吗？', '删除日记', 'warning');
       if (confirmed) {
-          onDeleteEntry(id);
+          handleDeleteJournalEntry(id);
           if (selectedEntry?.id === id) {
               setIsCreating(false);
               setSelectedEntry(null);
@@ -113,7 +122,15 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       }
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+  
   const handleSave = async (): Promise<void> => {
+    // 防止重复提交
+    if (isSaving) {
+      logger.warn("[RealWorldScreen] 正在保存中，跳过重复请求");
+      return;
+    }
+    
     logger.debug("[RealWorldScreen] 开始保存日志");
     
     // 表单验证
@@ -122,6 +139,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         showAlert("内容不能为空", "提示", "warning");
         return;
     }
+    
+    setIsSaving(true);
     
     // 如果标题为空，使用日期作为默认值
     const getDateString = (): string => {
@@ -265,27 +284,39 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         };
         
         logger.debug(`[RealWorldScreen] 更新日志条目: ${updatedEntry.id}`);
-        onUpdateEntry(updatedEntry);
-        
-        // 编辑模式下，关闭编辑框
-        setIsCreating(false);
-        setIsEditing(false);
-        setSelectedEntry(null);
-        setNewTags([]);
-        setTagInput('');
+        try {
+          await handleUpdateJournalEntry(updatedEntry);
+          
+          // 编辑模式下，关闭编辑框
+          setIsCreating(false);
+          setIsEditing(false);
+          setSelectedEntry(null);
+          setNewTags([]);
+          setTagInput('');
+        } catch (error) {
+          logger.error("[RealWorldScreen] 更新日志失败", error);
+        } finally {
+          setIsSaving(false);
+        }
     } else {
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
         logger.debug("[RealWorldScreen] 创建新日志条目");
-        onAddEntry(finalTitle, newContent, finalImageUrl, mirrorInsight || undefined, tagsString);
-        
-        // 新建模式下，只清空表单内容，保持编辑框打开
-        setNewTitle('');
-        setNewContent('');
-        setNewTags([]);
-        setTagInput('');
-        setUploadedImageUrl(undefined);
-        setIsEditing(false);
-        setSelectedEntry(null);
+        try {
+          await handleAddJournalEntry(finalTitle, newContent, finalImageUrl, mirrorInsight || undefined, tagsString);
+          
+          // 新建模式下，只清空表单内容，保持编辑框打开
+          setNewTitle('');
+          setNewContent('');
+          setNewTags([]);
+          setTagInput('');
+          setUploadedImageUrl(undefined);
+          setIsEditing(false);
+          setSelectedEntry(null);
+        } catch (error) {
+          logger.error("[RealWorldScreen] 创建日志失败", error);
+        } finally {
+          setIsSaving(false);
+        }
     }
   };
 
@@ -551,6 +582,73 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   笔记同步
               </Button>
               )}
+              {/* Memory Button - 查看日记记忆 */}
+              {!isGuest && userName && (
+              <Button 
+                  onClick={async () => {
+                      try {
+                          // 从多个来源尝试获取用户ID
+                          let userId: number | null = null;
+                          
+                          // 方法1: 从gameState获取（最可靠）
+                          if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userProfile.id) {
+                              const profileId = gameState.userProfile.id;
+                              // 确保是数字类型
+                              if (typeof profileId === 'number') {
+                                  userId = profileId;
+                              } else if (typeof profileId === 'string' && /^\d+$/.test(profileId)) {
+                                  userId = parseInt(profileId, 10);
+                              }
+                          }
+                          
+                          // 方法2: 如果gameState中没有，从localStorage的HEARTSPHERE_MEMORY_CORE_V1获取
+                          if (!userId || userId === 0) {
+                              const stored = localStorage.getItem('HEARTSPHERE_MEMORY_CORE_V1');
+                              if (stored) {
+                                  try {
+                                      const parsed = JSON.parse(stored);
+                                      const parsedUserId = parsed?.userProfile?.id;
+                                      if (parsedUserId) {
+                                          userId = typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
+                                      }
+                                  } catch (e) {
+                                      logger.debug('[RealWorldScreen] 解析HEARTSPHERE_MEMORY_CORE_V1失败', e);
+                                  }
+                              }
+                          }
+                          
+                          // 方法3: 如果还是获取不到，从API获取当前用户信息
+                          if (!userId || userId === 0) {
+                              const token = localStorage.getItem('auth_token');
+                              if (token) {
+                                  try {
+                                      const userInfo = await authApi.getCurrentUser(token);
+                                      if (userInfo && userInfo.id) {
+                                          userId = typeof userInfo.id === 'number' ? userInfo.id : parseInt(String(userInfo.id), 10);
+                                      }
+                                  } catch (e) {
+                                      logger.warn('[RealWorldScreen] 从API获取用户信息失败', e);
+                                  }
+                              }
+                          }
+                          
+                          if (!userId || userId === 0) {
+                              showAlert('无法获取用户信息，请重新登录', '提示', 'warning');
+                              return;
+                          }
+                          
+                          setShowMemoryModal(true);
+                      } catch (error) {
+                          logger.error('[RealWorldScreen] 获取用户信息失败', error);
+                          showAlert('无法获取用户信息', '提示', 'warning');
+                      }
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-900/20"
+                  title="查看从日记中提取的记忆"
+              >
+                  🧠 我的记忆
+              </Button>
+              )}
               {/* New Record Button */}
               <Button onClick={handleCreateClick} className="bg-gradient-to-r from-pink-600 to-purple-600 shadow-lg shadow-purple-900/20">
                   + 新记录
@@ -628,7 +726,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       {sortedEntries.map(entry => (
                           <div 
                             key={entry.id} 
-                            onClick={(event: MouseEvent<HTMLDivElement>) => handleEditClick(entry, event)}
+                            onClick={(event: MouseEvent<HTMLDivElement>) => {
+                              // 点击卡片时打开预览，而不是直接编辑
+                              setPreviewEntry(entry);
+                              setShowPreview(true);
+                            }}
                             className="group relative bg-slate-800/80 rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
                             style={{
                                 border: '1px solid transparent',
@@ -714,6 +816,20 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                           })}
                                       </span>
                                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button 
+                                            onClick={(e: MouseEvent<HTMLButtonElement>) => { 
+                                              e.stopPropagation(); 
+                                              setPreviewEntry(entry);
+                                              setShowPreview(true);
+                                            }} 
+                                            className="p-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-all"
+                                            title="预览详情"
+                                          >
+                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                              </svg>
+                                          </button>
                                           <button 
                                             onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
                                             className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all"
@@ -910,10 +1026,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           </button>
                           <button 
                               onClick={handleSave} 
-                              disabled={isGeneratingImage}
+                              disabled={isGeneratingImage || isSaving}
                               className="px-4 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-sm rounded-lg hover:from-pink-500 hover:to-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              type="button"
                           >
-                              {isGeneratingImage ? '生成配图中...' : '保存'}
+                              {isGeneratingImage ? '生成配图中...' : isSaving ? '保存中...' : '保存'}
                           </button>
                       </div>
                   </div>
@@ -935,6 +1052,90 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               />
           );
       })()}
+      
+      {/* 日记记忆查看模态框 */}
+      {showMemoryModal && !isGuest && userName && (
+          <JournalMemoryModal
+              userId={(() => {
+                  try {
+                      // 方法1: 从gameState获取
+                      if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userProfile.id) {
+                          const profileId = gameState.userProfile.id;
+                          if (typeof profileId === 'number') {
+                              return profileId;
+                          } else if (typeof profileId === 'string' && /^\d+$/.test(profileId)) {
+                              return parseInt(profileId, 10);
+                          }
+                      }
+                      
+                      // 方法2: 从localStorage获取
+                      const stored = localStorage.getItem('HEARTSPHERE_MEMORY_CORE_V1');
+                      if (stored) {
+                          const parsed = JSON.parse(stored);
+                          const parsedUserId = parsed?.userProfile?.id;
+                          if (parsedUserId) {
+                              return typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
+                          }
+                      }
+                      return 0;
+                  } catch (e) {
+                      logger.error('[RealWorldScreen] 获取用户ID失败', e);
+                      return 0;
+                  }
+              })()}
+              isOpen={showMemoryModal}
+              onClose={() => setShowMemoryModal(false)}
+          />
+      )}
+
+      {/* 日志预览模态框 */}
+      {showPreview && previewEntry && !isGuest && userName && (
+          <JournalPreviewModal
+              entry={previewEntry}
+              isOpen={showPreview}
+              onClose={() => {
+                  setShowPreview(false);
+                  setPreviewEntry(null);
+              }}
+              onEdit={(entry) => {
+                  handleEditClick(entry);
+                  setShowPreview(false);
+                  setPreviewEntry(null);
+              }}
+              onDelete={(entryId) => {
+                  handleDeleteJournalEntry(entryId);
+                  setShowPreview(false);
+                  setPreviewEntry(null);
+              }}
+              userId={(() => {
+                  try {
+                      // 方法1: 从gameState获取
+                      if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userProfile.id) {
+                          const profileId = gameState.userProfile.id;
+                          if (typeof profileId === 'number') {
+                              return profileId;
+                          } else if (typeof profileId === 'string' && /^\d+$/.test(profileId)) {
+                              return parseInt(profileId, 10);
+                          }
+                      }
+                      
+                      // 方法2: 从localStorage获取
+                      const stored = localStorage.getItem('HEARTSPHERE_MEMORY_CORE_V1');
+                      if (stored) {
+                          const parsed = JSON.parse(stored);
+                          const parsedUserId = parsed?.userProfile?.id;
+                          if (parsedUserId) {
+                              return typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
+                          }
+                      }
+                      return 0;
+                  } catch (e) {
+                      logger.error('[RealWorldScreen] 获取用户ID失败', e);
+                      return 0;
+                  }
+              })()}
+          />
+      )}
     </div>
     </>
   );

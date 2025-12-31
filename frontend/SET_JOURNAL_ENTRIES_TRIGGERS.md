@@ -185,3 +185,5 @@ dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
 2. 然后检查 `useDataLoader.ts:263`（后台查询）
 3. 最后检查 `useJournalHandlers.ts:227`（更新成功）
 
+
+

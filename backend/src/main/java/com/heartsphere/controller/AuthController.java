@@ -66,6 +66,9 @@ public class AuthController {
     @Autowired
     com.heartsphere.service.EmailVerificationCodeService emailVerificationCodeService;
 
+    @Autowired
+    com.heartsphere.mailbox.listener.ESoulLetterTriggerListener esoulLetterTriggerListener;
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> authenticateUser(
             @Valid @RequestBody LoginRequest loginRequest) {
@@ -80,6 +83,24 @@ public class AuthController {
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new ResourceNotFoundException("用户", null));
 
+            // 获取上次登录时间（如果User实体有lastLoginTime字段）
+            java.time.LocalDateTime lastLoginTime = null;
+            try {
+                // 尝试从User实体获取lastLoginTime字段
+                // 如果User实体没有这个字段，可以查询最近一次登录日志或其他方式获取
+                // 这里暂时设为null，表示首次登录或无法确定上次登录时间
+                // TODO: 如果User实体添加了lastLoginTime字段，可以取消注释
+                // lastLoginTime = user.getLastLoginTime();
+                
+                // 更新最后登录时间为当前时间（如果User实体有该字段）
+                // user.setLastLoginTime(java.time.LocalDateTime.now());
+                // userRepository.save(user);
+            } catch (Exception e) {
+                // 获取上次登录时间失败不影响登录流程
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("获取上次登录时间失败: " + e.getMessage());
+            }
+
             // 查询用户的世界，若为空则初始化，再次查询以返回最新数据
             List<World> userWorlds = worldRepository.findByUserId(user.getId());
             boolean isFirstLogin = userWorlds.isEmpty();
@@ -93,6 +114,16 @@ public class AuthController {
                         .warning("用户数据初始化失败: " + e.getMessage());
                     e.printStackTrace();
                 }
+            }
+
+            // 触发E-SOUL来信（异步执行，不阻塞登录流程）
+            try {
+                esoulLetterTriggerListener.handleUserLogin(user.getId(), lastLoginTime);
+            } catch (Exception e) {
+                // E-SOUL来信触发失败不影响登录，记录日志即可
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("E-SOUL来信触发失败: " + e.getMessage());
+                e.printStackTrace();
             }
 
             // 返回登录响应，包含首次登录标识

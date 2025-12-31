@@ -38,25 +38,25 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       setShareConfig(config);
       setShowShareDisplay(true);
     } catch (err: any) {
-      console.error('加载共享配置失败:', err);
       // 检查错误响应 - 如果共享配置不存在，打开创建界面
       const errorMessage = err?.message || '';
       const status = err?.response?.status || err?.status || (errorMessage.includes('404') ? 404 : null);
       
       // 检查是否是"共享配置不存在"的错误（404或相关错误消息）
-      if (
-        status === 404 || 
-        errorMessage === 'Not Found' ||
-        errorMessage.includes('共享配置不存在') ||
-        errorMessage.includes('不存在')
-      ) {
-        // 没有配置，打开创建界面
+      const isNotFound = status === 404 || 
+                        errorMessage === 'Not Found' ||
+                        errorMessage.includes('共享配置不存在') ||
+                        errorMessage.includes('不存在');
+      
+      if (isNotFound) {
+        // 没有配置，打开创建界面（这是正常情况，不记录为错误）
         console.log('No share config found, opening create modal');
         setShowConfigModal(true);
       } else {
+        // 其他错误才记录为错误
         console.error('加载共享配置失败:', err);
         // 显示错误提示
-        alert('加载共享配置失败: ' + errorMessage || '请稍后重试');
+        alert('加载共享配置失败: ' + (errorMessage || '请稍后重试'));
       }
     } finally {
       setLoading(false);
@@ -119,6 +119,17 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
                     </svg>
                   </button>
                 </div>
+                <div className="mb-4">
+                  <button
+                    onClick={() => {
+                      setShowShareDisplay(false);
+                      setShowConfigModal(true);
+                    }}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
+                  >
+                    ✏️ 重新配置
+                  </button>
+                </div>
                 <ShareCodeDisplay shareConfig={shareConfig} onRegenerate={handleConfigSuccess} />
                 <ConnectionRequestList shareConfigId={shareConfig.id} />
               </div>
@@ -167,6 +178,17 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
                     </svg>
                   </button>
                 </div>
+                <div className="mb-4">
+                  <button
+                    onClick={() => {
+                      setShowShareDisplay(false);
+                      setShowConfigModal(true);
+                    }}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
+                  >
+                    ✏️ 重新配置
+                  </button>
+                </div>
                 <ShareCodeDisplay shareConfig={shareConfig} onRegenerate={handleConfigSuccess} />
                 <ConnectionRequestList shareConfigId={shareConfig.id} />
               </div>
@@ -196,33 +218,44 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         onSuccess={handleConfigSuccess}
       />
       
-      {showShareDisplay && shareConfig && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setShowShareDisplay(false)}
-        >
+        {showShareDisplay && shareConfig && (
           <div
-            className="relative w-full max-w-2xl bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowShareDisplay(false)}
           >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">我的共享配置</h2>
-                <button
-                  onClick={() => setShowShareDisplay(false)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+            <div
+              className="relative w-full max-w-2xl bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-white">我的共享配置</h2>
+                  <button
+                    onClick={() => setShowShareDisplay(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="mb-4">
+                  <button
+                    onClick={() => {
+                      setShowShareDisplay(false);
+                      setShowConfigModal(true);
+                    }}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
+                  >
+                    ✏️ 重新配置
+                  </button>
+                </div>
+                <ShareCodeDisplay shareConfig={shareConfig} onRegenerate={handleConfigSuccess} />
+                <ConnectionRequestList shareConfigId={shareConfig.id} />
               </div>
-              <ShareCodeDisplay shareConfig={shareConfig} onRegenerate={handleConfigSuccess} />
-              <ConnectionRequestList shareConfigId={shareConfig.id} />
             </div>
           </div>
-        </div>
-      )}
+        )}
     </>
   );
 };

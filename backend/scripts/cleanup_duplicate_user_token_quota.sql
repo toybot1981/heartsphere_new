@@ -37,3 +37,5 @@ GROUP BY user_id
 HAVING COUNT(*) > 1;
 
 
+
+

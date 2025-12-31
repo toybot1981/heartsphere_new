@@ -13,3 +13,5 @@ ALTER TABLE `scenario_events`
 ADD COLUMN `system_era_id` BIGINT NULL COMMENT '关联的系统预设时代ID' AFTER `era_id`,
 ADD INDEX `idx_system_era_id` (`system_era_id`);
 
+
+

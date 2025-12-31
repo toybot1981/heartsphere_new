@@ -199,7 +199,14 @@ public class AIBillingAspect {
         if (!hasUserQuota) {
             log.warn("[计费] 用户配额不足: userId={}, quotaType={}, required={}", userId, quotaType, estimatedAmount);
             
-            // 检查资源池是否有余额（已经检查过了，这里再次确认）
+            // 如果启用了配额拦截开关，直接拒绝请求（不管资源池是否有余额）
+            if (quotaEnforcementEnabled) {
+                log.warn("[计费] 配额拦截已启用，用户配额不足，拒绝请求: userId={}, quotaType={}, required={}", 
+                        userId, quotaType, estimatedAmount);
+                throw new QuotaInsufficientException(quotaType, estimatedAmount, 0L);
+            }
+            
+            // 配额拦截开关关闭时，检查资源池是否有余额
             boolean canUseResourcePool = false;
             if (poolOpt.isPresent()) {
                 com.heartsphere.billing.entity.ProviderResourcePool pool = poolOpt.get();
@@ -207,28 +214,22 @@ public class AIBillingAspect {
                 // 如果资源池有余额，允许使用
                 if (poolBalance.compareTo(java.math.BigDecimal.ZERO) > 0) {
                     canUseResourcePool = true;
-                    log.info("[计费] 用户配额不足，但资源池有余额: userId={}, poolBalance={}", 
+                    log.info("[计费] 配额拦截已关闭，用户配额不足但资源池有余额，允许使用资源池: userId={}, poolBalance={}", 
                             userId, poolBalance);
                 } else {
-                    log.warn("[计费] 用户配额不足且资源池余额也为0: userId={}, quotaType={}, required={}, poolBalance={}", 
+                    log.warn("[计费] 配额拦截已关闭，用户配额不足且资源池余额也为0: userId={}, quotaType={}, required={}, poolBalance={}", 
                             userId, quotaType, estimatedAmount, poolBalance);
                 }
             } else {
-                log.warn("[计费] 用户配额不足且资源池不存在: userId={}, quotaType={}, required={}", 
+                log.warn("[计费] 配额拦截已关闭，用户配额不足且资源池不存在: userId={}, quotaType={}, required={}", 
                         userId, quotaType, estimatedAmount);
             }
             
-            // 如果启用了配额拦截开关，且既没有用户配额，也没有资源池余额，则拒绝请求
-            if (quotaEnforcementEnabled && !canUseResourcePool) {
-                log.warn("[计费] 配额拦截已启用，拒绝请求: userId={}, quotaType={}, required={}", 
+            // 如果配额拦截开关关闭，但既没有用户配额，也没有资源池余额，则拒绝请求
+            if (!canUseResourcePool) {
+                log.warn("[计费] 配额拦截已关闭，但用户配额不足且资源池余额不足，拒绝请求: userId={}, quotaType={}, required={}", 
                         userId, quotaType, estimatedAmount);
                 throw new QuotaInsufficientException(quotaType, estimatedAmount, 0L);
-            } else if (!quotaEnforcementEnabled) {
-                log.info("[计费] 配额拦截已关闭，允许继续使用资源池: userId={}, quotaType={}, required={}", 
-                        userId, quotaType, estimatedAmount);
-            } else {
-                log.info("[计费] 配额拦截已启用，但资源池有余额，允许使用资源池: userId={}, quotaType={}, required={}", 
-                        userId, quotaType, estimatedAmount);
             }
         } else {
             log.info("[计费] 用户配额检查通过: userId={}, quotaType={}, estimatedAmount={}", 

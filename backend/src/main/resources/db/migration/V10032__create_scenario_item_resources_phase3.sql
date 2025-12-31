@@ -36,3 +36,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 ('食物罐头（物品）', 'placeholder://item/item_wasteland_canned_food.jpg', 'item', '保存的食物罐头', 'Canned food, preserved food, survival food, wasteland supplies, realistic style, high quality, detailed canned food, post-apocalyptic food, valuable food resource', '废土,食物,物品', NULL, NOW(), NOW()),
 ('地图（物品）', 'placeholder://item/item_wasteland_map.jpg', 'item', '标注危险区域的地图', 'Wasteland map, survival map, danger zone map, post-apocalyptic map, realistic style, high quality, detailed map, annotated survival map, wasteland navigation map', '废土,地图,物品', NULL, NOW(), NOW());
 
+
+

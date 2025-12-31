@@ -4,6 +4,7 @@ import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { showAlert } from '../utils/dialog';
 import { authApi, wechatApi, userProfileApi } from '../services/api';
 import { ShareButton } from './heartconnect/ShareButton';
+import { mailboxApi } from '../services/api/mailbox';
 
 interface UserProfileProps {
   userProfile: UserProfileType;
@@ -76,6 +77,30 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     return userProfile.wechatOpenid != null && userProfile.wechatOpenid !== '';
   }, [userProfile]);
 
+  // 新系统未读数量状态
+  const [newSystemUnreadCount, setNewSystemUnreadCount] = useState<number>(0);
+  
+  // 从新系统获取未读数量
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      mailboxApi.getUnreadCount(token)
+        .then(count => {
+          const total = count.totalUnread || count.total || 0;
+          setNewSystemUnreadCount(total);
+          console.log('[UserProfile] 新系统未读数量:', total);
+        })
+        .catch(err => {
+          console.error('[UserProfile] 获取新系统未读数量失败:', err);
+          // 失败时使用旧系统数据
+          setNewSystemUnreadCount(mailbox.filter(m => !m.isRead).length);
+        });
+    } else {
+      // 未登录时使用旧系统数据
+      setNewSystemUnreadCount(mailbox.filter(m => !m.isRead).length);
+    }
+  }, [mailbox]); // 当mailbox变化时也更新
+
   // 计算统计数据
   const statistics = useMemo<UserStatistics>(() => {
     // 统计访问过的场景
@@ -125,9 +150,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       customScenesCount,
       customScriptsCount,
       totalMails: mailbox.length,
-      unreadMails: mailbox.filter(m => !m.isRead).length,
+      // 优先使用新系统的未读数量，如果没有则使用旧系统
+      unreadMails: newSystemUnreadCount > 0 ? newSystemUnreadCount : mailbox.filter(m => !m.isRead).length,
     };
-  }, [history, journalEntries, mailbox, gameState]);
+  }, [history, journalEntries, mailbox, gameState, newSystemUnreadCount]);
 
   // 获取我的内容列表
   const myContent = useMemo(() => {

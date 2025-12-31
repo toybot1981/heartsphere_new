@@ -5,6 +5,7 @@ import { InputGroup, TextInput, ConfigSection } from '../AdminUIComponents';
 import { Button } from '../../../components/Button';
 import { adminApi } from '../../../services/api';
 import { showAlert } from '../../../utils/dialog';
+import { getApiUrl } from '../../../services/api/config';
 
 interface WechatConfigProps {
     adminToken: string | null;
@@ -129,7 +130,7 @@ export const WechatConfig: React.FC<WechatConfigProps> = ({
                             redirectUri: e.target.value,
                         })
                     }
-                    placeholder="例如：http://localhost:8081/api/wechat/callback"
+                    placeholder={`例如：${getApiUrl('/wechat/callback')}`}
                 />
             </InputGroup>
             <div className="flex justify-end mt-4">

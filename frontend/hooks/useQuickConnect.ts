@@ -262,9 +262,10 @@ export const useQuickConnect = () => {
     setState(prev => ({ ...prev, viewMode: mode }));
   }, []);
   
-  // 初始化加载
+  // 初始化加载（只在组件首次挂载时加载）
   useEffect(() => {
     loadCharacters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   return {
@@ -278,6 +279,7 @@ export const useQuickConnect = () => {
     setViewMode,
     setSelectedSceneIds,
     reorderFavorites,
+    clearCache: cache.clearCache, // 暴露清除缓存方法
   };
 };
 

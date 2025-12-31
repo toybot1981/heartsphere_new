@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useQuickConnect } from '../../hooks/useQuickConnect';
+import { useSharedMode } from '../../hooks/useSharedMode';
 import { SearchBox } from './SearchBox';
 import { FilterTabs } from './FilterTabs';
 import { CharacterGrid } from './CharacterGrid';
@@ -8,6 +9,7 @@ import { useResponsive } from './useResponsive';
 import { EmptyState } from './EmptyState';
 import { QuickConnectErrorBoundary } from './ErrorBoundary';
 import { SharedHeartSphereSection } from './SharedHeartSphereSection';
+import type { ShareConfig } from '../../services/api/heartconnect/types';
 
 interface QuickConnectModalProps {
   isOpen: boolean;
@@ -23,6 +25,10 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
   onClose,
   onSelectCharacter,
 }) => {
+  const { leaveSharedMode, isActive: isSharedMode, enterSharedMode, visitorId: currentVisitorId } = useSharedMode();
+  const [selectedShareCode, setSelectedShareCode] = React.useState<string | null>(null);
+  const [selectedSharedHeartSphere, setSelectedSharedHeartSphere] = React.useState<any>(null);
+  
   const {
     filteredCharacters,
     searchQuery,
@@ -42,7 +48,39 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
     toggleFavorite,
     setViewMode,
     setSelectedSceneIds,
+    loadCharacters,
+    clearCache,
   } = useQuickConnect();
+  
+  // 当打开快速连接时，检查共享模式状态
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    
+    console.log('[QuickConnectModal] 模态框已打开，检查共享模式状态');
+    console.log('[QuickConnectModal] isSharedMode:', isSharedMode);
+    
+    try {
+      // 如果已经在共享模式下，保持状态并加载角色
+      if (isSharedMode) {
+        console.log('[QuickConnectModal] 已在共享模式下，加载角色');
+        loadCharacters();
+      } else {
+        // 不在共享模式下，清除可能存在的旧状态
+        console.log('[QuickConnectModal] 不在共享模式下，清除旧状态');
+        leaveSharedMode();
+        // 重置选中状态
+        setSelectedShareCode(null);
+        setSelectedSharedHeartSphere(null);
+      }
+    } catch (error) {
+      console.error('[QuickConnectModal] useEffect 中发生错误:', error);
+    }
+    // 只在 isOpen 变化时执行，避免循环依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+  
   
   // 响应式检测
   const { isMobile, isTablet } = useResponsive();
@@ -74,19 +112,30 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
     ? 'relative w-full h-full bg-gray-900 flex flex-col'
     : 'relative w-full max-w-5xl max-h-[90vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col';
   
+  console.log('[QuickConnectModal] 渲染，isOpen:', isOpen);
+  
   return (
     <QuickConnectErrorBoundary>
       <div
         className={modalClasses}
-        onClick={onClose}
+        onClick={(e) => {
+          // 只有点击背景区域（不是内容区域）才关闭
+          if (e.target === e.currentTarget) {
+            console.log('[QuickConnectModal] 点击背景，关闭模态框');
+            onClose();
+          }
+        }}
       >
         <div
           className={contentClasses}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('[QuickConnectModal] 点击内容区域，阻止冒泡');
+          }}
         >
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">快速连接 E-SOUL</h2>
+          <h2 className="text-2xl font-bold text-white">查看共享心域</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
@@ -98,12 +147,88 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         </div>
         
         {/* 共享心域展示区域 */}
-        <div className="p-6 border-b border-white/10">
-          <SharedHeartSphereSection />
+        <div className="p-6 pb-4 border-b border-white/10">
+          <SharedHeartSphereSection 
+            selectedShareCode={selectedShareCode}
+            onSelectHeartSphere={async (shareCode, sharedHeartSphere) => {
+              console.log('[QuickConnectModal] onSelectHeartSphere 被调用:', shareCode, sharedHeartSphere);
+              setSelectedShareCode(shareCode);
+              setSelectedSharedHeartSphere(sharedHeartSphere);
+              
+              // 清除缓存，确保重新加载
+              clearCache();
+              
+              // 进入共享模式以加载对应的角色
+              try {
+                const { getToken } = await import('../../services/api/base/tokenStorage');
+                
+                const token = getToken();
+                if (!token) {
+                  console.error('[QuickConnectModal] 未找到token');
+                  return;
+                }
+                
+                // 直接从 sharedHeartSphere 对象构造 shareConfig，不需要调用 API
+                const shareConfig: ShareConfig = {
+                  id: sharedHeartSphere.shareConfigId,
+                  userId: sharedHeartSphere.ownerId,
+                  shareCode: sharedHeartSphere.shareCode,
+                  shareType: sharedHeartSphere.shareType,
+                  shareStatus: 'active', // 默认值，因为能显示说明是 active
+                  accessPermission: sharedHeartSphere.accessPermission,
+                  description: sharedHeartSphere.description,
+                  coverImageUrl: sharedHeartSphere.coverImageUrl,
+                  viewCount: sharedHeartSphere.viewCount,
+                  requestCount: sharedHeartSphere.requestCount,
+                  approvedCount: sharedHeartSphere.approvedCount,
+                  createdAt: 0, // 这些字段在切换时不需要
+                  updatedAt: 0,
+                  worldCount: sharedHeartSphere.worldCount,
+                  eraCount: sharedHeartSphere.eraCount,
+                  characterCount: sharedHeartSphere.characterCount,
+                };
+                
+                console.log('[QuickConnectModal] 构造的 shareConfig:', shareConfig);
+                
+                // 尝试从 useSharedMode hook 中获取 visitorId（如果已经在共享模式下）
+                let visitorId: number | null = currentVisitorId;
+                
+                // 如果还是没有 visitorId，调用 API 获取
+                if (!visitorId) {
+                  const { authApi } = await import('../../services/api');
+                  const currentUser = await authApi.getCurrentUser(token);
+                  if (currentUser && currentUser.id) {
+                    visitorId = currentUser.id;
+                    console.log('[QuickConnectModal] 从 API 获取到 visitorId:', visitorId);
+                  } else {
+                    console.error('[QuickConnectModal] 无法获取用户ID');
+                    return;
+                  }
+                } else {
+                  console.log('[QuickConnectModal] 使用已有的 visitorId:', visitorId);
+                }
+                
+                // 更新 React 状态
+                console.log('[QuickConnectModal] 调用 enterSharedMode:', shareConfig.id, visitorId);
+                enterSharedMode(shareConfig, visitorId);
+                
+                // 等待一下确保共享模式上下文已设置
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // 加载对应共享心域的角色
+                console.log('[QuickConnectModal] 开始加载角色...');
+                await loadCharacters({ filter: 'all' });
+                console.log('[QuickConnectModal] 角色加载完成');
+              } catch (err) {
+                console.error('[QuickConnectModal] 加载共享心域角色失败:', err);
+              }
+            }}
+            onEnterSharedMode={onClose} // 传递关闭模态框的回调
+          />
         </div>
         
         {/* 搜索和筛选区域 */}
-        <div className="p-6 space-y-4 border-b border-white/10">
+        <div className="px-6 pt-4 pb-4 space-y-3 border-b border-white/10">
           {/* 搜索框 */}
           <SearchBox
             value={searchQuery}
@@ -213,6 +338,7 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
             {recentCount > 0 && ` · 最近访问 ${recentCount} 个`}
           </p>
         </div>
+      </div>
       </div>
     </QuickConnectErrorBoundary>
   );

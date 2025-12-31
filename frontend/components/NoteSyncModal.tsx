@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { noteSyncApi } from '../services/api';
 import { showAlert, showConfirm } from '../utils/dialog';
+import { getApiUrl } from '../services/api/config';
 
 // 声明 sessionStorage（TypeScript 可能需要）
 declare const sessionStorage: Storage;
@@ -120,7 +121,7 @@ export const NoteSyncModal: React.FC<NoteSyncModalProps> = ({ token, onClose }) 
       setAuthorizing('notion');
       // 使用后端服务器的回调地址，而不是前端地址
       // Notion OAuth 2.0 回调地址需要指向后端服务器
-      const callbackUrl = `http://localhost:8081/api/notes/notion/callback`;
+      const callbackUrl = getApiUrl('/notes/notion/callback');
       const authInfo = await noteSyncApi.getNotionAuthUrl(callbackUrl, actualToken);
       
       // 打开授权页面

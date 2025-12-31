@@ -5,7 +5,8 @@ import { aiService } from '../services/ai/AIService';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
 import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
-import { syncService } from '../services/syncService';
+import { getWorldIdForSceneId, initCustomSceneMappings } from '../utils/sceneMapping';
+import { useJournalHandlers } from '../hooks/useJournalHandlers';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileRealWorld } from './MobileRealWorld';
 import { showAlert, showConfirm } from '../utils/dialog';
@@ -91,10 +92,10 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             }
             setIsLoaded(true);
             
-            // 初始化同步服务（如果已登录）
+            // 初始化场景映射（如果已登录）
             const token = localStorage.getItem('auth_token');
             if (token) {
-                syncService.init();
+                await initCustomSceneMappings();
             }
         };
         init();
@@ -128,11 +129,22 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         console.log('[Mobile DataLoader] 开始加载场景数据...');
         const loadData = async () => {
             try {
-                // 获取世界列表
-                const worlds = await worldApi.getAllWorlds(token);
+                // 检查是否处于共享模式（通过全局状态）
+                const { getSharedModeState } = await import('../services/api/base/sharedModeState');
+                const sharedModeState = getSharedModeState();
+                const isSharedMode = sharedModeState.shareConfigId !== null;
                 
-                // 获取场景列表
-                const eras = await eraApi.getAllEras(token);
+                let worlds, eras;
+                if (isSharedMode) {
+                    // 共享模式：调用共享模式专用接口
+                    const { sharedApi } = await import('../services/api/heartconnect');
+                    worlds = await sharedApi.getSharedWorlds(token);
+                    eras = await sharedApi.getSharedEras(token);
+                } else {
+                    // 正常模式：调用原有接口
+                    worlds = await worldApi.getAllWorlds(token);
+                    eras = await eraApi.getAllEras(token);
+                }
                 
                 // 获取角色列表
                 const characters = await characterApi.getAllCharacters(token);
@@ -277,9 +289,9 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         const token = localStorage.getItem('auth_token');
         console.log('手机版登录成功:', method, identifier, '首次登录:', isFirstLogin);
         
-        // 初始化同步服务
+        // 初始化场景映射
         if (token) {
-            syncService.init();
+            await initCustomSceneMappings();
         }
         
         if (token) {
@@ -803,7 +815,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 try {
                     // 获取场景的eraId和worldId
                     const eraId = currentScene ? (parseInt(currentScene.id) || null) : null;
-                    const worldId = currentScene?.worldId || syncService.getWorldIdForSceneId(sceneId);
+                    const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
                     
                     // 准备角色数据
                     const characterData = {
@@ -936,75 +948,152 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     <MobileRealWorld 
                         entries={gameState.journalEntries}
                         onAddEntry={async (t, c, i, in_, tags) => {
-                            const newEntry: JournalEntry = {
-                                id: `e_${Date.now()}`,
-                                title: t,
-                                content: c,
-                                timestamp: Date.now(),
-                                imageUrl: i,
-                                insight: in_,
-                                tags: tags
-                            };
-                            
-                            // 1. 先保存到本地（立即更新UI）
-                            setGameState(prev => ({
-                                ...prev,
-                                journalEntries: [...prev.journalEntries, newEntry]
-                            }));
-                            
-                            // 2. 异步同步到服务器（如果已登录）
+                            // 使用统一的日记处理逻辑（通过适配器）
                             const token = localStorage.getItem('auth_token');
-                            if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
-                                (async () => {
-                                    try {
-                                        await syncService.handleLocalDataChange('journal', newEntry);
-                                        console.log('[Mobile] 日记同步成功:', newEntry.id);
-                                    } catch (error) {
-                                        console.error('[Mobile] 日记同步失败:', error);
-                                    }
-                                })();
+                            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+                                showAlert('请先登录', '提示', 'warning');
+                                return;
+                            }
+
+                            try {
+                                // 准备API请求数据
+                                const apiRequestData: any = {
+                                    title: t,
+                                    content: c,
+                                    entryDate: new Date().toISOString()
+                                };
+                                if (tags) {
+                                    apiRequestData.tags = tags;
+                                }
+                                if (in_) {
+                                    apiRequestData.insight = in_;
+                                }
+                                if (i !== undefined && i !== null) {
+                                    apiRequestData.imageUrl = i;
+                                }
+                                
+                                // 直接调用API创建
+                                await journalApi.createJournalEntry(apiRequestData, token);
+                                
+                                // 创建成功后，从服务器重新获取所有日志
+                                const allEntries = await journalApi.getAllJournalEntries(token);
+                                const mappedEntries = allEntries.map(entry => ({
+                                    id: entry.id.toString(),
+                                    title: entry.title,
+                                    content: entry.content,
+                                    timestamp: new Date(entry.entryDate).getTime(),
+                                    imageUrl: entry.imageUrl || undefined,
+                                    insight: entry.insight || undefined,
+                                    tags: entry.tags || undefined,
+                                }));
+                                
+                                setGameState(prev => ({
+                                    ...prev,
+                                    journalEntries: mappedEntries
+                                }));
+                                
+                                console.log('[Mobile] 日记创建成功，已从服务器重新加载');
+                            } catch (error) {
+                                console.error('[Mobile] 日记创建失败:', error);
+                                showAlert('日记创建失败，请重试', '错误', 'error');
                             }
                         }}
                         onUpdateEntry={async (e) => {
-                            // 1. 先保存到本地（立即更新UI）
-                            setGameState(prev => ({
-                                ...prev,
-                                journalEntries: prev.journalEntries.map(x => x.id === e.id ? e : x)
-                            }));
-                            
-                            // 2. 异步同步到服务器（如果已登录且ID是数字）
+                            // 检查是否为临时ID
+                            const isTemporaryId = e.id.startsWith('entry_') || e.id.startsWith('e_');
+                            if (isTemporaryId) {
+                                console.warn('[Mobile] 临时ID无法更新，跳过');
+                                return;
+                            }
+
                             const token = localStorage.getItem('auth_token');
-                            const isNumericId = /^\d+$/.test(e.id);
-                            if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
-                                (async () => {
-                                    try {
-                                        await syncService.handleLocalDataChange('journal', e);
-                                        console.log('[Mobile] 日记更新同步成功:', e.id);
-                                    } catch (error) {
-                                        console.error('[Mobile] 日记更新同步失败:', error);
-                                    }
-                                })();
+                            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+                                showAlert('请先登录', '提示', 'warning');
+                                return;
+                            }
+
+                            try {
+                                const apiRequestData: any = {
+                                    title: e.title,
+                                    content: e.content,
+                                    entryDate: new Date(e.timestamp).toISOString()
+                                };
+                                if (e.tags) {
+                                    apiRequestData.tags = e.tags;
+                                }
+                                if (e.imageUrl !== undefined && e.imageUrl !== null) {
+                                    apiRequestData.imageUrl = e.imageUrl;
+                                }
+                                // 总是包含insight字段
+                                if (e.insight !== undefined) {
+                                    apiRequestData.insight = e.insight !== null ? e.insight : null;
+                                }
+                                
+                                // 直接调用API更新
+                                await journalApi.updateJournalEntry(e.id, apiRequestData, token);
+                                
+                                // 更新成功后，从服务器重新获取所有日志
+                                const allEntries = await journalApi.getAllJournalEntries(token);
+                                const mappedEntries = allEntries.map(entry => ({
+                                    id: entry.id.toString(),
+                                    title: entry.title,
+                                    content: entry.content,
+                                    timestamp: new Date(entry.entryDate).getTime(),
+                                    imageUrl: entry.imageUrl || undefined,
+                                    insight: entry.insight || undefined,
+                                    tags: entry.tags || undefined,
+                                }));
+                                
+                                setGameState(prev => ({
+                                    ...prev,
+                                    journalEntries: mappedEntries
+                                }));
+                                
+                                console.log('[Mobile] 日记更新成功，已从服务器重新加载');
+                            } catch (error) {
+                                console.error('[Mobile] 日记更新失败:', error);
+                                showAlert('日记更新失败，请重试', '错误', 'error');
                             }
                         }}
                         onDeleteEntry={async (id) => {
-                            // 1. 先删除本地（立即更新UI）
-                            setGameState(prev => ({
-                                ...prev,
-                                journalEntries: prev.journalEntries.filter(x => x.id !== id)
-                            }));
-                            
-                            // 2. 异步同步到服务器（如果已登录且ID是数字）
+                            // 检查是否为临时ID
+                            const isTemporaryId = id.startsWith('entry_') || id.startsWith('e_');
+                            if (isTemporaryId) {
+                                console.warn('[Mobile] 临时ID无法删除，跳过');
+                                return;
+                            }
+
                             const token = localStorage.getItem('auth_token');
-                            const isNumericId = /^\d+$/.test(id);
-                            if (token && gameState.userProfile && !gameState.userProfile.isGuest && isNumericId) {
-                                (async () => {
-                                    try {
-                                        await journalApi.deleteJournalEntry(parseInt(id), token);
-                                        console.log('[Mobile] 日记删除同步成功:', id);
-                                    } catch (error) {
-                                        console.error('[Mobile] 日记删除同步失败:', error);
-                                    }
-                                })();
+                            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+                                showAlert('请先登录', '提示', 'warning');
+                                return;
+                            }
+
+                            try {
+                                // 直接调用API删除
+                                await journalApi.deleteJournalEntry(id, token);
+                                
+                                // 删除成功后，从服务器重新获取所有日志
+                                const allEntries = await journalApi.getAllJournalEntries(token);
+                                const mappedEntries = allEntries.map(entry => ({
+                                    id: entry.id.toString(),
+                                    title: entry.title,
+                                    content: entry.content,
+                                    timestamp: new Date(entry.entryDate).getTime(),
+                                    imageUrl: entry.imageUrl || undefined,
+                                    insight: entry.insight || undefined,
+                                    tags: entry.tags || undefined,
+                                }));
+                                
+                                setGameState(prev => ({
+                                    ...prev,
+                                    journalEntries: mappedEntries
+                                }));
+                                
+                                console.log('[Mobile] 日记删除成功，已从服务器重新加载');
+                            } catch (error) {
+                                console.error('[Mobile] 日记删除失败:', error);
+                                showAlert('日记删除失败，请重试', '错误', 'error');
                             }
                         }}
                         onExplore={(entry) => {

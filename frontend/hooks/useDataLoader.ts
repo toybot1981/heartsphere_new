@@ -6,10 +6,12 @@
 import { useCallback, useRef } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
 import { worldApi, eraApi, characterApi, scriptApi, userMainStoryApi, journalApi, authApi, chronosLetterApi } from '../services/api';
+import { sharedApi } from '../services/api/heartconnect';
 import { convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
-import { syncService } from '../services/sync/SyncService';
 import { logger } from '../utils/logger';
+import { JournalEntry } from '../types';
+import { useSharedMode } from './useSharedMode';
 
 /**
  * 数据加载 Hook
@@ -17,6 +19,7 @@ import { logger } from '../utils/logger';
 export const useDataLoader = () => {
   const { state: gameState, dispatch } = useGameState();
   const hasLoadedEntryPointData = useRef(false);
+  const sharedMode = useSharedMode(); // 使用共享模式 hook
 
   /**
    * 加载并同步世界数据（包括世界、场景、角色、剧本、主线剧情）
@@ -25,8 +28,30 @@ export const useDataLoader = () => {
     const screen = screenName || gameState.currentScreen || 'unknown';
     
     try {
-      const worlds = await worldApi.getAllWorlds(token);
-      const eras = await eraApi.getAllEras(token);
+      // 检查是否处于共享模式（通过 hook 状态）
+      const isSharedMode = sharedMode.isActive && sharedMode.shareConfig !== null;
+      
+      logger.info(`[useDataLoader ${screen}] 共享模式状态: isActive=${sharedMode.isActive}, shareConfig=${sharedMode.shareConfig ? '存在' : '不存在'}, shareConfigId=${sharedMode.shareConfig?.id || null}`);
+      
+      let worlds, eras;
+      if (isSharedMode && sharedMode.shareConfig) {
+        // 共享模式：调用共享模式专用接口
+        logger.info(`[useDataLoader ${screen}] 使用共享模式接口加载数据: shareConfigId=${sharedMode.shareConfig.id}`);
+        try {
+          worlds = await sharedApi.getSharedWorlds(token);
+          eras = await sharedApi.getSharedEras(token);
+          logger.info(`[useDataLoader ${screen}] 共享模式数据加载成功: worlds=${worlds?.length || 0}, eras=${eras?.length || 0}`);
+        } catch (error) {
+          logger.error(`[useDataLoader ${screen}] 共享模式数据加载失败:`, error);
+          throw error;
+        }
+      } else {
+        // 正常模式：调用原有接口
+        logger.info(`[useDataLoader ${screen}] 使用正常模式接口加载数据`);
+        worlds = await worldApi.getAllWorlds(token);
+        eras = await eraApi.getAllEras(token);
+      }
+      
       const characters = await characterApi.getAllCharacters(token);
       const scripts = await scriptApi.getAllScripts(token);
       const userMainStories = await userMainStoryApi.getAll(token);
@@ -37,7 +62,8 @@ export const useDataLoader = () => {
         eras,
         characters,
         scripts,
-        userMainStories
+        userMainStories,
+        isSharedMode // 传递共享模式标志
       );
       
       dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
@@ -56,7 +82,7 @@ export const useDataLoader = () => {
       hasLoadedEntryPointData.current = false;
       throw error;
     }
-  }, [gameState, dispatch]);
+  }, [gameState, dispatch, sharedMode]);
 
   /**
    * 处理登录成功后的数据加载
@@ -97,10 +123,9 @@ export const useDataLoader = () => {
         throw new Error('无法获取有效的用户信息');
       }
       
-      // 获取日记列表（使用同步服务：先展示本地缓存，后台查询并更新）
-      const tokenForSync = token; // 保存token用于后台查询
-      const localJournalEntries = await syncService.queryEntities('journal', token);
-      logger.debug(`[useDataLoader] 从本地缓存加载日记，数量: ${localJournalEntries.length}`);
+      // 获取日记列表（直接从服务器获取，不使用本地缓存）
+      const journalEntries = await journalApi.getAllJournalEntries(token);
+      logger.debug(`[useDataLoader] 从服务器加载日志，数量: ${journalEntries.length}`);
       
       // 获取信件列表（只获取用户反馈和管理员回复，不包含AI生成的信件）
       let letters: any[] = [];
@@ -112,11 +137,29 @@ export const useDataLoader = () => {
         // 信件加载失败不影响登录流程
       }
       
-      // 获取世界列表 (如果登录响应中没有，则单独获取)
-      const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
+      // 检查是否处于共享模式（通过 hook 状态）
+      const isSharedMode = sharedMode.isActive && sharedMode.shareConfig !== null;
       
-      // 获取场景列表
-      const eras = await eraApi.getAllEras(token);
+      logger.info(`[useDataLoader handleLoginSuccess] 共享模式状态: isActive=${sharedMode.isActive}, shareConfig=${sharedMode.shareConfig ? '存在' : '不存在'}, shareConfigId=${sharedMode.shareConfig?.id || null}`);
+      
+      let remoteWorlds, eras;
+      if (isSharedMode && sharedMode.shareConfig) {
+        // 共享模式：调用共享模式专用接口
+        logger.info(`[useDataLoader handleLoginSuccess] 使用共享模式接口加载数据: shareConfigId=${sharedMode.shareConfig.id}`);
+        try {
+          remoteWorlds = await sharedApi.getSharedWorlds(token);
+          eras = await sharedApi.getSharedEras(token);
+          logger.info(`[useDataLoader handleLoginSuccess] 共享模式数据加载成功: worlds=${remoteWorlds?.length || 0}, eras=${eras?.length || 0}`);
+        } catch (error) {
+          logger.error(`[useDataLoader handleLoginSuccess] 共享模式数据加载失败:`, error);
+          throw error;
+        }
+      } else {
+        // 正常模式：调用原有接口
+        logger.info(`[useDataLoader handleLoginSuccess] 使用正常模式接口加载数据`);
+        remoteWorlds = worlds || await worldApi.getAllWorlds(token);
+        eras = await eraApi.getAllEras(token);
+      }
       
       // 获取角色列表
       const characters = await characterApi.getAllCharacters(token);
@@ -127,7 +170,8 @@ export const useDataLoader = () => {
         eras,
         characters,
         undefined, // scripts 在 handleLoginSuccess 中未加载
-        undefined  // mainStories 在 handleLoginSuccess 中未加载
+        undefined,  // mainStories 在 handleLoginSuccess 中未加载
+        isSharedMode // 传递共享模式标志
       );
       
       // 更新用户信息和日记列表，使用远程加载的世界数据
@@ -139,60 +183,19 @@ export const useDataLoader = () => {
         phoneNumber: method === 'password' ? identifier : undefined,
       }});
       
-      // 更新日记列表（使用本地缓存数据，后台查询会自动更新）
-      const mappedEntries = localJournalEntries.map(entry => {
-        // 直接使用 entry 的所有字段，不进行选择性映射
-        // 这样可以确保所有字段（包括 insight, tags, syncStatus 等）都被保留
-        const mapped: JournalEntry = {
-          ...entry, // 先展开所有字段
-          // 确保必要字段存在
-          id: entry.id,
-          title: entry.title || '',
-          content: entry.content || '',
-          timestamp: entry.timestamp || Date.now(),
-          imageUrl: entry.imageUrl || '',
-          // 保留可选字段（即使为 undefined 也要保留）
-          insight: entry.insight !== undefined ? entry.insight : undefined,
-          tags: entry.tags !== undefined ? entry.tags : undefined,
-          syncStatus: entry.syncStatus !== undefined ? entry.syncStatus : undefined,
-          lastSyncTime: entry.lastSyncTime !== undefined ? entry.lastSyncTime : undefined,
-          syncError: entry.syncError !== undefined ? entry.syncError : undefined,
-        };
-        return mapped;
-      });
+      // 更新日记列表（直接从服务器数据映射，不使用本地缓存）
+      const mappedEntries = journalEntries.map(entry => ({
+        id: entry.id.toString(),
+        title: entry.title,
+        content: entry.content,
+        timestamp: new Date(entry.entryDate).getTime(),
+        imageUrl: entry.imageUrl || undefined,
+        insight: entry.insight || undefined,
+        tags: entry.tags || undefined,
+      }));
       
       logger.debug(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES，数量: ${mappedEntries.length}`);
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
-      
-      // 注册查询回调，当后台查询完成时更新状态
-      const config = (syncService as any).syncConfigs.get('journal');
-      if (config) {
-        const originalCallback = config.onEntitiesQueried;
-        config.onEntitiesQueried = (entities: any[]) => {
-          logger.debug(`[useDataLoader] 后台查询完成，更新日记列表，数量: ${entities.length}`);
-          
-          const mappedEntities = entities.map(entry => {
-            return {
-              id: entry.id,
-              title: entry.title,
-              content: entry.content,
-              timestamp: entry.timestamp,
-              imageUrl: entry.imageUrl || '',
-              insight: entry.insight, // 直接传递，不转换
-              tags: entry.tags,
-              syncStatus: entry.syncStatus,
-              lastSyncTime: entry.lastSyncTime,
-              syncError: entry.syncError,
-            };
-          });
-          
-          logger.debug(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES (后台查询完成)，数量: ${mappedEntities.length}`);
-          dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntities });
-          if (originalCallback) {
-            originalCallback(entities);
-          }
-        };
-      }
       
       // 更新信件列表（只包含用户反馈和管理员回复）
       dispatch({ type: 'SET_MAILBOX', payload: letters.map(letter => ({
@@ -229,7 +232,7 @@ export const useDataLoader = () => {
       
       return {
         userInfo,
-        journalEntries,
+        journalEntries: mappedEntries,
         userWorldScenes,
         newSelectedSceneId,
         shouldShowInitializationWizard: isFirstLogin || gameState.currentScreen === 'profileSetup'

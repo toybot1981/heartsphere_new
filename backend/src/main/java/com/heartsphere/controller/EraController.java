@@ -40,7 +40,8 @@ public class EraController {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        // 直接获取当前用户在指定世界中的时代
+        
+        // 正常模式：直接获取当前用户在指定世界中的时代
         List<Era> eras = eraRepository.findByWorld_IdAndUser_Id(worldId, userDetails.getId());
         List<EraDTO> eraDTOs = eras.stream()
             .map(DTOMapper::toEraDTO)
@@ -56,6 +57,8 @@ public class EraController {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 正常模式：返回当前用户的所有场景
         List<Era> eras = eraRepository.findByUser_Id(userDetails.getId());
         List<EraDTO> eraDTOs = eras.stream()
             .map(DTOMapper::toEraDTO)

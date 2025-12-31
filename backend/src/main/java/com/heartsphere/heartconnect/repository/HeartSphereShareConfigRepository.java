@@ -2,6 +2,7 @@ package com.heartsphere.heartconnect.repository;
 
 import com.heartsphere.heartconnect.entity.HeartSphereShareConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Optional;
  * 心域共享配置Repository
  */
 @Repository
-public interface HeartSphereShareConfigRepository extends JpaRepository<HeartSphereShareConfig, Long> {
+public interface HeartSphereShareConfigRepository extends JpaRepository<HeartSphereShareConfig, Long>, JpaSpecificationExecutor<HeartSphereShareConfig> {
     
     /**
      * 根据用户ID查找共享配置

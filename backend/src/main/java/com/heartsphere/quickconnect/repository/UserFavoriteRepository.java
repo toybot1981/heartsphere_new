@@ -57,3 +57,5 @@ public interface UserFavoriteRepository extends JpaRepository<UserFavorite, Long
     List<UserFavorite> findByUserIdAndCharacterIdIn(@Param("userId") Long userId, @Param("characterIds") List<Long> characterIds);
 }
 
+
+

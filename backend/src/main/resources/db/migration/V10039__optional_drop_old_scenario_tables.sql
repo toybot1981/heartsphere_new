@@ -15,3 +15,5 @@ SET NAMES utf8mb4;
 -- TRUNCATE TABLE `scenario_items`;
 -- TRUNCATE TABLE `scenario_events`;
 
+
+

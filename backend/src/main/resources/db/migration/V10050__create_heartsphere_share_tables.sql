@@ -74,3 +74,5 @@ CREATE TABLE IF NOT EXISTS heartsphere_connection (
   INDEX idx_connected_at (connected_at DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='连接记录表';
 
+
+

@@ -36,3 +36,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 ('蒸汽阀门（物品）', 'placeholder://item/item_steampunk_valve.jpg', 'item', '控制蒸汽的阀门', 'Steam valve, brass valve, steampunk valve, mechanical valve, realistic style, high quality, detailed valve, ornate brass valve, steampunk mechanical valve with intricate design', '蒸汽朋克,阀门,物品', NULL, NOW(), NOW()),
 ('铜制管道（物品）', 'placeholder://item/item_steampunk_pipe.jpg', 'item', '输送蒸汽的管道', 'Brass pipe, copper pipe, steampunk pipe, steam conduit, realistic style, high quality, detailed pipe, ornate metal pipe, steampunk pipe with mechanical connections', '蒸汽朋克,管道,物品', NULL, NOW(), NOW());
 
+
+

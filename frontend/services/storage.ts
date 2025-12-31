@@ -299,33 +299,114 @@ export const storageService = {
 
   /**
    * Clear all data (Factory Reset)
+   * @param options - 清除选项
+   * @param options.keepAuth - 是否保留认证信息（默认false）
+   * @param options.keepSettings - 是否保留设置（默认false）
+   * @param options.reload - 是否自动刷新页面（默认true）
    */
-  clearMemory: async () => {
+  clearMemory: async (options?: { keepAuth?: boolean; keepSettings?: boolean; reload?: boolean }) => {
+    const { keepAuth = false, keepSettings = false, reload = true } = options || {};
+    
     try {
+      // 如果需要保留设置，先加载当前状态
+      let settingsToKeep = null;
+      if (keepSettings) {
+        const currentState = await storageService.loadState();
+        if (currentState && currentState.settings) {
+          settingsToKeep = currentState.settings;
+        }
+      }
+      
+      // 清除 IndexedDB
       if (useIndexedDB && checkIndexedDBAvailability()) {
         try {
           const db = await storageService.initDB();
           const transaction = db.transaction(STORE_NAME, "readwrite");
           const store = transaction.objectStore(STORE_NAME);
           store.clear();
+          
+          // 如果保留设置，重新保存
+          if (settingsToKeep) {
+            const stateToSave: PersistedState = {
+              userProfile: null,
+              selectedSceneId: null,
+              selectedCharacterId: null,
+              selectedScenarioId: null,
+              editingScenarioId: null,
+              history: {},
+              customAvatars: {},
+              customScenarios: [],
+              customScenes: [],
+              customCharacters: {},
+              journalEntries: [],
+              settings: settingsToKeep,
+              mailbox: [],
+              lastLoginTime: undefined,
+              sceneMemories: {},
+              userWorldScenes: [],
+              showWelcomeOverlay: false
+            };
+            await store.put(stateToSave, 'latest');
+          }
         } catch (e) {
           console.warn('Failed to clear IndexedDB, clearing localStorage instead:', e);
         }
       }
+      
+      // 清除 localStorage
+      if (!keepAuth) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('lastLoginTime');
+      }
       localStorage.removeItem(LEGACY_STORAGE_KEY);
       localStorage.removeItem(FALLBACK_STORAGE_KEY);
-      window.location.reload();
+      
+      // 清除其他可能的存储
+      localStorage.removeItem('customSceneMappings');
+      localStorage.removeItem('emotion_records');
+      localStorage.removeItem('memory_records');
+      localStorage.removeItem('interaction_records');
+      localStorage.removeItem('card_records');
+      localStorage.removeItem('emoji_records');
+      
+      if (reload) {
+        window.location.reload();
+      }
     } catch (e) {
       console.error("Failed to clear memory", e);
       // 即使出错也尝试清除 localStorage
       try {
+        if (!keepAuth) {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('lastLoginTime');
+        }
         localStorage.removeItem(LEGACY_STORAGE_KEY);
         localStorage.removeItem(FALLBACK_STORAGE_KEY);
-        window.location.reload();
+        if (reload) {
+          window.location.reload();
+        }
       } catch (fallbackError) {
         console.error("Failed to clear localStorage:", fallbackError);
       }
     }
+  },
+  
+  /**
+   * Clear only journal entries (keep other data)
+   * @deprecated 日志已移除本地缓存同步机制，此方法不再使用
+   */
+  clearJournalEntries: async () => {
+    // 日志已移除本地缓存同步机制，此方法不再使用
+    console.warn('[storage] clearJournalEntries 已废弃，日志不再使用本地缓存');
+  },
+  
+  /**
+   * Clear only sync status (reset to unsynced)
+   * @deprecated 日志已移除本地缓存同步机制，此方法不再使用
+   */
+  clearSyncStatus: async () => {
+    // 日志已移除本地缓存同步机制，此方法不再使用
+    console.warn('[storage] clearSyncStatus 已废弃，日志不再使用本地缓存同步');
   },
 
   /**

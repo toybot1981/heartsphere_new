@@ -6,13 +6,13 @@ import { ScenarioBuilder } from './components/ScenarioBuilder';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { UserScriptEditor } from './components/UserScriptEditor';
 import { SettingsModal } from './components/SettingsModal';
+import { QuickConnectModal } from './components/quickconnect/QuickConnectModal';
 import { CharacterCard } from './components/CharacterCard';
 import { SceneCard } from './components/SceneCard';
 import { Character, GameState, Message, CustomScenario, AppSettings, WorldScene, JournalEntry, JournalEcho, Mail, EraMemory, DebugLog } from './types';
 import { aiService } from './services/ai/AIService';
 import { storageService } from './services/storage';
 import { authApi, journalApi, characterApi, scriptApi, worldApi, eraApi, membershipApi, userMainStoryApi } from './services/api';
-import { syncService as oldSyncService } from './services/syncService';
 import { syncService } from './services/sync/SyncService';
 import { initSyncConfigs } from './services/sync/syncConfig';
 import { EraConstructorModal } from './components/EraConstructorModal';
@@ -21,6 +21,7 @@ import { MainStoryEditor } from './components/MainStoryEditor';
 import { EntryPoint } from './components/EntryPoint';
 import { RealWorldScreen } from './components/RealWorldScreen';
 import { MailboxModal } from './components/MailboxModal';
+import { UnifiedMailboxModal } from './components/mailbox/UnifiedMailboxModal';
 import { EraMemoryModal } from './components/EraMemoryModal';
 import { Button } from './components/Button';
 import { DebugConsole } from './components/DebugConsole';
@@ -37,7 +38,6 @@ import { DEFAULT_GAME_STATE } from './contexts/constants/defaultState';
 import { convertErasToWorldScenes, convertBackendMainStoryToCharacter, convertBackendCharacterToFrontend } from './utils/dataTransformers';
 import { showSyncErrorToast } from './utils/toast';
 import { useEraHandlers } from './hooks/useEraHandlers';
-import { useJournalHandlers } from './hooks/useJournalHandlers';
 import { useNavigationHandlers } from './hooks/useNavigationHandlers';
 import { useMainStoryHandlers } from './hooks/useMainStoryHandlers';
 import { useCharacterHandlers } from './hooks/useCharacterHandlers';
@@ -55,11 +55,16 @@ import { useCharacterSelectionScroll } from './hooks/useCharacterSelectionScroll
 import { useMailCheck } from './hooks/useMailCheck';
 import { SceneSelectionScreen } from './components/screens/SceneSelectionScreen';
 import { CharacterSelectionScreen } from './components/screens/CharacterSelectionScreen';
+import { SharedHeartSphereScreen } from './components/screens/SharedHeartSphereScreen';
+import { SharedCharacterSelectionScreen } from './components/screens/SharedCharacterSelectionScreen';
+import { SharedChatWindow } from './components/screens/SharedChatWindow';
 import { ProfileSetupScreen } from './components/screens/ProfileSetupScreen';
 import { UserProfile } from './components/UserProfile';
-import { ExperienceModeProvider, useExperienceModeContext } from './components/heartconnect/ExperienceModeProvider';
-import { ConnectionRequestModal } from './components/heartconnect/ConnectionRequestModal';
+import { SharedModeBanner } from './components/heartconnect/SharedModeBanner';
+import { WarmMessageModal } from './components/heartconnect/WarmMessageModal';
+import { useSharedMode } from './hooks/useSharedMode';
 import { heartConnectApi } from './services/api/heartconnect';
+import { ConnectionRequestModal } from './components/heartconnect/ConnectionRequestModal';
 import { getToken } from './services/api/base/tokenStorage';
 import type { ShareConfig } from './services/api/heartconnect/types';
 
@@ -100,7 +105,12 @@ const AppContent: React.FC = () => {
 
   // 使用新的状态管理系统
   const { state: gameState, dispatch } = useGameState();
-  const [isLoaded, setIsLoaded] = useState(false); 
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // 共享模式状态管理
+  const { isActive: isSharedModeActive, shareConfig, leaveSharedMode, enterSharedMode } = useSharedMode();
+  const [showWarmMessageModal, setShowWarmMessageModal] = useState(false);
+  const [selectedSharedScene, setSelectedSharedScene] = useState<WorldScene | null>(null); // 选中的共享场景 
   
   // 初始化加载状态（GameStateProvider会自动加载，这里只是标记本地加载完成）
   useEffect(() => {
@@ -167,6 +177,9 @@ const AppContent: React.FC = () => {
     closeInitializationWizard,
   } = useModalState();
   
+  // 快速连接（心域连接）状态
+  const [showQuickConnectModal, setShowQuickConnectModal] = useState(false);
+  
   const [editingScene, setEditingScene] = useState<WorldScene | null>(null);
   
   // 使用 Handler Hooks
@@ -177,7 +190,6 @@ const AppContent: React.FC = () => {
       setEditingScene(null);
     }
   );
-  const { handleAddJournalEntry, handleUpdateJournalEntry, handleDeleteJournalEntry } = useJournalHandlers();
   const { handleSaveMainStory, handleDeleteMainStory: handleDeleteMainStoryHook, handleEditMainStory: handleEditMainStoryHook } = useMainStoryHandlers();
   const { loadAndSyncWorldData: loadAndSyncWorldDataHook } = useDataLoader();
   const { 
@@ -272,14 +284,55 @@ const AppContent: React.FC = () => {
     // 初始化同步配置
     initSyncConfigs();
     
-    // 启动自动同步（每30秒同步一次待同步的实体）
-    syncService.startAutoSync(30000);
+    // 初始化场景映射
+    (async () => {
+      const { initCustomSceneMappings } = await import('./utils/sceneMapping');
+      await initCustomSceneMappings();
+    })();
     
-    // 清理函数：停止自动同步
-    return () => {
-      syncService.stopAutoSync();
-    };
+    // 注意：日志已移除本地缓存同步机制，全部从后台获取
+    // 不再启动自动同步，日志保存后直接存储到服务器
   }, []);
+
+  // 检查是否需要导航到共享心域页面
+  // 监听导航到共享心域的事件
+  useEffect(() => {
+    const handleNavigateToShared = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ shareConfigId: number; visitorId: number; shareConfig?: ShareConfig }>;
+      if (customEvent.detail) {
+        const { shareConfigId, visitorId, shareConfig: providedShareConfig } = customEvent.detail;
+        
+        try {
+          // 如果事件中已经提供了 shareConfig，直接使用；否则通过 shareConfigId 获取
+          let shareConfig: ShareConfig;
+          if (providedShareConfig) {
+            shareConfig = providedShareConfig;
+            console.log('[App] handleNavigateToShared: 使用事件中提供的 shareConfig', shareConfig.id);
+          } else {
+            // 如果没有提供 shareConfig，说明已经在 SharedHeartSphereCard 中调用了 enterSharedMode
+            // 这里只需要设置屏幕即可
+            console.log('[App] handleNavigateToShared: shareConfig 已在事件发送前设置，直接导航');
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+            return;
+          }
+          
+          // 进入共享模式
+          console.log('[App] handleNavigateToShared: 进入共享模式', shareConfig.id, visitorId);
+          enterSharedMode(shareConfig, visitorId);
+          
+          // 设置屏幕为共享心域页面
+          dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+        } catch (err) {
+          console.error('[App] handleNavigateToShared 失败:', err);
+        }
+      }
+    };
+
+    window.addEventListener('navigateToShared', handleNavigateToShared);
+    return () => {
+      window.removeEventListener('navigateToShared', handleNavigateToShared);
+    };
+  }, [dispatch, enterSharedMode]);
 
   // 更新AI配置（当settings变化时）
   useEffect(() => {
@@ -451,8 +504,6 @@ const AppContent: React.FC = () => {
   // handlePlayScenario 已移至 useScriptHandlers Hook
   const handlePlayScenario = handlePlayScenarioHook;
 
-  // 日记 Handlers 已移至 useJournalHandlers Hook
-
   // handleExploreWithEntry 已移至 useNavigationHandlers Hook
 
   // handleConsultMirror 已移至 useMirrorHandlers Hook
@@ -573,6 +624,10 @@ const AppContent: React.FC = () => {
   if (!currentCharacterLocal && currentSceneLocal?.mainStory?.id === gameState.selectedCharacterId) {
       currentCharacterLocal = currentSceneLocal.mainStory;
   }
+  
+  // 在共享模式下，如果找不到角色，尝试从共享场景的角色中查找
+  // 注意：共享场景的角色是通过 API 动态加载的，不在 sceneCharacters 中
+  // 这里我们会在 SharedCharacterSelectionScreen 中处理角色选择
 
   const editingScenarioLocal = gameState.editingScenarioId 
     ? gameState.customScenarios.find(s => s.id === gameState.editingScenarioId) 
@@ -654,6 +709,10 @@ const AppContent: React.FC = () => {
                 // admin 现在在新页面打开，不需要处理
                 return;
               }
+              // 从正常入口进入时，清除共享模式状态（确保查看的是自己的心域）
+              if (screen === 'realWorld' || screen === 'sceneSelection') {
+                leaveSharedMode();
+              }
               dispatch({ type: 'SET_CURRENT_SCREEN', payload: screen });
             }} 
             nickname={gameState.userProfile?.nickname || ''} 
@@ -685,9 +744,6 @@ const AppContent: React.FC = () => {
           <RealWorldScreen
             showNoteSync={gameState.settings?.showNoteSync ?? false} 
              entries={gameState.journalEntries}
-             onAddEntry={handleAddJournalEntry}
-             onUpdateEntry={handleUpdateJournalEntry}
-             onDeleteEntry={handleDeleteJournalEntry}
              onExplore={handleExploreWithEntryHook}
              worldStyle={gameState.worldStyle}
              onChatWithCharacter={handleChatWithCharacterByName}
@@ -789,6 +845,68 @@ const AppContent: React.FC = () => {
           requireAuth={requireAuth}
           dispatch={dispatch}
         />
+      )}
+
+      {/* 共享心域页面 */}
+      {gameState.currentScreen === 'sharedHeartSphere' && (
+        <SharedHeartSphereScreen
+          onSceneSelect={(sceneId) => {
+            dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: sceneId });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedCharacterSelection' });
+          }}
+          onBack={() => {
+            leaveSharedMode();
+            setSelectedSharedScene(null); // 清除选中的共享场景
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+          }}
+          dispatch={dispatch}
+          onSceneObjectSelect={(scene) => {
+            // 当选择场景时，保存场景对象
+            console.log('[App] 选择共享场景:', scene);
+            setSelectedSharedScene(scene);
+            dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: scene.id });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedCharacterSelection' });
+          }}
+        />
+      )}
+
+      {gameState.currentScreen === 'sharedCharacterSelection' && (selectedSharedScene || currentSceneLocal) && (
+        <SharedCharacterSelectionScreen
+          currentScene={selectedSharedScene || currentSceneLocal!}
+          onBack={() => {
+            setSelectedSharedScene(null); // 清除选中的共享场景
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+          }}
+          onCharacterSelect={(character) => {
+            // 在共享模式下，保存选中的角色到 tempStoryCharacter，然后导航到共享聊天页面
+            dispatch({ type: 'SET_TEMP_STORY_CHARACTER', payload: character });
+            dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: character.id });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedChat' });
+          }}
+          scrollRef={characterSelectionScrollRef}
+        />
+      )}
+
+      {/* 共享模式聊天页面 */}
+      {gameState.currentScreen === 'sharedChat' && (currentCharacterLocal || gameState.tempStoryCharacter) && (
+        <ErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('[App] SharedChatWindow错误:', error, errorInfo);
+          }}
+        >
+          <SharedChatWindow
+            character={gameState.tempStoryCharacter || currentCharacterLocal!}
+            history={gameState.history[(gameState.tempStoryCharacter || currentCharacterLocal)!.id] || []}
+            settings={gameState.settings}
+            userProfile={gameState.userProfile!}
+            onUpdateHistory={handleUpdateHistory}
+            onBack={() => {
+              // 返回到角色选择页面，清除临时角色
+              dispatch({ type: 'SET_TEMP_STORY_CHARACTER', payload: null });
+              dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedCharacterSelection' });
+            }}
+          />
+        </ErrorBoundary>
       )}
 
       {gameState.currentScreen === 'characterSelection' && currentSceneLocal && (
@@ -1009,6 +1127,14 @@ const AppContent: React.FC = () => {
           onLogout={handleLogout}
           onBindAccount={() => { setShowSettingsModal(false); setShowLoginModal(true); }}
           onOpenRecycleBin={() => setShowRecycleBin(true)}
+          onOpenQuickConnect={() => {
+            console.log('[App] onOpenQuickConnect 被调用');
+            // 注意：不再在这里清除共享模式状态，让 QuickConnectModal 自己决定
+            // 如果用户在共享模式下，应该保持共享模式状态，搜索共享心域主人的E-SOUL
+            // 如果不在共享模式下，QuickConnectModal 会清除共享模式状态
+            setShowQuickConnectModal(true);
+            console.log('[App] showQuickConnectModal 设置为 true');
+          }}
           onOpenMembership={async () => {
             setShowSettingsModal(false);
             // 加载当前会员信息
@@ -1032,6 +1158,19 @@ const AppContent: React.FC = () => {
           onClose={() => setShowMembershipModal(false)}
           token={localStorage.getItem('auth_token') || ''}
           currentMembership={currentMembership}
+        />
+      )}
+
+      {showQuickConnectModal && (
+        <QuickConnectModal
+          isOpen={showQuickConnectModal}
+          onClose={() => setShowQuickConnectModal(false)}
+          onSelectCharacter={(characterId) => {
+            // 处理角色选择
+            console.log('选择了角色:', characterId);
+            setShowQuickConnectModal(false);
+            // 这里可以添加导航到角色的逻辑
+          }}
         />
       )}
 
@@ -1124,17 +1263,53 @@ const AppContent: React.FC = () => {
           );
       })()}
 
-      {showMailbox && (
-          <MailboxModal 
-             mails={gameState.mailbox}
-             onClose={() => setShowMailbox(false)}
-             onMarkAsRead={handleMarkMailRead}
-             onMailAdded={(mail) => {
-               // 将新信件添加到状态中
-               dispatch({ type: 'ADD_MAIL', payload: mail });
-             }}
-          />
-      )}
+      {showMailbox && (() => {
+        const token = localStorage.getItem('auth_token');
+        const userId = gameState.userProfile?.id;
+        
+        // 统一使用新的统一收件箱
+        // 如果已登录，传递userId和token；否则传递null，由UnifiedMailboxModal处理
+        if (token && userId) {
+          return (
+            <UnifiedMailboxModal
+              token={token}
+              currentUserId={userId}
+              onClose={() => setShowMailbox(false)}
+            />
+          );
+        }
+        
+        // 未登录情况：如果使用新的统一信箱，需要登录；否则降级到旧系统
+        // 为了更好的体验，提示用户登录
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full text-center">
+              <h3 className="text-xl font-bold text-white mb-4">需要登录</h3>
+              <p className="text-slate-400 mb-6">
+                统一信箱功能需要登录后使用。请先登录账号。
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowMailbox(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                >
+                  关闭
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMailbox(false);
+                    // 可以触发登录模态框
+                    // setShowLoginModal(true);
+                  }}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+                >
+                  去登录
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       
       {showEraMemory && memoryScene && (
           <EraMemoryModal
@@ -1156,6 +1331,34 @@ const AppContent: React.FC = () => {
       
       {/* 全局对话框 */}
       <GlobalDialogs />
+      
+      {/* 共享模式标识栏 */}
+      {isSharedModeActive && shareConfig && (
+        <SharedModeBanner
+          heartSphereName={shareConfig.shareCode}
+          onLeave={() => setShowWarmMessageModal(true)}
+        />
+      )}
+      
+      {/* 暖心留言模态框 */}
+      <WarmMessageModal
+        isOpen={showWarmMessageModal}
+        onClose={() => {
+          leaveSharedMode();
+          setShowWarmMessageModal(false);
+        }}
+        onSubmit={async (message: string) => {
+          if (shareConfig) {
+            try {
+              await heartConnectApi.createWarmMessage(shareConfig.id, message);
+            } catch (err) {
+              console.error('发送暖心留言失败:', err);
+            }
+          }
+          leaveSharedMode();
+          setShowWarmMessageModal(false);
+        }}
+      />
       
     </div>
   );
@@ -1190,11 +1393,7 @@ const App: React.FC = () => {
 
 // 简化版分享页面（不依赖React Router）
 const SharePageSimple: React.FC<{ shareCode: string }> = ({ shareCode }) => {
-  return (
-    <ExperienceModeProvider>
-      <SharePageContentSimple shareCode={shareCode} />
-    </ExperienceModeProvider>
-  );
+  return <SharePageContentSimple shareCode={shareCode} />;
 };
 
 // 分享页面内容（不依赖React Router）
@@ -1203,7 +1402,7 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const { enterExperienceMode } = useExperienceModeContext();
+  const { enterSharedMode } = useSharedMode();
   
   useEffect(() => {
     loadShareConfig();
@@ -1216,16 +1415,24 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
       const config = await heartConnectApi.getShareConfigByCode(shareCode);
       setShareConfig(config);
       
-      // 如果是自由连接，直接进入体验模式
+      // 如果是自由连接，尝试自动进入共享模式
       if (config.accessPermission === 'free') {
         const token = getToken();
         if (token) {
-          const userId = getCurrentUserId();
-          if (userId) {
-            enterExperienceMode(config, userId);
-            // 重定向到主应用
-            window.location.href = '/';
-            return;
+          try {
+            // 尝试从 API 获取用户信息
+            const currentUser = await authApi.getCurrentUser(token);
+            if (currentUser && currentUser.id) {
+              enterSharedMode(config, currentUser.id);
+              // 导航到共享心域页面
+              window.location.href = '/';
+              // 通过 sessionStorage 标记需要进入共享心域页面
+              sessionStorage.setItem('navigate_to_shared', 'true');
+              return;
+            }
+          } catch (err) {
+            console.warn('获取用户信息失败，将显示手动进入按钮:', err);
+            // 如果获取用户信息失败，继续显示页面，让用户手动点击进入
           }
         } else {
           setError('请先登录后再访问');
@@ -1239,6 +1446,33 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
       setError(err.response?.data?.message || '加载失败，请检查共享码是否正确');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleEnterExperience = async () => {
+    if (!shareConfig) return;
+    
+    const token = getToken();
+    if (!token) {
+      setError('请先登录后再访问');
+      return;
+    }
+    
+    try {
+      const currentUser = await authApi.getCurrentUser(token);
+      if (currentUser && currentUser.id) {
+        enterSharedMode(shareConfig, currentUser.id);
+        // 导航到共享心域页面
+        window.dispatchEvent(new CustomEvent('navigateToShared', { 
+          detail: { shareConfigId: shareConfig.id, visitorId: currentUser.id } 
+        }));
+        window.location.href = '/';
+      } else {
+        setError('无法获取用户信息，请重新登录');
+      }
+    } catch (err: any) {
+      console.error('进入共享模式失败:', err);
+      setError('进入共享模式失败，请稍后重试');
     }
   };
   
@@ -1261,8 +1495,11 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
     if (shareConfig) {
       const userId = getCurrentUserId();
       if (userId) {
-        enterExperienceMode(shareConfig, userId);
-        alert('连接请求已发送，等待主人审批后即可进入体验');
+        enterSharedMode(shareConfig, userId);
+        alert('连接请求已发送，等待主人审批后即可进入共享心域');
+        window.dispatchEvent(new CustomEvent('navigateToShared', { 
+          detail: { shareConfigId: shareConfig.id, visitorId: userId } 
+        }));
         window.location.href = '/';
       }
     }
@@ -1354,6 +1591,14 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
             >
               返回首页
             </button>
+            {shareConfig.accessPermission === 'free' && (
+              <button
+                onClick={handleEnterExperience}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-semibold shadow-lg"
+              >
+                进入体验
+              </button>
+            )}
             {shareConfig.accessPermission === 'approval' && (
               <button
                 onClick={() => setShowRequestModal(true)}

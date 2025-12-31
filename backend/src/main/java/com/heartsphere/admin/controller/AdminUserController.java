@@ -108,5 +108,18 @@ public class AdminUserController extends BaseAdminController {
         adminUserService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 强制删除用户（先清空所有关联数据，再删除用户）
+     */
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<Void> forceDeleteUser(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable("id") Long id
+    ) {
+        validateAdmin(authHeader);
+        adminUserService.forceDeleteUser(id);
+        return ResponseEntity.ok().build();
+    }
 }
 

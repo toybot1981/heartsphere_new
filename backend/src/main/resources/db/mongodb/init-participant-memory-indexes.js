@@ -36,3 +36,5 @@ db.participant_scene_memories.createIndex({ content: "text" }); // 文本搜索�
 
 print("参与者记忆系统索引创建完成！");
 
+
+

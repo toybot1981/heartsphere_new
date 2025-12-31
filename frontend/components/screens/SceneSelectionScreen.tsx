@@ -63,7 +63,7 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
             onClick={() => dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'connectionSpace' })}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-900 to-indigo-900 border border-blue-500/30 text-blue-200 hover:text-white hover:border-blue-400 transition-all shadow-lg hover:shadow-blue-500/20"
           >
-            <span className="animate-pulse">✨</span> 心域连接
+            <span className="animate-pulse">✨</span> 查看共享心域
           </button>
 
           <button

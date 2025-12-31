@@ -3,14 +3,14 @@ import React from 'react';
 export const AdminSidebarItem: React.FC<{ label: string; icon: string; active: boolean; onClick: () => void }> = ({ label, icon, active, onClick }) => (
     <button 
         onClick={onClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+        className={`w-full flex items-center gap-2 pl-8 pr-3 py-2.5 text-sm font-medium transition-all duration-200 ${
             active 
-            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50 border-r-4 border-white' 
+            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50 border-r-2 border-white' 
             : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
         }`}
     >
-        <span className="text-lg">{icon}</span>
-        {label}
+        <span className="text-base flex-shrink-0">{icon}</span>
+        <span className="truncate">{label}</span>
     </button>
 );
 

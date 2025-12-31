@@ -65,3 +65,5 @@ public class UserScenarioEvent {
     private LocalDateTime updatedAt;
 }
 
+
+

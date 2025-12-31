@@ -175,3 +175,5 @@ export function getAllTemplates(): CardTemplate[] {
   return CARD_TEMPLATES;
 }
 
+
+

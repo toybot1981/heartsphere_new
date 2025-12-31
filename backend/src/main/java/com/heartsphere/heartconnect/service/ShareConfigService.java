@@ -207,21 +207,33 @@ public class ShareConfigService {
         org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ShareConfigService.class);
         log.info("获取公开共享心域列表: 当前用户ID={}, 找到{}个激活的共享配置", currentUserId, configs.size());
         
-        List<SharedHeartSphereDTO> result = configs.stream()
-            .filter(config -> {
-                // 排除自己的
-                boolean isNotOwn = !config.getUserId().equals(currentUserId);
-                if (!isNotOwn) {
-                    log.debug("排除自己的共享配置: configId={}, userId={}", config.getId(), config.getUserId());
-                }
-                return isNotOwn;
-            })
-            .map(config -> {
-                log.debug("转换共享配置为DTO: configId={}, shareCode={}, ownerId={}", 
-                    config.getId(), config.getShareCode(), config.getUserId());
-                return convertToSharedDTO(config, currentUserId);
-            })
-            .collect(Collectors.toList());
+        // 如果currentUserId为null（未登录），返回所有激活的共享配置
+        List<SharedHeartSphereDTO> result;
+        if (currentUserId == null) {
+            result = configs.stream()
+                .map(config -> {
+                    log.debug("转换共享配置为DTO（未登录用户）: configId={}, shareCode={}, ownerId={}", 
+                        config.getId(), config.getShareCode(), config.getUserId());
+                    return convertToSharedDTO(config, null);
+                })
+                .collect(Collectors.toList());
+        } else {
+            result = configs.stream()
+                .filter(config -> {
+                    // 排除自己的
+                    boolean isNotOwn = !config.getUserId().equals(currentUserId);
+                    if (!isNotOwn) {
+                        log.debug("排除自己的共享配置: configId={}, userId={}", config.getId(), config.getUserId());
+                    }
+                    return isNotOwn;
+                })
+                .map(config -> {
+                    log.debug("转换共享配置为DTO: configId={}, shareCode={}, ownerId={}", 
+                        config.getId(), config.getShareCode(), config.getUserId());
+                    return convertToSharedDTO(config, currentUserId);
+                })
+                .collect(Collectors.toList());
+        }
         
         log.info("返回{}个共享心域", result.size());
         return result;

@@ -10,7 +10,7 @@ import { MemorySource } from '../types/MemoryTypes';
 /**
  * useMemorySystem Hook
  */
-export const useMemorySystem = (config: MemorySystemConfig & { aiEnhanced?: boolean }) => {
+export const useMemorySystem = (config: MemorySystemConfig & { aiEnhanced?: boolean; useRemoteStorage?: boolean }) => {
   const systemRef = useRef<MemorySystem | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -19,6 +19,7 @@ export const useMemorySystem = (config: MemorySystemConfig & { aiEnhanced?: bool
     const system = new MemorySystem({
       ...config,
       aiEnhanced: config.aiEnhanced ?? false,
+      useRemoteStorage: config.useRemoteStorage ?? true, // 默认使用远程存储
     });
     systemRef.current = system;
     setIsReady(true);

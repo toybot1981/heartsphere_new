@@ -1,0 +1,46 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.MemoryAssociation;
+import com.heartsphere.memory.service.MemoryAssociationService;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 记忆关联Repository
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface MemoryAssociationRepository extends MongoRepository<MemoryAssociation, String> {
+    
+    /**
+     * 根据记忆ID1查找所有关联
+     */
+    List<MemoryAssociation> findByMemoryId1OrderByStrengthDesc(String memoryId1);
+    
+    /**
+     * 根据记忆ID2查找所有关联
+     */
+    List<MemoryAssociation> findByMemoryId2OrderByStrengthDesc(String memoryId2);
+    
+    /**
+     * 根据两个记忆ID查找关联（双向）
+     */
+    Optional<MemoryAssociation> findByMemoryId1AndMemoryId2(String memoryId1, String memoryId2);
+    
+    /**
+     * 根据关联类型查找关联
+     */
+    List<MemoryAssociation> findByMemoryId1AndAssociationTypeOrderByStrengthDesc(
+        String memoryId1, MemoryAssociationService.AssociationType associationType);
+    
+    /**
+     * 检查关联是否存在
+     */
+    boolean existsByMemoryId1AndMemoryId2(String memoryId1, String memoryId2);
+}
+
+
+

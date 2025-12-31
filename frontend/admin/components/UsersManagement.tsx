@@ -99,7 +99,43 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
             if (onRefresh) onRefresh();
         } catch (error: any) {
             console.error('删除用户失败:', error);
-            showAlert('删除用户失败: ' + (error.message || '未知错误'), '删除失败', 'error');
+            const errorMessage = error.message || '未知错误';
+            
+            // 检查是否是外键约束错误
+            if (errorMessage.includes('外键关联约束') || errorMessage.includes('foreign key') || errorMessage.includes('DataIntegrityViolationException')) {
+                // 显示强制删除选项
+                const forceDeleteConfirmed = await showConfirm(
+                    `无法删除用户 "${username}"：存在外键关联约束。\n\n` +
+                    `⚠️ 强制删除将清空以下所有关联数据：\n` +
+                    `• 角色数据\n` +
+                    `• 日记记录\n` +
+                    `• 场景数据\n` +
+                    `• 脚本数据\n` +
+                    `• 世界数据\n` +
+                    `• 主线剧情\n` +
+                    `• 笔记数据\n` +
+                    `• 会员记录\n` +
+                    `• 支付订单\n` +
+                    `• 积分交易记录\n\n` +
+                    `此操作不可恢复，确定要继续吗？`,
+                    '强制删除用户',
+                    'danger'
+                );
+                
+                if (forceDeleteConfirmed) {
+                    try {
+                        await adminApi.users.forceDelete(userId, adminToken);
+                        showAlert('用户已强制删除', '删除成功', 'success');
+                        loadUsers();
+                        if (onRefresh) onRefresh();
+                    } catch (forceError: any) {
+                        console.error('强制删除用户失败:', forceError);
+                        showAlert('强制删除用户失败: ' + (forceError.message || '未知错误'), '删除失败', 'error');
+                    }
+                }
+            } else {
+                showAlert('删除用户失败: ' + errorMessage, '删除失败', 'error');
+            }
         }
     };
 

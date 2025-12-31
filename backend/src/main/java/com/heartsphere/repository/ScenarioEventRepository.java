@@ -28,3 +28,5 @@ public interface ScenarioEventRepository extends JpaRepository<ScenarioEvent, Lo
     Boolean existsByEventId(String eventId);
 }
 
+
+

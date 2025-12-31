@@ -24,3 +24,5 @@ CREATE TABLE IF NOT EXISTS emotion_records (
     INDEX idx_timestamp (timestamp DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='情绪记录表';
 
+
+

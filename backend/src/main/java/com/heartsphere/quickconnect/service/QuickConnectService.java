@@ -40,10 +40,19 @@ public class QuickConnectService {
     
     /**
      * 获取快速连接列表
+     * @param ownerId 角色所有者的用户ID（在共享模式下是共享心域的主人，正常模式下是当前用户）
+     * @param visitorId 访问者的用户ID（用于查询收藏状态和访问历史，在共享模式下是访问者，正常模式下是当前用户）
+     * @param filter 筛选类型
+     * @param sceneId 场景ID
+     * @param sortBy 排序方式
+     * @param limit 限制数量
+     * @param offset 偏移量
+     * @param search 搜索关键词
      */
     @Transactional(readOnly = true)
     public GetQuickConnectCharactersResponse getQuickConnectCharacters(
-            Long userId,
+            Long ownerId,
+            Long visitorId,
             String filter,
             Long sceneId,
             String sortBy,
@@ -51,11 +60,15 @@ public class QuickConnectService {
             Integer offset,
             String search) {
         
-        logger.info(String.format("[QuickConnectService] 获取快速连接列表 - userId: %d, filter: %s, sortBy: %s, search: %s", 
-                userId, filter, sortBy, search));
+        logger.info(String.format("[QuickConnectService] ========== 获取快速连接列表 =========="));
+        logger.info(String.format("[QuickConnectService] ownerId: %d (用于查询角色列表)", ownerId));
+        logger.info(String.format("[QuickConnectService] visitorId: %d (用于查询收藏状态和访问历史)", visitorId));
+        logger.info(String.format("[QuickConnectService] filter: %s, sortBy: %s, search: %s", filter, sortBy, search));
         
-        // 1. 获取用户的所有角色
-        List<Character> characters = characterRepository.findByUser_Id(userId);
+        // 1. 获取角色所有者的所有角色（在共享模式下是主人的角色，正常模式下是当前用户的角色）
+        logger.info(String.format("[QuickConnectService] 使用 ownerId=%d 查询角色列表", ownerId));
+        List<Character> characters = characterRepository.findByUser_Id(ownerId);
+        logger.info(String.format("[QuickConnectService] 查询到 %d 个角色 (ownerId=%d)", characters.size(), ownerId));
         
         // 2. 转换为DTO
         List<QuickConnectCharacterDTO> characterDTOs = characters.stream()
@@ -63,7 +76,8 @@ public class QuickConnectService {
                 .collect(Collectors.toList());
         
         // 3. 填充收藏状态、访问历史、推荐分数（批量优化）
-        fillCharacterDetails(characterDTOs, userId);
+        // 注意：收藏状态和访问历史使用 visitorId（访问者的数据），推荐分数也使用 visitorId
+        fillCharacterDetails(characterDTOs, visitorId != null ? visitorId : ownerId);
         
         // 4. 应用搜索过滤
         if (search != null && !search.trim().isEmpty()) {
@@ -72,7 +86,7 @@ public class QuickConnectService {
         
         // 5. 应用筛选
         if (filter != null) {
-            characterDTOs = filterByType(characterDTOs, filter, userId);
+            characterDTOs = filterByType(characterDTOs, filter, visitorId != null ? visitorId : ownerId);
         }
         
         // 6. 应用场景筛选
@@ -119,18 +133,31 @@ public class QuickConnectService {
     
     /**
      * 搜索E-SOUL
+     * @param ownerId 角色所有者的用户ID（在共享模式下是共享心域的主人，正常模式下是当前用户）
+     * @param visitorId 访问者的用户ID（用于查询收藏状态和访问历史，在共享模式下是访问者，正常模式下是当前用户）
+     * @param query 搜索关键词
+     * @param filter 筛选类型
+     * @param limit 限制数量
      */
     @Transactional(readOnly = true)
-    public SearchCharactersResponse searchCharacters(Long userId, String query, String filter, Integer limit) {
-        logger.info(String.format("[QuickConnectService] 搜索E-SOUL - userId: %d, query: %s, filter: %s", userId, query, filter));
+    public SearchCharactersResponse searchCharacters(Long ownerId, Long visitorId, String query, String filter, Integer limit) {
+        logger.info(String.format("[QuickConnectService] ========== 搜索E-SOUL =========="));
+        logger.info(String.format("[QuickConnectService] ownerId: %d (用于查询角色列表)", ownerId));
+        logger.info(String.format("[QuickConnectService] visitorId: %d (用于查询收藏状态和访问历史)", visitorId));
+        logger.info(String.format("[QuickConnectService] query: %s, filter: %s, limit: %d", query, filter, limit));
         
         if (query == null || query.trim().isEmpty()) {
+            logger.warning("[QuickConnectService] 搜索关键词为空，返回空结果");
             return new SearchCharactersResponse(new ArrayList<>(), 0, query, new HashMap<>());
         }
         
         // 获取快速连接列表（应用搜索）
+        logger.info(String.format("[QuickConnectService] 调用 getQuickConnectCharacters 进行搜索 - ownerId: %d, visitorId: %d", 
+                ownerId, visitorId));
         GetQuickConnectCharactersResponse response = getQuickConnectCharacters(
-                userId, filter, null, "frequency", limit, 0, query);
+                ownerId, visitorId, filter, null, "frequency", limit, 0, query);
+        logger.info(String.format("[QuickConnectService] 搜索完成 - 找到 %d 个角色 (ownerId=%d, visitorId=%d)", 
+                response.getTotalCount(), ownerId, visitorId));
         
         // 构建搜索响应
         SearchCharactersResponse searchResponse = new SearchCharactersResponse();

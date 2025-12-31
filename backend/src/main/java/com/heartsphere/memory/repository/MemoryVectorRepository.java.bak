@@ -1,0 +1,50 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.MemoryType;
+import com.heartsphere.memory.model.MemoryVector;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 记忆向量Repository
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface MemoryVectorRepository extends MongoRepository<MemoryVector, String> {
+    
+    /**
+     * 根据记忆ID查找向量
+     */
+    Optional<MemoryVector> findByMemoryId(String memoryId);
+    
+    /**
+     * 根据用户ID查找所有向量
+     */
+    List<MemoryVector> findByUserId(String userId);
+    
+    /**
+     * 根据角色ID查找所有向量
+     */
+    List<MemoryVector> findByCharacterId(String characterId);
+    
+    /**
+     * 根据参与者ID查找所有向量
+     */
+    List<MemoryVector> findByParticipantId(String participantId);
+    
+    /**
+     * 根据记忆类型查找所有向量
+     */
+    List<MemoryVector> findByMemoryType(MemoryType memoryType);
+    
+    /**
+     * 根据用户ID和记忆类型查找向量
+     */
+    List<MemoryVector> findByUserIdAndMemoryType(String userId, MemoryType memoryType);
+}
+
+
+

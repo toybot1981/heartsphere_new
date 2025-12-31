@@ -4,5 +4,5 @@
 
 export * from './types';
 export * as heartConnectApi from './heartconnect';
-export * from './experience';
+export { sharedApi } from './shared';
 

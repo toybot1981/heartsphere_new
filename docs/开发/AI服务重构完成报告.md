@@ -184,3 +184,4 @@ await geminiService.generateCharacterFromPrompt(prompt, eraName);
 🎯 **下一步**: 进行全面的功能测试，确保所有功能正常工作。
 
 
+

@@ -7,7 +7,6 @@ import com.heartsphere.emotion.repository.EmotionRecordRepository;
 import com.heartsphere.aiagent.service.AIService;
 import com.heartsphere.aiagent.dto.request.TextGenerationRequest;
 import com.heartsphere.aiagent.dto.response.TextGenerationResponse;
-import com.heartsphere.memory.service.TemperatureMemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
@@ -31,14 +30,11 @@ public class EmotionService {
     
     @Autowired
     private EmotionRecordRepository emotionRecordRepository;
-    
+
     @Autowired
     private AIService aiService;
-    
+
     private final ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-    
-    @Autowired(required = false)
-    private TemperatureMemoryService temperatureMemoryService;
     
     @Autowired(required = false)
     private com.heartsphere.heartconnect.storage.TemporaryDataStorage temporaryDataStorage;
@@ -332,13 +328,13 @@ public class EmotionService {
      */
     @Transactional
     public EmotionRecord saveEmotionRecord(EmotionAnalysisResponse analysis, EmotionAnalysisRequest request) {
-        // 检查是否处于体验模式
-        if (com.heartsphere.heartconnect.context.ExperienceModeContext.isActive()) {
-            Long shareConfigId = com.heartsphere.heartconnect.context.ExperienceModeContext.getShareConfigId();
-            Long visitorId = com.heartsphere.heartconnect.context.ExperienceModeContext.getVisitorId();
+        // 检查是否处于共享模式
+        if (com.heartsphere.heartconnect.context.SharedModeContext.isActive()) {
+            Long shareConfigId = com.heartsphere.heartconnect.context.SharedModeContext.getShareConfigId();
+            Long visitorId = com.heartsphere.heartconnect.context.SharedModeContext.getVisitorId();
             
             if (shareConfigId != null && visitorId != null && temporaryDataStorage != null) {
-                // 体验模式：保存到临时存储
+                // 共享模式：保存到临时存储
                 EmotionRecord record = new EmotionRecord();
                 record.setUserId(request.getUserId());
                 record.setEmotionType(analysis.getPrimaryEmotion());
@@ -365,7 +361,7 @@ public class EmotionService {
                     "emotion",
                     record
                 );
-                log.debug("体验模式：保存情绪记录到临时存储: shareConfigId={}, visitorId={}", 
+                log.debug("共享模式：保存情绪记录到临时存储: shareConfigId={}, visitorId={}", 
                     shareConfigId, visitorId);
                 
                 return record; // 返回记录但不保存到数据库

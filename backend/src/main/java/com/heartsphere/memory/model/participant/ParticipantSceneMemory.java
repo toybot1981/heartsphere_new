@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "participant_scene_memories")
 public class ParticipantSceneMemory {
     
     @Id
@@ -116,4 +114,6 @@ public class ParticipantSceneMemory {
      */
     private Map<String, Object> metadata;
 }
+
+
 

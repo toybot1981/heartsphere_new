@@ -109,14 +109,27 @@ fi
 
 echo -e "${GREEN}找到 JAR 文件: ${JAR_FILE}${NC}"
 
-# 5. 部署 JAR 文件
-echo -e "${YELLOW}[5/8] 部署 JAR 文件...${NC}"
+# 5. 创建用户和目录
+echo -e "${YELLOW}[5/9] 创建用户和目录...${NC}"
+if ! id "${APP_USER}" &>/dev/null; then
+    echo -e "${YELLOW}创建用户 ${APP_USER}...${NC}"
+    useradd -r -s /bin/bash -d "${APP_HOME}" "${APP_USER}" || {
+        echo -e "${YELLOW}用户可能已存在，继续...${NC}"
+    }
+fi
+
 mkdir -p "${BACKEND_DIR}"
+mkdir -p "${APP_HOME}/logs"
+mkdir -p "${APP_HOME}/uploads/images"
+chown -R "${APP_USER}:${APP_USER}" "${APP_HOME}"
+
+# 6. 部署 JAR 文件
+echo -e "${YELLOW}[6/9] 部署 JAR 文件...${NC}"
 cp "${JAR_FILE}" "${BACKEND_DIR}/app.jar"
 chown "${APP_USER}:${APP_USER}" "${BACKEND_DIR}/app.jar"
 
-# 6. 创建 application-prod.yml
-echo -e "${YELLOW}[6/8] 创建生产环境配置...${NC}"
+# 7. 创建 application-prod.yml
+echo -e "${YELLOW}[7/9] 创建生产环境配置...${NC}"
 cat > "${BACKEND_DIR}/application-prod.yml" <<EOF
 server:
   port: ${BACKEND_PORT}
@@ -165,16 +178,42 @@ EOF
 
 chown "${APP_USER}:${APP_USER}" "${BACKEND_DIR}/application-prod.yml"
 
-# 7. 创建 systemd 服务
-echo -e "${YELLOW}[7/8] 创建 systemd 服务...${NC}"
+# 8. 创建环境变量文件（如果不存在）
+echo -e "${YELLOW}[8/9] 检查环境变量文件...${NC}"
+if [ ! -f "${ENV_FILE}" ]; then
+    echo -e "${YELLOW}创建默认环境变量文件...${NC}"
+    cat > "${ENV_FILE}" <<ENVEOF
+# 数据库配置
+DB_NAME=heartsphere
+DB_USER=heartsphere
+DB_PASSWORD=HeartSphere@2024
+DB_HOST=localhost
+DB_PORT=3306
+
+# JWT 配置
+JWT_SECRET=$(openssl rand -base64 32 2>/dev/null || echo "your-secret-key-change-in-production")
+
+# Spring 配置
+SPRING_PROFILES_ACTIVE=prod
+BACKEND_PORT=8081
+ENVEOF
+    chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
+    chmod 600 "${ENV_FILE}"
+    echo -e "${YELLOW}请编辑 ${ENV_FILE} 配置正确的数据库信息${NC}"
+fi
+
+# 9. 创建 systemd 服务
+echo -e "${YELLOW}[9/9] 创建 systemd 服务...${NC}"
 cat > /etc/systemd/system/${APP_NAME}-backend.service <<EOF
 [Unit]
 Description=HeartSphere Backend Service
 After=network.target mysql.service
+Requires=network.target
 
 [Service]
 Type=simple
 User=${APP_USER}
+Group=${APP_USER}
 WorkingDirectory=${BACKEND_DIR}
 ExecStart=/usr/bin/java -jar -Xms512m -Xmx1024m \\
   -Dspring.profiles.active=prod \\
@@ -193,6 +232,10 @@ Environment="JAVA_HOME=${JAVA_HOME}"
 Environment="SPRING_PROFILES_ACTIVE=prod"
 EnvironmentFile=${ENV_FILE}
 
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -200,8 +243,17 @@ EOF
 # 重新加载 systemd
 systemctl daemon-reload
 
-# 8. 启动服务
-echo -e "${YELLOW}[8/8] 启动后端服务...${NC}"
+# 重新加载 systemd
+systemctl daemon-reload
+
+# 验证服务文件
+if ! systemctl cat "${APP_NAME}-backend" &>/dev/null; then
+    echo -e "${RED}错误: 服务文件语法错误${NC}"
+    exit 1
+fi
+
+# 启动服务
+echo -e "${YELLOW}启动后端服务...${NC}"
 systemctl enable ${APP_NAME}-backend
 systemctl restart ${APP_NAME}-backend
 
@@ -220,5 +272,7 @@ else
 fi
 
 echo -e "${GREEN}后端部署完成！${NC}"
+
+
 
 

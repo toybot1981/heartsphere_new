@@ -1,0 +1,98 @@
+package com.heartsphere.memory.model;
+
+import com.heartsphere.memory.service.MemoryAssociationService;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+import java.util.Map;
+
+/**
+ * 记忆关联
+ * 存储记忆之间的关联关系
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "memory_associations")
+public class MemoryAssociation {
+    
+    @Id
+    private String id;
+    
+    /**
+     * 记忆ID1
+     */
+    private String memoryId1;
+    
+    /**
+     * 记忆ID2
+     */
+    private String memoryId2;
+    
+    /**
+     * 记忆类型1
+     */
+    private MemoryType memoryType1;
+    
+    /**
+     * 记忆类型2
+     */
+    private MemoryType memoryType2;
+    
+    /**
+     * 关联类型
+     */
+    private MemoryAssociationService.AssociationType associationType;
+    
+    /**
+     * 关联强度 (0.0-1.0)
+     */
+    private Double strength;
+    
+    /**
+     * 关联描述
+     */
+    private String description;
+    
+    /**
+     * 关联原因
+     */
+    private String reason;
+    
+    /**
+     * 创建时间
+     */
+    private Instant createdAt;
+    
+    /**
+     * 更新时间
+     */
+    private Instant updatedAt;
+    
+    /**
+     * 最后访问时间
+     */
+    private Instant lastAccessedAt;
+    
+    /**
+     * 访问次数
+     */
+    private Integer accessCount;
+    
+    /**
+     * 元数据
+     */
+    private Map<String, Object> metadata;
+}
+
+
+

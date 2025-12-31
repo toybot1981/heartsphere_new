@@ -4,6 +4,7 @@
  */
 
 import { AIMode, AIProvider, UserAIConfig } from './types';
+import { getApiUrl } from '../api/config';
 
 const CONFIG_STORAGE_KEY = 'ai_service_config';
 const API_KEYS_STORAGE_KEY = 'ai_api_keys'; // 本地配置模式的API Keys
@@ -68,7 +69,7 @@ export class AIConfigManager {
       try {
         const token = localStorage.getItem('auth_token');
         if (token) {
-          const response = await fetch('http://localhost:8081/api/ai/config', {
+          const response = await fetch(getApiUrl('/ai/config'), {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -140,7 +141,7 @@ export class AIConfigManager {
           // 不保存API Keys到后端
           const { localApiKeys, ...configToSave } = config;
           
-          const response = await fetch('http://localhost:8081/api/ai/config', {
+          const response = await fetch(getApiUrl('/ai/config'), {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,

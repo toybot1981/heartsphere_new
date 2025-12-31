@@ -11,6 +11,7 @@ import {
 } from './types/MemoryTypes';
 import { MemoryExtractor, MemoryExtractionRequest } from './extractors/MemoryExtractor';
 import { LocalMemoryStorage, IMemoryStorage } from './storage/MemoryStorage';
+import { RemoteMemoryStorage } from './storage/RemoteMemoryStorage';
 import { AIMemoryExtractor } from './ai/AIMemoryExtractor';
 
 /**
@@ -21,6 +22,7 @@ export interface MemorySystemConfig {
   autoExtraction: boolean;
   aiEnhanced: boolean; // 是否使用AI增强提取
   userId: number;
+  useRemoteStorage?: boolean; // 是否使用远程存储（连接到Redis/MongoDB）
 }
 
 /**
@@ -34,7 +36,18 @@ export class MemorySystem {
 
   constructor(config: MemorySystemConfig, storage?: IMemoryStorage) {
     this.config = config;
-    this.storage = storage || new LocalMemoryStorage();
+    
+    // 根据配置选择存储方式
+    if (storage) {
+      this.storage = storage;
+    } else if (config.useRemoteStorage) {
+      // 使用远程存储（连接到后端的Redis/MongoDB）
+      this.storage = new RemoteMemoryStorage(config.userId);
+    } else {
+      // 默认使用本地存储
+      this.storage = new LocalMemoryStorage();
+    }
+    
     this.extractor = new MemoryExtractor();
     this.aiExtractor = new AIMemoryExtractor();
   }

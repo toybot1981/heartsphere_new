@@ -19,6 +19,8 @@ import { CelebrationProvider } from './growth/CelebrationProvider';
 import { CareMessageNotification } from './companion/CareMessageNotification';
 import { EmojiPicker } from './emoji/EmojiPicker';
 import { CardMaker } from './card/CardMaker';
+// import { InteractionButtons, CommentList } from './interaction'; // 已移除，可在留言板测试
+// import { ContentType } from '../services/interaction-system/types/InteractionTypes'; // 已移除
 
 // --- Audio Decoding Helpers (Raw PCM) ---
 function decode(base64: string) {
@@ -132,6 +134,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCardMaker, setShowCardMaker] = useState(false);
+  // const [showCommentsFor, setShowCommentsFor] = useState<string | null>(null); // 已移除，可在留言板测试
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(character?.backgroundUrl || null);
   const [isGeneratingScene, setIsGeneratingScene] = useState(false);
   
@@ -1976,6 +1980,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                  </button>
                              </div>
                          )}
+                         {/* 互动按钮 */}
+                         {!isCinematic && (
+                           <div className="mt-3 flex items-center gap-2">
+                             {/* 互动按钮已移除，可在留言板测试 */}
+                           </div>
+                         )}
                      </div>
                   )}
                 </div>
@@ -2097,7 +2107,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* 表情选择器 */}
       {showEmojiPicker && (
         <EmojiPicker
-          userId={userProfile?.id || 0}
+          userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
           onSelect={(emoji) => {
             setInput((prev) => prev + emoji.code);
             setShowEmojiPicker(false);
@@ -2105,6 +2115,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           onClose={() => setShowEmojiPicker(false)}
         />
       )}
+
+      {/* 卡片制作工具 */}
+      {showCardMaker && (
+        <CardMaker
+          userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
+          onSave={(card) => {
+            console.log('保存的卡片:', card);
+            setShowCardMaker(false);
+          }}
+          onSend={(card, recipientId) => {
+            console.log('发送卡片:', card, '给用户:', recipientId);
+            setShowCardMaker(false);
+          }}
+          onClose={() => setShowCardMaker(false)}
+        />
+      )}
+
+      {/* 评论列表已移除，可在留言板测试 */}
     </div>
   );
 };

@@ -2,6 +2,7 @@ package com.heartsphere.heartconnect.repository;
 
 import com.heartsphere.heartconnect.entity.HeartSphereConnection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Optional;
  * 连接记录Repository
  */
 @Repository
-public interface HeartSphereConnectionRepository extends JpaRepository<HeartSphereConnection, Long> {
+public interface HeartSphereConnectionRepository extends JpaRepository<HeartSphereConnection, Long>, JpaSpecificationExecutor<HeartSphereConnection> {
     
     /**
      * 根据共享配置ID查找所有连接

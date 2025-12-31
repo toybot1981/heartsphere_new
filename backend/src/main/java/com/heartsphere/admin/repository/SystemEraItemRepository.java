@@ -28,3 +28,5 @@ public interface SystemEraItemRepository extends JpaRepository<SystemEraItem, Lo
     Boolean existsByItemId(String itemId);
 }
 
+
+

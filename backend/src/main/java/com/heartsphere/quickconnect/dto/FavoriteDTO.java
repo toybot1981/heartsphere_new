@@ -24,3 +24,5 @@ public class FavoriteDTO {
     private QuickConnectCharacterDTO character;
 }
 
+
+

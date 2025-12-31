@@ -41,3 +41,5 @@ CREATE TABLE IF NOT EXISTS `access_history` (
   FOREIGN KEY (`character_id`) REFERENCES `characters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访问历史表';
 
+
+

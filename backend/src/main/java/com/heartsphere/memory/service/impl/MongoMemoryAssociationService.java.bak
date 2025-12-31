@@ -1,0 +1,290 @@
+package com.heartsphere.memory.service.impl;
+
+import com.heartsphere.memory.model.MemoryAssociation;
+import com.heartsphere.memory.model.MemoryType;
+import com.heartsphere.memory.repository.MemoryAssociationRepository;
+import com.heartsphere.memory.service.MemoryAssociationService;
+import com.heartsphere.memory.service.VectorSearchService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * MongoDB记忆关联服务实现
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MongoMemoryAssociationService implements MemoryAssociationService {
+    
+    private final MemoryAssociationRepository associationRepository;
+    private final VectorSearchService vectorSearchService;
+    
+    @Override
+    public List<MemoryAssociation> discoverAssociations(String memoryId, int limit) {
+        // 使用向量搜索发现语义相似的记忆
+        List<VectorSearchService.SimilarMemory> similarMemories = 
+            vectorSearchService.findSimilarMemories(memoryId, limit, 0.6);
+        
+        List<MemoryAssociation> associations = new ArrayList<>();
+        for (VectorSearchService.SimilarMemory similar : similarMemories) {
+            com.heartsphere.memory.model.MemoryAssociation entity = 
+                com.heartsphere.memory.model.MemoryAssociation.builder()
+                .memoryId1(memoryId)
+                .memoryId2(similar.getMemoryId())
+                .memoryType1(MemoryType.PERSONAL_INFO) // 需要从原始记忆获取
+                .memoryType2(similar.getMemoryType())
+                .associationType(AssociationType.SEMANTIC)
+                .strength(similar.getSimilarity())
+                .description("语义相似")
+                .reason("向量相似度: " + similar.getSimilarity())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .lastAccessedAt(Instant.now())
+                .accessCount(0)
+                .build();
+            
+            // 保存到数据库
+            associationRepository.save(entity);
+            
+            // 转换为接口类型
+            associations.add(new MemoryAssociationAdapter(entity));
+        }
+        
+        log.debug("发现记忆关联: memoryId={}, count={}", memoryId, associations.size());
+        return associations;
+    }
+    
+    @Override
+    public void saveAssociation(MemoryAssociation association) {
+        // 转换为实体类型
+        com.heartsphere.memory.model.MemoryAssociation entity = 
+            convertToEntity(association);
+        
+        // 检查是否已存在
+        Optional<com.heartsphere.memory.model.MemoryAssociation> existing = 
+            associationRepository.findByMemoryId1AndMemoryId2(
+                entity.getMemoryId1(), entity.getMemoryId2());
+        
+        if (existing.isPresent()) {
+            // 更新现有关联
+            com.heartsphere.memory.model.MemoryAssociation existingAssoc = existing.get();
+            existingAssoc.setStrength(entity.getStrength());
+            existingAssoc.setAssociationType(entity.getAssociationType());
+            existingAssoc.setDescription(entity.getDescription());
+            existingAssoc.setUpdatedAt(Instant.now());
+            existingAssoc.setLastAccessedAt(Instant.now());
+            associationRepository.save(existingAssoc);
+        } else {
+            // 创建新关联
+            if (entity.getCreatedAt() == null) {
+                entity.setCreatedAt(Instant.now());
+            }
+            entity.setUpdatedAt(Instant.now());
+            entity.setLastAccessedAt(Instant.now());
+            if (entity.getAccessCount() == null) {
+                entity.setAccessCount(0);
+            }
+            associationRepository.save(entity);
+        }
+        
+        log.debug("保存记忆关联: memoryId1={}, memoryId2={}, strength={}",
+            association.getMemoryId1(), association.getMemoryId2(), association.getStrength());
+    }
+    
+    private com.heartsphere.memory.model.MemoryAssociation convertToEntity(MemoryAssociation association) {
+        return com.heartsphere.memory.model.MemoryAssociation.builder()
+            .memoryId1(association.getMemoryId1())
+            .memoryId2(association.getMemoryId2())
+            .memoryType1(association.getMemoryType1())
+            .memoryType2(association.getMemoryType2())
+            .associationType(association.getAssociationType())
+            .strength(association.getStrength())
+            .description(association.getDescription())
+            .build();
+    }
+    
+    @Override
+    public List<MemoryAssociation> getAssociations(String memoryId) {
+        List<MemoryAssociation> associations = new ArrayList<>();
+        
+        // 获取memoryId1的关联
+        List<com.heartsphere.memory.model.MemoryAssociation> forwardAssociations = 
+            associationRepository.findByMemoryId1OrderByStrengthDesc(memoryId);
+        associations.addAll(forwardAssociations.stream()
+            .map(MemoryAssociationAdapter::new)
+            .collect(Collectors.toList()));
+        
+        // 获取memoryId2的关联（反向）
+        List<com.heartsphere.memory.model.MemoryAssociation> reverseAssociations = 
+            associationRepository.findByMemoryId2OrderByStrengthDesc(memoryId);
+        // 转换为接口类型并交换memoryId1和memoryId2以保持一致性
+        for (com.heartsphere.memory.model.MemoryAssociation assoc : reverseAssociations) {
+            String temp = assoc.getMemoryId1();
+            assoc.setMemoryId1(assoc.getMemoryId2());
+            assoc.setMemoryId2(temp);
+            associations.add(new MemoryAssociationAdapter(assoc));
+        }
+        
+        return associations;
+    }
+    
+    @Override
+    public MemoryAssociation getBidirectionalAssociation(String memoryId1, String memoryId2) {
+        Optional<com.heartsphere.memory.model.MemoryAssociation> association = 
+            associationRepository.findByMemoryId1AndMemoryId2(memoryId1, memoryId2);
+        return association.map(MemoryAssociationAdapter::new).orElse(null);
+    }
+    
+    @Override
+    public void updateAssociationStrength(String memoryId1, String memoryId2, double strength) {
+        Optional<com.heartsphere.memory.model.MemoryAssociation> association = 
+            associationRepository.findByMemoryId1AndMemoryId2(memoryId1, memoryId2);
+        
+        if (association.isPresent()) {
+            com.heartsphere.memory.model.MemoryAssociation assoc = association.get();
+            assoc.setStrength(strength);
+            assoc.setUpdatedAt(Instant.now());
+            associationRepository.save(assoc);
+            log.debug("更新关联强度: memoryId1={}, memoryId2={}, strength={}", 
+                memoryId1, memoryId2, strength);
+        }
+    }
+    
+    @Override
+    public MemoryNetwork buildMemoryNetwork(String memoryId, int maxDepth) {
+        Set<String> visited = new HashSet<>();
+        List<NetworkNode> nodes = new ArrayList<>();
+        List<NetworkEdge> edges = new ArrayList<>();
+        
+        buildNetworkRecursive(memoryId, 0, maxDepth, visited, nodes, edges);
+        
+        return new MemoryNetworkImpl(memoryId, nodes, edges, maxDepth);
+    }
+    
+    private void buildNetworkRecursive(String memoryId, int currentDepth, int maxDepth,
+                                      Set<String> visited, List<NetworkNode> nodes,
+                                      List<NetworkEdge> edges) {
+        if (currentDepth > maxDepth || visited.contains(memoryId)) {
+            return;
+        }
+        
+        visited.add(memoryId);
+        
+        // 添加节点
+        nodes.add(new NetworkNodeImpl(memoryId, MemoryType.PERSONAL_INFO, "", currentDepth));
+        
+        // 获取关联
+        List<MemoryAssociation> associations = getAssociations(memoryId);
+        for (MemoryAssociation assoc : associations) {
+            String relatedMemoryId = assoc.getMemoryId2();
+            
+            // 添加边
+            edges.add(new NetworkEdgeImpl(memoryId, relatedMemoryId, 
+                assoc.getStrength(), assoc.getAssociationType()));
+            
+            // 递归构建
+            buildNetworkRecursive(relatedMemoryId, currentDepth + 1, maxDepth, 
+                visited, nodes, edges);
+        }
+    }
+    
+    @Override
+    public List<MemoryAssociation> retrieveByAssociation(String memoryId, int limit) {
+        List<MemoryAssociation> associations = getAssociations(memoryId);
+        return associations.stream()
+            .sorted((a, b) -> Double.compare(b.getStrength(), a.getStrength()))
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public void deleteAssociation(String memoryId1, String memoryId2) {
+        associationRepository.findByMemoryId1AndMemoryId2(memoryId1, memoryId2)
+            .ifPresent(associationRepository::delete);
+        log.debug("删除记忆关联: memoryId1={}, memoryId2={}", memoryId1, memoryId2);
+    }
+    
+    // 适配器类：将实体转换为接口
+    @RequiredArgsConstructor
+    private static class MemoryAssociationAdapter implements MemoryAssociation {
+        private final com.heartsphere.memory.model.MemoryAssociation entity;
+        
+        @Override
+        public String getId() { return entity.getId(); }
+        @Override
+        public String getMemoryId1() { return entity.getMemoryId1(); }
+        @Override
+        public String getMemoryId2() { return entity.getMemoryId2(); }
+        @Override
+        public MemoryType getMemoryType1() { return entity.getMemoryType1(); }
+        @Override
+        public MemoryType getMemoryType2() { return entity.getMemoryType2(); }
+        @Override
+        public AssociationType getAssociationType() { return entity.getAssociationType(); }
+        @Override
+        public double getStrength() { return entity.getStrength(); }
+        @Override
+        public String getDescription() { return entity.getDescription(); }
+    }
+    
+    // 内部实现类
+    @RequiredArgsConstructor
+    private static class MemoryNetworkImpl implements MemoryNetwork {
+        private final String centerMemoryId;
+        private final List<NetworkNode> nodes;
+        private final List<NetworkEdge> edges;
+        private final int depth;
+        
+        @Override
+        public String getCenterMemoryId() { return centerMemoryId; }
+        @Override
+        public List<NetworkNode> getNodes() { return nodes; }
+        @Override
+        public List<NetworkEdge> getEdges() { return edges; }
+        @Override
+        public int getDepth() { return depth; }
+    }
+    
+    @RequiredArgsConstructor
+    private static class NetworkNodeImpl implements NetworkNode {
+        private final String memoryId;
+        private final MemoryType memoryType;
+        private final String content;
+        private final int level;
+        
+        @Override
+        public String getMemoryId() { return memoryId; }
+        @Override
+        public MemoryType getMemoryType() { return memoryType; }
+        @Override
+        public String getContent() { return content; }
+        @Override
+        public int getLevel() { return level; }
+    }
+    
+    @RequiredArgsConstructor
+    private static class NetworkEdgeImpl implements NetworkEdge {
+        private final String fromMemoryId;
+        private final String toMemoryId;
+        private final double strength;
+        private final AssociationType associationType;
+        
+        @Override
+        public String getFromMemoryId() { return fromMemoryId; }
+        @Override
+        public String getToMemoryId() { return toMemoryId; }
+        @Override
+        public double getStrength() { return strength; }
+        @Override
+        public AssociationType getAssociationType() { return associationType; }
+    }
+}
+

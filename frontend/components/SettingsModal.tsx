@@ -18,6 +18,7 @@ interface SettingsModalProps {
   onBindAccount: () => void;
   onOpenRecycleBin?: () => void; // 打开回收站
   onOpenMembership?: () => void; // 打开会员管理
+  onOpenQuickConnect?: () => void; // 打开心域连接
 }
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
@@ -54,7 +55,7 @@ const ConfigSection: React.FC<{ title: string; children: React.ReactNode }> = ({
     </div>
 );
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount, onOpenRecycleBin, onOpenMembership }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameState, onSettingsChange, onUpdateProfile, onClose, onLogout, onBindAccount, onOpenRecycleBin, onOpenMembership, onOpenQuickConnect }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState('');
@@ -251,22 +252,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                         </div>
                         
                         <div className="flex flex-col gap-2">
+                             {onOpenQuickConnect && (
+                                <button 
+                                    type="button"
+                                    onClick={(e) => { 
+                                        e.preventDefault(); 
+                                        e.stopPropagation(); 
+                                        console.log('[SettingsModal] 点击查看共享心域按钮');
+                                        // 先打开快速连接模态框
+                                        onOpenQuickConnect();
+                                        // 然后关闭设置模态框
+                                        onClose();
+                                    }} 
+                                    className="text-xs text-blue-400 hover:bg-blue-900/20 hover:text-blue-300 border border-blue-500/30 px-3 py-2 rounded-lg transition-colors"
+                                >
+                                    🌟 查看共享心域
+                                </button>
+                             )}
                              {gameState.userProfile && !gameState.userProfile.isGuest && onOpenMembership && (
-                                <Button variant="ghost" onClick={() => { onOpenMembership(); onClose(); }} className="text-xs text-yellow-400 hover:bg-yellow-900/20 hover:text-yellow-300 border border-yellow-500/30">
+                                <Button variant="text" onClick={() => { onOpenMembership(); onClose(); }} className="text-xs text-yellow-400 hover:bg-yellow-900/20 hover:text-yellow-300 border border-yellow-500/30">
                                     💎 会员管理
                                 </Button>
                              )}
                              {gameState.userProfile && !gameState.userProfile.isGuest && onOpenRecycleBin && (
-                                <Button variant="ghost" onClick={() => { onOpenRecycleBin(); onClose(); }} className="text-xs text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-slate-700">
+                                <Button variant="text" onClick={() => { onOpenRecycleBin(); onClose(); }} className="text-xs text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-slate-700">
                                     🗑️ 回收站
                                 </Button>
                              )}
                              {gameState.userProfile?.isGuest && (
-                                <Button variant="ghost" onClick={onBindAccount} className="text-xs text-pink-400 hover:bg-pink-900/20 hover:text-pink-300 border border-pink-500/30">
+                                <Button variant="text" onClick={onBindAccount} className="text-xs text-pink-400 hover:bg-pink-900/20 hover:text-pink-300 border border-pink-500/30">
                                     绑定账号
                                 </Button>
                              )}
-                             <Button variant="ghost" onClick={onLogout} className="text-xs text-red-400 hover:bg-red-900/20 hover:text-red-300">
+                             <Button variant="text" onClick={onLogout} className="text-xs text-red-400 hover:bg-red-900/20 hover:text-red-300">
                                 退出登录
                              </Button>
                         </div>

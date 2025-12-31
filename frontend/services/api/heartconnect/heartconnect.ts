@@ -141,3 +141,25 @@ export async function getPublicSharedHeartSpheres(): Promise<SharedHeartSphere[]
   return response;
 }
 
+/**
+ * 创建暖心留言
+ */
+export async function createWarmMessage(
+  shareConfigId: number,
+  message: string
+): Promise<any> {
+  const response = await request<any>(`/heartconnect/shared/${shareConfigId}/warm-message`, {
+    method: 'POST',
+    body: { message },
+  });
+  return response;
+}
+
+/**
+ * 获取暖心留言列表（主人查看）
+ */
+export async function getWarmMessages(shareConfigId: number): Promise<any[]> {
+  const response = await request<any[]>(`/heartconnect/shared/${shareConfigId}/warm-messages`);
+  return response;
+}
+

@@ -58,3 +58,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 ('煤矿（物品）', 'placeholder://item/item_industrial_coal.jpg', 'item', '工业用的煤矿', 'Coal, industrial fuel, coal chunks, black coal material, realistic style, high quality, detailed coal, raw coal resource, Industrial Revolution fuel source with mineral texture', '工业革命,煤矿,物品', NULL, NOW(), NOW()),
 ('钢铁（物品）', 'placeholder://item/item_industrial_steel.jpg', 'item', '工业生产的钢铁', 'Steel, industrial metal, forged steel, iron and steel material, realistic style, high quality, detailed metal, processed industrial steel, Industrial Revolution material with metallic sheen', '工业革命,钢铁,物品', NULL, NOW(), NOW());
 
+
+

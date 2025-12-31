@@ -34,8 +34,6 @@ export const quickConnectApi = {
   getQuickConnectCharacters: async (
     params: GetQuickConnectCharactersParams = {}
   ): Promise<GetQuickConnectCharactersResponse> => {
-    console.log('[quickConnectApi] 获取快速连接列表', params);
-    
     const token = getToken();
     if (!token) {
       throw new Error('未登录');
@@ -51,11 +49,18 @@ export const quickConnectApi = {
     
     const url = `/quick-connect/characters?${queryParams.toString()}`;
     
-    return request<GetQuickConnectCharactersResponse>(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await request<GetQuickConnectCharactersResponse>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return response;
+    } catch (error: any) {
+      console.error('[quickConnectApi] 获取快速连接列表失败:', error);
+      throw error;
+    }
   },
 
   /**
@@ -314,4 +319,6 @@ export const quickConnectApi = {
     });
   },
 };
+
+
 

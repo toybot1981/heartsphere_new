@@ -237,7 +237,7 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
 
         {/* 登录/游客入口 - 仅在没有昵称时显示（访客已登录后不显示） */}
         {!nickname && (
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-4 animate-fade-in">
             {onLoginSuccess && (
               <Button
                 onClick={() => setShowLoginModal(true)}
@@ -296,28 +296,31 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 mt-8">
-            <Button 
-                onClick={() => onNavigate('realWorld')} 
-                className="group relative px-10 py-4 text-lg bg-white text-black hover:bg-indigo-50 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 rounded-full font-bold tracking-wider overflow-hidden"
-            >
-                <div className="relative z-10 flex flex-col items-center leading-none gap-1">
-                    <span>进入现实</span>
-                    <span className="text-[10px] font-normal tracking-widest opacity-60">ENTER REALITY</span>
-                </div>
-            </Button>
-            
-            <Button 
-                onClick={() => onNavigate('sceneSelection')} 
-                variant="secondary"
-                className="group relative px-10 py-4 text-lg border-white/20 hover:bg-white/10 hover:border-white/40 rounded-full font-bold tracking-wider backdrop-blur-md overflow-hidden"
-            >
-                <div className="relative z-10 flex flex-col items-center leading-none gap-1">
-                    <span>潜入心域</span>
-                    <span className="text-[10px] font-normal tracking-widest opacity-60">DIVE DEEP</span>
-                </div>
-            </Button>
-        </div>
+        {/* 导航按钮 - 仅在已有昵称时显示（已登录或已输入游客昵称） */}
+        {nickname && (
+          <div className="flex flex-col sm:flex-row gap-4 mt-8 animate-fade-in">
+              <Button 
+                  onClick={() => onNavigate('realWorld')} 
+                  className="group relative px-10 py-4 text-lg bg-white text-black hover:bg-indigo-50 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 rounded-full font-bold tracking-wider overflow-hidden"
+              >
+                  <div className="relative z-10 flex flex-col items-center leading-none gap-1">
+                      <span>进入现实</span>
+                      <span className="text-[10px] font-normal tracking-widest opacity-60">ENTER REALITY</span>
+                  </div>
+              </Button>
+              
+              <Button 
+                  onClick={() => onNavigate('sceneSelection')} 
+                  variant="secondary"
+                  className="group relative px-10 py-4 text-lg border-white/20 hover:bg-white/10 hover:border-white/40 rounded-full font-bold tracking-wider backdrop-blur-md overflow-hidden"
+              >
+                  <div className="relative z-10 flex flex-col items-center leading-none gap-1">
+                      <span>潜入心域</span>
+                      <span className="text-[10px] font-normal tracking-widest opacity-60">DIVE DEEP</span>
+                  </div>
+              </Button>
+          </div>
+        )}
 
         {/* 登录弹窗 */}
         {showLoginModal && onLoginSuccess && (

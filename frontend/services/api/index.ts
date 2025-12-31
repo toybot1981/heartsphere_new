@@ -22,6 +22,9 @@ export * from './api/quickconnect';
 // 心域共享模块
 export * from './api/heartconnect';
 
+// 对话日志模块
+export * from './api/conversationLog';
+
 // 注意：其他模块（auth, world, journal, membership等）仍在 api.ts 中
 // 后续会逐步迁移到模块化结构
 

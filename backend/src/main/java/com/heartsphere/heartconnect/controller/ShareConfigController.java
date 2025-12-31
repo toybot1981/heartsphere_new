@@ -93,11 +93,18 @@ public class ShareConfigController {
     @GetMapping("/discover")
     public ApiResponse<List<SharedHeartSphereDTO>> getPublicSharedHeartSpheres(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        if (userDetails == null) {
-            // 如果未登录，返回空列表
-            return ApiResponse.success(new java.util.ArrayList<>());
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ShareConfigController.class);
+        
+        Long userId = null;
+        if (userDetails != null) {
+            userId = userDetails.getId();
+            log.info("获取共享心域列表：用户ID={}", userId);
+        } else {
+            log.info("获取共享心域列表：用户未登录，返回所有公开的共享心域");
         }
-        List<SharedHeartSphereDTO> sharedHeartSpheres = shareConfigService.getPublicSharedHeartSpheres(userDetails.getId());
+        
+        List<SharedHeartSphereDTO> sharedHeartSpheres = shareConfigService.getPublicSharedHeartSpheres(userId);
+        log.info("返回共享心域列表：用户ID={}, 数量={}", userId, sharedHeartSpheres.size());
         return ApiResponse.success(sharedHeartSpheres);
     }
 }

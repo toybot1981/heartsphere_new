@@ -24,3 +24,5 @@ public interface SystemEraEventRepository extends JpaRepository<SystemEraEvent, 
     Boolean existsByEventId(String eventId);
 }
 
+
+

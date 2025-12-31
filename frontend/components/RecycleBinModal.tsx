@@ -15,9 +15,10 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
     worlds: any[];
     eras: any[];
     scripts: any[];
+    conversationLogs: any[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'characters' | 'worlds' | 'eras' | 'scripts'>('characters');
+  const [activeTab, setActiveTab] = useState<'characters' | 'worlds' | 'eras' | 'scripts' | 'conversationLogs'>('characters');
 
   useEffect(() => {
     loadRecycleBin();
@@ -36,7 +37,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
     }
   };
 
-  const handleRestore = async (type: 'characters' | 'worlds' | 'eras' | 'scripts', id: number) => {
+  const handleRestore = async (type: 'characters' | 'worlds' | 'eras' | 'scripts' | 'conversationLogs', id: number) => {
     try {
       switch (type) {
         case 'characters':
@@ -51,6 +52,9 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
         case 'scripts':
           await recycleBinApi.restoreScript(id, token);
           break;
+        case 'conversationLogs':
+          await recycleBinApi.restoreConversationLog(id, token);
+          break;
       }
       showAlert('恢复成功', '操作成功', 'success');
       await loadRecycleBin();
@@ -63,7 +67,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
     }
   };
 
-  const handlePermanentlyDelete = async (type: 'characters' | 'worlds' | 'eras' | 'scripts', id: number, name: string) => {
+  const handlePermanentlyDelete = async (type: 'characters' | 'worlds' | 'eras' | 'scripts' | 'conversationLogs', id: number, name: string) => {
     const confirmed = await showConfirm(`确定要永久删除 "${name}" 吗？此操作不可恢复！`, '永久删除', 'danger');
     if (!confirmed) {
       return;
@@ -82,6 +86,9 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
           break;
         case 'scripts':
           await recycleBinApi.permanentlyDeleteScript(id, token);
+          break;
+        case 'conversationLogs':
+          await recycleBinApi.permanentlyDeleteConversationLog(id, token);
           break;
       }
       showAlert('永久删除成功', '操作成功', 'success');
@@ -103,21 +110,33 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
         return recycleBin.eras;
       case 'scripts':
         return recycleBin.scripts;
+      case 'conversationLogs':
+        return recycleBin.conversationLogs || [];
       default:
         return [];
     }
   };
 
   const getItemName = (item: any) => {
+    if (activeTab === 'conversationLogs') {
+      return item.characterName || '未知角色';
+    }
     return item.name || item.title || '未命名';
   };
 
   const getItemDescription = (item: any) => {
+    if (activeTab === 'conversationLogs') {
+      return item.lastMessagePreview || `共 ${item.messageCount || 0} 条消息`;
+    }
     return item.description || item.bio || '';
   };
 
   const totalCount = recycleBin
-    ? recycleBin.characters.length + recycleBin.worlds.length + recycleBin.eras.length + recycleBin.scripts.length
+    ? recycleBin.characters.length + 
+      recycleBin.worlds.length + 
+      recycleBin.eras.length + 
+      recycleBin.scripts.length + 
+      (recycleBin.conversationLogs?.length || 0)
     : 0;
 
   return (
@@ -138,12 +157,13 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700 px-6">
+        <div className="flex border-b border-slate-700 px-6 overflow-x-auto">
           {[
             { key: 'characters' as const, label: '角色', count: recycleBin?.characters.length || 0 },
             { key: 'worlds' as const, label: '世界', count: recycleBin?.worlds.length || 0 },
             { key: 'eras' as const, label: '场景', count: recycleBin?.eras.length || 0 },
             { key: 'scripts' as const, label: '剧本', count: recycleBin?.scripts.length || 0 },
+            { key: 'conversationLogs' as const, label: '对话日志', count: recycleBin?.conversationLogs?.length || 0 },
           ].map((tab) => (
             <button
               key={tab.key}

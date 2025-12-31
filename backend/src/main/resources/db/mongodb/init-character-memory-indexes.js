@@ -39,3 +39,5 @@ print("character_relationship_memories 索引创建完成");
 
 print("\n所有角色记忆索引创建完成！");
 
+
+

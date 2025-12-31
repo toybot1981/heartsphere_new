@@ -19,3 +19,5 @@ public interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
     boolean existsByKeyName(String keyName);
 }
 
+
+

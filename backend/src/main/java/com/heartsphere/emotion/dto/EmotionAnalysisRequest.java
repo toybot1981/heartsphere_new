@@ -20,3 +20,5 @@ public class EmotionAnalysisRequest {
     private Integer dayOfWeek;
 }
 
+
+

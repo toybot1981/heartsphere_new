@@ -20,6 +20,8 @@ import { EmailConfigManagement } from './components/EmailConfigManagement';
 import { SettingsManagement } from './components/SettingsManagement';
 import { AdminsManagement } from './components/AdminsManagement';
 import { BillingManagement } from './components/billing';
+import { HeartSphereConnectionManagement } from './components/heartSphereConnection';
+import { MemoryManagement } from './components/memory';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -80,6 +82,8 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'admins': '系统管理员管理',
             'settings': '系统全局设置',
             'billing': '计费管理',
+            'heartsphere-connection': '心域连接管理',
+            'memory': '记忆系统管理',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -300,14 +304,23 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                                        await loadSystemData(adminToken);
+                                    await loadSystemData(adminToken);
                                 }
                             }}
                         />
-                                                    )}
-                                                </div>
-                                        </div>
-                                </div>
+                    )}
+                    {activeSection === 'heartsphere-connection' && (
+                        <HeartSphereConnectionManagement 
+                            adminToken={adminToken} 
+                            onRefresh={loadSystemData} 
+                        />
+                    )}
+                    {activeSection === 'memory' && (
+                        <MemoryManagement />
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

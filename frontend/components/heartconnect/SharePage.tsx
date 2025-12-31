@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { heartConnectApi } from '../../services/api/heartconnect';
 import { ConnectionRequestModal } from './ConnectionRequestModal';
-import { ExperienceModeProvider, useExperienceModeContext } from './ExperienceModeProvider';
+import { useSharedMode } from '../../hooks/useSharedMode';
 import type { ShareConfig } from '../../services/api/heartconnect/types';
 import { getToken } from '../../services/api/base/tokenStorage';
 
@@ -13,7 +13,7 @@ import { getToken } from '../../services/api/base/tokenStorage';
 const SharePageContent: React.FC = () => {
   const { shareCode } = useParams<{ shareCode: string }>();
   const navigate = useNavigate();
-  const { enterExperienceMode } = useExperienceModeContext();
+  const { enterSharedMode } = useSharedMode();
   
   const [shareConfig, setShareConfig] = useState<ShareConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,7 @@ const SharePageContent: React.FC = () => {
           // 这里简化处理，实际应该从API获取
           const userId = getCurrentUserId(); // 需要实现这个函数
           if (userId) {
-            enterExperienceMode(config, userId);
+            enterSharedMode(config, userId);
             // 重定向到主应用
             navigate('/');
           }
@@ -85,7 +85,7 @@ const SharePageContent: React.FC = () => {
     if (shareConfig) {
       const userId = getCurrentUserId();
       if (userId) {
-        enterExperienceMode(shareConfig, userId);
+        enterSharedMode(shareConfig, userId);
         // 显示提示：等待审批
         alert('连接请求已发送，等待主人审批后即可进入体验');
         navigate('/');
@@ -208,13 +208,9 @@ const SharePageContent: React.FC = () => {
 };
 
 /**
- * 分享页面（带Provider）
+ * 分享页面
  */
 export const SharePage: React.FC = () => {
-  return (
-    <ExperienceModeProvider>
-      <SharePageContent />
-    </ExperienceModeProvider>
-  );
+  return <SharePageContent />;
 };
 

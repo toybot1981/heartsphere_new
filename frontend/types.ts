@@ -270,6 +270,9 @@ export interface Mail {
   parentLetterId?: string; // 父信件ID（用于回复）
 }
 
+// 跨时空信箱类型（新架构）- 从 mailbox.ts 导入
+export * from './types/mailbox';
+
 // Debug Logging Structure
 export interface DebugLog {
   id: string;
@@ -282,7 +285,7 @@ export interface DebugLog {
 }
 
 export interface GameState {
-  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'admin' | 'mobileProfile' | 'profile';
+  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'admin' | 'mobileProfile' | 'profile' | 'sharedHeartSphere' | 'sharedCharacterSelection' | 'sharedChat';
   userProfile: UserProfile | null;
   selectedSceneId: string | null;
   selectedCharacterId: string | null;

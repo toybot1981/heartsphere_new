@@ -58,3 +58,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 ('信件（物品）', 'placeholder://item/item_hometown_letter.jpg', 'item', '来自故乡的信件', 'Letter from hometown, handwritten letter, family letter, realistic style, high quality, detailed letter, emotional letter, traditional letter format', '故乡,信件,物品', NULL, NOW(), NOW()),
 ('家乡味道（物品）', 'placeholder://item/item_hometown_taste.jpg', 'item', '家乡的味道（可以是食品或香料）', 'Hometown taste, local flavor, regional food, realistic style, high quality, detailed food item, authentic local flavor, traditional food appearance', '故乡,味道,物品', NULL, NOW(), NOW());
 
+
+

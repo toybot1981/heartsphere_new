@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { Character, Message, JournalEntry, JournalEcho } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
 import { eraApi, characterApi, userMainStoryApi } from '../services/api';
+import { sharedApi } from '../services/api/heartconnect';
 import { convertBackendCharacterToFrontend, convertBackendMainStoryToCharacter } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
 import { WORLD_SCENES } from '../constants';
@@ -49,8 +50,17 @@ export const useNavigationHandlers = () => {
               // 异步加载数据
               (async () => {
                 try {
+                  // 检查是否处于共享模式（通过全局状态）
+                  const { getSharedModeState } = await import('../services/api/base/sharedModeState');
+                  const sharedModeState = getSharedModeState();
+                  // 注意：如果是从用户自己的场景进入（selectedScene存在），说明是自己的世界，应该使用普通API
+                  const isSharedMode = sharedModeState.shareConfigId !== null && !selectedScene;
+                  
                   // 按世界ID获取场景列表
-                  const eras = await eraApi.getErasByWorldId(worldId, token);
+                  // 优先使用普通API（用户自己的世界），只有在明确的共享模式下才使用共享API
+                  const eras = isSharedMode
+                    ? await sharedApi.getSharedErasByWorldId(worldId, token)
+                    : await eraApi.getErasByWorldId(worldId, token);
                   console.log(`[useNavigationHandlers] 获取到场景数据:`, eras);
                   
                   // 按世界ID获取角色列表
@@ -70,14 +80,35 @@ export const useNavigationHandlers = () => {
                   // 按场景分组角色
                   const charactersByEraId = new Map<number, any[]>();
                   characters.forEach(char => {
-                    const eraId = char.eraId;
+                    let eraId = char.eraId;
+                    
+                    // 如果角色缺少eraId，尝试从场景数据中推断
+                    if (!eraId) {
+                      // 尝试从场景列表中找到匹配的场景
+                      const matchingEra = eras.find(e => {
+                        // 如果角色有worldId，匹配worldId和场景
+                        return char.worldId && e.worldId === char.worldId;
+                      });
+                      if (matchingEra) {
+                        eraId = matchingEra.id;
+                        console.log(`[useNavigationHandlers] 为角色 ${char.id} 推断eraId: ${eraId}`);
+                      } else {
+                        // 如果无法推断，使用当前选中的场景ID（如果它是数字）
+                        const sceneIdNum = sceneId ? (isNaN(parseInt(sceneId)) ? null : parseInt(sceneId)) : null;
+                        if (sceneIdNum) {
+                          eraId = sceneIdNum;
+                          console.log(`[useNavigationHandlers] 为角色 ${char.id} 使用当前场景ID作为eraId: ${eraId}`);
+                        }
+                      }
+                    }
+                    
                     if (eraId) {
                       if (!charactersByEraId.has(eraId)) {
                         charactersByEraId.set(eraId, []);
                       }
                       charactersByEraId.get(eraId)?.push(char);
                     } else {
-                      console.warn('角色数据缺少eraId:', char);
+                      console.warn('角色数据缺少eraId且无法推断:', char);
                     }
                   });
                   

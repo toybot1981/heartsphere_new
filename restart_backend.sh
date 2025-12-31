@@ -73,3 +73,5 @@ echo ""
 echo "查看日志: tail -f backend.log"
 echo "停止服务: pkill -f HeartSphereApplication"
 
+
+

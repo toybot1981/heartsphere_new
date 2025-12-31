@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -23,7 +22,6 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "user_facts")
 public class UserFact {
     @Id
     private String id;
@@ -112,4 +110,6 @@ public class UserFact {
         this.accessCount = (this.accessCount == null ? 0 : this.accessCount) + 1;
     }
 }
+
+
 

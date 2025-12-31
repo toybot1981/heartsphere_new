@@ -1,0 +1,39 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.participant.ParticipantSceneMemory;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+
+/**
+ * 参与者场景记忆Repository
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface ParticipantSceneMemoryRepository extends MongoRepository<ParticipantSceneMemory, String> {
+    
+    /**
+     * 根据参与者ID和场景ID查找场景记忆
+     */
+    List<ParticipantSceneMemory> findByParticipantIdAndSceneIdOrderByCreatedAtDesc(
+        String participantId, String sceneId);
+    
+    /**
+     * 根据场景ID查找所有场景记忆
+     */
+    List<ParticipantSceneMemory> findBySceneIdOrderByCreatedAtDesc(String sceneId);
+    
+    /**
+     * 根据参与者ID查找所有场景记忆
+     */
+    List<ParticipantSceneMemory> findByParticipantIdOrderByCreatedAtDesc(String participantId);
+    
+    /**
+     * 根据场景ID和可继承标记查找场景记忆
+     */
+    List<ParticipantSceneMemory> findBySceneIdAndInheritableTrueOrderByCreatedAtDesc(String sceneId);
+}
+
+
+

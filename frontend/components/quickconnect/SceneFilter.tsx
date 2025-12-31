@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { worldApi } from '../../services/api/world';
+import { eraApi } from '../../services/api/scene';
+import { sharedApi } from '../../services/api/heartconnect';
+import { useSharedMode } from '../../hooks/useSharedMode';
 
 interface Scene {
   id: number;
@@ -13,6 +15,7 @@ interface SceneFilterProps {
 
 /**
  * 场景筛选组件
+ * 显示场景名称（era名称）用于筛选角色
  */
 export const SceneFilter: React.FC<SceneFilterProps> = ({
   selectedSceneIds,
@@ -21,19 +24,39 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const { isActive: isSharedMode } = useSharedMode();
   
   useEffect(() => {
     loadScenes();
-  }, []);
+  }, [isSharedMode]);
   
   const loadScenes = async () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
-      if (token) {
-        const worlds = await worldApi.getAllWorlds(token);
-        setScenes(worlds.map(w => ({ id: w.id, name: w.name })));
+      if (!token) {
+        return;
       }
+      
+      let eras;
+      if (isSharedMode) {
+        // 共享模式：获取共享的场景列表
+        console.log('[SceneFilter] 共享模式，加载共享场景列表');
+        eras = await sharedApi.getSharedEras(token);
+      } else {
+        // 正常模式：获取用户的场景列表
+        console.log('[SceneFilter] 正常模式，加载用户场景列表');
+        eras = await eraApi.getAllEras(token);
+      }
+      
+      // 将 eras 转换为 scenes 格式（场景ID格式为 era_数字）
+      const sceneList = eras.map(era => ({
+        id: era.id, // 使用 era.id，在筛选时会转换为 era_${id} 格式
+        name: era.name || `场景 ${era.id}`,
+      }));
+      
+      console.log('[SceneFilter] 加载场景成功，数量:', sceneList.length);
+      setScenes(sceneList);
     } catch (error) {
       console.error('[SceneFilter] 加载场景失败:', error);
     } finally {
@@ -127,4 +150,6 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
     </div>
   );
 };
+
+
 

@@ -1,10 +1,12 @@
 package com.heartsphere.controller;
 
 import com.heartsphere.entity.Character;
+import com.heartsphere.entity.ConversationLog;
 import com.heartsphere.entity.Era;
 import com.heartsphere.entity.Script;
 import com.heartsphere.entity.World;
 import com.heartsphere.repository.CharacterRepository;
+import com.heartsphere.repository.ConversationLogRepository;
 import com.heartsphere.repository.EraRepository;
 import com.heartsphere.repository.ScriptRepository;
 import com.heartsphere.repository.WorldRepository;
@@ -29,16 +31,19 @@ public class RecycleBinController {
     private final WorldRepository worldRepository;
     private final EraRepository eraRepository;
     private final ScriptRepository scriptRepository;
+    private final ConversationLogRepository conversationLogRepository;
 
     public RecycleBinController(
             CharacterRepository characterRepository,
             WorldRepository worldRepository,
             EraRepository eraRepository,
-            ScriptRepository scriptRepository) {
+            ScriptRepository scriptRepository,
+            ConversationLogRepository conversationLogRepository) {
         this.characterRepository = characterRepository;
         this.worldRepository = worldRepository;
         this.eraRepository = eraRepository;
         this.scriptRepository = scriptRepository;
+        this.conversationLogRepository = conversationLogRepository;
     }
 
     // 获取回收站中的所有数据
@@ -55,6 +60,7 @@ public class RecycleBinController {
         recycleBin.put("worlds", worldRepository.findDeletedByUserId(userId));
         recycleBin.put("eras", eraRepository.findDeletedByUser_Id(userId));
         recycleBin.put("scripts", scriptRepository.findDeletedByUser_Id(userId));
+        recycleBin.put("conversationLogs", conversationLogRepository.findByUserIdAndIsDeletedTrueOrderByDeletedAtDesc(userId));
 
         return ResponseEntity.ok(recycleBin);
     }
@@ -212,6 +218,44 @@ public class RecycleBinController {
 
         scriptRepository.delete(script);
         logger.info(String.format("[RecycleBinController] 永久删除剧本: ID=%d", id));
+        return ResponseEntity.noContent().build();
+    }
+
+    // 恢复对话日志
+    @PostMapping("/conversation-logs/{id}/restore")
+    public ResponseEntity<Void> restoreConversationLog(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        ConversationLog log = conversationLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Conversation log not found"));
+
+        if (!log.getUserId().equals(userDetails.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        log.restore();
+        conversationLogRepository.save(log);
+
+        logger.info(String.format("[RecycleBinController] 恢复对话日志: ID=%d", id));
+        return ResponseEntity.ok().build();
+    }
+
+    // 永久删除对话日志
+    @DeleteMapping("/conversation-logs/{id}")
+    public ResponseEntity<Void> permanentlyDeleteConversationLog(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        ConversationLog log = conversationLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Conversation log not found"));
+
+        if (!log.getUserId().equals(userDetails.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        conversationLogRepository.delete(log);
+        logger.info(String.format("[RecycleBinController] 永久删除对话日志: ID=%d", id));
         return ResponseEntity.noContent().build();
     }
 }

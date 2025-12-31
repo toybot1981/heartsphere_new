@@ -59,3 +59,5 @@ export interface CompanionMemorySystemConfig {
   recordEmotions: boolean; // 记录情绪
 }
 
+
+

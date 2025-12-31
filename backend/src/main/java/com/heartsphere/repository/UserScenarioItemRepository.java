@@ -24,3 +24,5 @@ public interface UserScenarioItemRepository extends JpaRepository<UserScenarioIt
     List<UserScenarioItem> findByItemId(@Param("itemId") String itemId);
 }
 
+
+

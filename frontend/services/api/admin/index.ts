@@ -19,6 +19,8 @@ import { adminSystemAdminsApi } from './admins';
 import { adminDashboardApi } from './dashboard';
 import { adminPresetScriptsApi } from './presetScripts';
 import { apiKeysApi } from './apiKeys';
+import { adminHeartSphereConnectionApi } from './heartSphereConnection';
+import { adminMemoryApi } from './memory';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -39,6 +41,8 @@ export {
   adminDashboardApi,
   adminPresetScriptsApi,
   apiKeysApi,
+  adminHeartSphereConnectionApi,
+  adminMemoryApi,
 };
 
 // 为了向后兼容，创建一个包含所有旧接口的 adminApi 对象
@@ -92,7 +96,13 @@ export const adminApi = {
   // 预置剧本生成
   presetScripts: adminPresetScriptsApi,
 
-  // API Key管理
-  apiKeys: apiKeysApi,
+    // API Key管理
+    apiKeys: apiKeysApi,
+
+    // 心域连接管理
+    heartSphereConnection: adminHeartSphereConnectionApi,
+
+    // 记忆系统管理
+    memory: adminMemoryApi,
 };
 

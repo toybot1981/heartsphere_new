@@ -99,3 +99,5 @@ export function getCategoryIcon(category: EmojiCategory): string {
   return icons[category] || '😊';
 }
 
+
+

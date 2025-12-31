@@ -32,3 +32,5 @@ public interface ScenarioItemRepository extends JpaRepository<ScenarioItem, Long
     Boolean existsByItemId(String itemId);
 }
 
+
+

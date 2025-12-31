@@ -141,7 +141,7 @@ if [ ! -f "${APP_HOME}/.env" ]; then
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
-DB_HOST=localhost
+DB_HOST=${DB_HOST}
 DB_PORT=3306
 
 # JWT 配置

@@ -24,8 +24,7 @@ import { AIConfigManager } from './config';
 import { adapterManager } from './AdapterManager';
 import { BusinessServiceManager } from './business/BusinessServiceManager';
 import { AppSettings, DebugLog } from '../../types';
-
-const API_BASE_URL = 'http://localhost:8081/api';
+import { API_BASE_URL } from '../api/config';
 
 /**
  * 统一AI服务类

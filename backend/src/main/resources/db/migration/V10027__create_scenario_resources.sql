@@ -28,3 +28,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 -- 这里只创建了第一阶段（我的大学场景）的16个资源作为示例。
 -- 建议使用脚本程序批量生成剩余的256个资源记录，或者按需逐步创建。
 
+
+

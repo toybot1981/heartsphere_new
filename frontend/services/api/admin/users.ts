@@ -88,5 +88,17 @@ export const adminUsersApi = {
       },
     });
   },
+
+  /**
+   * 强制删除用户（先清空所有关联数据，再删除用户）
+   */
+  forceDelete: (id: number, token: string): Promise<void> => {
+    return request<void>(`/admin/users/${id}/force`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };
 

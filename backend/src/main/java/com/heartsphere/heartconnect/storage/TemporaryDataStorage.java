@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 临时数据存储
- * 用于存储体验模式下的临时数据（对话、记忆、情绪等）
+ * 用于存储共享模式下的临时数据（对话、记忆、情绪等）
  * 数据存储在内存中，会话结束后自动清理
  */
 @Component

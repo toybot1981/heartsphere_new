@@ -225,6 +225,7 @@ export function groupMainStoriesByEraId<T extends { eraId?: number }>(
  * @param characters - 角色列表
  * @param scripts - 剧本列表（可选）
  * @param mainStories - 主线剧情列表（可选）
+ * @param isSharedMode - 是否为共享模式（共享模式下直接展示所有场景，不按世界分组）
  * @returns WorldScene 数组
  */
 export function convertErasToWorldScenes(
@@ -232,8 +233,13 @@ export function convertErasToWorldScenes(
   eras: Array<{ id: number; name: string; description?: string | null; imageUrl?: string | null; systemEraId?: number | null; worldId?: number }>,
   characters: UserCharacter[],
   scripts?: UserScript[],
-  mainStories?: UserMainStory[]
+  mainStories?: UserMainStory[],
+  isSharedMode: boolean = false
 ): WorldScene[] {
+  console.log('[convertErasToWorldScenes] ========== 开始转换数据 ==========');
+  console.log('[convertErasToWorldScenes] 输入参数: worlds数量=', worlds?.length || 0, ', eras数量=', eras?.length || 0, ', characters数量=', characters?.length || 0);
+  console.log('[convertErasToWorldScenes] 共享模式:', isSharedMode);
+  
   // 分组数据
   const erasByWorldId = groupErasByWorldId(eras);
   const charactersByEraId = groupCharactersByEraId(characters);
@@ -243,16 +249,16 @@ export function convertErasToWorldScenes(
   // 转换为 WorldScene 数组
   const userWorldScenes: WorldScene[] = [];
 
-  worlds.forEach(world => {
-    const worldEras = erasByWorldId.get(world.id) || [];
-
-    worldEras.forEach(era => {
+  if (isSharedMode) {
+    // 共享模式：直接展示所有场景，不按世界分组
+    console.log('[convertErasToWorldScenes] 共享模式：直接展示所有场景');
+    eras.forEach(era => {
       const eraCharacters = charactersByEraId.get(era.id) || [];
       const eraScripts = scriptsByEraId.get(era.id) || [];
       const eraMainStory = mainStoriesByEraId.get(era.id);
 
       const scene: WorldScene = {
-        id: era.id.toString(),
+        id: `era_${era.id}`, // 使用 era_ 前缀标识
         name: era.name,
         description: era.description || '',
         imageUrl: era.imageUrl || '',
@@ -261,13 +267,46 @@ export function convertErasToWorldScenes(
         mainStory: eraMainStory ? convertBackendMainStoryToCharacter(eraMainStory) : undefined,
         scripts: eraScripts.map(script => convertBackendScriptToFrontend(script)),
         scenes: [],
-        worldId: world.id
+        worldId: era.worldId || undefined
       };
 
+      console.log(`[convertErasToWorldScenes] 添加场景: id=${scene.id}, name=${scene.name}, characters数量=${scene.characters.length}`);
       userWorldScenes.push(scene);
     });
-  });
+  } else {
+    // 正常模式：按世界分组
+    console.log('[convertErasToWorldScenes] 正常模式：按世界分组');
+    worlds.forEach(world => {
+      const worldEras = erasByWorldId.get(world.id) || [];
 
+      worldEras.forEach(era => {
+        const eraCharacters = charactersByEraId.get(era.id) || [];
+        const eraScripts = scriptsByEraId.get(era.id) || [];
+        const eraMainStory = mainStoriesByEraId.get(era.id);
+
+        const scene: WorldScene = {
+          id: `era_${era.id}`, // 使用 era_ 前缀标识
+          name: era.name,
+          description: era.description || '',
+          imageUrl: era.imageUrl || '',
+          systemEraId: era.systemEraId || undefined,
+          characters: eraCharacters.map(char => convertBackendCharacterToFrontend(char)),
+          mainStory: eraMainStory ? convertBackendMainStoryToCharacter(eraMainStory) : undefined,
+          scripts: eraScripts.map(script => convertBackendScriptToFrontend(script)),
+          scenes: [],
+          worldId: world.id
+        };
+
+        userWorldScenes.push(scene);
+      });
+    });
+  }
+
+  console.log('[convertErasToWorldScenes] ✅ 转换完成，返回场景数量:', userWorldScenes.length);
+  userWorldScenes.forEach((scene, index) => {
+    console.log(`[convertErasToWorldScenes]   场景[${index}]: id=${scene.id}, name=${scene.name}, characters数量=${scene.characters.length}`);
+  });
+  
   return userWorldScenes;
 }
 

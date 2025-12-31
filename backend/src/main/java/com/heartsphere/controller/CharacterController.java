@@ -13,6 +13,7 @@ import com.heartsphere.security.UserDetailsImpl;
 import com.heartsphere.utils.DTOMapper;
 import com.heartsphere.exception.ResourceNotFoundException;
 import com.heartsphere.exception.ForbiddenException;
+import com.heartsphere.heartconnect.context.SharedModeContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -46,18 +47,41 @@ public class CharacterController {
     @GetMapping
     public ResponseEntity<List<CharacterDTO>> getAllCharacters() {
         logger.info("========== [CharacterController] 获取所有角色 ==========");
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
         
-        List<Character> characters = characterRepository.findByUser_Id(userDetails.getId());
-        logger.info(String.format("[CharacterController] 查询到 %d 个角色", characters.size()));
+        // 检查是否处于共享模式
+        Long ownerId;
+        Long visitorId;
+        if (SharedModeContext.isActive()) {
+            ownerId = SharedModeContext.getOwnerId();
+            visitorId = SharedModeContext.getVisitorId();
+            logger.info(String.format("[CharacterController] 共享模式激活 - ownerId: %d, visitorId: %d, 使用ownerId查询角色", 
+                    ownerId, visitorId));
+            if (ownerId == null) {
+                logger.warning("[CharacterController] 共享模式激活但ownerId为null，使用当前用户ID");
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                ownerId = userDetails.getId();
+                visitorId = ownerId;
+            }
+        } else {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            ownerId = userDetails.getId();
+            visitorId = ownerId;
+            logger.info(String.format("[CharacterController] 正常模式 - ownerId: %d, visitorId: %d, 用户名: %s", 
+                    ownerId, visitorId, userDetails.getUsername()));
+        }
+        
+        logger.info(String.format("[CharacterController] 使用 ownerId=%d 查询角色列表", ownerId));
+        List<Character> characters = characterRepository.findByUser_Id(ownerId);
+        logger.info(String.format("[CharacterController] 查询到 %d 个角色 (ownerId=%d)", characters.size(), ownerId));
         
         List<CharacterDTO> characterDTOs = characters.stream()
             .map(DTOMapper::toCharacterDTO)
             .collect(Collectors.toList());
         
-        logger.info(String.format("[CharacterController] 返回 %d 个角色DTO", characterDTOs.size()));
+        logger.info(String.format("[CharacterController] 返回 %d 个角色DTO (ownerId=%d, visitorId=%d)", 
+                characterDTOs.size(), ownerId, visitorId));
         return ResponseEntity.ok(characterDTOs);
     }
 

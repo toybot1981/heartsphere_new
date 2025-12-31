@@ -13,6 +13,11 @@ public enum MemorySource {
     CONVERSATION,
     
     /**
+     * 日记
+     */
+    JOURNAL,
+    
+    /**
      * 用户输入
      */
     USER_INPUT,
@@ -32,4 +37,5 @@ public enum MemorySource {
      */
     EXTERNAL_SYNC
 }
+
 

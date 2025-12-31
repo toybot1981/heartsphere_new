@@ -7,10 +7,9 @@ import { useCallback } from 'react';
 import { Character, WorldScene } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
 import { characterApi, worldApi, eraApi, userMainStoryApi, imageApi, scriptApi } from '../services/api';
-import { syncService } from '../services/syncService';
+import { getWorldIdForSceneId } from '../utils/sceneMapping';
 import { convertBackendCharacterToFrontend, convertBackendMainStoryToCharacter, convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert, showConfirm } from '../utils/dialog';
-import { showSyncErrorToast } from '../utils/toast';
 import { WORLD_SCENES } from '../constants';
 import { aiService } from '../services/ai';
 import { imageCacheService } from '../utils/imageCache';
@@ -70,101 +69,175 @@ export const useCharacterHandlers = (
       isEditing: isEditing
     });
     
-    // 1. 先保存到本地（立即更新UI）
-    console.log("[useCharacterHandlers] 步骤1: 保存到本地状态");
-    
-    if (isEditingMainStory) {
-      // 更新主线故事
-      const updatedUserWorldScenes = gameState.userWorldScenes.map(scene => {
-        if (scene.id === sceneId) {
-          return {
-            ...scene,
-            mainStory: newCharacter
-          };
-        }
-        return scene;
-      });
-      dispatch({ type: 'SET_USER_WORLD_SCENES', payload: updatedUserWorldScenes });
-    } else {
-      // 更新角色
-      const existingCustomChars = gameState.customCharacters[sceneId] || [];
-      
-      let newChars: Character[] = [];
-      if (isEditing) {
-        // 更新现有角色
-        newChars = existingCustomChars.map(c => c.id === newCharacter.id ? newCharacter : c);
-        console.log(`[useCharacterHandlers] 更新角色: ${newCharacter.id}`);
-      } else {
-        // 添加新角色
-        newChars = [...existingCustomChars, newCharacter];
-        console.log(`[useCharacterHandlers] 添加新角色: ${newCharacter.id}`);
-      }
-
-      console.log(`[useCharacterHandlers] 场景 ${sceneId} 现在有 ${newChars.length} 个角色`);
-      dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {
-        ...gameState.customCharacters,
-        [sceneId]: newChars
-      }});
-    }
-    
-    if (onClose) {
-      onClose();
-    }
-    console.log("[useCharacterHandlers] 步骤1完成: 本地状态已更新");
-
-    // 2. 异步同步到服务器（如果已登录）
+    // 直接调用API提交到服务器（如果已登录）
     const token = localStorage.getItem('auth_token');
     const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
-    console.log(`[useCharacterHandlers] 步骤2: 同步到服务器, token存在=${!!token}, isGuest=${isGuest}`);
+    console.log(`[useCharacterHandlers] 提交角色到服务器, token存在=${!!token}, isGuest=${isGuest}`);
     
     if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
-      (async () => {
-        try {
-          console.log("[useCharacterHandlers] 开始同步角色到服务器");
+      try {
+        console.log("[useCharacterHandlers] 开始提交角色到服务器");
+        
+        // 处理头像URL：如果是从本地缓存（blob URL），尝试上传到服务器
+        let finalAvatarUrl = newCharacter.avatarUrl;
+        if (finalAvatarUrl && finalAvatarUrl.startsWith('blob:')) {
+          try {
+            console.log("[useCharacterHandlers] 检测到本地缓存头像，尝试上传到服务器");
+            finalAvatarUrl = await imageCacheService.uploadAndCache(
+              finalAvatarUrl,
+              newCharacter.id,
+              async (file) => {
+                const result = await imageApi.uploadImage(file, 'character', token);
+                return {
+                  success: result.success,
+                  url: result.url,
+                  error: result.error
+                };
+              }
+            );
+            console.log("[useCharacterHandlers] 头像处理完成，最终URL:", finalAvatarUrl);
+          } catch (uploadError) {
+            console.warn("[useCharacterHandlers] 上传头像失败:", uploadError);
+            throw new Error('上传头像失败，请重试');
+          }
+        }
+        
+        // 获取当前场景对应的 worldId 和 eraId
+        const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+          ? [...gameState.userWorldScenes, ...gameState.customScenes]
+          : [...WORLD_SCENES, ...gameState.customScenes];
+        const currentScene = allScenes.find(s => s.id === sceneId);
+        const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
+        
+        // 计算eraId：优先从场景数据中获取有效的eraId
+        let eraId: number | null = null;
+        
+        console.log(`[useCharacterHandlers] 开始计算eraId: sceneId=${sceneId}, sceneId类型=${typeof sceneId}`);
+        console.log(`[useCharacterHandlers] userWorldScenes数量: ${gameState.userWorldScenes?.length || 0}`);
+        console.log(`[useCharacterHandlers] userWorldScenes IDs:`, gameState.userWorldScenes?.map(s => s.id));
+        console.log(`[useCharacterHandlers] currentScene:`, currentScene ? { id: currentScene.id, systemEraId: currentScene.systemEraId } : null);
+        
+        // 提取sceneId中的数字部分（支持 era_193、193 等格式）
+        const sceneIdNumericMatch = sceneId ? sceneId.match(/\d+$/) : null;
+        const sceneIdNum = sceneIdNumericMatch ? parseInt(sceneIdNumericMatch[0], 10) : null;
+        
+        if (sceneIdNum !== null) {
+          console.log(`[useCharacterHandlers] 提取的sceneId数字: ${sceneIdNum} (原始sceneId: ${sceneId})`);
           
-          // 处理头像URL：如果是从本地缓存（blob URL），尝试上传到服务器
-          let finalAvatarUrl = newCharacter.avatarUrl;
-          if (finalAvatarUrl && finalAvatarUrl.startsWith('blob:')) {
-            try {
-              console.log("[useCharacterHandlers] 检测到本地缓存头像，尝试上传到服务器");
-              finalAvatarUrl = await imageCacheService.uploadAndCache(
-                finalAvatarUrl,
-                newCharacter.id,
-                async (file) => {
-                  const result = await imageApi.uploadImage(file, 'character', token);
-                  return {
-                    success: result.success,
-                    url: result.url,
-                    error: result.error
-                  };
-                }
-              );
-              console.log("[useCharacterHandlers] 头像处理完成，最终URL:", finalAvatarUrl);
-            } catch (uploadError) {
-              console.warn("[useCharacterHandlers] 上传头像失败，使用本地缓存:", uploadError);
-              // 上传失败时保持使用本地缓存URL
+          // 检查这个ID是否在userWorldScenes中存在（支持 era_193 格式）
+          const isValidInUserScenes = gameState.userWorldScenes?.some(s => {
+            const sNumericMatch = s.id.match(/\d+$/);
+            const sIdNum = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+            const matches = sIdNum !== null && sIdNum === sceneIdNum;
+            if (matches) {
+              console.log(`[useCharacterHandlers] 在userWorldScenes中找到匹配的场景: ${s.id} (${s.name})`);
+            }
+            return matches;
+          });
+          
+          // 也检查customScenes（支持 era_193 格式）
+          const isValidInCustomScenes = gameState.customScenes?.some(s => {
+            const sNumericMatch = s.id.match(/\d+$/);
+            const sIdNum = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+            return sIdNum !== null && sIdNum === sceneIdNum;
+          });
+          
+          if (isValidInUserScenes || isValidInCustomScenes) {
+            eraId = sceneIdNum;
+            console.log(`[useCharacterHandlers] 使用sceneId作为eraId: ${eraId}`);
+          } else {
+            // 即使不在列表中，如果sceneId是数字，也使用它（可能是新创建的场景，还没有刷新到列表中）
+            console.log(`[useCharacterHandlers] sceneId ${sceneIdNum} 不在场景列表中，但它是数字，使用它作为eraId`);
+            eraId = sceneIdNum;
+          }
+        } else if (currentScene) {
+          // 如果场景有systemEraId，尝试找到对应的用户场景ID（支持 era_193 格式）
+          if (currentScene.systemEraId) {
+            console.log(`[useCharacterHandlers] 场景有systemEraId: ${currentScene.systemEraId}`);
+            const userEra = gameState.userWorldScenes?.find(s => s.systemEraId === currentScene.systemEraId);
+            if (userEra && userEra.id) {
+              const sNumericMatch = userEra.id.match(/\d+$/);
+              const sIdNum = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+              if (sIdNum !== null && !isNaN(sIdNum)) {
+                eraId = sIdNum;
+                console.log(`[useCharacterHandlers] 从systemEraId找到对应的用户场景ID: ${eraId}`);
+              }
             }
           }
           
-          // 获取当前场景对应的 worldId 和 eraId
-          const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-            ? [...gameState.userWorldScenes, ...gameState.customScenes]
-            : [...WORLD_SCENES, ...gameState.customScenes];
-          const currentScene = allScenes.find(s => s.id === sceneId);
-          const worldId = currentScene?.worldId || syncService.getWorldIdForSceneId(sceneId);
-          const eraId = sceneId ? (isNaN(parseInt(sceneId)) ? null : parseInt(sceneId)) : null;
-          
-          console.log(`[useCharacterHandlers] 同步参数: sceneId=${sceneId}, worldId=${worldId}, eraId=${eraId}`);
-          
-          if (isEditingMainStory) {
-            // 同步主线故事
-            const isNumericId = /^\d+$/.test(newCharacter.id);
-            if (isNumericId) {
-              // 更新现有主线故事
-              const mainStoryId = parseInt(newCharacter.id, 10);
-              await userMainStoryApi.update(mainStoryId, {
-                name: newCharacter.name,
-                age: newCharacter.age,
+          // 如果场景ID是数字，使用它（支持 era_193 格式）
+          if (!eraId && currentScene.id) {
+            const sNumericMatch = currentScene.id.match(/\d+$/);
+            const sIdNum = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+            if (sIdNum !== null && !isNaN(sIdNum)) {
+              eraId = sIdNum;
+              console.log(`[useCharacterHandlers] 使用currentScene.id作为eraId: ${eraId}`);
+            }
+          }
+        }
+        
+        // 如果仍然没有有效的eraId，尝试从worldId对应的场景中获取第一个有效的eraId（支持 era_193 格式）
+        if (!eraId && worldId) {
+          console.log(`[useCharacterHandlers] 尝试从worldId ${worldId} 获取eraId`);
+          const worldScenes = gameState.userWorldScenes?.filter(s => {
+            const sWorldId = (s as any).worldId;
+            if (!s.id) return false;
+            const sNumericMatch = s.id.match(/\d+$/);
+            const sIdNum = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+            return sWorldId === worldId && sIdNum !== null && !isNaN(sIdNum);
+          });
+          if (worldScenes && worldScenes.length > 0) {
+            const sNumericMatch = worldScenes[0].id.match(/\d+$/);
+            const firstValidEraId = sNumericMatch ? parseInt(sNumericMatch[0], 10) : null;
+            if (firstValidEraId !== null && !isNaN(firstValidEraId)) {
+              eraId = firstValidEraId;
+              console.log(`[useCharacterHandlers] 使用世界 ${worldId} 的第一个有效场景ID作为eraId: ${eraId}`);
+            }
+          }
+        }
+        
+        // 如果仍然没有有效的eraId，使用null（让后端处理）
+        if (!eraId) {
+          console.warn(`[useCharacterHandlers] 无法确定有效的eraId，将使用null。sceneId=${sceneId}, worldId=${worldId}, currentScene存在=${!!currentScene}`);
+        }
+        
+        console.log(`[useCharacterHandlers] 最终eraId: ${eraId}, 提交参数: sceneId=${sceneId}, worldId=${worldId}, currentScene存在=${!!currentScene}`);
+        
+        if (isEditingMainStory) {
+          // 处理主线故事
+          const isNumericId = /^\d+$/.test(newCharacter.id);
+          if (isNumericId) {
+            // 更新现有主线故事
+            const mainStoryId = parseInt(newCharacter.id, 10);
+            await userMainStoryApi.update(mainStoryId, {
+              name: newCharacter.name,
+              age: newCharacter.age,
+              role: newCharacter.role,
+              bio: newCharacter.bio,
+              avatarUrl: finalAvatarUrl,
+              backgroundUrl: newCharacter.backgroundUrl,
+              themeColor: newCharacter.themeColor,
+              colorAccent: newCharacter.colorAccent,
+              firstMessage: newCharacter.firstMessage,
+              systemInstruction: newCharacter.systemInstruction,
+              voiceName: newCharacter.voiceName,
+              tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
+              speechStyle: newCharacter.speechStyle,
+              catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
+              secrets: newCharacter.secrets,
+              motivations: newCharacter.motivations,
+            }, token);
+            console.log(`[useCharacterHandlers] 主线故事更新成功: ID=${mainStoryId}`);
+          } else {
+            // 创建新主线故事
+            const createdMainStory = await userMainStoryApi.create({
+              name: newCharacter.name,
+              eraId: eraId || 0,
+            }, token);
+            
+            // 创建后立即更新其他字段
+            if (createdMainStory.id) {
+              await userMainStoryApi.update(createdMainStory.id, {
                 role: newCharacter.role,
                 bio: newCharacter.bio,
                 avatarUrl: finalAvatarUrl,
@@ -180,166 +253,144 @@ export const useCharacterHandlers = (
                 secrets: newCharacter.secrets,
                 motivations: newCharacter.motivations,
               }, token);
-              console.log(`[useCharacterHandlers] 主线故事更新成功: ID=${mainStoryId}`);
-            } else {
-              // 创建新主线故事
-              const createdMainStory = await userMainStoryApi.create({
-                name: newCharacter.name,
-                eraId: eraId || 0,
-              }, token);
-              
-              // 创建后立即更新其他字段
-              if (createdMainStory.id) {
-                await userMainStoryApi.update(createdMainStory.id, {
-                  role: newCharacter.role,
-                  bio: newCharacter.bio,
-                  avatarUrl: finalAvatarUrl,
-                  backgroundUrl: newCharacter.backgroundUrl,
-                  themeColor: newCharacter.themeColor,
-                  colorAccent: newCharacter.colorAccent,
-                  firstMessage: newCharacter.firstMessage,
-                  systemInstruction: newCharacter.systemInstruction,
-                  voiceName: newCharacter.voiceName,
-                  tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
-                  speechStyle: newCharacter.speechStyle,
-                  catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
-                  secrets: newCharacter.secrets,
-                  motivations: newCharacter.motivations,
-                }, token);
-              }
-              console.log(`[useCharacterHandlers] 主线故事创建成功: ID=${createdMainStory.id}`);
-              
-              // 更新本地状态中的主线故事ID
-              const updatedUserWorldScenes = gameState.userWorldScenes.map(scene => {
-                if (scene.id === sceneId && scene.mainStory?.id === newCharacter.id) {
-                  return {
-                    ...scene,
-                    mainStory: {
-                      ...scene.mainStory,
-                      id: createdMainStory.id.toString()
-                    }
-                  };
-                }
-                return scene;
-              });
-              dispatch({ type: 'SET_USER_WORLD_SCENES', payload: updatedUserWorldScenes });
             }
-          } else {
-            // 同步角色
-            const syncResult = await syncService.handleLocalDataChange('character', {
-              ...newCharacter,
-              avatarUrl: finalAvatarUrl,
-              description: newCharacter.bio,
+            console.log(`[useCharacterHandlers] 主线故事创建成功: ID=${createdMainStory.id}`);
+          }
+        } else {
+          // 处理角色：直接调用API
+          const isNumericId = /^\d+$/.test(newCharacter.id);
+          
+          if (isNumericId) {
+            // 更新现有角色
+            const characterId = parseInt(newCharacter.id, 10);
+            await characterApi.updateCharacter(characterId, {
+              name: newCharacter.name,
+              description: newCharacter.bio || newCharacter.description || '',
               age: newCharacter.age,
-              gender: newCharacter.role,
+              gender: newCharacter.role || newCharacter.gender || '',
               worldId: worldId,
-              eraId: eraId
-            });
-          
-            // 如果创建了新角色，更新本地状态中的角色ID为服务器返回的数字ID
-            if (syncResult && syncResult.id && !isEditing) {
-              console.log(`[useCharacterHandlers] 新角色已创建，更新本地ID: ${newCharacter.id} -> ${syncResult.id}`);
-              const existingCustomChars = gameState.customCharacters[sceneId] || [];
-              const updatedChars = existingCustomChars.map(c => 
-                c.id === newCharacter.id 
-                  ? { ...c, id: syncResult.id.toString() }
-                  : c
-              );
-              dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {
-                ...gameState.customCharacters,
-                [sceneId]: updatedChars
-              }});
-            }
-            
-            console.log(`[useCharacterHandlers] 角色同步成功: ID=${newCharacter.id}, name=${newCharacter.name}`);
+              eraId: eraId || null,
+              role: newCharacter.role,
+              bio: newCharacter.bio,
+              avatarUrl: finalAvatarUrl,
+              backgroundUrl: newCharacter.backgroundUrl,
+              themeColor: newCharacter.themeColor,
+              colorAccent: newCharacter.colorAccent,
+              firstMessage: newCharacter.firstMessage,
+              systemInstruction: newCharacter.systemInstruction,
+              voiceName: newCharacter.voiceName,
+              mbti: newCharacter.mbti,
+              tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
+              speechStyle: newCharacter.speechStyle,
+              catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
+              secrets: newCharacter.secrets,
+              motivations: newCharacter.motivations,
+              relationships: newCharacter.relationships,
+            }, token);
+            console.log(`[useCharacterHandlers] 角色更新成功: ID=${characterId}`);
+          } else {
+            // 创建新角色
+            const createdCharacter = await characterApi.createCharacter({
+              name: newCharacter.name,
+              description: newCharacter.bio || newCharacter.description || '',
+              age: newCharacter.age,
+              gender: newCharacter.role || newCharacter.gender || '',
+              worldId: worldId,
+              eraId: eraId || null,
+              role: newCharacter.role,
+              bio: newCharacter.bio,
+              avatarUrl: finalAvatarUrl,
+              backgroundUrl: newCharacter.backgroundUrl,
+              themeColor: newCharacter.themeColor,
+              colorAccent: newCharacter.colorAccent,
+              firstMessage: newCharacter.firstMessage,
+              systemInstruction: newCharacter.systemInstruction,
+              voiceName: newCharacter.voiceName,
+              mbti: newCharacter.mbti,
+              tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
+              speechStyle: newCharacter.speechStyle,
+              catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
+              secrets: newCharacter.secrets,
+              motivations: newCharacter.motivations,
+              relationships: newCharacter.relationships,
+            }, token);
+            console.log(`[useCharacterHandlers] 角色创建成功: ID=${createdCharacter.id}`);
           }
-          
-          // 3. 刷新角色列表，更新显示
-          console.log("[useCharacterHandlers] 步骤3: 刷新角色列表");
-          try {
-            const updatedCharacters = await characterApi.getAllCharacters(token);
-            console.log(`[useCharacterHandlers] 获取到 ${updatedCharacters.length} 个角色`);
-            
-            // 重新构建 userWorldScenes，更新角色数据
-            const worlds = await worldApi.getAllWorlds(token);
-            const eras = await eraApi.getAllEras(token);
-            
-            // 加载剧本数据，确保剧本内容能正常显示
-            const scripts = await scriptApi.getAllScripts(token);
-            console.log(`[useCharacterHandlers] 获取到 ${scripts.length} 个剧本`);
-            
-            // 使用数据转换工具
-            const userMainStories = await userMainStoryApi.getAll(token);
-            const updatedUserWorldScenes = convertErasToWorldScenes(
-              worlds,
-              eras,
-              updatedCharacters,
-              scripts, // 传递剧本数据
-              userMainStories
-            );
-            
-            // 保留原有的 memories
-            const scenesWithMemories = updatedUserWorldScenes.map(scene => {
-              const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
-              return {
-                ...scene,
-                memories: existingScene?.memories
-              };
-            });
-            
-            // 更新游戏状态，同时保留 sceneMemories，并清除已同步到后端的角色（避免重复显示）
-            // 收集所有已同步到后端的角色信息（用于去重）
-            const syncedCharacterIds = new Set<string>();
-            const syncedCharacterKeys = new Set<string>(); // 使用 name+avatarUrl 作为唯一标识
-            
-            scenesWithMemories.forEach(scene => {
-              scene.characters.forEach(char => {
-                // 如果角色ID是数字字符串，说明已同步到后端
-                if (/^\d+$/.test(char.id)) {
-                  syncedCharacterIds.add(char.id);
-                }
-                // 同时记录角色的唯一标识（名称+头像），用于匹配预置角色
-                const charKey = `${char.name}|${char.avatarUrl || ''}`;
-                syncedCharacterKeys.add(charKey);
-              });
-            });
-            
-            // 从 customCharacters 中移除已同步的角色
-            const cleanedCustomCharacters: Record<string, Character[]> = {};
-            Object.keys(gameState.customCharacters).forEach(sceneId => {
-              const sceneChars = gameState.customCharacters[sceneId] || [];
-              // 移除已同步的角色：ID是数字且在已同步列表中，或者名称+头像匹配已同步角色
-              cleanedCustomCharacters[sceneId] = sceneChars.filter(char => {
-                const isSyncedById = /^\d+$/.test(char.id) && syncedCharacterIds.has(char.id);
-                const charKey = `${char.name}|${char.avatarUrl || ''}`;
-                const isSyncedByKey = syncedCharacterKeys.has(charKey);
-                
-                if (isSyncedById || isSyncedByKey) {
-                  console.log(`[useCharacterHandlers] 从customCharacters中移除已同步的角色: ${char.id} (${char.name})`);
-                  return false;
-                }
-                return true;
-              });
-            });
-            
-            dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
-            dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: cleanedCustomCharacters });
-            
-            console.log(`[useCharacterHandlers] 角色列表已刷新，共 ${scenesWithMemories.length} 个场景`);
-          } catch (refreshError) {
-            console.error("[useCharacterHandlers] 刷新角色列表失败:", refreshError);
-            // 刷新失败不影响主流程，只记录错误
-          }
-        } catch (error: any) {
-          console.error(`[useCharacterHandlers] 角色同步失败: ID=${newCharacter.id}`, error);
-          // 显示详细的错误信息
-          const errorMessage = error.message || '未知错误';
-          showAlert(`角色同步失败: ${errorMessage}`, '同步失败', 'error');
-          showSyncErrorToast('角色');
         }
-      })();
+        
+        // 刷新角色列表，更新显示
+        console.log("[useCharacterHandlers] 刷新角色列表");
+        const updatedCharacters = await characterApi.getAllCharacters(token);
+        console.log(`[useCharacterHandlers] 获取到 ${updatedCharacters.length} 个角色`);
+        
+        // 打印新创建/更新的角色信息，用于调试
+        if (updatedCharacters.length > 0) {
+          console.log(`[useCharacterHandlers] 角色列表详情:`);
+          updatedCharacters.forEach((char, index) => {
+            console.log(`[useCharacterHandlers]   角色[${index}]: id=${char.id}, name=${char.name}, eraId=${char.eraId}, worldId=${char.worldId}`);
+          });
+        }
+        
+        // 重新构建 userWorldScenes，更新角色数据
+        const worlds = await worldApi.getAllWorlds(token);
+        const eras = await eraApi.getAllEras(token);
+        console.log(`[useCharacterHandlers] 获取到 ${eras.length} 个场景`);
+        
+        // 加载剧本数据，确保剧本内容能正常显示
+        const scripts = await scriptApi.getAllScripts(token);
+        console.log(`[useCharacterHandlers] 获取到 ${scripts.length} 个剧本`);
+        
+        // 使用数据转换工具
+        const userMainStories = await userMainStoryApi.getAll(token);
+        const updatedUserWorldScenes = convertErasToWorldScenes(
+          worlds,
+          eras,
+          updatedCharacters,
+          scripts,
+          userMainStories
+        );
+        
+        // 打印转换后的场景信息，用于调试
+        console.log(`[useCharacterHandlers] 转换后的场景列表:`);
+        updatedUserWorldScenes.forEach((scene, index) => {
+          console.log(`[useCharacterHandlers]   场景[${index}]: id=${scene.id}, name=${scene.name}, characters数量=${scene.characters.length}`);
+          if (scene.characters.length > 0) {
+            scene.characters.forEach((char, charIndex) => {
+              console.log(`[useCharacterHandlers]     角色[${charIndex}]: id=${char.id}, name=${char.name}`);
+            });
+          }
+        });
+        
+        // 保留原有的 memories
+        const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+          const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+          return {
+            ...scene,
+            memories: existingScene?.memories
+          };
+        });
+        
+        // 清空 customCharacters（不再保存手动添加的内容到本地）
+        dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+        dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {} });
+        
+        console.log(`[useCharacterHandlers] 角色列表已刷新，共 ${scenesWithMemories.length} 个场景`);
+        
+        if (onClose) {
+          onClose();
+        }
+      } catch (error: any) {
+        console.error(`[useCharacterHandlers] 角色提交失败: ID=${newCharacter.id}`, error);
+        const errorMessage = error.message || '未知错误';
+        showAlert(`角色提交失败: ${errorMessage}`, '提交失败', 'error');
+        throw error; // 重新抛出错误，让调用方知道失败
+      }
     } else {
-      console.log("[useCharacterHandlers] 跳过服务器同步: 未登录或游客模式");
+      // 游客模式或未登录，直接关闭
+      if (onClose) {
+        onClose();
+      }
+      console.log("[useCharacterHandlers] 跳过服务器提交: 未登录或游客模式");
     }
   }, [gameState, dispatch, editingCharacterSceneId, editingMainStory, onClose]);
 

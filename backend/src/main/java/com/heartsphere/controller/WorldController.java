@@ -51,7 +51,7 @@ public class WorldController {
             
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             
-            // 使用新添加的findByUserId方法查询用户的世界
+            // 正常模式：返回当前用户自己的世界（不再检查共享模式）
             List<World> userWorlds = worldRepository.findByUserId(userDetails.getId());
             List<WorldDTO> worldDTOs = userWorlds.stream()
                 .map(DTOMapper::toWorldDTO)

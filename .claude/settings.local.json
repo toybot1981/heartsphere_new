@@ -31,7 +31,16 @@
       "Bash(node node_modules/vite/bin/vite.js:*)",
       "Bash(xargs:*)",
       "Bash(mysql:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(java:*)",
+      "Bash(/usr/libexec/java_home:*)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home mvn spring-boot:run:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home mvn:*)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home java:*)",
+      "Bash(ls:*)"
     ]
   }
 }

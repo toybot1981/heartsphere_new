@@ -129,5 +129,33 @@ export const recycleBinApi = {
       },
     });
   },
+
+  /**
+   * 恢复对话日志
+   * @param id - 对话日志ID
+   * @param token - 用户token
+   */
+  restoreConversationLog: (id: number, token: string): Promise<void> => {
+    return request<void>(`/recycle-bin/conversation-logs/${id}/restore`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * 永久删除对话日志
+   * @param id - 对话日志ID
+   * @param token - 用户token
+   */
+  permanentlyDeleteConversationLog: (id: number, token: string): Promise<void> => {
+    return request<void>(`/recycle-bin/conversation-logs/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };
 

@@ -75,3 +75,5 @@ export interface EmojiPickerCallbacks {
   onMultiSelect?: (emojis: Emoji[]) => void; // 多选模式
 }
 
+
+

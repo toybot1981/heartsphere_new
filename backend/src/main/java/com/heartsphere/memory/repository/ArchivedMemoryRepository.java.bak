@@ -1,0 +1,34 @@
+package com.heartsphere.memory.repository;
+
+import com.heartsphere.memory.model.ArchivedMemory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.Optional;
+
+/**
+ * 归档记忆仓储接口
+ * 
+ * @author HeartSphere
+ * @date 2025-12-29
+ */
+public interface ArchivedMemoryRepository extends MongoRepository<ArchivedMemory, String> {
+    
+    /**
+     * 根据原始记忆ID查找
+     */
+    Optional<ArchivedMemory> findByOriginalMemoryId(String originalMemoryId);
+    
+    /**
+     * 根据用户ID分页查询
+     */
+    Page<ArchivedMemory> findByUserId(String userId, Pageable pageable);
+    
+    /**
+     * 删除原始记忆ID对应的归档记录
+     */
+    void deleteByOriginalMemoryId(String originalMemoryId);
+}
+
+

@@ -17,5 +17,7 @@ export { SettingsManagement } from './SettingsManagement';
 export { PlaceholderManagement } from './PlaceholderManagement';
 export { EventsManagement } from './EventsManagement';
 export { ItemsManagement } from './ItemsManagement';
+export { HeartSphereConnectionManagement } from './heartSphereConnection';
+export { MemoryManagement } from './memory';
 
 

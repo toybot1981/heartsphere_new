@@ -97,6 +97,23 @@ public class AdminUserService {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("用户不存在: " + id));
         
+        // 尝试直接删除，如果失败则抛出异常
+        try {
+            userRepository.delete(user);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 如果有外键约束，抛出异常，让前端提示强制删除
+            throw new RuntimeException("无法删除用户：存在外键关联约束。请使用强制删除功能。", e);
+        }
+    }
+
+    /**
+     * 强制删除用户（先清空所有关联数据，再删除用户）
+     */
+    @Transactional
+    public void forceDeleteUser(Long id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("用户不存在: " + id));
+        
         // 删除所有关联数据（按依赖顺序）
         // 1. 删除角色
         characterRepository.findByUser_Id(id).forEach(characterRepository::delete);

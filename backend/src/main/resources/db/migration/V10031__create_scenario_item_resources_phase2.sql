@@ -58,3 +58,5 @@ INSERT INTO `system_resources` (`name`, `url`, `category`, `description`, `promp
 ('地图（物品）', 'placeholder://item/item_ming_map.jpg', 'item', '江湖路线图或藏宝图', 'Treasure map, jianghu map, route map, Ming Dynasty map, realistic style, high quality, detailed map, ancient map design, mysterious map appearance', '明朝,地图,物品', NULL, NOW(), NOW()),
 ('玉佩信物（物品）', 'placeholder://item/item_ming_jade_token.jpg', 'item', '作为信物的玉佩', 'Jade token, jade keepsake, identification jade, Ming Dynasty jade, realistic style, high quality, detailed jade, traditional jade token, elegant jade design', '明朝,信物,物品', NULL, NOW(), NOW());
 
+
+

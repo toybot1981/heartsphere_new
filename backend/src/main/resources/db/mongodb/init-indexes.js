@@ -31,3 +31,5 @@ print("user_memories 索引创建完成");
 
 print("所有索引创建完成！");
 
+
+

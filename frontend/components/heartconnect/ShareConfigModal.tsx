@@ -36,23 +36,52 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
   // 加载现有配置
   useEffect(() => {
     if (isOpen) {
+      // 重置表单状态
+      setStep(1);
+      setError(null);
+      setLoading(false);
+      // 加载现有配置
       loadExistingConfig();
+    } else {
+      // 关闭时重置状态
+      setExistingConfig(null);
+      setShareType('all');
+      setAccessPermission('approval');
+      setDescription('');
+      setCoverImageUrl('');
+      setSelectedScopes([]);
     }
   }, [isOpen]);
   
   const loadExistingConfig = async () => {
     try {
       const config = await heartConnectApi.getMyShareConfig();
+      console.log('加载现有共享配置:', config);
       setExistingConfig(config);
       setShareType(config.shareType);
       setAccessPermission(config.accessPermission);
-      setDescription(config.description || '');
-      setCoverImageUrl(config.coverImageUrl || '');
+      setDescription(config.description || "");
+      setCoverImageUrl(config.coverImageUrl || "");
       setSelectedScopes(config.scopes?.map(s => ({ scopeType: s.scopeType, scopeId: s.scopeId })) || []);
+      console.log('共享配置已加载，准备编辑');
     } catch (err: any) {
-      // 如果没有配置，忽略错误
-      if (err.response?.status !== 404) {
-        console.error('加载共享配置失败:', err);
+      // 如果没有配置（404错误），这是正常情况，静默处理
+      const errorMessage = err?.message || "";
+      const isNotFound = err?.response?.status === 404 || 
+                        errorMessage.includes("共享配置不存在") ||
+                        errorMessage.includes("不存在");
+      if (!isNotFound) {
+        console.error("加载共享配置失败:", err);
+        setError("加载共享配置失败，请刷新后重试");
+      } else {
+        console.debug("共享配置不存在（正常情况），将创建新配置");
+        // 重置为默认值
+        setExistingConfig(null);
+        setShareType('all');
+        setAccessPermission('approval');
+        setDescription('');
+        setCoverImageUrl('');
+        setSelectedScopes([]);
       }
     }
   };
@@ -283,7 +312,11 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
             ? 'border-blue-500 bg-blue-500/10'
             : 'border-gray-700 hover:border-gray-600'
         }`}
-        onClick={() => setShareType('world')}
+        onClick={() => {
+          setShareType('world');
+          // 切换到按世界共享时，只保留世界选择，清空场景选择
+          setSelectedScopes(selectedScopes.filter(s => s.scopeType === 'world'));
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -334,7 +367,11 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
             ? 'border-blue-500 bg-blue-500/10'
             : 'border-gray-700 hover:border-gray-600'
         }`}
-        onClick={() => setShareType('era')}
+        onClick={() => {
+          setShareType('era');
+          // 切换到按场景共享时，只保留场景选择，清空世界选择
+          setSelectedScopes(selectedScopes.filter(s => s.scopeType === 'era'));
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -380,7 +417,7 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
       
       {shareType !== 'all' && (
         <div className="mt-4 p-3 bg-gray-800 rounded-lg text-sm text-gray-400">
-          已选择 {selectedScopes.length} 个{shareType === 'world' ? '世界' : '场景'}
+          已选择 {selectedScopes.filter(s => s.scopeType === shareType).length} 个{shareType === 'world' ? '世界' : '场景'}
         </div>
       )}
     </div>
@@ -483,7 +520,7 @@ const PermissionStep: React.FC<PermissionStepProps> = ({
         <label className="block text-white font-medium mb-2">预览效果</label>
         <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
           <div className="text-gray-400 text-sm mb-2">
-            共享范围：{shareType === 'all' ? '全部' : `${selectedScopes.length}个${shareType === 'world' ? '世界' : '场景'}`}
+            共享范围：{shareType === 'all' ? '全部' : `${selectedScopes.filter(s => s.scopeType === shareType).length}个${shareType === 'world' ? '世界' : '场景'}`}
           </div>
           {description && (
             <div className="text-white text-sm mt-2">{description}</div>

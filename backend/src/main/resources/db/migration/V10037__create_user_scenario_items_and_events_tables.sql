@@ -56,3 +56,5 @@ CREATE TABLE IF NOT EXISTS `user_scenario_events` (
   FOREIGN KEY (`system_era_event_id`) REFERENCES `system_era_events` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户场景事件表（与场景节点关联）';
 
+
+

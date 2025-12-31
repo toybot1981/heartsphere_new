@@ -24,3 +24,5 @@ public interface UserScenarioEventRepository extends JpaRepository<UserScenarioE
     List<UserScenarioEvent> findByEventId(@Param("eventId") String eventId);
 }
 
+
+

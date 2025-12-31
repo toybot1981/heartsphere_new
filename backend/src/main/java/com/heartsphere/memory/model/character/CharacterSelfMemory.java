@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "character_self_memories")
 public class CharacterSelfMemory {
     
     @Id
@@ -106,4 +104,6 @@ public class CharacterSelfMemory {
      */
     private Double confidence;
 }
+
+
 

@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 
@@ -21,7 +20,6 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "participant_preferences")
 public class ParticipantPreference {
     
     @Id
@@ -67,4 +65,6 @@ public class ParticipantPreference {
      */
     private Integer accessCount;
 }
+
+
 

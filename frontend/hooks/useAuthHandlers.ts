@@ -9,6 +9,7 @@ import { authApi, journalApi, characterApi, worldApi, eraApi, userMainStoryApi }
 import { convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
 import { GameState } from '../types';
+import { useSharedMode } from './useSharedMode';
 
 interface UseAuthHandlersProps {
   setShowLoginModal: (show: boolean) => void;
@@ -30,6 +31,7 @@ export const useAuthHandlers = ({
   hasLoadedEntryPointData,
 }: UseAuthHandlersProps) => {
   const { state: gameState, dispatch } = useGameState();
+  const sharedMode = useSharedMode();
 
   // 认证要求检查
   const requireAuth = useCallback((action: () => void) => {
@@ -86,12 +88,26 @@ export const useAuthHandlers = ({
         const journalEntries = await journalApi.getAllJournalEntries(token);
         console.log('获取日记列表成功:', journalEntries);
         
-        // 获取世界列表 (如果登录响应中没有，则单独获取)
-        const remoteWorlds = worlds || await worldApi.getAllWorlds(token);
-        console.log('获取世界列表成功:', remoteWorlds);
+        // 检查是否处于共享模式（通过 hook 状态）
+        const isSharedMode = sharedMode.isActive && sharedMode.shareConfig !== null;
+        console.log(`[handleLoginSuccess] 共享模式状态: isActive=${sharedMode.isActive}, shareConfigId=${sharedMode.shareConfig?.id || null}`);
         
-        // 获取场景列表
-        const eras = await eraApi.getAllEras(token);
+        let remoteWorlds, eras;
+        if (isSharedMode) {
+          // 共享模式：调用共享模式专用接口
+          console.log(`[handleLoginSuccess] 使用共享模式接口加载数据: shareConfigId=${shareConfigId}`);
+          const { sharedApi } = await import('../services/api/heartconnect');
+          remoteWorlds = await sharedApi.getSharedWorlds(token);
+          eras = await sharedApi.getSharedEras(token);
+          console.log(`[handleLoginSuccess] 共享模式数据加载成功: worlds=${remoteWorlds?.length || 0}, eras=${eras?.length || 0}`);
+        } else {
+          // 正常模式：调用原有接口
+          console.log('[handleLoginSuccess] 使用正常模式接口加载数据');
+          remoteWorlds = worlds || await worldApi.getAllWorlds(token);
+          eras = await eraApi.getAllEras(token);
+        }
+        
+        console.log('获取世界列表成功:', remoteWorlds);
         console.log('获取场景列表成功:', eras);
         
         // 获取角色列表
@@ -104,7 +120,8 @@ export const useAuthHandlers = ({
           eras,
           characters,
           undefined, // scripts 在 handleLoginSuccess 中未加载
-          undefined  // mainStories 在 handleLoginSuccess 中未加载
+          undefined,  // mainStories 在 handleLoginSuccess 中未加载
+          isSharedMode // 传递共享模式标志
         );
         
         // 更新用户信息和日记列表，使用远程加载的世界数据
@@ -485,15 +502,27 @@ export const useAuthHandlers = ({
           const journalEntries = await journalApi.getAllJournalEntries(token);
           console.log('获取日记列表成功:', journalEntries);
           
-          // 获取世界列表
-          console.log('尝试获取世界列表...');
-          const worlds = await worldApi.getAllWorlds(token);
-          console.log('获取世界列表成功:', worlds);
+          // 检查是否处于共享模式（通过 hook 状态）
+          const isSharedMode = sharedMode.isActive && sharedMode.shareConfig !== null;
+          console.log(`[checkAuth] 共享模式状态: isActive=${sharedMode.isActive}, shareConfigId=${sharedMode.shareConfig?.id || null}`);
           
-          // 获取场景列表
-          console.log('尝试获取场景列表...');
-          const eras = await eraApi.getAllEras(token);
-          console.log('获取场景列表成功:', eras);
+          let worlds, eras;
+          if (isSharedMode) {
+            // 共享模式：调用共享模式专用接口
+            console.log('[checkAuth] 共享模式：使用共享模式接口加载数据');
+            const { sharedApi } = await import('../services/api/heartconnect');
+            worlds = await sharedApi.getSharedWorlds(token);
+            eras = await sharedApi.getSharedEras(token);
+            console.log(`[checkAuth] 共享模式数据加载成功: worlds=${worlds?.length || 0}, eras=${eras?.length || 0}`);
+          } else {
+            // 正常模式：调用原有接口
+            console.log('[checkAuth] 正常模式：使用正常模式接口加载数据');
+            worlds = await worldApi.getAllWorlds(token);
+            console.log('获取世界列表成功:', worlds);
+            
+            eras = await eraApi.getAllEras(token);
+            console.log('获取场景列表成功:', eras);
+          }
           
           // 获取角色列表
           console.log('尝试获取角色列表...');
@@ -509,7 +538,8 @@ export const useAuthHandlers = ({
             eras,
             characters,
             undefined, // scripts 在 checkAuth 中未加载
-            userMainStories
+            userMainStories,
+            isSharedMode // 传递共享模式标志
           );
           
           console.log('转换后的用户世界场景:', userWorldScenes);

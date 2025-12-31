@@ -4,6 +4,8 @@
 
 本系统实现了一套完整的客户端缓存和同步机制，确保数据在本地和服务器之间的可靠同步。该机制支持离线操作、自动同步、失败重试等功能。
 
+**重要说明：日志（journal）已移除本地缓存同步机制，全部从后台直接获取。以下文档中的示例代码使用通用实体类型，不再包含日志相关的同步逻辑。**
+
 ## 核心概念
 
 ### 同步状态（SyncStatus）
@@ -44,29 +46,28 @@ interface SyncableEntity {
 
 ```typescript
 // 1. 创建实体并标记为待同步
-const newEntry: JournalEntry = {
-  id: `entry_${Date.now()}`,
-  title: '标题',
-  content: '内容',
+const newEntity: YourEntity = {
+  id: `temp_${Date.now()}`,
+  // ... 其他字段
   syncStatus: 0, // 待同步
 };
 
 // 标记为待同步并保存到本地
-const entryWithSync = syncService.markEntityForSync('journal', newEntry, 'create');
+const entityWithSync = syncService.markEntityForSync('yourEntity', newEntity, 'create');
 
 // 2. 立即更新UI
-dispatch({ type: 'ADD_JOURNAL_ENTRY', payload: entryWithSync });
+dispatch({ type: 'ADD_ENTITY', payload: entityWithSync });
 
 // 3. 后台同步
 try {
-  const savedEntry = await journalApi.createJournalEntry(apiRequestData, token);
+  const savedEntity = await yourApi.createEntity(apiRequestData, token);
   // 标记为同步成功
-  const syncedEntry = syncService.markEntitySynced('journal', entryWithSync, savedEntry);
-  dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
+  const syncedEntity = syncService.markEntitySynced('yourEntity', entityWithSync, savedEntity);
+  dispatch({ type: 'SET_ENTITIES', payload: updatedEntities });
 } catch (error) {
   // 标记为同步失败
-  const failedEntry = syncService.markEntitySyncFailed('journal', entryWithSync, error.message);
-  dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
+  const failedEntity = syncService.markEntitySyncFailed('yourEntity', entityWithSync, error.message);
+  dispatch({ type: 'SET_ENTITIES', payload: updatedEntities });
 }
 ```
 
@@ -85,28 +86,28 @@ try {
 
 ```typescript
 // 1. 更新实体并标记为待同步
-const updatedEntry: JournalEntry = {
-  ...existingEntry,
-  title: '新标题',
+const updatedEntity: YourEntity = {
+  ...existingEntity,
+  // ... 更新的字段
   syncStatus: 0, // 待同步
 };
 
 // 标记为待同步并保存到本地
-const markedEntry = syncService.markEntityForSync('journal', updatedEntry, 'update');
+const markedEntity = syncService.markEntityForSync('yourEntity', updatedEntity, 'update');
 
 // 2. 立即更新UI
-dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
+dispatch({ type: 'SET_ENTITIES', payload: updatedEntities });
 
 // 3. 后台同步
 try {
-  const savedEntry = await journalApi.updateJournalEntry(id, apiRequestData, token);
+  const savedEntity = await yourApi.updateEntity(id, apiRequestData, token);
   // 标记为同步成功
-  const syncedEntry = syncService.markEntitySynced('journal', markedEntry, savedEntry);
-  dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
+  const syncedEntity = syncService.markEntitySynced('yourEntity', markedEntity, savedEntity);
+  dispatch({ type: 'SET_ENTITIES', payload: updatedEntities });
 } catch (error) {
   // 标记为同步失败
-  const failedEntry = syncService.markEntitySyncFailed('journal', markedEntry, error.message);
-  dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: updatedEntries });
+  const failedEntity = syncService.markEntitySyncFailed('yourEntity', markedEntity, error.message);
+  dispatch({ type: 'SET_ENTITIES', payload: updatedEntities });
 }
 ```
 
@@ -124,11 +125,11 @@ try {
 ```typescript
 try {
   // 1. 先调用后台API删除
-  await syncService.deleteEntity('journal', entityId);
+  await syncService.deleteEntity('yourEntity', entityId);
   
   // 2. 删除成功后，删除本地状态
-  const remainingEntries = entries.filter(e => e.id !== entityId);
-  dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: remainingEntries });
+  const remainingEntities = entities.filter(e => e.id !== entityId);
+  dispatch({ type: 'SET_ENTITIES', payload: remainingEntities });
 } catch (error) {
   // 删除失败，保留本地缓存
   console.error('删除失败:', error);
@@ -150,10 +151,10 @@ try {
 
 ```typescript
 // 1. 立即返回本地缓存数据（不等待后台查询）
-const localEntities = await syncService.queryEntities('journal', token);
+const localEntities = await syncService.queryEntities('yourEntity', token);
 
 // 2. 立即更新UI（使用本地缓存数据）
-dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: localEntities });
+dispatch({ type: 'SET_ENTITIES', payload: localEntities });
 
 // 3. 后台查询会自动进行，查询完成后会触发 onEntitiesQueried 回调更新UI
 ```
@@ -161,27 +162,23 @@ dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: localEntities });
 **配置查询：**
 
 ```typescript
-syncService.registerSyncConfig<JournalEntry>({
-  entityType: 'journal',
+syncService.registerSyncConfig<YourEntity>({
+  entityType: 'yourEntity',
   // ... 其他配置
   queryApi: async (token: string) => {
     // 返回服务器原始数据
-    return await journalApi.getAllJournalEntries(token);
+    return await yourApi.getAllEntities(token);
   },
-  transformQueryResult: (serverEntry: any): JournalEntry => {
+  transformQueryResult: (serverEntity: any): YourEntity => {
     // 转换服务器数据为前端格式
     return {
-      id: serverEntry.id.toString(),
-      title: serverEntry.title,
-      content: serverEntry.content,
-      timestamp: new Date(serverEntry.entryDate).getTime(),
-      insight: serverEntry.insight || undefined,
-      // ... 其他字段
-    } as JournalEntry;
+      id: serverEntity.id.toString(),
+      // ... 其他字段转换
+    } as YourEntity;
   },
   onEntitiesQueried: (entities) => {
     // 查询完成后更新UI
-    dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: entities });
+    dispatch({ type: 'SET_ENTITIES', payload: entities });
   },
 });
 ```
@@ -205,8 +202,9 @@ useEffect(() => {
   // 初始化同步配置
   initSyncConfigs();
   
-  // 启动自动同步（每30秒同步一次）
-  syncService.startAutoSync(30000);
+  // 注意：日志已移除本地缓存同步机制，不再启动自动同步
+  // 如果需要为其他实体类型启动自动同步，可以取消下面的注释
+  // syncService.startAutoSync(30000);
   
   // 清理函数：停止自动同步
   return () => {
@@ -229,7 +227,7 @@ useEffect(() => {
 await syncService.syncAllPendingEntities();
 
 // 同步特定类型的实体
-await syncService.syncAllPendingEntities('journal');
+await syncService.syncAllPendingEntities('yourEntity');
 ```
 
 ## 配置同步服务
@@ -238,25 +236,27 @@ await syncService.syncAllPendingEntities('journal');
 
 在 `frontend/services/sync/syncConfig.ts` 中注册实体类型的同步配置：
 
+**注意：日志已移除本地缓存同步机制，不再在此注册。**
+
 ```typescript
-syncService.registerSyncConfig<JournalEntry>({
-  entityType: 'journal',
-  storageKey: 'journal_entries',
-  createApi: async (entity: JournalEntry, token: string) => {
+syncService.registerSyncConfig<YourEntity>({
+  entityType: 'yourEntity',
+  storageKey: 'your_entities',
+  createApi: async (entity: YourEntity, token: string) => {
     // 创建API调用
-    return await journalApi.createJournalEntry(apiData, token);
+    return await yourApi.createEntity(apiData, token);
   },
-  updateApi: async (id: string, entity: Partial<JournalEntry>, token: string) => {
+  updateApi: async (id: string, entity: Partial<YourEntity>, token: string) => {
     // 更新API调用
-    return await journalApi.updateJournalEntry(id, apiData, token);
+    return await yourApi.updateEntity(id, apiData, token);
   },
   deleteApi: async (id: string, token: string) => {
     // 删除API调用
-    await journalApi.deleteJournalEntry(id, token);
+    await yourApi.deleteEntity(id, token);
   },
   queryApi: async (token: string) => {
     // 查询API调用
-    return await journalApi.getAllJournalEntries(token);
+    return await yourApi.getAllEntities(token);
   },
   onEntityUpdated: (entity) => {
     // 实体更新后的回调
@@ -283,15 +283,15 @@ value: JSON.stringify(entity)
 
 例如：
 ```
-key: sync_journal_6cc38b55-a177-4d18-ac36-618fd5e1bff1
-value: {"id":"6cc38b55-a177-4d18-ac36-618fd5e1bff1","title":"标题","syncStatus":1,...}
+key: sync_yourEntity_6cc38b55-a177-4d18-ac36-618fd5e1bff1
+value: {"id":"6cc38b55-a177-4d18-ac36-618fd5e1bff1","name":"名称","syncStatus":1,...}
 ```
 
 ### 加载实体
 
 ```typescript
 // 从本地存储加载所有实体
-const entities = syncService.loadAllEntitiesFromLocal<JournalEntry>('journal');
+const entities = syncService.loadAllEntitiesFromLocal<YourEntity>('yourEntity');
 ```
 
 ## 重要注意事项
@@ -396,7 +396,7 @@ if (journalEntryDTO.getInsight() != null) {
 
 ```typescript
 try {
-  await syncService.syncEntity('journal', entity);
+  await syncService.syncEntity('yourEntity', entity);
 } catch (error) {
   // 同步失败，实体会被标记为 syncStatus = -1
   // 可以在UI中显示错误提示
@@ -408,12 +408,12 @@ try {
 
 ```typescript
 // 检查实体同步状态
-const entry = journalEntries.find(e => e.id === entryId);
-if (entry?.syncStatus === 0) {
+const entity = entities.find(e => e.id === entityId);
+if (entity?.syncStatus === 0) {
   // 显示"同步中"状态
-} else if (entry?.syncStatus === -1) {
+} else if (entity?.syncStatus === -1) {
   // 显示"同步失败"状态，可以显示错误信息
-  console.error('同步错误:', entry.syncError);
+  console.error('同步错误:', entity.syncError);
 }
 ```
 
@@ -486,7 +486,7 @@ const localEntities = await syncService.queryEntities('yourEntity', token);
 **解决方案：**
 1. 检查 `onEntitiesQueried` 回调是否正确触发
 2. 查看浏览器控制台的日志
-3. 手动触发查询：`await syncService.queryEntities('journal', token)`
+3. 手动触发查询：`await syncService.queryEntities('yourEntity', token)`
 
 ### 问题：删除后实体仍然存在
 
