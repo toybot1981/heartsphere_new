@@ -27,6 +27,26 @@ export const MessageList: React.FC<MessageListProps> = ({
     loadMessages();
   }, [category, filter, page, token]);
 
+  // 监听消息更新事件（删除、标记等）
+  useEffect(() => {
+    const handleMessageUpdate = () => {
+      console.log('[MessageList] 收到消息更新事件，刷新列表');
+      setPage(0); // 重置到第一页
+      // 使用setTimeout确保在下一个事件循环中执行，避免状态更新冲突
+      setTimeout(() => {
+        loadMessages();
+      }, 100);
+    };
+
+    window.addEventListener('mailbox:message-updated', handleMessageUpdate);
+    window.addEventListener('mailbox:unread-updated', handleMessageUpdate);
+
+    return () => {
+      window.removeEventListener('mailbox:message-updated', handleMessageUpdate);
+      window.removeEventListener('mailbox:unread-updated', handleMessageUpdate);
+    };
+  }, []);
+
   const loadMessages = async () => {
     setLoading(true);
     try {

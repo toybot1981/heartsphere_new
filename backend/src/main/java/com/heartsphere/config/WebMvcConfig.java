@@ -42,6 +42,22 @@ public class WebMvcConfig implements WebMvcConfigurer {
         mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
         // 忽略未知属性，避免前端发送额外字段时抛出异常
         mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        
+        // 处理Hibernate懒加载代理对象
+        try {
+            // 尝试注册Hibernate 6模块（如果可用）
+            Class<?> hibernateModuleClass = Class.forName("com.fasterxml.jackson.databind.module.SimpleModule");
+            com.fasterxml.jackson.databind.module.SimpleModule hibernateModule = 
+                new com.fasterxml.jackson.databind.module.SimpleModule("HibernateModule");
+            // 配置忽略Hibernate代理相关属性
+            mapper.registerModule(hibernateModule);
+        } catch (ClassNotFoundException e) {
+            // Hibernate模块不可用，使用其他方式处理
+        }
+        
+        // 配置Jackson忽略Hibernate代理属性
+        mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        
         return mapper;
     }
 

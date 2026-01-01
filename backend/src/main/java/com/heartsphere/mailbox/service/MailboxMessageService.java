@@ -39,6 +39,7 @@ public class MailboxMessageService {
     /**
      * 获取消息列表
      */
+    @Transactional(readOnly = true)
     public Page<MailboxMessage> getMessages(Long userId, MessageQueryRequest request) {
         // 构建分页参数
         Pageable pageable = PageRequest.of(
@@ -102,6 +103,16 @@ public class MailboxMessageService {
             // 默认：所有未删除的消息
             result = messageRepository.findNotDeletedByReceiverId(userId, pageable);
         }
+        
+        // 确保所有消息的receiver字段不会触发懒加载
+        // 通过显式设置receiver为null来避免Jackson序列化时访问懒加载代理
+        result.getContent().forEach(msg -> {
+            // 如果receiverId已经有值，就不需要receiver对象
+            // 设置receiver为null，确保不会触发懒加载
+            if (msg.getReceiverId() != null) {
+                msg.setReceiver(null);
+            }
+        });
         
         return result;
     }

@@ -10,6 +10,7 @@ import java.util.List;
 public class ShareConfigDTO {
     private Long id;
     private Long userId;
+    private String ownerName; // 主人昵称
     private String shareCode;
     private String shareType; // "all", "world", "era"
     private String shareStatus; // "active", "paused", "closed"

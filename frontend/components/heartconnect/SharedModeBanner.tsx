@@ -32,7 +32,7 @@ export const SharedModeBanner: React.FC<SharedModeBannerProps> = ({
   
   if (isCollapsed) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-50 to-blue-50 border-b-2 border-blue-300 shadow-md backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-50 to-blue-50 border-t-2 border-blue-300 shadow-md backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 py-2">
           <button
             onClick={() => setIsCollapsed(false)}
@@ -54,7 +54,7 @@ export const SharedModeBanner: React.FC<SharedModeBannerProps> = ({
   }
   
   return (
-    <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-50/95 to-blue-50/95 border-b-2 border-blue-300 shadow-md backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-50/95 to-blue-50/95 border-t-2 border-blue-300 shadow-md backdrop-blur-sm">
       <div className="px-6 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4 flex-1">

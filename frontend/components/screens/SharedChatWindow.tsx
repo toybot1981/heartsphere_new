@@ -276,11 +276,16 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         </div>
       )}
 
-      {/* Header Bar - 与ChatWindow样式一致 */}
+      {/* Header Bar - 与ChatWindow样式一致，返回按钮更明显 */}
       {!uiState.isCinematic && (
         <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center transition-opacity duration-500">
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" onClick={onBack} className="!p-2">
+            <Button 
+              variant="ghost" 
+              onClick={onBack} 
+              className="!p-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg backdrop-blur-sm"
+              title="返回"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -314,7 +319,7 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         </div>
       )}
 
-      {/* 提示信息 */}
+      {/* 提示信息 - 调整位置 */}
       {!uiState.isCinematic && (
         <div className="absolute top-16 left-0 right-0 p-3 bg-blue-900/40 border-b border-blue-500/50 z-10">
           <div className="flex items-start gap-2">
@@ -326,9 +331,9 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         </div>
       )}
 
-      {/* Main Chat Area - 与ChatWindow样式一致 */}
+      {/* Main Chat Area - 与ChatWindow样式一致，增加底部padding避免被SharedModeBanner遮挡 */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${
+        className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-24 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${
           uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'
         }`}
       >

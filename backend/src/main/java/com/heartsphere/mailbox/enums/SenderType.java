@@ -1,5 +1,8 @@
 package com.heartsphere.mailbox.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 发送者类型枚举
  * 
@@ -20,6 +23,7 @@ public enum SenderType {
         this.description = description;
     }
     
+    @JsonValue
     public String getCode() {
         return code;
     }
@@ -28,9 +32,14 @@ public enum SenderType {
         return description;
     }
     
+    @JsonCreator
     public static SenderType fromCode(String code) {
+        if (code == null) {
+            return null;
+        }
+        // 支持枚举名称（大写）和code（小写）
         for (SenderType type : values()) {
-            if (type.code.equals(code)) {
+            if (type.code.equalsIgnoreCase(code) || type.name().equalsIgnoreCase(code)) {
                 return type;
             }
         }

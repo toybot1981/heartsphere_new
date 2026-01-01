@@ -53,6 +53,9 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
 
   // 不再自动检查和提示迁移，直接使用新系统
 
+  // 消息列表刷新key，用于强制刷新
+  const [messageListKey, setMessageListKey] = useState(0);
+
   const handleMessageClick = (message: MailboxMessage) => {
     setSelectedMessage(message);
     setInboxView('detail');
@@ -66,6 +69,14 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
   const handleBackToInboxList = () => {
     setSelectedMessage(null);
     setInboxView('list');
+  };
+
+  // 处理消息更新（删除、标记已读等）
+  const handleMessageUpdate = () => {
+    // 刷新消息列表
+    setMessageListKey(prev => prev + 1);
+    // 刷新未读数量
+    window.dispatchEvent(new CustomEvent('mailbox:unread-updated'));
   };
 
   const handleBackToConversationList = () => {
@@ -300,6 +311,7 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
               <div className="flex-1 overflow-hidden">
                 {inboxView === 'list' ? (
                   <MessageList
+                    key={messageListKey}
                     token={token}
                     category={currentCategory}
                     onMessageClick={handleMessageClick}
@@ -309,7 +321,10 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                     message={selectedMessage}
                     token={token}
                     onBack={handleBackToInboxList}
-                    onUpdate={(updated) => setSelectedMessage(updated)}
+                    onUpdate={(updatedMessage) => {
+                      setSelectedMessage(updatedMessage);
+                      handleMessageUpdate();
+                    }}
                   />
                 ) : null}
               </div>

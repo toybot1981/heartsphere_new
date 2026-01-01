@@ -26,7 +26,19 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
       loadUnreadCount();
       // 定期刷新未读数量（每30秒）
       const interval = setInterval(loadUnreadCount, 30000);
-      return () => clearInterval(interval);
+      
+      // 监听未读数量更新事件
+      const handleUnreadUpdate = () => {
+        console.log('[UnreadBadge] 收到未读数量更新事件，立即刷新');
+        loadUnreadCount();
+      };
+      
+      window.addEventListener('mailbox:unread-updated', handleUnreadUpdate);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('mailbox:unread-updated', handleUnreadUpdate);
+      };
     }
   }, [token]);
 

@@ -1,9 +1,12 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { UserProfile as UserProfileType, JournalEntry, Character, Mail, WorldScene, GameState } from '../types';
 import { constructUserAvatarPrompt } from '../utils/promptConstructors';
 import { showAlert } from '../utils/dialog';
 import { authApi, wechatApi, userProfileApi } from '../services/api';
-import { ShareButton } from './heartconnect/ShareButton';
+import { ShareConfigModal } from './heartconnect/ShareConfigModal';
+import { ShareCodeDisplay } from './heartconnect/ShareCodeDisplay';
+import { heartConnectApi } from '../services/api/heartconnect';
+import type { ShareConfig } from '../services/api/heartconnect/types';
 import { mailboxApi } from '../services/api/mailbox';
 
 interface UserProfileProps {
@@ -63,8 +66,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     profile: true,
     statistics: false, // 默认折叠，只显示入口
     myContent: false,
-    share: false, // 心域共享区域，默认折叠
   });
+  const [showShareConfigModal, setShowShareConfigModal] = useState(false);
+  const [showShareDisplay, setShowShareDisplay] = useState(false);
+  const [shareConfig, setShareConfig] = useState<ShareConfig | null>(null);
   
   // 微信绑定相关状态
   const [showWechatBindModal, setShowWechatBindModal] = useState(false);
@@ -83,7 +88,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [newSystemUnreadCount, setNewSystemUnreadCount] = useState<number>(0);
   
   // 从新系统获取未读数量
-  useEffect(() => {
+  const loadUnreadCount = useCallback(() => {
     const token = localStorage.getItem('auth_token');
     if (token) {
       mailboxApi.getUnreadCount(token)
@@ -101,7 +106,23 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       // 未登录时使用旧系统数据
       setNewSystemUnreadCount(mailbox.filter(m => !m.isRead).length);
     }
-  }, [mailbox]); // 当mailbox变化时也更新
+  }, [mailbox]);
+
+  useEffect(() => {
+    loadUnreadCount();
+    
+    // 监听未读数量更新事件
+    const handleUnreadUpdate = () => {
+      console.log('[UserProfile] 收到未读数量更新事件，立即刷新');
+      loadUnreadCount();
+    };
+    
+    window.addEventListener('mailbox:unread-updated', handleUnreadUpdate);
+    
+    return () => {
+      window.removeEventListener('mailbox:unread-updated', handleUnreadUpdate);
+    };
+  }, [loadUnreadCount]); // 当mailbox变化时也更新
 
   // 计算统计数据
   const statistics = useMemo<UserStatistics>(() => {
@@ -400,7 +421,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     setWechatBindStatus('waiting');
   };
 
-  // 统计卡片组件 - Compact (水平布局)
+  // 统计卡片组件 - 扁平清新风格
   const StatCard: React.FC<{ 
     title: string; 
     value: number | string; 
@@ -409,37 +430,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     onClick?: () => void;
   }> = ({ title, value, icon, color, onClick }) => (
     <div 
-      className={`bg-white/5 rounded-lg p-2 flex items-center justify-between border border-white/5 hover:bg-white/10 transition-all cursor-pointer ${onClick ? 'hover:scale-105' : ''}`}
+      className={`bg-gray-50 rounded-lg p-2.5 flex items-center justify-between border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer ${onClick ? '' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
         {icon && <div className="text-base flex-shrink-0">{icon}</div>}
-        <div className="text-[9px] text-gray-400 truncate">{title}</div>
+        <div className="text-xs text-gray-600 truncate">{title}</div>
       </div>
-      <div className={`text-base font-bold ${color} flex-shrink-0 ml-1`}>{value}</div>
+      <div className={`text-base font-semibold ${color} flex-shrink-0 ml-1`}>{value}</div>
     </div>
   );
 
   return (
-    <div className="h-full bg-black pb-32 overflow-y-auto">
-      {/* 返回按钮（PC端显示） */}
-      {onBack && (
-        <div className="fixed top-6 left-6 z-20">
-          <button
-            onClick={onBack}
-            className="p-3 text-slate-400 hover:text-white bg-slate-900/30 hover:bg-slate-800/50 rounded-full transition-all backdrop-blur-sm hover:scale-105"
-            title="返回"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-          </button>
-        </div>
-      )}
-      
+    <div className="h-full bg-gray-50 pb-32 overflow-y-auto">
       {/* Header Profile Card */}
-      <div className="p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-900/40 rounded-b-xl shadow-2xl border-b border-white/5">
-        <div className="flex items-center gap-2.5 mb-3">
+      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-white border-b border-gray-200">
+        {/* 返回按钮（在Header内部，避免遮挡头像） */}
+        {onBack && (
+          <div className="mb-3">
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200"
+              title="返回"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+            </button>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-3 mb-4">
           <div className="relative group" onClick={() => fileInputRef.current?.click()}>
             <input 
               type="file" 
@@ -448,37 +469,35 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               accept="image/*" 
               className="hidden" 
             />
-            <div className="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px]">
-              <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
-                {isUpdatingAvatar ? (
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                ) : userProfile.avatarUrl ? (
-                  <img src={userProfile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-white">{userProfile.nickname[0]?.toUpperCase()}</span>
-                )}
-              </div>
+            <div className="w-16 h-16 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center overflow-hidden">
+              {isUpdatingAvatar ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+              ) : userProfile.avatarUrl ? (
+                <img src={userProfile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-semibold text-gray-600">{userProfile.nickname[0]?.toUpperCase()}</span>
+              )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-gray-800 rounded-full p-1.5 border border-white/10 shadow-lg cursor-pointer hover:bg-gray-700 transition-colors">
+            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 border-2 border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
               <span className="text-xs">📷</span>
             </div>
           </div>
           
           <div className="flex-1">
             {isEditingNickname ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={editedNickname}
                   onChange={(e) => setEditedNickname(e.target.value)}
                   onBlur={handleNicknameSave}
                   onKeyPress={(e) => e.key === 'Enter' && handleNicknameSave()}
-                  className="bg-gray-800 border border-pink-500 rounded px-2.5 py-0.5 text-base font-bold text-white focus:outline-none"
+                  className="bg-white border-2 border-blue-500 rounded-lg px-3 py-1 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300"
                   autoFocus
                 />
                 <button
                   onClick={handleNicknameSave}
-                  className="text-green-400 hover:text-green-300"
+                  className="text-green-600 hover:text-green-700 text-lg"
                 >
                   ✓
                 </button>
@@ -487,37 +506,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     setEditedNickname(userProfile.nickname);
                     setIsEditingNickname(false);
                   }}
-                  className="text-red-400 hover:text-red-300"
+                  className="text-red-500 hover:text-red-600 text-lg"
                 >
                   ✕
                 </button>
               </div>
             ) : (
               <h2 
-                className="text-lg font-bold text-white cursor-pointer hover:text-pink-400 transition-colors"
+                className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => setIsEditingNickname(true)}
               >
                 {userProfile.nickname}
               </h2>
             )}
-            <p className="text-[10px] text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 mt-1">
               {userProfile.isGuest ? '访客身份 (未绑定)' : '已连接至心域网络'}
             </p>
             {userProfile.phoneNumber && (
-              <p className="text-[10px] text-gray-500 mt-0.5">{userProfile.phoneNumber}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{userProfile.phoneNumber}</p>
             )}
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-2 mt-2">
               {userProfile.isGuest && (
                 <button 
                   onClick={onOpenSettings} 
-                  className="text-[9px] bg-pink-600/20 text-pink-400 px-1.5 py-0.5 rounded-full border border-pink-600/30 hover:bg-pink-600/30 transition-colors"
+                  className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-lg border border-pink-200 hover:bg-pink-100 transition-colors"
                 >
                   绑定账号
                 </button>
               )}
               <button 
                 onClick={handleCopyPrompt} 
-                className="text-[9px] bg-indigo-600/20 text-indigo-400 px-1.5 py-0.5 rounded-full border border-indigo-600/30 hover:bg-indigo-600/30 transition-colors"
+                className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
               >
                 复制头像 Prompt
               </button>
@@ -525,76 +544,76 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           </div>
         </div>
 
-        {/* Stats Grid - Compact */}
-        <div className="grid grid-cols-3 gap-1.5 mt-2">
+        {/* Stats Grid - 扁平清新风格 */}
+        <div className="grid grid-cols-3 gap-2 mt-3">
           <StatCard 
             title="日记碎片" 
             value={statistics.journalEntriesCount} 
             icon="📔"
-            color="text-pink-400"
+            color="text-pink-600"
             onClick={onNavigateToJournal}
           />
           <StatCard 
             title="遇见灵魂" 
             value={statistics.charactersCount} 
             icon="👥"
-            color="text-indigo-400"
+            color="text-indigo-600"
           />
           <StatCard 
             title="时光信件" 
             value={statistics.totalMails} 
             icon={statistics.unreadMails > 0 ? '📬' : '📭'}
-            color="text-emerald-400"
+            color="text-emerald-600"
           />
         </div>
       </div>
 
-      {/* 详细统计区域 - Compact */}
-      <div className="p-3">
+      {/* 详细统计区域 - 扁平清新风格 */}
+      <div className="p-4">
         <div 
-          className="bg-gray-900/50 rounded-lg border border-gray-800 mb-2 cursor-pointer"
+          className="bg-white rounded-lg border border-gray-200 mb-3 cursor-pointer hover:border-gray-300 transition-colors"
           onClick={() => toggleSection('statistics')}
         >
-          <div className="p-2 flex items-center justify-between">
-            <h3 className="text-xs font-bold text-white">📊 数据统计</h3>
-            <span className="text-gray-500 text-xs">{expandedSections.statistics ? '▼' : '▶'}</span>
+          <div className="p-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">📊 数据统计</h3>
+            <span className="text-gray-400 text-sm">{expandedSections.statistics ? '▼' : '▶'}</span>
           </div>
           
           {expandedSections.statistics && (
-            <div className="p-2 pt-0 space-y-2">
+            <div className="p-3 pt-0 space-y-3">
               {/* 心域探索统计 */}
               <div>
-                <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">心域探索</h4>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <StatCard title="访问场景" value={statistics.scenesCount} icon="🌍" color="text-blue-400" />
-                  <StatCard title="对话轮数" value={statistics.totalMessages} icon="💬" color="text-purple-400" />
-                  <StatCard title="活跃天数" value={statistics.activeDays} icon="📅" color="text-yellow-400" />
-                  <StatCard title="互动角色" value={statistics.charactersCount} icon="👤" color="text-pink-400" />
+                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">心域探索</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <StatCard title="访问场景" value={statistics.scenesCount} icon="🌍" color="text-blue-600" />
+                  <StatCard title="对话轮数" value={statistics.totalMessages} icon="💬" color="text-purple-600" />
+                  <StatCard title="活跃天数" value={statistics.activeDays} icon="📅" color="text-yellow-600" />
+                  <StatCard title="互动角色" value={statistics.charactersCount} icon="👤" color="text-pink-600" />
                 </div>
               </div>
 
               {/* 内容创作统计 */}
               <div>
-                <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">内容创作</h4>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <StatCard title="自定义角色" value={statistics.customCharactersCount} icon="🎭" color="text-indigo-400" />
-                  <StatCard title="自定义场景" value={statistics.customScenesCount} icon="🎬" color="text-cyan-400" />
-                  <StatCard title="剧本创作" value={statistics.customScriptsCount} icon="📝" color="text-green-400" />
-                  <StatCard title="日记条目" value={statistics.journalEntriesCount} icon="📔" color="text-pink-400" />
+                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">内容创作</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <StatCard title="自定义角色" value={statistics.customCharactersCount} icon="🎭" color="text-indigo-600" />
+                  <StatCard title="自定义场景" value={statistics.customScenesCount} icon="🎬" color="text-cyan-600" />
+                  <StatCard title="剧本创作" value={statistics.customScriptsCount} icon="📝" color="text-green-600" />
+                  <StatCard title="日记条目" value={statistics.journalEntriesCount} icon="📔" color="text-pink-600" />
                 </div>
               </div>
 
               {/* 社交互动统计 */}
               <div>
-                <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">社交互动</h4>
-                <div className="grid grid-cols-2 gap-1.5">
+                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">社交互动</h4>
+                <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <StatCard title="时光信件" value={statistics.totalMails} icon="📭" color="text-emerald-400" />
+                    <StatCard title="时光信件" value={statistics.totalMails} icon="📭" color="text-emerald-600" />
                     {statistics.unreadMails > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
                     )}
                   </div>
-                  <StatCard title="未读信件" value={statistics.unreadMails} icon="📬" color="text-red-400" />
+                  <StatCard title="未读信件" value={statistics.unreadMails} icon="📬" color="text-red-600" />
                 </div>
               </div>
             </div>
@@ -603,34 +622,34 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
         {/* 我的内容区域 */}
         <div 
-          className="bg-gray-900/50 rounded-xl border border-gray-800 mb-3 cursor-pointer"
+          className="bg-white rounded-lg border border-gray-200 mb-3 cursor-pointer hover:border-gray-300 transition-colors"
           onClick={() => toggleSection('myContent')}
         >
           <div className="p-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">📚 我的内容</h3>
-            <span className="text-gray-500">{expandedSections.myContent ? '▼' : '▶'}</span>
+            <h3 className="text-sm font-semibold text-gray-900">📚 我的内容</h3>
+            <span className="text-gray-400 text-sm">{expandedSections.myContent ? '▼' : '▶'}</span>
           </div>
           
           {expandedSections.myContent && (
-            <div className="p-3 pt-0 space-y-3">
+            <div className="p-3 pt-0 space-y-3 border-t border-gray-200">
               {/* 我的场景 */}
               {myContent.customScenes.length > 0 && (
                 <div>
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">我的场景 ({myContent.customScenes.length})</h4>
-                  <div className="space-y-1.5">
+                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">我的场景 ({myContent.customScenes.length})</h4>
+                  <div className="space-y-2">
                     {myContent.customScenes.slice(0, 5).map(scene => (
                       <div
                         key={scene.id}
-                        className="bg-gray-800/50 rounded-lg p-2.5 flex items-center justify-between hover:bg-gray-800 transition-colors cursor-pointer"
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
                         onClick={() => onNavigateToScene?.(scene.id)}
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-3">
                           {scene.imageUrl && (
-                            <img src={scene.imageUrl} alt={scene.name} className="w-9 h-9 rounded-lg object-cover" />
+                            <img src={scene.imageUrl} alt={scene.name} className="w-10 h-10 rounded-lg object-cover" />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-white">{scene.name}</p>
-                            <p className="text-xs text-gray-400">{scene.description?.slice(0, 30)}...</p>
+                            <p className="text-sm font-medium text-gray-900">{scene.name}</p>
+                            <p className="text-xs text-gray-500">{scene.description?.slice(0, 30)}...</p>
                           </div>
                         </div>
                         <span className="text-gray-600">→</span>
@@ -643,24 +662,24 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               {/* 我的角色 */}
               {myContent.customCharacters.length > 0 && (
                 <div>
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">我的角色 ({myContent.customCharacters.length})</h4>
-                  <div className="space-y-1.5">
+                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">我的角色 ({myContent.customCharacters.length})</h4>
+                  <div className="space-y-2">
                     {myContent.customCharacters.slice(0, 5).map(({ character, sceneId }) => (
                       <div
                         key={character.id}
-                        className="bg-gray-800/50 rounded-lg p-2.5 flex items-center justify-between hover:bg-gray-800 transition-colors cursor-pointer"
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
                         onClick={() => onNavigateToCharacter?.(character.id, sceneId)}
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-3">
                           {character.avatarUrl && (
-                            <img src={character.avatarUrl} alt={character.name} className="w-9 h-9 rounded-full object-cover" />
+                            <img src={character.avatarUrl} alt={character.name} className="w-10 h-10 rounded-full object-cover" />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-white">{character.name}</p>
-                            <p className="text-xs text-gray-400">{character.bio?.slice(0, 30)}...</p>
+                            <p className="text-sm font-medium text-gray-900">{character.name}</p>
+                            <p className="text-xs text-gray-500">{character.bio?.slice(0, 30)}...</p>
                           </div>
                         </div>
-                        <span className="text-gray-600">→</span>
+                        <span className="text-gray-400">→</span>
                       </div>
                     ))}
                   </div>
@@ -670,16 +689,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               {/* 最近日记 */}
               {myContent.recentJournalEntries.length > 0 && (
                 <div>
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">最近日记</h4>
-                  <div className="space-y-1.5">
+                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">最近日记</h4>
+                  <div className="space-y-2">
                     {myContent.recentJournalEntries.map(entry => (
                       <div
                         key={entry.id}
-                        className="bg-gray-800/50 rounded-lg p-2.5 hover:bg-gray-800 transition-colors cursor-pointer"
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
                         onClick={onNavigateToJournal}
                       >
-                        <p className="text-sm font-medium text-white">{entry.title}</p>
-                        <p className="text-xs text-gray-400 mt-1">{new Date(entry.timestamp).toLocaleDateString()}</p>
+                        <p className="text-sm font-medium text-gray-900">{entry.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(entry.timestamp).toLocaleDateString()}</p>
                       </div>
                     ))}
                   </div>
@@ -689,56 +708,53 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           )}
         </div>
 
-        {/* 心域连接区域 - 更显著的双按钮布局 */}
-        <div className="mb-3 space-y-2">
-          {/* 打开共享心域 - 主要入口，更显著 */}
+        {/* 心域连接区域 - 左右并列，扁平清新风格 */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          {/* 打开共享心域 - 左侧 */}
           {onOpenQuickConnect && (
             <button
               onClick={onOpenQuickConnect}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-4 rounded-xl flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-95 transition-all border border-blue-400/30"
+              className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
             >
               <span className="text-2xl">🌟</span>
-              <span className="text-base">打开共享心域</span>
-              <span className="text-sm opacity-80">探索他人的心域世界</span>
+              <span className="text-sm">打开共享心域</span>
+              <span className="text-xs text-blue-600">探索他人的心域</span>
             </button>
           )}
           
-          {/* 心域共享 - 分享自己的心域 */}
-          <div 
-            className="bg-gray-900/50 rounded-xl border border-gray-800"
+          {/* 心域共享 - 右侧，样式与左侧一致 */}
+          <button
+            onClick={() => setShowShareConfigModal(true)}
+            className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
           >
-            <div 
-              className="p-3 flex items-center justify-between cursor-pointer"
-              onClick={() => toggleSection('share')}
-            >
-              <h3 className="text-sm font-bold text-white">🔗 心域共享</h3>
-              <span className="text-gray-500">{expandedSections.share ? '▼' : '▶'}</span>
-            </div>
-            
-            {expandedSections.share && (
-              <div className="p-3 pt-0" onClick={(e) => e.stopPropagation()}>
-                <p className="text-xs text-gray-400 mb-3">
-                  分享你的心域，让其他人可以体验你的世界和场景
-                </p>
-                <ShareButton variant="button" className="w-full" />
-              </div>
-            )}
-          </div>
+            <span className="text-2xl">🔗</span>
+            <span className="text-sm">心域共享</span>
+            <span className="text-xs text-blue-600">分享你的心域</span>
+          </button>
         </div>
+        
+        {/* 共享配置模态框 */}
+        <ShareConfigModal
+          isOpen={showShareConfigModal}
+          onClose={() => setShowShareConfigModal(false)}
+          onSuccess={() => {
+            setShowShareConfigModal(false);
+          }}
+        />
 
         {/* 快捷操作 */}
-        <div className="space-y-1.5">
-          <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1 mb-2">系统选项</h3>
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wider px-1 mb-2">系统选项</h3>
           
           <button 
             onClick={onOpenSettings} 
-            className="w-full bg-gray-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between group hover:bg-gray-800 active:scale-95 transition-all"
+            className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 p-3 rounded-lg flex items-center justify-between group hover:bg-gray-50 transition-all"
           >
-            <div className="flex items-center gap-2.5">
-              <span className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors text-sm">⚙️</span>
-              <span className="text-gray-200 font-medium text-sm">设置与模型配置</span>
+            <div className="flex items-center gap-3">
+              <span className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600 group-hover:bg-indigo-100 transition-colors text-sm">⚙️</span>
+              <span className="text-gray-900 font-medium text-sm">设置与模型配置</span>
             </div>
-            <span className="text-gray-600">→</span>
+            <span className="text-gray-400">→</span>
           </button>
         </div>
 
@@ -749,11 +765,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               e.stopPropagation();
               onLogout();
             }} 
-            className="w-full py-3 text-red-500/80 font-bold text-sm bg-red-900/10 rounded-xl border border-red-900/20 hover:bg-red-900/20 hover:text-red-400 active:scale-95 transition-all cursor-pointer"
+            className="w-full py-3 text-red-600 font-semibold text-sm bg-red-50 rounded-lg border-2 border-red-200 hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer"
           >
             退出登录
           </button>
-          <p className="text-center text-[10px] text-gray-700 mt-3">
+          <p className="text-center text-xs text-gray-400 mt-3">
             HeartSphere v1.0.3
           </p>
         </div>

@@ -8,6 +8,7 @@
 export interface ShareConfig {
   id: number;
   userId: number;
+  ownerName?: string; // 主人昵称
   shareCode: string;
   shareType: 'all' | 'world' | 'era';
   shareStatus: 'active' | 'paused' | 'closed';

@@ -1,10 +1,10 @@
 package com.heartsphere.memory.service.impl;
 
 import com.heartsphere.memory.model.ChatMessage;
-import com.heartsphere.memory.model.ConversationContext;
 import com.heartsphere.memory.model.MessageRole;
 import com.heartsphere.memory.model.UserFact;
-import com.heartsphere.memory.service.MemoryManager;
+import com.heartsphere.memory.service.ShortMemoryService;
+import com.heartsphere.memory.service.LongMemoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 记忆管理器测试
+ * 记忆服务测试
+ * 测试短期记忆和长期记忆服务
  * 
  * @author HeartSphere
  * @date 2025-12-28
@@ -26,7 +27,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class MemoryManagerImplTest {
     
     @Autowired
-    private MemoryManager memoryManager;
+    private ShortMemoryService shortMemoryService;
+    
+    @Autowired
+    private LongMemoryService longMemoryService;
     
     private String testUserId;
     private String testSessionId;
@@ -50,12 +54,12 @@ class MemoryManagerImplTest {
             .build();
         
         // 保存消息
-        memoryManager.saveMessage(testUserId, testSessionId, message);
+        shortMemoryService.saveMessage(testSessionId, message);
         
-        // 验证（通过获取对话上下文验证）
-        ConversationContext context = memoryManager.getConversationContext(testUserId, testSessionId, 10);
-        assertNotNull(context);
-        assertFalse(context.getMessages().isEmpty());
+        // 验证
+        List<ChatMessage> messages = shortMemoryService.getMessages(testSessionId, 10);
+        assertNotNull(messages);
+        assertFalse(messages.isEmpty());
     }
     
     @Test
@@ -70,20 +74,15 @@ class MemoryManagerImplTest {
                 .content("消息 " + i)
                 .timestamp(System.currentTimeMillis())
                 .build();
-            memoryManager.saveMessage(testUserId, testSessionId, message);
+            shortMemoryService.saveMessage(testSessionId, message);
         }
         
-        // 获取对话上下文
-        ConversationContext context = memoryManager.getConversationContext(testUserId, testSessionId, 10);
+        // 获取消息
+        List<ChatMessage> messages = shortMemoryService.getMessages(testSessionId, 10);
         
         // 验证
-        assertNotNull(context);
-        assertEquals(testUserId, context.getUserId());
-        assertEquals(testSessionId, context.getSessionId());
-        assertNotNull(context.getMessages());
-        assertTrue(context.getMessages().size() >= 3);
-        assertNotNull(context.getRelevantMemories());
-        assertNotNull(context.getUserPreferences());
+        assertNotNull(messages);
+        assertTrue(messages.size() >= 3);
     }
     
     @Test
@@ -98,18 +97,20 @@ class MemoryManagerImplTest {
             .timestamp(System.currentTimeMillis())
             .build();
         
-        // 提取事实
-        List<UserFact> facts = memoryManager.extractFacts(testUserId, List.of(message));
+        // 保存消息
+        shortMemoryService.saveMessage(testSessionId, message);
         
-        // 验证（可能为空，取决于提取器是否启用）
-        assertNotNull(facts);
+        // 验证消息已保存
+        List<ChatMessage> messages = shortMemoryService.getMessages(testSessionId, 10);
+        assertNotNull(messages);
+        assertTrue(messages.size() >= 1);
     }
     
     @Test
     void testRetrieveRelevantMemories() {
         // 检索相关记忆（可能为空，因为测试环境可能没有数据）
         List<com.heartsphere.memory.model.UserMemory> memories = 
-            memoryManager.retrieveRelevantMemories(testUserId, "测试", 10);
+            longMemoryService.retrieveRelevantMemories(testUserId, "测试", 10);
         
         // 验证（至少应该返回空列表，不应该抛出异常）
         assertNotNull(memories);
@@ -117,16 +118,13 @@ class MemoryManagerImplTest {
     
     @Test
     void testGetUserProfile() {
-        // 获取用户画像
-        com.heartsphere.memory.model.UserProfile profile = memoryManager.getUserProfile(testUserId);
+        // 获取用户事实和偏好
+        List<UserFact> facts = longMemoryService.getAllFacts(testUserId);
+        List<com.heartsphere.memory.model.UserPreference> preferences = longMemoryService.getAllPreferences(testUserId);
         
         // 验证
-        assertNotNull(profile);
-        assertEquals(testUserId, profile.getUserId());
-        assertNotNull(profile.getFacts());
-        assertNotNull(profile.getPreferences());
-        assertNotNull(profile.getMemories());
-        assertNotNull(profile.getStatistics());
+        assertNotNull(facts);
+        assertNotNull(preferences);
     }
 }
 

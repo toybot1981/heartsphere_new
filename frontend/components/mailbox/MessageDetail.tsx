@@ -63,6 +63,10 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
 
     try {
       await mailboxApi.deleteMessage(message.id, token);
+      // 触发消息更新事件，通知列表刷新
+      window.dispatchEvent(new CustomEvent('mailbox:message-updated'));
+      // 触发未读数量更新
+      window.dispatchEvent(new CustomEvent('mailbox:unread-updated'));
       onBack();
     } catch (error) {
       console.error('删除消息失败:', error);

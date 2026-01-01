@@ -28,20 +28,22 @@ public interface MailboxMessageRepository extends JpaRepository<MailboxMessage, 
     Page<MailboxMessage> findByReceiverIdOrderByCreatedAtDesc(Long receiverId, Pageable pageable);
     
     /**
-     * 根据接收者ID和分类查找消息
+     * 根据接收者ID和分类查找消息（未删除）
      */
+    @Query("SELECT m FROM MailboxMessage m WHERE m.receiverId = :receiverId AND m.messageCategory = :category AND m.deletedAt IS NULL ORDER BY m.createdAt DESC")
     Page<MailboxMessage> findByReceiverIdAndMessageCategoryOrderByCreatedAtDesc(
-        Long receiverId, 
-        MessageCategory category, 
+        @Param("receiverId") Long receiverId, 
+        @Param("category") MessageCategory category, 
         Pageable pageable
     );
     
     /**
-     * 根据接收者ID和已读状态查找消息
+     * 根据接收者ID和已读状态查找消息（未删除）
      */
+    @Query("SELECT m FROM MailboxMessage m WHERE m.receiverId = :receiverId AND m.isRead = :isRead AND m.deletedAt IS NULL ORDER BY m.createdAt DESC")
     Page<MailboxMessage> findByReceiverIdAndIsReadOrderByCreatedAtDesc(
-        Long receiverId, 
-        Boolean isRead, 
+        @Param("receiverId") Long receiverId, 
+        @Param("isRead") Boolean isRead, 
         Pageable pageable
     );
     
@@ -72,20 +74,22 @@ public interface MailboxMessageRepository extends JpaRepository<MailboxMessage, 
     Optional<MailboxMessage> findByIdAndReceiverId(Long id, Long receiverId);
     
     /**
-     * 根据接收者ID、分类和是否重要查找消息
+     * 根据接收者ID、分类和是否重要查找消息（未删除）
      */
+    @Query("SELECT m FROM MailboxMessage m WHERE m.receiverId = :receiverId AND m.messageCategory = :category AND m.isImportant = :isImportant AND m.deletedAt IS NULL ORDER BY m.createdAt DESC")
     Page<MailboxMessage> findByReceiverIdAndMessageCategoryAndIsImportantOrderByCreatedAtDesc(
-        Long receiverId, 
-        MessageCategory category, 
-        Boolean isImportant, 
+        @Param("receiverId") Long receiverId, 
+        @Param("category") MessageCategory category, 
+        @Param("isImportant") Boolean isImportant, 
         Pageable pageable
     );
     
     /**
-     * 根据接收者ID查找收藏的消息
+     * 根据接收者ID查找收藏的消息（未删除）
      */
+    @Query("SELECT m FROM MailboxMessage m WHERE m.receiverId = :receiverId AND m.isStarred = true AND m.deletedAt IS NULL ORDER BY m.createdAt DESC")
     Page<MailboxMessage> findByReceiverIdAndIsStarredTrueOrderByCreatedAtDesc(
-        Long receiverId, 
+        @Param("receiverId") Long receiverId, 
         Pageable pageable
     );
     
@@ -127,9 +131,10 @@ public interface MailboxMessageRepository extends JpaRepository<MailboxMessage, 
     );
     
     /**
-     * 根据回复的消息ID查找所有回复
+     * 根据回复的消息ID查找所有回复（未删除）
      */
-    List<MailboxMessage> findByReplyToIdOrderByCreatedAtAsc(Long replyToId);
+    @Query("SELECT m FROM MailboxMessage m WHERE m.replyToId = :replyToId AND m.deletedAt IS NULL ORDER BY m.createdAt ASC")
+    List<MailboxMessage> findByReplyToIdOrderByCreatedAtAsc(@Param("replyToId") Long replyToId);
     
     /**
      * 批量查找消息

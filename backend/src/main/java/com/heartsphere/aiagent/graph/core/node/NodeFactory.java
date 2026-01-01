@@ -63,8 +63,7 @@ public class NodeFactory {
             case "dialogue":
                 return createDialogueNode(config);
             case "choice":
-                // TODO: 实现ChoiceNode
-                throw new UnsupportedOperationException("ChoiceNode尚未实现");
+                return createChoiceNode(config);
             case "condition":
                 // TODO: 实现ConditionNode
                 throw new UnsupportedOperationException("ConditionNode尚未实现");
@@ -88,6 +87,14 @@ public class NodeFactory {
     }
     
     /**
+     * 创建选择节点
+     */
+    private GraphEngine.GraphNode createChoiceNode(Map<String, Object> config) {
+        ChoiceNodeConfig nodeConfig = objectMapper.convertValue(config, ChoiceNodeConfig.class);
+        return nodeConfig.toChoiceNode();
+    }
+    
+    /**
      * 从JSON字符串创建对话节点
      */
     public DialogueNode createDialogueNodeFromJson(String json) {
@@ -97,6 +104,19 @@ public class NodeFactory {
         } catch (Exception e) {
             log.error("[NodeFactory] 从JSON创建对话节点失败", e);
             throw new RuntimeException("从JSON创建对话节点失败", e);
+        }
+    }
+    
+    /**
+     * 从JSON字符串创建选择节点
+     */
+    public ChoiceNode createChoiceNodeFromJson(String json) {
+        try {
+            ChoiceNodeConfig config = objectMapper.readValue(json, ChoiceNodeConfig.class);
+            return config.toChoiceNode();
+        } catch (Exception e) {
+            log.error("[NodeFactory] 从JSON创建选择节点失败", e);
+            throw new RuntimeException("从JSON创建选择节点失败", e);
         }
     }
 }

@@ -41,6 +41,7 @@ import { generateAIResponse } from './chat/utils/generateAIResponse';
 import { logger } from '../utils/logger';
 import { getToken } from '../services/api/base/tokenStorage';
 import { mailboxApi } from '../services/api/mailbox';
+import { browserNotificationService } from '../services/mailbox/BrowserNotificationService';
 
 // 类型定义已移至 types/chat.ts
 // 音频解码函数已移至 utils/audio.ts
@@ -96,6 +97,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       const result = await mailboxApi.triggerESoulLetter(token);
       
       if (result.success) {
+        // 显示浏览器通知
+        try {
+          await browserNotificationService.notifyNewMessage(
+            '📧 收到E-SOUL来信',
+            `${character.name}给您发送了一封来信，快去信箱查看吧！`,
+            character.avatarUrl || '/favicon.ico',
+            result.messageId
+          );
+        } catch (notifError) {
+          console.warn('浏览器通知失败:', notifError);
+        }
+        
+        // 触发未读数量刷新事件（通知其他组件刷新）
+        window.dispatchEvent(new CustomEvent('mailbox:unread-updated'));
+        
         showAlert(
           'E-SOUL来信已发送',
           `来信已成功发送到您的信箱！\n消息ID: ${result.messageId || 'N/A'}\n\n请前往信箱查看。`,
@@ -124,7 +140,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // 温度感引擎集成
-  const { engine, state: engineState, isReady: engineReady } = useTemperatureEngine({
+  const { engine, state: engineState, isReady: engineReady, isRunning: engineRunning } = useTemperatureEngine({
     enabled: true,
     plugins: {
       enabled: ['greeting', 'expression', 'dialogue'],
@@ -230,6 +246,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const systemIntegration = useSystemIntegration({
     engine,
     engineReady,
+    engineRunning,
     emotionSystem,
     memorySystem,
     companionSystem,
@@ -321,9 +338,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         // AI动态生成模式：使用AI根据节点prompt生成内容
         logger.debug('[ChatWindow] AI动态节点生成:', { nodeId: node.id, prompt: node.prompt });
         
-        // 检查当前配置模式
-        const config = await AIConfigManager.getUserConfig();
-        
         // 获取节点涉及的角色信息
         let focusedCharacter = character; // 默认使用主角色
         if (node.focusCharacterId && participatingCharacters) {
@@ -333,116 +347,37 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           }
         }
         
-        // 构建系统指令
-        const systemInstruction = buildSystemInstruction(
-          focusedCharacter,
+        // 构建场景上下文（添加到系统指令中）
+        const scenarioContext = customScenario 
+          ? `\n\n[当前场景上下文]\n剧本标题：${customScenario.title}${customScenario.description ? `\n剧本描述：${customScenario.description}` : ''}\n\n[场景节点说明]\n${node.prompt || node.title}\n\n请根据上述场景描述，生成符合角色性格的对话内容和旁白。`
+          : undefined;
+        
+        // 创建虚拟用户消息（用于generateAIResponse）
+        const scenarioUserMsg: Message = {
+          id: `scenario_${node.id}_${Date.now()}`,
+          role: 'user',
+          text: node.prompt || node.title || '请生成这个场景的内容',
+          timestamp: Date.now(),
+        };
+        
+        // 使用generateAIResponse统一处理AI调用（场景模式）
+        // 注意：场景模式不使用记忆系统和温度感引擎
+        await generateAIResponse({
+          userText: node.prompt || node.title || '请生成这个场景的内容',
+          userMsg: scenarioUserMsg,
+          historyWithUserMsg: currentHistory, // 使用当前历史（不包含虚拟用户消息）
+          character: focusedCharacter,
           settings,
           userProfile,
-          customScenario ? `\n\n[当前场景上下文]\n剧本标题：${customScenario.title}${customScenario.description ? `\n剧本描述：${customScenario.description}` : ''}\n\n[场景节点说明]\n${node.prompt || node.title}\n\n请根据上述场景描述，生成符合角色性格的对话内容和旁白。` : undefined
-        );
-        
-        // 转换消息历史（不包含当前节点的内容）
-        const historyMessages = currentHistory.map(msg => ({
-          role: msg.role === 'model' ? 'assistant' : 'user' as 'user' | 'assistant' | 'system',
-          content: msg.text,
-        }));
-        
-        // 使用AI生成内容（流式生成）
-        const currentRequestId = tempBotId;
-        let requestFullResponseText = '';
-        let hasAddedBotMessage = false;
-        
-        if (config.mode === 'unified') {
-          await aiService.generateTextStream(
-            {
-              prompt: node.prompt || node.title || '请生成这个场景的内容',
-              systemInstruction: systemInstruction,
-              messages: historyMessages,
-              temperature: 0.7,
-              maxTokens: 2048,
-            },
-            (chunk) => {
-              try {
-                if (!chunk.done && chunk.content) {
-                  requestFullResponseText += chunk.content;
-                  const msg = { id: currentRequestId, role: 'model' as const, text: requestFullResponseText, timestamp: Date.now() };
-                  
-                  onUpdateHistory(prevHistory => {
-                    try {
-                      if (typeof prevHistory === 'function' || !Array.isArray(prevHistory)) {
-                        return [];
-                      }
-                      
-                      const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
-                      const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
-                      
-                      if (!hasAddedBotMessage && !isLastMsgOurs) {
-                        hasAddedBotMessage = true;
-                        return [...prevHistory, msg];
-                      } else if (isLastMsgOurs) {
-                        hasAddedBotMessage = true;
-                        return [...prevHistory.slice(0, -1), msg];
-                      } else {
-                        hasAddedBotMessage = true;
-                        return [...prevHistory, msg];
-                      }
-                    } catch (error) {
-                      logger.error('[ChatWindow] AI动态节点更新history错误:', error);
-                      return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
-                    }
-                  });
-                } else if (chunk.done) {
-                  setIsLoading(false);
-                }
-              } catch (error) {
-                logger.error('[ChatWindow] AI动态节点处理chunk错误:', error);
-                setIsLoading(false);
-              }
-            }
-          );
-        } else {
-          // 本地配置模式：使用非流式生成（简化实现）
-          try {
-            const response = await aiService.generateText({
-              prompt: node.prompt || node.title || '请生成这个场景的内容',
-              systemInstruction: systemInstruction,
-              messages: historyMessages,
-              temperature: 0.7,
-              maxTokens: 2048,
-            });
-            
-            const nodeContent = response.content || node.prompt || '【场景内容】';
-            const botMsg: Message = {
-              id: tempBotId,
-              role: 'model',
-              text: nodeContent,
-              timestamp: Date.now()
-            };
-            
-            onUpdateHistory(prevHistory => {
-              if (typeof prevHistory === 'function' || !Array.isArray(prevHistory)) {
-                return [botMsg];
-              }
-              return [...prevHistory, botMsg];
-            });
-          } catch (error) {
-            logger.error('[ChatWindow] AI动态节点生成失败（本地模式）:', error);
-            // 如果AI生成失败，回退到使用prompt内容
-            const nodeContent = node.prompt || node.title || '【场景内容】';
-            const botMsg: Message = {
-              id: tempBotId,
-              role: 'model',
-              text: nodeContent,
-              timestamp: Date.now()
-            };
-            onUpdateHistory(prevHistory => {
-              if (typeof prevHistory === 'function' || !Array.isArray(prevHistory)) {
-                return [botMsg];
-              }
-              return [...prevHistory, botMsg];
-            });
-          }
-        }
+          tempBotId,
+          onUpdateHistory,
+          setIsLoading,
+          engine: undefined, // 场景模式不使用温度感引擎
+          engineReady: false,
+          memorySystem: undefined, // 场景模式不使用记忆系统
+          relevantMemories: [], // 场景模式不获取记忆
+          customSystemInstructionSuffix: scenarioContext, // 添加场景上下文
+        });
       } else if (nodeType === 'ending') {
         // 结局节点：显示结局内容
         const endingContent = node.prompt || node.title || '【结局】';
@@ -619,48 +554,36 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           return;
       }
       
-      // 应用选项的状态影响
-      if (option.effects && option.effects.length > 0 && onUpdateScenarioStateData) {
-          const favorabilityUpdates: Record<string, number> = {};
-          const newEvents: string[] = [];
-          const newItems: string[] = [];
+      // 应用选项的状态影响（使用统一的工具函数）
+      if (option.effects && option.effects.length > 0 && onUpdateScenarioStateData && scenarioState) {
+          const updates = applyOptionEffects(option.effects, scenarioState);
           
-          option.effects.forEach(effect => {
-              if (effect.type === 'favorability') {
-                  // 好感度变化
-                  const currentFavorability = scenarioState.favorability?.[effect.target] || 0;
-                  const change = effect.value || 0;
-                  const newValue = Math.max(0, Math.min(100, currentFavorability + change)); // 限制在 0-100 之间
-                  favorabilityUpdates[effect.target] = newValue;
-                  logger.debug(`[ChatWindow] 好感度变化: ${effect.target} ${currentFavorability} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
-              } else if (effect.type === 'event') {
-                  // 触发事件（去重）
-                  if (!scenarioState.events?.includes(effect.target)) {
-                      newEvents.push(effect.target);
-                      logger.debug(`[ChatWindow] 触发事件: ${effect.target}`);
-                  }
-              } else if (effect.type === 'item') {
-                  // 收集物品（去重）
-                  if (!scenarioState.items?.includes(effect.target)) {
-                      newItems.push(effect.target);
-                      logger.debug(`[ChatWindow] 收集物品: ${effect.target}`);
-                  }
+          // 检查是否有任何更新
+          const hasUpdates =
+              (updates.events && updates.events.length > 0) ||
+              (updates.items && updates.items.length > 0) ||
+              (updates.favorability && Object.keys(updates.favorability).length > 0);
+          
+          if (hasUpdates) {
+              // 记录调试信息
+              if (updates.favorability && Object.keys(updates.favorability).length > 0) {
+                  Object.entries(updates.favorability).forEach(([target, newValue]) => {
+                      const current = scenarioState.favorability?.[target] || 0;
+                      const change = newValue - current;
+                      logger.debug(`[ChatWindow] 好感度变化: ${target} ${current} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
+                  });
               }
-          });
-          
-          // 更新状态
-          const updates: { favorability?: Record<string, number>; events?: string[]; items?: string[] } = {};
-          if (Object.keys(favorabilityUpdates).length > 0) {
-              updates.favorability = favorabilityUpdates;
-          }
-          if (newEvents.length > 0) {
-              updates.events = newEvents;
-          }
-          if (newItems.length > 0) {
-              updates.items = newItems;
-          }
-          
-          if (Object.keys(updates).length > 0) {
+              if (updates.events && updates.events.length > 0) {
+                  updates.events.forEach(event => {
+                      logger.debug(`[ChatWindow] 触发事件: ${event}`);
+                  });
+              }
+              if (updates.items && updates.items.length > 0) {
+                  updates.items.forEach(item => {
+                      logger.debug(`[ChatWindow] 收集物品: ${item}`);
+                  });
+              }
+              
               onUpdateScenarioStateData(updates);
           }
       }

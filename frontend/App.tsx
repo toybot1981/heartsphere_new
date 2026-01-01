@@ -1337,8 +1337,8 @@ const AppContent: React.FC = () => {
       {/* 全局对话框 */}
       <GlobalDialogs />
       
-      {/* 共享模式标识栏 */}
-      {isSharedModeActive && shareConfig && (
+      {/* 共享模式标识栏 - 在共享聊天页面时隐藏，避免遮挡 */}
+      {isSharedModeActive && shareConfig && gameState.currentScreen !== 'sharedChat' && (
         <SharedModeBanner
           heartSphereName={shareConfig.shareCode}
           onLeave={() => setShowWarmMessageModal(true)}

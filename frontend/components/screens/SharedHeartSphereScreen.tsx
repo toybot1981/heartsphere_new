@@ -78,16 +78,11 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
         setScenes(worldScenes);
         
         // 获取主人信息（如果有）
-        if (shareConfig.userId) {
-          try {
-            // 尝试从 shareConfig 中获取主人昵称
-            // 如果 shareConfig 中有 ownerName 或 nickname 字段，使用它
-            const ownerNickname = (shareConfig as any).ownerName || (shareConfig as any).nickname || shareConfig.shareCode || '心域主人';
-            setOwnerName(ownerNickname);
-          } catch (err) {
-            console.error('获取主人信息失败:', err);
-            setOwnerName('心域主人');
-          }
+        if (shareConfig.ownerName) {
+          setOwnerName(shareConfig.ownerName);
+        } else if (shareConfig.userId) {
+          // 如果后端没有返回 ownerName，使用默认值
+          setOwnerName('心域主人');
         } else {
           setOwnerName('心域主人');
         }

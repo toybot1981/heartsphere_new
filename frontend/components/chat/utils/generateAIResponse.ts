@@ -24,6 +24,7 @@ interface GenerateAIResponseOptions {
   memorySystem?: any;
   relevantMemories?: any[];
   onComplete?: (fullText: string, requestId: string) => void | Promise<void>;
+  customSystemInstructionSuffix?: string; // 自定义系统指令后缀（用于场景节点等特殊场景）
 }
 
 /**
@@ -45,9 +46,15 @@ export const generateAIResponse = async ({
   memorySystem,
   relevantMemories = [],
   onComplete,
+  customSystemInstructionSuffix,
 }: GenerateAIResponseOptions): Promise<void> => {
   // 构建系统指令（使用统一的工具函数）
   let systemInstruction = buildSystemInstruction(character, settings, userProfile);
+  
+  // 添加自定义系统指令后缀（用于场景节点等特殊场景）
+  if (customSystemInstructionSuffix) {
+    systemInstruction += customSystemInstructionSuffix;
+  }
   
   // 将记忆添加到系统指令中（如果有）
   if (relevantMemories.length > 0) {

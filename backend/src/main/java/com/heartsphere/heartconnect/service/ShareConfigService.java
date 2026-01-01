@@ -339,6 +339,11 @@ public class ShareConfigService {
         dto.setId(config.getId());
         dto.setUserId(config.getUserId());
         dto.setShareCode(config.getShareCode());
+        
+        // 获取主人昵称
+        userRepository.findById(config.getUserId()).ifPresent(user -> {
+            dto.setOwnerName(user.getUsername());
+        });
         dto.setShareType(config.getShareType().name().toLowerCase());
         dto.setShareStatus(config.getShareStatus().name().toLowerCase());
         dto.setAccessPermission(config.getAccessPermission().name().toLowerCase());

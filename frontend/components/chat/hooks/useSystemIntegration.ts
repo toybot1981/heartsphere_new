@@ -10,6 +10,7 @@ import { MemorySource } from '../../../services/memory-system/types/MemoryTypes'
 interface SystemIntegrationProps {
   engine: any | null;
   engineReady: boolean;
+  engineRunning?: boolean; // 引擎实际运行状态
   emotionSystem: any;
   memorySystem: any;
   companionSystem: any;
@@ -27,6 +28,7 @@ interface SystemIntegrationProps {
 export const useSystemIntegration = ({
   engine,
   engineReady,
+  engineRunning,
   emotionSystem,
   memorySystem,
   companionSystem,
@@ -123,7 +125,29 @@ export const useSystemIntegration = ({
    * 计算温度感
    */
   const calculateTemperature = useCallback(async (userText: string) => {
-    if (!engine || !engineReady) return null;
+    // 检查引擎是否就绪和运行
+    if (!engine || !engineReady) {
+      logger.debug('[useSystemIntegration] 温度感引擎未就绪，跳过计算');
+      return null;
+    }
+
+    // 如果提供了 engineRunning 状态，优先使用它
+    if (engineRunning !== undefined && !engineRunning) {
+      logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+      return null;
+    }
+
+    // 否则尝试从引擎获取状态
+    try {
+      const engineState = engine.getState?.();
+      if (engineState && !engineState.isRunning) {
+        logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+        return null;
+      }
+    } catch (error) {
+      logger.debug('[useSystemIntegration] 无法获取引擎状态，跳过计算:', error);
+      return null;
+    }
 
     try {
       const emotion = await engine.analyzeEmotion({ text: userText });
@@ -161,10 +185,15 @@ export const useSystemIntegration = ({
       
       return temperature;
     } catch (error) {
+      // 如果引擎未运行，静默失败，不记录错误
+      if (error instanceof Error && error.message.includes('Engine is not running')) {
+        logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+        return null;
+      }
       logger.error('[useSystemIntegration] 温度感计算失败:', error);
       return null;
     }
-  }, [engine, engineReady, scenarioState, safeHistory]);
+  }, [engine, engineReady, engineRunning, scenarioState, safeHistory]);
 
   /**
    * 获取相关记忆

@@ -3,6 +3,7 @@ import { heartConnectApi } from '../../services/api/heartconnect';
 import { worldApi } from '../../services/api/world';
 import { eraApi } from '../../services/api/scene';
 import { getToken } from '../../services/api/base/tokenStorage';
+import { ShareCodeDisplay } from './ShareCodeDisplay';
 import type { ShareConfig, CreateShareConfigRequest, UpdateShareConfigRequest } from '../../services/api/heartconnect/types';
 import type { World } from '../../services/api/world/types';
 import type { UserEra } from '../../services/api/scene/types';
@@ -21,7 +22,7 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [step, setStep] = useState(1); // 1: 选择共享范围, 2: 权限和描述设置
+  const [step, setStep] = useState(1); // 1: 选择共享范围, 2: 权限和描述设置, 3: 分享预览
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingConfig, setExistingConfig] = useState<ShareConfig | null>(null);
@@ -114,14 +115,21 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
         scopes: shareType !== 'all' ? selectedScopes : undefined,
       };
       
+      let savedConfig: ShareConfig;
       if (existingConfig) {
-        await heartConnectApi.updateShareConfig(existingConfig.id, request);
+        savedConfig = await heartConnectApi.updateShareConfig(existingConfig.id, request);
       } else {
-        await heartConnectApi.createShareConfig(request);
+        savedConfig = await heartConnectApi.createShareConfig(request);
       }
       
+      // 保存成功后，重新加载配置以获取最新数据（包括共享码）
+      const updatedConfig = await heartConnectApi.getMyShareConfig();
+      setExistingConfig(updatedConfig);
+      
+      // 切换到分享预览步骤
+      setStep(3); // 3 表示分享预览步骤
+      
       onSuccess?.();
-      onClose();
     } catch (err: any) {
       setError(err.response?.data?.message || '操作失败，请重试');
     } finally {
@@ -168,7 +176,7 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
               selectedScopes={selectedScopes}
               setSelectedScopes={setSelectedScopes}
             />
-          ) : (
+          ) : step === 2 ? (
             <PermissionStep
               accessPermission={accessPermission}
               setAccessPermission={setAccessPermission}
@@ -179,41 +187,48 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
               shareType={shareType}
               selectedScopes={selectedScopes}
             />
+          ) : (
+            <SharePreviewStep
+              shareConfig={existingConfig}
+              onClose={onClose}
+            />
           )}
         </div>
         
         {/* 底部按钮 */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-700">
-          <div className="text-sm text-gray-400">
-            步骤 {step}/2
+        {step !== 3 && (
+          <div className="flex items-center justify-between p-6 border-t border-gray-700">
+            <div className="text-sm text-gray-400">
+              步骤 {step}/2
+            </div>
+            <div className="flex gap-3">
+              {step === 2 && (
+                <button
+                  onClick={handleBack}
+                  className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+                >
+                  上一步
+                </button>
+              )}
+              {step === 1 ? (
+                <button
+                  onClick={handleNext}
+                  className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                >
+                  下一步
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? '保存中...' : existingConfig ? '更新配置' : '保存并开启共享'}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex gap-3">
-            {step === 2 && (
-              <button
-                onClick={handleBack}
-                className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
-              >
-                上一步
-              </button>
-            )}
-            {step === 1 ? (
-              <button
-                onClick={handleNext}
-                className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-              >
-                下一步
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? '保存中...' : existingConfig ? '更新配置' : '保存并开启共享'}
-              </button>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -531,3 +546,72 @@ const PermissionStep: React.FC<PermissionStepProps> = ({
   );
 };
 
+/**
+ * 分享预览步骤
+ */
+interface SharePreviewStepProps {
+  shareConfig: ShareConfig | null;
+  onClose: () => void;
+}
+
+const SharePreviewStep: React.FC<SharePreviewStepProps> = ({
+  shareConfig,
+  onClose,
+}) => {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!shareConfig) return;
+    
+    setRefreshing(true);
+    try {
+      await heartConnectApi.regenerateShareCode(shareConfig.id);
+      // 重新加载配置
+      const updatedConfig = await heartConnectApi.getMyShareConfig();
+      // 通过 window.location.reload() 来刷新页面以显示新的共享码
+      window.location.reload();
+    } catch (err) {
+      console.error('重新生成共享码失败:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  if (!shareConfig) {
+    return (
+      <div className="text-center py-8 text-gray-400">
+        配置加载中...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="text-6xl mb-4">✅</div>
+        <h3 className="text-2xl font-bold text-white mb-2">
+          共享配置已{shareConfig.shareCode ? '创建' : '更新'}成功！
+        </h3>
+        <p className="text-gray-400">
+          现在你可以分享你的心域了
+        </p>
+      </div>
+
+      {/* 使用 ShareCodeDisplay 组件显示分享信息 */}
+      <ShareCodeDisplay 
+        shareConfig={shareConfig} 
+        onRegenerate={handleRegenerate}
+      />
+
+      {/* 完成按钮 */}
+      <div className="flex justify-center pt-4">
+        <button
+          onClick={onClose}
+          className="px-8 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-semibold"
+        >
+          完成
+        </button>
+      </div>
+    </div>
+  );
+};
