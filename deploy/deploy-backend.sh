@@ -275,7 +275,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://\${DB_HOST:${DB_HOST}}:\${DB_PORT:${DB_PORT}}/\${DB_NAME:${DB_NAME}}?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://\${DB_HOST:${DB_HOST}}:\${DB_PORT:${DB_PORT}}/\${DB_NAME:${DB_NAME}}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: \${DB_USER:${DB_USER}}
     password: \${DB_PASSWORD:${DB_PASSWORD}}
     driver-class-name: com.mysql.cj.jdbc.Driver
