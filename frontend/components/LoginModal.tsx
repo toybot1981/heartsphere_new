@@ -431,21 +431,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
   };
 
   return (
-    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-slate-900 border border-indigo-500/30 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col relative">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in overflow-y-auto">
+      <div className="bg-slate-900 border border-indigo-500/30 rounded-2xl w-full max-w-md max-h-[90vh] shadow-2xl overflow-hidden flex flex-col relative my-auto">
         <button onClick={onCancel} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
-        <div className="p-8 pb-4 text-center">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400">
+        <div className="p-4 sm:p-8 pb-4 text-center flex-shrink-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400">
                 身份连接
             </h2>
-            <p className="text-sm text-slate-400 mt-2">绑定身份以保存记忆、解锁心域全部功能。</p>
+            <p className="text-xs sm:text-sm text-slate-400 mt-2">绑定身份以保存记忆、解锁心域全部功能。</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700 mx-8">
+        <div className="flex border-b border-slate-700 mx-4 sm:mx-8 flex-shrink-0">
             <button 
                 onClick={() => setActiveTab('login')}
                 className={`flex-1 pb-3 text-sm font-bold transition-colors ${activeTab === 'login' ? 'text-white border-b-2 border-pink-500' : 'text-slate-500 hover:text-slate-300'}`}
@@ -466,7 +466,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             </button>
         </div>
 
-        <div className="p-8 pt-6">
+        <div className="p-4 sm:p-8 pt-4 sm:pt-6 overflow-y-auto flex-1 min-h-0">
             {/* 登录表单 */}
             {activeTab === 'login' && (
                 <div className="space-y-5">
@@ -771,7 +771,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             )}
         </div>
         
-        <div className="bg-slate-950 p-4 text-center border-t border-slate-800">
+        <div className="bg-slate-950 p-3 sm:p-4 text-center border-t border-slate-800 flex-shrink-0">
              <p className="text-[10px] text-slate-600">
                  登录即代表您同意 <span 
                    className="text-indigo-400 cursor-pointer hover:underline"

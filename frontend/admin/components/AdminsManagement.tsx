@@ -180,7 +180,15 @@ export const AdminsManagement: React.FC<AdminsManagementProps> = ({
             resetPasswordForm();
         } catch (error: any) {
             console.error('修改密码失败:', error);
-            showAlert('修改密码失败: ' + (error.message || '未知错误'), '修改失败', 'error');
+            // 提取错误消息，优先使用 error.message，如果没有则尝试从响应中提取
+            let errorMessage = '未知错误';
+            if (error?.message) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            }
+            // 显示友好的错误提示
+            showAlert(errorMessage, '修改失败', 'error');
         } finally {
             setLoading(false);
         }

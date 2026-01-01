@@ -109,7 +109,7 @@ npm cache clean --force || {
 
 # 6. 安装/更新依赖
 echo -e "${GREEN}6. 安装/更新项目依赖${NC}"
-npm install || {
+npm install --legacy-peer-deps || {
     echo -e "${RED}错误: 依赖安装失败${NC}"
     exit 1
 }

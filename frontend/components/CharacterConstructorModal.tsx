@@ -6,6 +6,7 @@ import { imageApi, characterApi } from '../services/api';
 import { Button } from './Button';
 import { ResourcePicker } from './ResourcePicker';
 import { showAlert } from '../utils/dialog';
+import { constructCharacterBackgroundPrompt, constructCharacterAvatarPrompt } from '../utils/promptConstructors';
 
 interface CharacterConstructorModalProps {
   scene: WorldScene;
@@ -632,7 +633,6 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              setUploadError('');
                                              try {
                                                  // 生成背景
-                                                 const { constructCharacterBackgroundPrompt } = await import('../utils/promptConstructors');
                                                  const prompt = constructCharacterBackgroundPrompt(
                                                      characterToEdit.name,
                                                      characterToEdit.bio || '',

@@ -5,6 +5,7 @@ import { aiService } from '../services/ai/AIService';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
 import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
+import { sharedApi } from '../services/api/heartconnect';
 import { getWorldIdForSceneId, initCustomSceneMappings } from '../utils/sceneMapping';
 import { useJournalHandlers } from '../hooks/useJournalHandlers';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -137,7 +138,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 let worlds, eras;
                 if (isSharedMode) {
                     // 共享模式：调用共享模式专用接口
-                    const { sharedApi } = await import('../services/api/heartconnect');
                     worlds = await sharedApi.getSharedWorlds(token);
                     eras = await sharedApi.getSharedEras(token);
                 } else {
@@ -254,17 +254,31 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     const handleProfileSubmit = () => {
         if (!profileNickname.trim()) return;
+        // 确保关闭访客昵称输入框，并且不触发登录框
+        setShowGuestNicknameModal(false);
+        setProfileNickname('');
+        // 设置访客用户并切换到realWorld，不触发任何登录相关的逻辑
         setGameState(prev => ({
             ...prev,
             userProfile: { nickname: profileNickname.trim(), avatarUrl: '', isGuest: true, id: `guest_${Date.now()}` },
             currentScreen: 'realWorld'
         }));
-        setShowGuestNicknameModal(false);
-        setProfileNickname('');
     };
 
     const handleLogout = () => {
-        // Construct a clean state but preserve settings (API keys etc)
+        console.log('[MobileApp] 开始退出登录');
+        
+        // 1. 清除认证token
+        localStorage.removeItem('auth_token');
+        console.log('[MobileApp] 已清除 auth_token');
+        
+        // 2. 清除所有UI状态
+        setShowSettings(false);
+        setShowLoginModal(false);
+        setShowGuestNicknameModal(false);
+        setProfileNickname('');
+        
+        // 3. Construct a clean state but preserve settings (API keys etc)
         const cleanState: GameState = {
             ...DEFAULT_STATE,
             settings: gameState.settings, 
@@ -272,15 +286,15 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             userProfile: null
         };
 
-        // 1. Update React State immediately to show login screen
-        setShowSettings(false);
+        // 4. Update React State immediately to show login screen
         setGameState(cleanState);
+        console.log('[MobileApp] 已重置游戏状态');
 
-        // 2. Persist the clean state asynchronously (Fire and forget)
+        // 5. Persist the clean state asynchronously (Fire and forget)
         storageService.saveState(cleanState).then(() => {
-            console.log("Logged out and state saved.");
+            console.log("[MobileApp] 退出登录完成，状态已保存");
         }).catch(err => {
-            console.error("Logout save failed", err);
+            console.error("[MobileApp] 退出登录保存状态失败", err);
         });
     };
 
@@ -887,8 +901,13 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                         以访客身份进入
                     </button>
                     <button 
-                        onClick={() => setShowLoginModal(true)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('[MobileApp] 点击登录账户按钮');
+                            setShowLoginModal(true);
+                        }}
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-all touch-manipulation"
                     >
                         登录账户
                     </button>
@@ -897,8 +916,8 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 
                 {/* 访客昵称输入对话框 */}
                 {showGuestNicknameModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 max-w-sm w-full shadow-2xl">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+                        <div className="bg-slate-900 rounded-2xl border border-slate-700 p-4 sm:p-6 max-w-sm w-full shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
                             <h3 className="text-xl font-bold text-white mb-4">访客体验</h3>
                             <p className="text-sm text-slate-400 mb-6">输入你的昵称，以访客身份进入体验</p>
                 <input 
@@ -934,6 +953,22 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                             </div>
                         </div>
                     </div>
+                )}
+                
+                {/* 登录注册模态框 - 在profileSetup页面也需要显示 */}
+                {showLoginModal && (
+                    <LoginModal
+                        onLoginSuccess={handleLoginSuccess}
+                        onCancel={() => {
+                            console.log('[MobileApp] 关闭登录模态框');
+                            setShowLoginModal(false);
+                        }}
+                        initialNickname={
+                            profileNickname.trim()
+                                ? profileNickname.trim()
+                                : undefined
+                        }
+                    />
                 )}
             </div>
         );

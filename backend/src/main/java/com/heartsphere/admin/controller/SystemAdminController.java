@@ -4,12 +4,14 @@ import com.heartsphere.admin.dto.*;
 import com.heartsphere.admin.entity.SystemAdmin;
 import com.heartsphere.admin.service.AdminAuthService;
 import com.heartsphere.admin.service.SystemAdminService;
+import com.heartsphere.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -154,27 +156,115 @@ public class SystemAdminController {
             @PathVariable Long id,
             @RequestBody ChangePasswordDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        logger.info("========== 修改密码请求 ==========");
+        logger.info("管理员ID: {}", id);
+        
         try {
+            // 验证授权头
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                logger.error("授权头无效或为空");
                 throw new RuntimeException("未授权访问");
             }
 
+            // 验证请求体
+            if (dto == null) {
+                logger.error("请求体为 null");
+                throw new RuntimeException("请求体不能为空");
+            }
+            logger.info("请求体验证通过");
+            
+            if (dto.getOldPassword() == null || dto.getOldPassword().trim().isEmpty()) {
+                logger.error("旧密码为空");
+                throw new RuntimeException("旧密码不能为空");
+            }
+            
+            if (dto.getNewPassword() == null || dto.getNewPassword().trim().isEmpty()) {
+                logger.error("新密码为空");
+                throw new RuntimeException("新密码不能为空");
+            }
+            logger.info("密码字段验证通过");
+
+            // 验证 token
+            if (adminAuthService == null) {
+                logger.error("adminAuthService 为 null");
+                throw new RuntimeException("认证服务未初始化");
+            }
+            
             String token = authHeader.substring(7);
-            SystemAdmin currentAdmin = adminAuthService.validateToken(token);
+            logger.info("开始验证 token，长度: {}", token != null ? token.length() : 0);
+            
+            SystemAdmin currentAdmin;
+            try {
+                currentAdmin = adminAuthService.validateToken(token);
+            } catch (Exception e) {
+                logger.error("Token 验证失败: {}", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+                throw new RuntimeException("Token 验证失败: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            }
+            
+            if (currentAdmin == null) {
+                logger.error("validateToken 返回 null");
+                throw new RuntimeException("无法验证管理员身份");
+            }
+            
+            logger.info("Token 验证成功，管理员: ID={}, username={}, role={}", 
+                    currentAdmin.getId(), currentAdmin.getUsername(), currentAdmin.getRole());
+            
+            if (currentAdmin.getId() == null) {
+                logger.error("管理员ID为 null");
+                throw new RuntimeException("管理员ID无效");
+            }
+
+            // 检查角色
+            String currentRole = currentAdmin.getRole();
+            if (currentRole == null) {
+                logger.warn("管理员角色为 null，使用默认值 ADMIN");
+                currentRole = "ADMIN";
+            }
 
             // 只能修改自己的密码，或者超级管理员可以修改任何人的密码
-            if (!currentAdmin.getId().equals(id) && !"SUPER_ADMIN".equals(currentAdmin.getRole())) {
+            boolean isSelf = currentAdmin.getId().equals(id);
+            boolean isSuperAdmin = "SUPER_ADMIN".equals(currentRole);
+            
+            logger.info("权限检查: isSelf={}, isSuperAdmin={}, currentId={}, targetId={}", 
+                    isSelf, isSuperAdmin, currentAdmin.getId(), id);
+            
+            if (!isSelf && !isSuperAdmin) {
+                logger.error("权限不足: 当前管理员ID={}, 目标ID={}, 角色={}", 
+                        currentAdmin.getId(), id, currentRole);
                 throw new RuntimeException("只能修改自己的密码");
             }
 
+            logger.info("开始调用 service 修改密码...");
+            
+            if (systemAdminService == null) {
+                logger.error("systemAdminService 为 null");
+                throw new RuntimeException("系统服务未初始化");
+            }
+            
             systemAdminService.changePassword(id, dto);
-            return ResponseEntity.ok(Map.of("code", 200, "message", "密码修改成功", "data", null));
+            logger.info("========== 修改密码成功 ==========");
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 200);
+            response.put("message", "密码修改成功");
+            response.put("data", null);
+            return ResponseEntity.ok(response);
+        } catch (BusinessException e) {
+            // BusinessException 会被全局异常处理器处理，重新抛出以返回标准的 ApiResponse 格式
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
+            logger.error("修改密码失败 (BusinessException): {}", errorMsg, e);
+            // 重新抛出，让全局异常处理器统一处理，返回标准的 ApiResponse 格式
+            throw e;
         } catch (RuntimeException e) {
-            logger.error("修改密码失败: {}", e.getMessage());
-            return ResponseEntity.status(400).body(Map.of("code", 400, "message", e.getMessage(), "data", null));
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
+            logger.error("修改密码失败 (RuntimeException): {}", errorMsg, e);
+            // 转换为 BusinessException，让全局异常处理器处理
+            throw new BusinessException(400, errorMsg);
         } catch (Exception e) {
-            logger.error("修改密码异常: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("code", 500, "message", "服务器内部错误", "data", null));
+            String errorMessage = e.getMessage() != null ? e.getMessage() : ("服务器内部错误: " + e.getClass().getSimpleName());
+            logger.error("修改密码异常 (Exception): {}", errorMessage, e);
+            logger.error("异常堆栈:", e);
+            // 转换为 BusinessException，让全局异常处理器处理
+            throw new BusinessException(500, errorMessage);
         }
     }
 }

@@ -16,6 +16,8 @@ APP_HOME="/opt/${APP_NAME}"
 BACKEND_DIR="${APP_HOME}/backend"
 JAVA_VERSION="17"
 BACKEND_PORT=8081
+NGINX_CONF="/etc/nginx/conf.d/${APP_NAME}-backend.conf"
+DOMAIN_NAME="${DOMAIN_NAME:-heartsphere.cn}"
 
 echo -e "${GREEN}开始部署后端服务...${NC}"
 
@@ -108,8 +110,77 @@ mkdir -p ${BACKEND_DIR}
 cp ${JAR_FILE} ${BACKEND_DIR}/app.jar
 chown ${APP_USER}:${APP_USER} ${BACKEND_DIR}/app.jar
 
-# 7. 创建 systemd 服务
-echo -e "${YELLOW}[7/7] 创建 systemd 服务...${NC}"
+# 7. 安装和配置 Nginx
+echo -e "${YELLOW}[7/8] 安装和配置 Nginx...${NC}"
+if ! command -v nginx &> /dev/null; then
+    echo -e "${YELLOW}安装 Nginx...${NC}"
+    yum install -y nginx
+    systemctl enable nginx
+else
+    echo -e "${GREEN}Nginx 已安装${NC}"
+fi
+
+# 创建后端 Nginx 配置（仅 API 反向代理）
+cat > ${NGINX_CONF} <<EOF
+# HeartSphere 后端 API 反向代理配置
+# 注意：前端静态文件由 deploy-frontend.sh 配置在 80 端口
+
+upstream ${APP_NAME}-backend {
+    server 127.0.0.1:${BACKEND_PORT};
+    keepalive 32;
+}
+
+server {
+    listen 8081;
+    server_name ${DOMAIN_NAME} localhost;
+
+    # 日志配置
+    access_log /var/log/nginx/${APP_NAME}-backend-access.log;
+    error_log /var/log/nginx/${APP_NAME}-backend-error.log;
+
+    # 客户端请求体大小限制
+    client_max_body_size 10M;
+
+    # API 反向代理
+    location /api/ {
+        proxy_pass http://${APP_NAME}-backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # 超时设置
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 健康检查端点
+    location /actuator/ {
+        proxy_pass http://${APP_NAME}-backend;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+
+# 测试 Nginx 配置
+if nginx -t; then
+    echo -e "${GREEN}Nginx 配置验证成功${NC}"
+    systemctl reload nginx || systemctl restart nginx
+else
+    echo -e "${RED}Nginx 配置验证失败，请检查配置${NC}"
+    exit 1
+fi
+
+# 8. 创建 systemd 服务
+echo -e "${YELLOW}[8/8] 创建 systemd 服务...${NC}"
 cat > /etc/systemd/system/${APP_NAME}-backend.service <<EOF
 [Unit]
 Description=HeartSphere Backend Service
@@ -201,10 +272,11 @@ fi
 cat > ${BACKEND_DIR}/application-prod.yml <<EOF
 server:
   port: ${BACKEND_PORT}
+  address: 127.0.0.1  # 仅监听本地接口，避免与 Nginx 端口冲突
 
 spring:
   datasource:
-    url: jdbc:mysql://\${DB_HOST:localhost}:\${DB_PORT:3306}/\${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://\${DB_HOST:localhost}:\${DB_PORT:3306}/\${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: \${DB_USER:root}
     password: \${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -260,14 +332,41 @@ sleep 5
 # 检查服务状态
 if systemctl is-active --quiet ${APP_NAME}-backend; then
     echo -e "${GREEN}后端服务启动成功！${NC}"
-    echo -e "${GREEN}服务地址: http://localhost:${BACKEND_PORT}${NC}"
+    echo -e "${GREEN}内部服务地址: http://localhost:${BACKEND_PORT}${NC}"
+    echo -e "${GREEN}Nginx 代理地址: http://${DOMAIN_NAME}:8081/api${NC}"
 else
     echo -e "${RED}后端服务启动失败，请查看日志:${NC}"
     echo -e "journalctl -u ${APP_NAME}-backend -n 50"
     exit 1
 fi
 
+# 检查 Nginx 状态
+if systemctl is-active --quiet nginx; then
+    echo -e "${GREEN}Nginx 服务运行正常${NC}"
+else
+    echo -e "${YELLOW}警告: Nginx 服务未运行，请手动启动: systemctl start nginx${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}后端部署完成！${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo -e "${BLUE}服务配置:${NC}"
+echo -e "  后端内部端口: ${BACKEND_PORT}"
+echo -e "  Nginx 代理端口: 8081"
+echo -e "  前端端口: 80 (由 deploy-frontend.sh 配置)"
+echo -e "  域名: ${DOMAIN_NAME}"
+echo ""
+echo -e "${BLUE}访问地址:${NC}"
+echo -e "  后端 API: http://${DOMAIN_NAME}:8081/api"
+echo -e "  前端页面: http://${DOMAIN_NAME}"
+echo ""
+echo -e "${BLUE}常用命令:${NC}"
+echo -e "  查看后端日志: journalctl -u ${APP_NAME}-backend -f"
+echo -e "  查看 Nginx 日志: tail -f /var/log/nginx/${APP_NAME}-backend-*.log"
+echo -e "  重启后端: systemctl restart ${APP_NAME}-backend"
+echo -e "  重启 Nginx: systemctl restart nginx"
 
 
 

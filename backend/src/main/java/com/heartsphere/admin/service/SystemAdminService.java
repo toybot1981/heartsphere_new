@@ -3,6 +3,7 @@ package com.heartsphere.admin.service;
 import com.heartsphere.admin.dto.*;
 import com.heartsphere.admin.entity.SystemAdmin;
 import com.heartsphere.admin.repository.SystemAdminRepository;
+import com.heartsphere.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,18 +132,75 @@ public class SystemAdminService {
      */
     @Transactional
     public void changePassword(Long id, ChangePasswordDTO dto) {
-        SystemAdmin admin = adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("管理员不存在"));
+        logger.info("========== 修改管理员密码 ==========");
+        logger.info("管理员ID: {}", id);
+        
+        try {
+            if (dto == null) {
+                logger.error("请求参数为 null");
+                throw new BusinessException(400, "请求参数不能为空");
+            }
+            
+            if (dto.getOldPassword() == null || dto.getOldPassword().trim().isEmpty()) {
+                logger.error("旧密码为空");
+                throw new BusinessException(400, "旧密码不能为空");
+            }
+            
+            if (dto.getNewPassword() == null || dto.getNewPassword().trim().isEmpty()) {
+                logger.error("新密码为空");
+                throw new BusinessException(400, "新密码不能为空");
+            }
+            
+            logger.info("开始查询管理员: ID={}", id);
+            SystemAdmin admin = adminRepository.findById(id)
+                    .orElseThrow(() -> {
+                        logger.error("管理员不存在: ID={}", id);
+                        return new BusinessException(404, "管理员不存在");
+                    });
 
-        // 验证旧密码
-        if (!passwordEncoder.matches(dto.getOldPassword(), admin.getPassword())) {
-            throw new RuntimeException("旧密码错误");
+            logger.info("找到管理员: ID={}, username={}", admin.getId(), admin.getUsername());
+
+            if (admin.getPassword() == null) {
+                logger.error("管理员密码字段为 null: ID={}", id);
+                throw new BusinessException(500, "管理员密码数据异常");
+            }
+
+            if (passwordEncoder == null) {
+                logger.error("PasswordEncoder 为 null");
+                throw new BusinessException(500, "密码编码器未初始化");
+            }
+
+            // 验证旧密码
+            logger.info("开始验证旧密码...");
+            boolean passwordMatches = passwordEncoder.matches(dto.getOldPassword(), admin.getPassword());
+            logger.info("旧密码验证结果: {}", passwordMatches);
+            
+            if (!passwordMatches) {
+                logger.error("旧密码验证失败: ID={}", id);
+                throw new BusinessException(400, "旧密码错误，请检查后重试");
+            }
+
+            // 设置新密码
+            logger.info("开始加密新密码...");
+            String encodedPassword = passwordEncoder.encode(dto.getNewPassword());
+            if (encodedPassword == null || encodedPassword.trim().isEmpty()) {
+                logger.error("密码加密结果为 null 或空");
+                throw new BusinessException(500, "密码加密失败，请稍后重试");
+            }
+            
+            logger.info("密码加密成功，开始保存...");
+            admin.setPassword(encodedPassword);
+            adminRepository.save(admin);
+            logger.info("========== 修改密码成功 ==========");
+            logger.info("管理员ID: {}, username: {}", admin.getId(), admin.getUsername());
+        } catch (BusinessException e) {
+            // BusinessException 直接抛出，由全局异常处理器处理
+            logger.error("修改密码失败: {}", e.getMessage() != null ? e.getMessage() : "未知错误", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("修改密码异常: {}", e.getMessage() != null ? e.getMessage() : "未知错误", e);
+            throw new BusinessException(500, "修改密码失败: " + (e.getMessage() != null ? e.getMessage() : "服务器内部错误"));
         }
-
-        // 设置新密码
-        admin.setPassword(passwordEncoder.encode(dto.getNewPassword()));
-        adminRepository.save(admin);
-        logger.info("修改密码成功: ID={}, username={}", admin.getId(), admin.getUsername());
     }
 
     /**

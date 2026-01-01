@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
 import { authApi, journalApi, characterApi, worldApi, eraApi, userMainStoryApi } from '../services/api';
+import { sharedApi } from '../services/api/heartconnect';
 import { convertErasToWorldScenes } from '../utils/dataTransformers';
 import { showAlert } from '../utils/dialog';
 import { GameState } from '../types';
@@ -97,7 +98,6 @@ export const useAuthHandlers = ({
         if (isSharedMode) {
           // 共享模式：调用共享模式专用接口
           logger.debug(`[handleLoginSuccess] 使用共享模式接口加载数据: shareConfigId=${shareConfigId}`);
-          const { sharedApi } = await import('../services/api/heartconnect');
           remoteWorlds = await sharedApi.getSharedWorlds(token);
           eras = await sharedApi.getSharedEras(token);
           logger.debug(`[handleLoginSuccess] 共享模式数据加载成功: worlds=${remoteWorlds?.length || 0}, eras=${eras?.length || 0}`);
@@ -540,7 +540,6 @@ export const useAuthHandlers = ({
           if (isSharedMode) {
             // 共享模式：调用共享模式专用接口
             logger.debug('[checkAuth] 共享模式：使用共享模式接口加载数据');
-            const { sharedApi } = await import('../services/api/heartconnect');
             worlds = await sharedApi.getSharedWorlds(token);
             eras = await sharedApi.getSharedEras(token);
             logger.debug(`[checkAuth] 共享模式数据加载成功: worlds=${worlds?.length || 0}, eras=${eras?.length || 0}`);

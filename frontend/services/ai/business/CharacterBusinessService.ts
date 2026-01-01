@@ -5,6 +5,7 @@
 
 import { AIService } from '../AIService';
 import { AIServiceException } from '../types';
+import { constructCharacterAvatarPrompt } from '../../../utils/promptConstructors';
 
 /**
  * 角色业务服务
@@ -65,19 +66,9 @@ The content MUST be in Chinese.`;
     worldStyle?: string
   ): Promise<string | null> {
     try {
-      // 使用提示词构造器（如果可用）
-      try {
-        const { constructCharacterAvatarPrompt } = await import('../../../utils/promptConstructors');
-        const prompt = constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
-        return await this.aiService.generateImageFromPrompt(prompt, '3:4');
-      } catch {
-        // 如果提示词构造器不可用，使用默认提示词
-        const prompt = `A portrait of ${character.name}, ${character.role}. ${character.bio}. 
-Style: ${worldStyle || 'realistic'}. 
-Color theme: ${character.themeColor}. 
-High quality, detailed, cinematic lighting.`;
-        return await this.aiService.generateImageFromPrompt(prompt, '3:4');
-      }
+      // 使用提示词构造器
+      const prompt = constructCharacterAvatarPrompt(character.name, character.role, character.bio, character.themeColor, worldStyle);
+      return await this.aiService.generateImageFromPrompt(prompt, '3:4');
     } catch (error) {
       console.error('[CharacterBusinessService] 生成角色图片失败:', error);
       return null;

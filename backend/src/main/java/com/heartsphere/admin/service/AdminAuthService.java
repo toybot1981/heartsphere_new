@@ -149,8 +149,9 @@ public class AdminAuthService {
             // 重新抛出RuntimeException，保留原始错误信息
             throw e;
         } catch (Exception e) {
-            logger.error("Token验证异常: {}", e.getMessage(), e);
-            throw new RuntimeException("无效的管理员token: " + e.getMessage(), e);
+            logger.error("Token验证异常: {}", e.getMessage() != null ? e.getMessage() : "未知错误", e);
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
+            throw new RuntimeException("无效的管理员token: " + errorMsg, e);
         }
     }
 }

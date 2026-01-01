@@ -4,6 +4,7 @@
  */
 
 import { AIService } from '../AIService';
+import { constructUserAvatarPrompt } from '../../../utils/promptConstructors';
 
 /**
  * 媒体业务服务
@@ -56,16 +57,9 @@ export class MediaBusinessService {
    */
   async generateUserAvatar(nickname: string, worldStyle?: string): Promise<string | null> {
     try {
-      // 使用提示词构造器（如果可用）
-      try {
-        const { constructUserAvatarPrompt } = await import('../../../utils/promptConstructors');
-        const prompt = constructUserAvatarPrompt(nickname, worldStyle);
-        return await this.generateImageFromPrompt(prompt, '1:1');
-      } catch {
-        // 如果提示词构造器不可用，使用默认提示词
-        const prompt = `A portrait of ${nickname}, user avatar. Style: ${worldStyle || 'realistic'}. High quality, detailed.`;
-        return await this.generateImageFromPrompt(prompt, '1:1');
-      }
+      // 使用提示词构造器
+      const prompt = constructUserAvatarPrompt(nickname, worldStyle);
+      return await this.generateImageFromPrompt(prompt, '1:1');
     } catch (error) {
       console.error('[MediaBusinessService] 生成用户头像失败:', error);
       return null;

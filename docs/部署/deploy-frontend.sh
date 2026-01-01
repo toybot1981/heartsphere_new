@@ -51,10 +51,19 @@ echo -e "${YELLOW}[3/6] 构建前端项目...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}/frontend"
 
+# 配置 npm 使用淘宝镜像源
+echo -e "${YELLOW}配置 npm 使用淘宝镜像源...${NC}"
+npm config set registry https://registry.npmmirror.com
+npm config set disturl https://npmmirror.com/dist
+npm config set electron_mirror https://npmmirror.com/mirrors/electron/
+npm config set sass_binary_site https://npmmirror.com/mirrors/node-sass/
+npm config set puppeteer_download_host https://npmmirror.com/mirrors
+echo -e "${GREEN}npm 镜像源已配置为淘宝源${NC}"
+
 # 检查是否存在 node_modules，如果没有则安装依赖
 if [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}安装前端依赖...${NC}"
-    npm install
+    npm install --legacy-peer-deps
 fi
 
 # 创建前端环境变量文件
