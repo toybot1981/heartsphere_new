@@ -3,11 +3,17 @@ import { Footer } from './Footer';
 
 interface WelcomeOverlayProps {
   onClose: () => void;
+  onSwitchToMobile?: () => void;
 }
 
-export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
+export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose, onSwitchToMobile }) => {
   const [showContent, setShowContent] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
+
+  // 调试：检查 onSwitchToMobile 是否存在
+  useEffect(() => {
+    console.log('[WelcomeOverlay] onSwitchToMobile:', typeof onSwitchToMobile, onSwitchToMobile);
+  }, [onSwitchToMobile]);
 
   useEffect(() => {
     // 粒子效果延迟出现
@@ -49,6 +55,23 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({ onClose }) => {
 
       {/* 网格背景 */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.15)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+
+      {/* 顶部按钮组 - Mobile Switch Button - 始终显示，无动画延迟 */}
+      {onSwitchToMobile && (
+        <div className="absolute top-4 right-4 z-[999999] flex items-center gap-3 opacity-100">
+          <button
+            onClick={onSwitchToMobile}
+            className="p-3 text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700/90 backdrop-blur-md rounded-full transition-all border-2 border-white/30 hover:border-white/50 shadow-xl hover:scale-105 flex items-center gap-2 px-4"
+            title="切换手机版 Switch to Mobile"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+            </svg>
+            <span className="text-sm font-bold hidden sm:inline">手机版 Mobile</span>
+          </button>
+        </div>
+      )}
 
       {/* 中心内容 */}
       <div className="relative z-10 text-center max-w-2xl px-4">

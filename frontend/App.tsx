@@ -670,7 +670,10 @@ const AppContent: React.FC = () => {
 
           {/* 欢迎蒙层 */}
           {gameState.showWelcomeOverlay && (
-            <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
+            <WelcomeOverlay 
+              onClose={handleCloseWelcomeOverlay}
+              onSwitchToMobile={handleSwitchToMobile}
+            />
           )}
 
           {/* 初始化向导 - 只在真正需要时显示，且确保不会覆盖正常页面 */}

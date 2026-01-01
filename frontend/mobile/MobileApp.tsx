@@ -891,7 +891,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     if (gameState.currentScreen === 'profileSetup') {
         return (
             <div className="h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-6 space-y-6">
-                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">HeartSphere Mobile</h1>
+                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">欢迎进入我的心域</h1>
                 <p className="text-gray-400 text-center">选择你的进入方式</p>
                 <div className="w-full space-y-3">
                     <button 
