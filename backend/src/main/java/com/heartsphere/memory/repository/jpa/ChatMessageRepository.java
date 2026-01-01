@@ -77,3 +77,4 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     void deleteBySessionIdAndId(@Param("sessionId") String sessionId, @Param("messageId") String messageId);
 }
 
+

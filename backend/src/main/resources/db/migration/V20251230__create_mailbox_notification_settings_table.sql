@@ -28,3 +28,4 @@ CREATE TABLE IF NOT EXISTS mailbox_notification_settings (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='跨时空信箱提醒设置表';
 
+

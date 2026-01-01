@@ -5,21 +5,18 @@ import com.heartsphere.memory.entity.SessionEntity;
 import com.heartsphere.memory.entity.WorkingMemoryEntity;
 import com.heartsphere.memory.model.ChatMessage;
 import com.heartsphere.memory.model.MessageRole;
+import com.heartsphere.memory.model.Session;
+import com.heartsphere.memory.model.WorkingMemory;
 import com.heartsphere.memory.repository.jpa.ChatMessageRepository;
 import com.heartsphere.memory.repository.jpa.SessionRepository;
 import com.heartsphere.memory.repository.jpa.WorkingMemoryRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,20 +41,19 @@ class MySQLShortMemoryServiceTest {
     @Mock
     private WorkingMemoryRepository workingMemoryRepository;
     
-    @Mock
-    private ObjectMapper objectMapper;
-    
     @InjectMocks
     private MySQLShortMemoryService mySQLShortMemoryService;
     
-    private String testSessionId;
     private String testUserId;
+    private String testSessionId;
     
     @BeforeEach
     void setUp() {
-        testSessionId = "session-" + System.currentTimeMillis();
-        testUserId = "user-" + System.currentTimeMillis();
+        testUserId = "test-user-" + System.currentTimeMillis();
+        testSessionId = "test-session-" + System.currentTimeMillis();
     }
+    
+    // ========== 消息测试 ==========
     
     @Test
     void testSaveMessage() {
@@ -75,26 +71,21 @@ class MySQLShortMemoryServiceTest {
         entity.setId("msg-1");
         entity.setSessionId(testSessionId);
         entity.setUserId(testUserId);
+        entity.setContent("测试消息");
         
         when(chatMessageRepository.save(any(ChatMessageEntity.class))).thenReturn(entity);
-        when(chatMessageRepository.countBySessionId(testSessionId)).thenReturn(1L);
-        when(sessionRepository.findBySessionId(testSessionId)).thenReturn(Optional.empty());
-        when(sessionRepository.save(any(SessionEntity.class))).thenReturn(new SessionEntity());
         
         // When
-        mySQLShortMemoryService.saveMessage(testSessionId, message);
+        mySQLShortMemoryService.saveMessage(message);
         
         // Then
         verify(chatMessageRepository, times(1)).save(any(ChatMessageEntity.class));
-        verify(sessionRepository, times(1)).save(any(SessionEntity.class));
     }
     
     @Test
     void testGetMessages() {
         // Given
         int limit = 10;
-        Pageable pageable = PageRequest.of(0, limit);
-        
         List<ChatMessageEntity> entities = Arrays.asList(
             ChatMessageEntity.builder()
                 .id("msg-1")
@@ -103,10 +94,18 @@ class MySQLShortMemoryServiceTest {
                 .role(MessageRole.USER)
                 .content("消息1")
                 .timestamp(System.currentTimeMillis())
+                .build(),
+            ChatMessageEntity.builder()
+                .id("msg-2")
+                .sessionId(testSessionId)
+                .userId(testUserId)
+                .role(MessageRole.ASSISTANT)
+                .content("消息2")
+                .timestamp(System.currentTimeMillis())
                 .build()
         );
         
-        when(chatMessageRepository.findBySessionIdOrderByTimestampDesc(testSessionId, pageable))
+        when(chatMessageRepository.findBySessionIdOrderByTimestampAsc(testSessionId, limit))
             .thenReturn(entities);
         
         // When
@@ -114,81 +113,220 @@ class MySQLShortMemoryServiceTest {
         
         // Then
         assertNotNull(result);
+        assertEquals(2, result.size());
         verify(chatMessageRepository, times(1))
-            .findBySessionIdOrderByTimestampDesc(eq(testSessionId), any(Pageable.class));
+            .findBySessionIdOrderByTimestampAsc(testSessionId, limit);
     }
     
     @Test
-    void testSaveWorkingMemory() throws Exception {
+    void testGetMessagesByTimeRange() {
         // Given
-        String key = "test-key";
-        String value = "test-value";
-        String valueJson = "{\"test\":\"value\"}";
+        long startTime = System.currentTimeMillis() - 10000;
+        long endTime = System.currentTimeMillis();
+        List<ChatMessageEntity> entities = Arrays.asList(
+            ChatMessageEntity.builder()
+                .id("msg-1")
+                .sessionId(testSessionId)
+                .userId(testUserId)
+                .role(MessageRole.USER)
+                .content("消息1")
+                .timestamp(startTime + 1000)
+                .build()
+        );
         
-        when(objectMapper.writeValueAsString(value)).thenReturn(valueJson);
-        when(workingMemoryRepository.findBySessionIdAndMemoryKey(testSessionId, key))
-            .thenReturn(Optional.empty());
-        when(workingMemoryRepository.save(any(WorkingMemoryEntity.class)))
-            .thenReturn(new WorkingMemoryEntity());
+        when(chatMessageRepository.findBySessionIdAndTimestampBetween(
+            testSessionId, startTime, endTime))
+            .thenReturn(entities);
         
         // When
-        mySQLShortMemoryService.saveWorkingMemory(testSessionId, key, value);
-        
-        // Then
-        verify(workingMemoryRepository, times(1)).save(any(WorkingMemoryEntity.class));
-    }
-    
-    @Test
-    void testGetWorkingMemory() throws Exception {
-        // Given
-        String key = "test-key";
-        String valueJson = "{\"test\":\"value\"}";
-        WorkingMemoryEntity entity = WorkingMemoryEntity.builder()
-            .sessionId(testSessionId)
-            .memoryKey(key)
-            .memoryValue(valueJson)
-            .expiresAt(LocalDateTime.now().plusHours(1))
-            .build();
-        
-        when(workingMemoryRepository.findBySessionIdAndMemoryKey(testSessionId, key))
-            .thenReturn(Optional.of(entity));
-        when(objectMapper.readValue(valueJson, Map.class)).thenReturn(new HashMap<>());
-        
-        // When
-        Map<String, Object> result = mySQLShortMemoryService.getWorkingMemory(testSessionId, key, Map.class);
+        List<ChatMessage> result = mySQLShortMemoryService.getMessagesByTimeRange(
+            testSessionId, startTime, endTime);
         
         // Then
         assertNotNull(result);
-        verify(workingMemoryRepository, times(1)).findBySessionIdAndMemoryKey(testSessionId, key);
+        assertEquals(1, result.size());
+        verify(chatMessageRepository, times(1))
+            .findBySessionIdAndTimestampBetween(testSessionId, startTime, endTime);
     }
     
+    // ========== 会话测试 ==========
+    
     @Test
-    void testSessionExists() {
+    void testCreateSession() {
         // Given
-        when(chatMessageRepository.countBySessionId(testSessionId)).thenReturn(1L);
+        Session session = Session.builder()
+            .id(testSessionId)
+            .userId(testUserId)
+            .characterId("char-1")
+            .title("测试会话")
+            .createdAt(System.currentTimeMillis())
+            .build();
+        
+        SessionEntity entity = new SessionEntity();
+        entity.setId(testSessionId);
+        entity.setUserId(testUserId);
+        
+        when(sessionRepository.save(any(SessionEntity.class))).thenReturn(entity);
         
         // When
-        boolean result = mySQLShortMemoryService.sessionExists(testSessionId);
+        mySQLShortMemoryService.createSession(session);
         
         // Then
-        assertTrue(result);
-        verify(chatMessageRepository, times(1)).countBySessionId(testSessionId);
+        verify(sessionRepository, times(1)).save(any(SessionEntity.class));
     }
     
     @Test
-    void testGetAllSessionIds() {
+    void testGetSession() {
         // Given
-        List<String> sessionIds = Arrays.asList("session-1", "session-2");
-        when(chatMessageRepository.findDistinctSessionIdsByUserId(testUserId))
-            .thenReturn(sessionIds);
+        SessionEntity entity = SessionEntity.builder()
+            .id(testSessionId)
+            .userId(testUserId)
+            .characterId("char-1")
+            .title("测试会话")
+            .createdAt(System.currentTimeMillis())
+            .build();
+        
+        when(sessionRepository.findById(testSessionId)).thenReturn(Optional.of(entity));
         
         // When
-        List<String> result = mySQLShortMemoryService.getAllSessionIds(testUserId);
+        Session result = mySQLShortMemoryService.getSession(testSessionId);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(testSessionId, result.getId());
+        assertEquals(testUserId, result.getUserId());
+        verify(sessionRepository, times(1)).findById(testSessionId);
+    }
+    
+    @Test
+    void testGetSessionsByUser() {
+        // Given
+        List<SessionEntity> entities = Arrays.asList(
+            SessionEntity.builder()
+                .id(testSessionId)
+                .userId(testUserId)
+                .title("会话1")
+                .createdAt(System.currentTimeMillis())
+                .build()
+        );
+        
+        when(sessionRepository.findByUserIdOrderByCreatedAtDesc(testUserId))
+            .thenReturn(entities);
+        
+        // When
+        List<Session> result = mySQLShortMemoryService.getSessionsByUser(testUserId);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(sessionRepository, times(1))
+            .findByUserIdOrderByCreatedAtDesc(testUserId);
+    }
+    
+    // ========== 工作记忆测试 ==========
+    
+    @Test
+    void testSaveWorkingMemory() {
+        // Given
+        WorkingMemory workingMemory = WorkingMemory.builder()
+            .id("wm-1")
+            .userId(testUserId)
+            .sessionId(testSessionId)
+            .key("context")
+            .value("工作记忆内容")
+            .build();
+        
+        WorkingMemoryEntity entity = new WorkingMemoryEntity();
+        entity.setId("wm-1");
+        entity.setUserId(testUserId);
+        entity.setSessionId(testSessionId);
+        entity.setKey("context");
+        entity.setValue("工作记忆内容");
+        
+        when(workingMemoryRepository.save(any(WorkingMemoryEntity.class)))
+            .thenReturn(entity);
+        
+        // When
+        mySQLShortMemoryService.saveWorkingMemory(workingMemory);
+        
+        // Then
+        verify(workingMemoryRepository, times(1))
+            .save(any(WorkingMemoryEntity.class));
+    }
+    
+    @Test
+    void testGetWorkingMemory() {
+        // Given
+        String key = "context";
+        WorkingMemoryEntity entity = WorkingMemoryEntity.builder()
+            .id("wm-1")
+            .userId(testUserId)
+            .sessionId(testSessionId)
+            .key(key)
+            .value("工作记忆内容")
+            .build();
+        
+        when(workingMemoryRepository.findByUserIdAndSessionIdAndKey(
+            testUserId, testSessionId, key))
+            .thenReturn(Optional.of(entity));
+        
+        // When
+        WorkingMemory result = mySQLShortMemoryService.getWorkingMemory(
+            testUserId, testSessionId, key);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(key, result.getKey());
+        verify(workingMemoryRepository, times(1))
+            .findByUserIdAndSessionIdAndKey(testUserId, testSessionId, key);
+    }
+    
+    @Test
+    void testGetAllWorkingMemories() {
+        // Given
+        List<WorkingMemoryEntity> entities = Arrays.asList(
+            WorkingMemoryEntity.builder()
+                .id("wm-1")
+                .userId(testUserId)
+                .sessionId(testSessionId)
+                .key("context")
+                .value("工作记忆1")
+                .build(),
+            WorkingMemoryEntity.builder()
+                .id("wm-2")
+                .userId(testUserId)
+                .sessionId(testSessionId)
+                .key("summary")
+                .value("工作记忆2")
+                .build()
+        );
+        
+        when(workingMemoryRepository.findByUserIdAndSessionId(testUserId, testSessionId))
+            .thenReturn(entities);
+        
+        // When
+        Map<String, WorkingMemory> result = mySQLShortMemoryService.getAllWorkingMemories(
+            testUserId, testSessionId);
         
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(chatMessageRepository, times(1)).findDistinctSessionIdsByUserId(testUserId);
+        verify(workingMemoryRepository, times(1))
+            .findByUserIdAndSessionId(testUserId, testSessionId);
+    }
+    
+    @Test
+    void testDeleteWorkingMemory() {
+        // Given
+        String key = "context";
+        doNothing().when(workingMemoryRepository)
+            .deleteByUserIdAndSessionIdAndKey(testUserId, testSessionId, key);
+        
+        // When
+        mySQLShortMemoryService.deleteWorkingMemory(testUserId, testSessionId, key);
+        
+        // Then
+        verify(workingMemoryRepository, times(1))
+            .deleteByUserIdAndSessionIdAndKey(testUserId, testSessionId, key);
     }
 }
-

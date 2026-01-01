@@ -103,3 +103,4 @@ public interface UserMemoryRepository extends JpaRepository<UserMemoryEntity, St
     void updateAccessInfo(@Param("memoryId") String memoryId, @Param("lastAccessedAt") LocalDateTime lastAccessedAt);
 }
 
+

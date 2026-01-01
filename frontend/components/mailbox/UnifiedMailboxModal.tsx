@@ -7,23 +7,13 @@ import { ConversationList } from './ConversationList';
 import { ConversationView } from './ConversationView';
 import { UnreadBadge } from './UnreadBadge';
 import { browserNotificationService } from '../../services/mailbox/BrowserNotificationService';
-// 迁移功能已禁用，不再需要相关导入
-// import { 
-//   migrateOldMailsToNewSystem, 
-//   hasOldMailData, 
-//   checkMigrationStatus,
-//   type OldMail 
-// } from '../../services/mailbox/MailMigrationService';
-// import { useGameState } from '../../contexts/GameStateContext';
 import { ComposeMessageModal } from './ComposeMessageModal';
+import { logger } from '../../utils/logger';
 
 interface UnifiedMailboxModalProps {
   token: string;
   currentUserId: number;
   onClose: () => void;
-  // 迁移功能已禁用
-  // oldMails?: any[]; // 旧信箱数据（Mail[]类型），可选
-  // onMigrationComplete?: () => void; // 迁移完成回调
 }
 
 type ViewMode = 'inbox' | 'conversations';
@@ -52,44 +42,16 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
   const [searchKeyword, setSearchKeyword] = useState('');
   // 禁用迁移功能，直接使用新系统
   // const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
-  // const [isMigrating, setIsMigrating] = useState(false);
-  // const [migrationResult, setMigrationResult] = useState<{ success: number; failed: number } | null>(null);
   const [showComposeModal, setShowComposeModal] = useState(false);
 
   // 请求浏览器通知权限
   useEffect(() => {
-    browserNotificationService.requestPermission().catch(console.error);
+    browserNotificationService.requestPermission().catch((error) => {
+      logger.error('[UnifiedMailboxModal] 请求浏览器通知权限失败:', error);
+    });
   }, []);
 
   // 不再自动检查和提示迁移，直接使用新系统
-  // 用户可以通过其他方式（如果有需要）手动触发迁移
-  // useEffect(() => {
-  //   const checkMigration = async () => {
-  //     // 检查是否有旧数据
-  //     const hasOldData = hasOldMailData(oldMails) || hasOldMailData(gameState.mailbox);
-  //     if (!hasOldData) {
-  //       return;
-  //     }
-
-  //     // 检查是否已迁移
-  //     try {
-  //       const status = await checkMigrationStatus(currentUserId, token);
-  //       if (!status.migrated && hasOldData) {
-  //         // 显示迁移提示
-  //         setShowMigrationPrompt(true);
-  //       }
-  //     } catch (error) {
-  //       console.error('[UnifiedMailboxModal] 检查迁移状态失败:', error);
-  //     }
-  //   };
-
-  //   checkMigration();
-  // }, [currentUserId, token, oldMails, gameState.mailbox]);
-
-  // 迁移功能已禁用
-  // const handleMigrate = async () => {
-  //   // 不再执行迁移
-  // };
 
   const handleMessageClick = (message: MailboxMessage) => {
     setSelectedMessage(message);
@@ -381,7 +343,7 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
           onClose={() => setShowComposeModal(false)}
           onSuccess={() => {
             // 可以在这里刷新消息列表
-            console.log('[UnifiedMailboxModal] 消息发送成功');
+            logger.info('[UnifiedMailboxModal] 消息发送成功');
           }}
         />
       )}

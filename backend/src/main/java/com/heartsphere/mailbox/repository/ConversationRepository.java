@@ -84,3 +84,4 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     Long countUnreadConversationsByUserId(@Param("userId") Long userId);
 }
 
+

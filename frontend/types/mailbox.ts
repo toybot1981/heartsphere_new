@@ -196,10 +196,6 @@ export interface UnreadCount {
   resonance?: number;
   system?: number;
   userMessage?: number;
-  esoulLetter: number;
-  resonance: number;
-  system: number;
-  userMessage: number;
 }
 
 /**

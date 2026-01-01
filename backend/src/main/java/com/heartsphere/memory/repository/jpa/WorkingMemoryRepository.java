@@ -39,3 +39,4 @@ public interface WorkingMemoryRepository extends JpaRepository<WorkingMemoryEnti
     void deleteExpired(@Param("now") LocalDateTime now);
 }
 
+

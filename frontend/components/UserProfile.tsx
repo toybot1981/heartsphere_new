@@ -19,6 +19,7 @@ interface UserProfileProps {
   onNavigateToCharacter?: (characterId: string, sceneId: string) => void;
   onNavigateToJournal?: () => void;
   onBack?: () => void; // 返回按钮回调（可选，PC端需要，移动端可能不需要）
+  onOpenQuickConnect?: () => void; // 打开共享心域入口
 }
 
 interface UserStatistics {
@@ -52,6 +53,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   onNavigateToCharacter,
   onNavigateToJournal,
   onBack,
+  onOpenQuickConnect,
 }) => {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [editedNickname, setEditedNickname] = useState(userProfile.nickname);
@@ -687,26 +689,41 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           )}
         </div>
 
-        {/* 心域共享区域 */}
-        <div 
-          className="bg-gray-900/50 rounded-xl border border-gray-800 mb-3"
-        >
-          <div 
-            className="p-3 flex items-center justify-between cursor-pointer"
-            onClick={() => toggleSection('share')}
-          >
-            <h3 className="text-sm font-bold text-white">🔗 心域共享</h3>
-            <span className="text-gray-500">{expandedSections.share ? '▼' : '▶'}</span>
-          </div>
-          
-          {expandedSections.share && (
-            <div className="p-3 pt-0" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs text-gray-400 mb-3">
-                分享你的心域，让其他人可以体验你的世界和场景
-              </p>
-              <ShareButton variant="button" className="w-full" />
-            </div>
+        {/* 心域连接区域 - 更显著的双按钮布局 */}
+        <div className="mb-3 space-y-2">
+          {/* 打开共享心域 - 主要入口，更显著 */}
+          {onOpenQuickConnect && (
+            <button
+              onClick={onOpenQuickConnect}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-4 rounded-xl flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-95 transition-all border border-blue-400/30"
+            >
+              <span className="text-2xl">🌟</span>
+              <span className="text-base">打开共享心域</span>
+              <span className="text-sm opacity-80">探索他人的心域世界</span>
+            </button>
           )}
+          
+          {/* 心域共享 - 分享自己的心域 */}
+          <div 
+            className="bg-gray-900/50 rounded-xl border border-gray-800"
+          >
+            <div 
+              className="p-3 flex items-center justify-between cursor-pointer"
+              onClick={() => toggleSection('share')}
+            >
+              <h3 className="text-sm font-bold text-white">🔗 心域共享</h3>
+              <span className="text-gray-500">{expandedSections.share ? '▼' : '▶'}</span>
+            </div>
+            
+            {expandedSections.share && (
+              <div className="p-3 pt-0" onClick={(e) => e.stopPropagation()}>
+                <p className="text-xs text-gray-400 mb-3">
+                  分享你的心域，让其他人可以体验你的世界和场景
+                </p>
+                <ShareButton variant="button" className="w-full" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 快捷操作 */}

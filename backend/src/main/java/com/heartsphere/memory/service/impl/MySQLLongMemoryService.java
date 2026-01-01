@@ -491,6 +491,77 @@ public class MySQLLongMemoryService implements LongMemoryService {
     }
     
     /**
+     * 更新记忆
+     */
+    @Transactional
+    public void updateMemory(UserMemory memory) {
+        try {
+            if (memory.getId() == null || memory.getId().isEmpty()) {
+                throw new IllegalArgumentException("记忆ID不能为空");
+            }
+            
+            // 检查记忆是否存在
+            Optional<UserMemoryEntity> existingOpt = userMemoryRepository.findById(memory.getId());
+            if (existingOpt.isEmpty()) {
+                throw new RuntimeException("记忆不存在: memoryId=" + memory.getId());
+            }
+            
+            UserMemoryEntity existing = existingOpt.get();
+            
+            // 验证用户ID匹配
+            if (!existing.getUserId().equals(memory.getUserId())) {
+                throw new RuntimeException("无权更新该用户的记忆");
+            }
+            
+            // 更新字段（保留创建时间）
+            // 使用MemoryEntityConverter转换UserMemory到Entity，然后只更新需要的字段
+            UserMemoryEntity updateEntity = MemoryEntityConverter.toEntity(memory);
+            if (updateEntity == null) {
+                throw new RuntimeException("转换记忆实体失败");
+            }
+            
+            if (memory.getType() != null) {
+                existing.setType(memory.getType());
+            }
+            if (memory.getImportance() != null) {
+                existing.setImportance(memory.getImportance());
+            }
+            if (memory.getContent() != null) {
+                existing.setContent(memory.getContent());
+            }
+            if (updateEntity.getStructuredData() != null) {
+                existing.setStructuredData(updateEntity.getStructuredData());
+            }
+            if (memory.getSource() != null) {
+                existing.setSource(memory.getSource());
+            }
+            if (memory.getSourceId() != null) {
+                existing.setSourceId(memory.getSourceId());
+            }
+            if (memory.getConfidence() != null) {
+                existing.setConfidence(memory.getConfidence());
+            }
+            if (updateEntity.getTags() != null) {
+                existing.setTags(updateEntity.getTags());
+            }
+            if (updateEntity.getMetadata() != null) {
+                existing.setMetadata(updateEntity.getMetadata());
+            }
+            // 总是更新lastAccessedAt
+            existing.setLastAccessedAt(java.time.LocalDateTime.now());
+            if (memory.getAccessCount() != null) {
+                existing.setAccessCount(memory.getAccessCount());
+            }
+            
+            userMemoryRepository.save(existing);
+            log.debug("更新记忆成功: memoryId={}", memory.getId());
+        } catch (Exception e) {
+            log.error("更新记忆失败: memoryId={}", memory.getId(), e);
+            throw new RuntimeException("更新记忆失败", e);
+        }
+    }
+    
+    /**
      * 删除记忆
      */
     @Transactional

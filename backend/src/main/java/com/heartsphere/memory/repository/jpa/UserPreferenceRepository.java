@@ -42,3 +42,4 @@ public interface UserPreferenceRepository extends JpaRepository<UserPreferenceEn
     void deleteByUserIdAndKey(@Param("userId") String userId, @Param("key") String key);
 }
 
+

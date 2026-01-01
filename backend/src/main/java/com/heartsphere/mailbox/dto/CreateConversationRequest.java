@@ -31,3 +31,4 @@ public class CreateConversationRequest {
     private Boolean createMailboxNotification;
 }
 
+

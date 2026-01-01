@@ -26,3 +26,4 @@ public interface NotificationSettingsRepository extends JpaRepository<Notificati
     boolean existsByUserId(Long userId);
 }
 
+

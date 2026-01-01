@@ -26,6 +26,23 @@ import { getApiUrl } from '../config';
 const API_BASE = getApiUrl('/mailbox');
 
 /**
+ * 统一的API响应解析函数
+ * 处理不同的响应格式（ApiResponse包装、直接返回等）
+ */
+function parseApiResponse<T>(data: any): T {
+  // 如果是ApiResponse格式，提取data字段
+  if (data && typeof data === 'object' && 'data' in data) {
+    // 检查是否是Page格式（有content字段）
+    if ('content' in data.data) {
+      return data.data as T;
+    }
+    return data.data as T;
+  }
+  // 直接返回
+  return data as T;
+}
+
+/**
  * 获取消息列表
  */
 export async function getMessages(
@@ -74,15 +91,7 @@ export async function getMessages(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    // 如果返回的是ApiResponse格式，提取data字段
-    if (data && typeof data === 'object' && 'data' in data && 'content' in data.data) {
-      return data.data;
-    }
-    // 如果直接是Page格式
-    if (data && typeof data === 'object' && 'content' in data) {
-      return data;
-    }
-    return data;
+    return parseApiResponse<Page<MailboxMessage>>(data);
   } else {
     const text = await response.text();
     console.error('收到非JSON响应:', text.substring(0, 200));
@@ -109,7 +118,8 @@ export async function getMessageById(
     throw new Error(`获取消息详情失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<MailboxMessage>(data);
 }
 
 /**
@@ -131,7 +141,8 @@ export async function markMessageAsRead(
     throw new Error(`标记已读失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<MailboxMessage>(data);
 }
 
 /**
@@ -155,7 +166,8 @@ export async function markMessageAsImportant(
     throw new Error(`标记重要失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<MailboxMessage>(data);
 }
 
 /**
@@ -179,7 +191,8 @@ export async function markMessageAsStarred(
     throw new Error(`收藏消息失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<MailboxMessage>(data);
 }
 
 /**
@@ -254,11 +267,7 @@ export async function getUnreadCount(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    // 如果返回的是ApiResponse格式，提取data字段
-    if (data && typeof data === 'object' && 'data' in data) {
-      return data.data;
-    }
-    return data;
+    return parseApiResponse<UnreadCount>(data);
   } else {
     // 非JSON响应，可能是HTML错误页面
     const text = await response.text();
@@ -315,11 +324,7 @@ export async function getConversations(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    // 如果返回的是ApiResponse格式，提取data字段
-    if (data && typeof data === 'object' && 'data' in data) {
-      return data.data;
-    }
-    return data;
+    return parseApiResponse<Page<Conversation>>(data);
   } else {
     const text = await response.text();
     console.error('收到非JSON响应:', text.substring(0, 200));
@@ -346,7 +351,8 @@ export async function getConversationById(
     throw new Error(`获取对话详情失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<Conversation>(data);
 }
 
 /**
@@ -403,7 +409,8 @@ export async function getConversationMessages(
     throw new Error(`获取对话消息失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<Page<ConversationMessage>>(data);
 }
 
 /**
@@ -449,7 +456,8 @@ export async function markConversationAsRead(
     throw new Error(`标记对话已读失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<Conversation>(data);
 }
 
 /**
@@ -473,7 +481,8 @@ export async function pinConversation(
     throw new Error(`置顶对话失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<Conversation>(data);
 }
 
 /**
@@ -497,7 +506,8 @@ export async function muteConversation(
     throw new Error(`设置免打扰失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<Conversation>(data);
 }
 
 /**
@@ -540,7 +550,8 @@ export async function getNotificationSettings(
     throw new Error(`获取提醒设置失败: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return parseApiResponse<NotificationSettings>(data);
 }
 
 /**
@@ -567,6 +578,41 @@ export async function updateNotificationSettings(
 }
 
 // ==================== E-SOUL来信相关 ====================
+
+/**
+ * 触发E-SOUL来信（测试用）
+ */
+export async function triggerESoulLetter(
+  token: string,
+  letterType?: 'GREETING' | 'CARE' | 'SHARE' | 'REMINDER'
+): Promise<{ success: boolean; messageId?: number; message?: string }> {
+  const params = new URLSearchParams();
+  if (letterType) {
+    params.append('letterType', letterType);
+  }
+
+  const response = await fetch(`${API_BASE}/esoul-letters?${params.toString()}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('触发E-SOUL来信失败:', response.status, errorText.substring(0, 200));
+    try {
+      const errorJson = JSON.parse(errorText);
+      throw new Error(errorJson.message || `触发E-SOUL来信失败: ${response.statusText}`);
+    } catch {
+      throw new Error(`触发E-SOUL来信失败: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  const data = await response.json();
+  return parseApiResponse<{ success: boolean; messageId?: number; message?: string }>(data);
+}
 
 /**
  * 回复E-SOUL来信
@@ -676,10 +722,48 @@ export async function createMessage(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    if (data && typeof data === 'object' && 'data' in data) {
-      return data.data;
+    return parseApiResponse<MailboxMessage>(data);
+  } else {
+    const text = await response.text();
+    console.error('收到非JSON响应:', text.substring(0, 200));
+    throw new Error('服务器返回了无效的响应格式');
+  }
+}
+
+/**
+ * 获取消息的回复列表
+ */
+export async function getMessageReplies(
+  messageId: number,
+  token: string
+): Promise<MailboxMessage[]> {
+  const response = await fetch(`${API_BASE}/messages/${messageId}/replies`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('获取回复列表失败:', response.status, errorText.substring(0, 200));
+    try {
+      const errorJson = JSON.parse(errorText);
+      throw new Error(errorJson.message || `获取回复列表失败: ${response.statusText}`);
+    } catch {
+      throw new Error(`获取回复列表失败: ${response.status} ${response.statusText}`);
     }
-    return data;
+  }
+
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    const data = await response.json();
+    // 回复列表可能是数组，也可能是ApiResponse包装
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return parseApiResponse<MailboxMessage[]>(data);
   } else {
     const text = await response.text();
     console.error('收到非JSON响应:', text.substring(0, 200));
@@ -694,6 +778,7 @@ export const mailboxApi = {
   // 消息相关
   getMessages,
   getMessageById,
+  getMessageReplies,
   createMessage,
   markMessageAsRead,
   markMessageAsImportant,
@@ -719,6 +804,7 @@ export const mailboxApi = {
   updateNotificationSettings,
   
   // E-SOUL来信相关
+  triggerESoulLetter,
   replyToESoulLetter,
   
   // 共鸣消息相关

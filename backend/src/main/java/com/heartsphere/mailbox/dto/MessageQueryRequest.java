@@ -59,3 +59,4 @@ public class MessageQueryRequest {
     private Integer size = 20;
 }
 
+

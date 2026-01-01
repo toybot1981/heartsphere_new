@@ -33,3 +33,4 @@ CREATE TABLE IF NOT EXISTS mailbox_conversation_messages (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='跨时空信箱对话消息表';
 
+

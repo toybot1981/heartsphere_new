@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MailboxMessage } from '../../types/mailbox';
 import { mailboxApi } from '../../services/api/mailbox';
+import { isESoulLetter } from '../../utils/mailboxHelpers';
 
 interface MessageDetailProps {
   message: MailboxMessage;
@@ -71,10 +72,9 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
 
   const handleReply = async () => {
     // 如果是E-SOUL来信，显示回复功能
-    const isESoulLetter = message.messageCategory === 'ESOUL_LETTER' || 
-                          message.senderType === 'ESOUL';
+    const isESoul = isESoulLetter(message);
     
-    if (!isESoulLetter) {
+    if (!isESoul) {
       // 其他类型消息可以创建对话或直接回复
       return;
     }
@@ -106,8 +106,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
     }
   };
 
-  const isESoulLetter = message.messageCategory === 'ESOUL_LETTER' || 
-                        message.senderType === 'ESOUL';
+  const isESoul = isESoulLetter(message);
   
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-950">
@@ -171,11 +170,11 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
         <div className="max-w-4xl mx-auto animate-fade-in">
           {/* 发送者信息 */}
           <div className={`flex items-start gap-6 mb-8 pb-6 border-b relative ${
-            isESoulLetter 
+            isESoul 
               ? 'border-purple-700/50' 
               : 'border-slate-700/50'
           }`}>
-            {isESoulLetter && (
+            {isESoul && (
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-950/20 via-pink-950/20 to-purple-950/20 rounded-2xl blur-xl"></div>
                 <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
@@ -185,18 +184,18 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
             <div className="relative z-10">
               {message.senderAvatar ? (
                 <div className={`relative ${
-                  isESoulLetter ? 'ring-4 ring-purple-500/30 ring-offset-4 ring-offset-slate-900' : ''
+                  isESoul ? 'ring-4 ring-purple-500/30 ring-offset-4 ring-offset-slate-900' : ''
                 }`}>
                   <img
                     src={message.senderAvatar}
                     alt={message.senderName || '发送者'}
                     className={`w-20 h-20 rounded-full border-4 object-cover shadow-2xl ${
-                      isESoulLetter 
+                      isESoul 
                         ? 'border-purple-500/50' 
                         : 'border-slate-600/50'
                     }`}
                   />
-                  {isESoulLetter && (
+                  {isESoul && (
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm shadow-lg animate-pulse">
                       ✨
                     </div>
@@ -204,7 +203,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
                 </div>
               ) : (
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-2xl ${
-                  isESoulLetter
+                  isESoul
                     ? 'bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500'
                     : 'bg-gradient-to-br from-slate-600 to-slate-700'
                 }`}>
@@ -216,11 +215,11 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
             <div className="flex-1 relative z-10">
               <div className="flex items-center gap-3 mb-3 flex-wrap">
                 <h2 className={`text-3xl font-bold ${
-                  isESoulLetter ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300' : 'text-white'
+                  isESoul ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300' : 'text-white'
                 }`}>
                   {message.title || '无标题'}
                 </h2>
-                {isESoulLetter && (
+                {isESoul && (
                   <span className="text-xs bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 px-3 py-1.5 rounded-full font-semibold border border-purple-500/30 backdrop-blur-sm">
                     E-SOUL来信
                   </span>
@@ -228,10 +227,10 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
               </div>
               <div className="space-y-1.5">
                 <p className={`text-sm font-medium ${
-                  isESoulLetter ? 'text-purple-300' : 'text-slate-400'
+                  isESoul ? 'text-purple-300' : 'text-slate-400'
                 }`}>
                   来自：<span className={`font-semibold ${
-                    isESoulLetter ? 'text-pink-300' : 'text-purple-400'
+                    isESoul ? 'text-pink-300' : 'text-purple-400'
                   }`}>
                     {message.senderName || '未知发送者'}
                   </span>
@@ -241,7 +240,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className={`text-xs ${
-                    isESoulLetter ? 'text-purple-400/70' : 'text-slate-500'
+                    isESoul ? 'text-purple-400/70' : 'text-slate-500'
                   }`}>
                     {new Date(message.createdAt).toLocaleString('zh-CN', {
                       year: 'numeric',
@@ -258,15 +257,15 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
 
           {/* 消息正文 */}
           <div className={`relative ${
-            isESoulLetter 
+            isESoul 
               ? 'bg-gradient-to-br from-purple-950/40 via-pink-950/30 to-purple-950/40 p-8 rounded-2xl border border-purple-800/40 shadow-2xl shadow-purple-900/20' 
               : 'bg-slate-800/30 p-8 rounded-2xl border border-slate-700/50'
           }`}>
-            {isESoulLetter && (
+            {isESoul && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50 rounded-2xl"></div>
             )}
             <div className={`whitespace-pre-wrap leading-relaxed relative z-10 ${
-              isESoulLetter 
+              isESoul 
                 ? 'text-purple-100 text-lg' 
                 : 'text-slate-300'
             }`}>
@@ -275,7 +274,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
           </div>
 
           {/* 回复按钮（仅E-SOUL来信） */}
-          {isESoulLetter && (
+          {isESoul && (
             <div className="mt-8 pt-6 border-t border-purple-700/30">
               <button
                 onClick={handleReply}

@@ -50,3 +50,4 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     void deleteBySessionId(@Param("sessionId") String sessionId);
 }
 
+

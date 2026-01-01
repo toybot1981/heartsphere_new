@@ -86,14 +86,33 @@ export const memoryApi = {
     memories: SaveMemoryRequest[],
     token: string
   ): Promise<UserMemory[]> => {
-    return request<UserMemory[]>(`/memory/v1/users/${userId}/memories/batch`, {
+    const response = await request<{ data: UserMemory[] }>(`/memory/v1/users/${userId}/memories/batch`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ memories }),
+      body: JSON.stringify(memories),
     });
+    
+    // 处理响应格式
+    let memoryList = Array.isArray(response) ? response : (response as any).data || [];
+    
+    // 转换为前端格式
+    return memoryList.map((m: any) => ({
+      id: m.id,
+      userId: Number(userId),
+      memoryType: m.type,
+      importance: m.importance,
+      content: m.content,
+      structuredData: m.structuredData,
+      source: m.source,
+      sourceId: m.sourceId,
+      timestamp: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
+      usageCount: m.accessCount || 0,
+      confidence: m.confidence || 0.7,
+      metadata: m.metadata,
+    })) as UserMemory[];
   },
 
   /**
@@ -247,12 +266,31 @@ export const memoryApi = {
     sessionId: string,
     token: string
   ): Promise<UserMemory[]> => {
-    return request<UserMemory[]>(`/memory/v1/users/${userId}/sessions/${sessionId}/extract`, {
+    const response = await request<{ data: UserMemory[] }>(`/memory/v1/users/${userId}/sessions/${sessionId}/extract`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+    
+    // 处理响应格式
+    let memoryList = Array.isArray(response) ? response : (response as any).data || [];
+    
+    // 转换为前端格式
+    return memoryList.map((m: any) => ({
+      id: m.id,
+      userId: Number(userId),
+      memoryType: m.type,
+      importance: m.importance,
+      content: m.content,
+      structuredData: m.structuredData,
+      source: m.source,
+      sourceId: m.sourceId,
+      timestamp: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
+      usageCount: m.accessCount || 0,
+      confidence: m.confidence || 0.7,
+      metadata: m.metadata,
+    })) as UserMemory[];
   },
 };
 

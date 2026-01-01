@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MailboxMessage, MessageCategory } from '../../types/mailbox';
 import { mailboxApi } from '../../services/api/mailbox';
+import { isESoulLetter, isResonanceMessage, isSystemMessage } from '../../utils/mailboxHelpers';
 
 interface MessageListProps {
   token: string;
@@ -225,31 +226,24 @@ interface MessageCardProps {
 }
 
 const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
-  // 判断是否为E-SOUL来信
-  const isESoulLetter = message.messageCategory === 'ESOUL_LETTER' || 
-                        message.senderType === 'ESOUL';
-  
-  // 判断是否为共鸣消息
-  const isResonanceMessage = message.messageCategory === 'RESONANCE' || 
-                             message.senderType === 'HEARTSPHERE';
-  
-  // 判断是否为系统消息
-  const isSystemMessage = message.messageCategory === 'SYSTEM' || 
-                          message.senderType === 'SYSTEM';
+  // 使用工具函数判断消息类型
+  const isESoul = isESoulLetter(message);
+  const isResonance = isResonanceMessage(message);
+  const isSystem = isSystemMessage(message);
   
   return (
     <div
       onClick={onClick}
       className={`p-5 rounded-2xl cursor-pointer transition-all duration-300 border relative overflow-hidden group hover:scale-[1.02] active:scale-[0.98] ${
-        isESoulLetter
+        isESoul
           ? message.isRead
             ? 'bg-gradient-to-br from-purple-950/60 via-purple-900/40 to-indigo-950/60 border-purple-700/40 hover:border-purple-500/60 hover:shadow-lg hover:shadow-purple-500/10'
             : 'bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-indigo-900/80 border-pink-500/60 hover:border-pink-400/80 shadow-xl shadow-pink-900/30 ring-2 ring-pink-500/20'
-          : isResonanceMessage
+          : isResonance
             ? message.isRead
               ? 'bg-gradient-to-br from-blue-950/60 via-cyan-900/40 to-teal-950/60 border-blue-700/40 hover:border-blue-500/60 hover:shadow-lg hover:shadow-blue-500/10'
               : 'bg-gradient-to-br from-blue-900/80 via-cyan-900/60 to-teal-900/80 border-cyan-500/60 hover:border-cyan-400/80 shadow-xl shadow-cyan-900/30 ring-2 ring-cyan-500/20'
-            : isSystemMessage
+            : isSystem
               ? message.isRead
                 ? 'bg-gradient-to-br from-amber-950/60 via-yellow-900/40 to-orange-950/60 border-amber-700/40 hover:border-amber-500/60 hover:shadow-lg hover:shadow-amber-500/10'
                 : 'bg-gradient-to-br from-amber-900/80 via-yellow-900/60 to-orange-900/80 border-yellow-500/60 hover:border-yellow-400/80 shadow-xl shadow-yellow-900/30 ring-2 ring-yellow-500/20'
@@ -266,15 +260,15 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
       {/* 未读指示器 */}
       {!message.isRead && (
         <div className={`absolute top-3 right-3 w-3 h-3 rounded-full animate-pulse shadow-lg ${
-          isESoulLetter ? 'bg-pink-400 shadow-pink-400/50' : 
-          isResonanceMessage ? 'bg-cyan-400 shadow-cyan-400/50' :
-          isSystemMessage ? 'bg-yellow-400 shadow-yellow-400/50' :
+          isESoul ? 'bg-pink-400 shadow-pink-400/50' : 
+          isResonance ? 'bg-cyan-400 shadow-cyan-400/50' :
+          isSystem ? 'bg-yellow-400 shadow-yellow-400/50' :
           'bg-indigo-400 shadow-indigo-400/50'
         }`} />
       )}
       
       {/* E-SOUL特殊装饰 */}
-      {isESoulLetter && (
+      {isESoul && (
         <>
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 opacity-60"></div>
           <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl"></div>
@@ -284,18 +278,18 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
       <div className="flex items-start gap-4 relative z-10">
         {message.senderAvatar ? (
           <div className={`relative flex-shrink-0 transition-transform group-hover:scale-110 ${
-            isESoulLetter ? 'ring-2 ring-purple-500/50 ring-offset-2 ring-offset-slate-900' : ''
+            isESoul ? 'ring-2 ring-purple-500/50 ring-offset-2 ring-offset-slate-900' : ''
           }`}>
             <img
               src={message.senderAvatar}
               alt={message.senderName || '发送者'}
               className={`w-12 h-12 rounded-full object-cover border-2 flex-shrink-0 transition-all ${
-                isESoulLetter 
+                isESoul 
                   ? 'border-purple-500/60 shadow-lg shadow-purple-500/30' 
                   : 'border-slate-600/60'
               }`}
             />
-            {isESoulLetter && (
+            {isESoul && (
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs shadow-lg animate-pulse">
                 ✨
               </div>
@@ -303,9 +297,9 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
           </div>
         ) : (
           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
-            isESoulLetter ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
-            isResonanceMessage ? 'bg-gradient-to-br from-cyan-500 to-blue-500' :
-            isSystemMessage ? 'bg-gradient-to-br from-yellow-500 to-orange-500' :
+            isESoul ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
+            isResonance ? 'bg-gradient-to-br from-cyan-500 to-blue-500' :
+            isSystem ? 'bg-gradient-to-br from-yellow-500 to-orange-500' :
             'bg-gradient-to-br from-slate-600 to-slate-700'
           }`}>
             {(message.senderName || 'U').charAt(0).toUpperCase()}
@@ -317,22 +311,22 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
             <div className="flex items-center gap-2.5 flex-wrap">
               <h4 className={`font-bold text-base truncate ${
                 message.isRead 
-                  ? isESoulLetter ? 'text-purple-300/80' : 'text-slate-400'
-                  : isESoulLetter ? 'text-pink-200' : 'text-white'
+                  ? isESoul ? 'text-purple-300/80' : 'text-slate-400'
+                  : isESoul ? 'text-pink-200' : 'text-white'
               }`}>
                 {message.senderName || '未知发送者'}
               </h4>
-              {isESoulLetter && (
+              {isESoul && (
                 <span className="text-xs bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 px-2.5 py-1 rounded-full font-medium border border-purple-500/30 backdrop-blur-sm">
                   E-SOUL
                 </span>
               )}
-              {isResonanceMessage && (
+              {isResonance && (
                 <span className="text-xs bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-200 px-2.5 py-1 rounded-full font-medium border border-cyan-500/30 backdrop-blur-sm">
                   共鸣
                 </span>
               )}
-              {isSystemMessage && (
+              {isSystem && (
                 <span className="text-xs bg-gradient-to-r from-yellow-500/30 to-amber-500/30 text-yellow-200 px-2.5 py-1 rounded-full font-medium border border-yellow-500/30 backdrop-blur-sm">
                   系统
                 </span>
@@ -350,14 +344,14 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
           
           {message.title && (
             <p className={`text-sm font-semibold truncate mb-2 ${
-              isESoulLetter ? 'text-purple-200' : 'text-slate-300'
+              isESoul ? 'text-purple-200' : 'text-slate-300'
             }`}>
               {message.title}
             </p>
           )}
           
           <p className={`text-sm line-clamp-2 leading-relaxed mb-3 ${
-            isESoulLetter ? 'text-purple-100/90' : 'text-slate-400'
+            isESoul ? 'text-purple-100/90' : 'text-slate-400'
           }`}>
             {message.content}
           </p>
@@ -367,7 +361,7 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onClick }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className={`text-xs ${
-              isESoulLetter ? 'text-purple-400/70' : 'text-slate-500'
+              isESoul ? 'text-purple-400/70' : 'text-slate-500'
             }`}>
               {new Date(message.createdAt).toLocaleString('zh-CN', {
                 month: 'short',

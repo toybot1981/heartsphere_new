@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho, DialogueStyle } from '../types';
+import { ChatWindowProps, ScenarioState, ScenarioStateUpdates } from '../types/chat';
 import { aiService } from '../services/ai';
 import { AIConfigManager } from '../services/ai/config';
-import { GenerateContentResponse } from '@google/genai';
 import { Button } from './Button';
 import { showAlert } from '../utils/dialog';
 import { createScenarioContext } from '../constants';
@@ -15,104 +15,37 @@ import { MemorySource } from '../services/memory-system/types/MemoryTypes';
 import { useCompanionSystem } from '../services/companion-system/hooks/useCompanionSystem';
 import { useGrowthSystem } from '../services/growth-system/hooks/useGrowthSystem';
 import { useCompanionMemorySystem } from '../services/companion-memory/hooks/useCompanionMemorySystem';
-import { CelebrationProvider } from './growth/CelebrationProvider';
 import { CareMessageNotification } from './companion/CareMessageNotification';
 import { EmojiPicker } from './emoji/EmojiPicker';
 import { CardMaker } from './card/CardMaker';
-// import { InteractionButtons, CommentList } from './interaction'; // 已移除，可在留言板测试
-// import { ContentType } from '../services/interaction-system/types/InteractionTypes'; // 已移除
+import { RichTextRenderer } from './chat/RichTextRenderer';
+import { MessageBubble } from './chat/MessageBubble';
+import { VoiceModeUI } from './chat/VoiceModeUI';
+import { ScenarioChoices } from './chat/ScenarioChoices';
+import { HeaderBar } from './chat/HeaderBar';
+import { BackgroundLayer } from './chat/BackgroundLayer';
+import { CharacterAvatar } from './chat/CharacterAvatar';
+import { useImagePreload } from './chat/hooks/useImagePreload';
+import { decodeBase64ToBytes, decodeAudioData } from '../utils/audio';
+import { useUIState } from './chat/hooks/useUIState';
+import { useAudioPlayback } from './chat/hooks/useAudioPlayback';
+import { useVoiceInput } from './chat/hooks/useVoiceInput';
+import { useHistoryInitialization } from './chat/hooks/useHistoryInitialization';
+import { useSceneGeneration } from './chat/hooks/useSceneGeneration';
+import { useStreamResponse } from './chat/hooks/useStreamResponse';
+import { useSystemIntegration } from './chat/hooks/useSystemIntegration';
+import { buildSystemInstruction, getDialogueStyleInstruction } from '../utils/chat/systemInstruction';
+import { createErrorMessage, getErrorMessage } from '../utils/chat/errorHandling';
+import { applyOptionEffects, processRandomEvents, checkOptionConditions } from '../utils/chat/scenarioHelpers';
+import { generateAIResponse } from './chat/utils/generateAIResponse';
+import { logger } from '../utils/logger';
+import { getToken } from '../services/api/base/tokenStorage';
+import { mailboxApi } from '../services/api/mailbox';
 
-// --- Audio Decoding Helpers (Raw PCM) ---
-function decode(base64: string) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
-  }
-  return buffer;
-}
-
-// --- Rich Text Parser ---
-// Parses *actions* and (thoughts) for styled rendering
-const RichTextRenderer: React.FC<{ text: string, colorAccent: string }> = ({ text, colorAccent }) => {
-    const parts = text.split(/(\*[^*]+\*|\([^)]+\))/g);
-
-    // 过滤掉空字符串，然后渲染，确保每个元素都有唯一的 key
-    const validParts = parts
-        .map((part, index) => ({ part, index }))
-        .filter(({ part }) => part.trim() !== '');
-
-    return (
-        <span className="whitespace-pre-wrap">
-            {validParts.map(({ part, index }) => {
-                // 使用原始索引确保 key 的唯一性和稳定性
-                const uniqueKey = `rich-text-${index}`;
-                
-                if (part.startsWith('*') && part.endsWith('*')) {
-                    // Action: Italic, slightly faded
-                    return (
-                        <span key={uniqueKey} className="italic opacity-70 text-sm mx-1 block my-1" style={{ color: '#e5e7eb' }}>
-                            {part.slice(1, -1)}
-                        </span>
-                    );
-                } else if (part.startsWith('(') && part.endsWith(')')) {
-                    // Thought/Inner Monologue: Smaller, distinct color
-                    return (
-                        <span key={uniqueKey} className="block text-xs my-1 font-serif opacity-80 tracking-wide" style={{ color: `${colorAccent}cc` }}>
-                            {part}
-                        </span>
-                    );
-                } else {
-                    // Standard dialogue
-                    return <span key={uniqueKey}>{part}</span>;
-                }
-            })}
-        </span>
-    );
-};
-
-interface ChatWindowProps {
-  character: Character;
-  customScenario?: CustomScenario;
-  history: Message[];
-  scenarioState?: { 
-    currentNodeId: string;
-    favorability?: Record<string, number>;
-    events?: string[];
-    items?: string[];
-    visitedNodes?: string[];
-    currentTime?: number;
-    startTime?: number;
-  };
-  settings: AppSettings;
-  userProfile: UserProfile;
-  activeJournalEntryId: string | null; 
-  onUpdateHistory: (msgs: Message[] | ((prev: Message[]) => Message[])) => void;
-  onUpdateScenarioState?: (nodeId: string) => void;
-  onUpdateScenarioStateData?: (updates: { favorability?: Record<string, number>; events?: string[]; items?: string[]; visitedNodes?: string[]; currentTime?: number }) => void;
-  onBack: (echo?: JournalEcho) => void;
-  participatingCharacters?: Character[]; // 参与剧本的角色列表
-}
+// 类型定义已移至 types/chat.ts
+// 音频解码函数已移至 utils/audio.ts
+// RichTextRenderer 组件已移至 components/chat/RichTextRenderer.tsx
+// 状态管理Hooks已移至 components/chat/hooks/
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ 
   character, customScenario, history, scenarioState, settings, userProfile, activeJournalEntryId, onUpdateHistory, onUpdateScenarioState, onUpdateScenarioStateData, onBack, participatingCharacters 
@@ -120,24 +53,75 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // 防御性检查：确保history是数组
   const safeHistory = Array.isArray(history) ? history : [];
   
-  // 调试日志：检查history数据
+  // 调试日志：检查history数据（仅在开发环境）
   useEffect(() => {
-    console.log('[ChatWindow] history prop变化:', {
-    historyLength: history?.length || 0,
+    logger.debug('[ChatWindow] history prop变化:', {
+      historyLength: history?.length || 0,
       historyType: typeof history,
       isArray: Array.isArray(history),
       safeHistoryLength: safeHistory.length,
-      safeHistoryContent: safeHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
-  });
-  }, [history, safeHistory]);
+    });
+  }, [history?.length]);
   
+  // 基础状态
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showCardMaker, setShowCardMaker] = useState(false);
-  // const [showCommentsFor, setShowCommentsFor] = useState<string | null>(null); // 已移除，可在留言板测试
-  const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(character?.backgroundUrl || null);
-  const [isGeneratingScene, setIsGeneratingScene] = useState(false);
+  
+  // UI状态管理（使用自定义Hook）
+  const uiState = useUIState();
+  
+  // 音频播放状态管理（使用自定义Hook）
+  const audioPlayback = useAudioPlayback();
+  
+  // 语音输入状态管理（使用自定义Hook）
+  const voiceInput = useVoiceInput();
+  
+  // 记忆结晶状态
+  const [isCrystalizing, setIsCrystalizing] = useState(false);
+  const [generatedEcho, setGeneratedEcho] = useState<JournalEcho | undefined>(undefined);
+  
+  // E-SOUL发邮件测试状态
+  const [isTriggeringLetter, setIsTriggeringLetter] = useState(false);
+  
+  // 触发E-SOUL来信（测试用）
+  const handleTriggerESoulLetter = async () => {
+    const token = getToken();
+    if (!token) {
+      showAlert('请先登录', '需要登录才能发送E-SOUL来信');
+      return;
+    }
+
+    setIsTriggeringLetter(true);
+    try {
+      const result = await mailboxApi.triggerESoulLetter(token);
+      
+      if (result.success) {
+        showAlert(
+          'E-SOUL来信已发送',
+          `来信已成功发送到您的信箱！\n消息ID: ${result.messageId || 'N/A'}\n\n请前往信箱查看。`,
+          'success'
+        );
+      } else {
+        showAlert(
+          '发送失败',
+          result.message || '未满足触发条件或没有可用角色',
+          'error'
+        );
+      }
+    } catch (error: any) {
+      console.error('触发E-SOUL来信失败:', error);
+      showAlert(
+        '发送失败',
+        error.message || '发送E-SOUL来信时发生错误，请稍后重试',
+        'error'
+      );
+    } finally {
+      setIsTriggeringLetter(false);
+    }
+  };
+  
+  // DOM引用
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // 温度感引擎集成
   const { engine, state: engineState, isReady: engineReady } = useTemperatureEngine({
@@ -241,232 +225,53 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     recordMilestones: true,
     recordEmotions: true,
   });
-  
-  // Cinematic Mode State
-  const [isCinematic, setIsCinematic] = useState(false);
 
-  // Audio State
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
-  const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
+  // 系统集成Hook（统一处理温度感、情绪、记忆、陪伴、成长等系统）
+  const systemIntegration = useSystemIntegration({
+    engine,
+    engineReady,
+    emotionSystem,
+    memorySystem,
+    companionSystem,
+    companionMemorySystem,
+    growthSystem,
+    emotionMemoryFusion,
+    scenarioState,
+    safeHistory,
+  });
   
-  // Voice Input State
-  const [isListening, setIsListening] = useState(false);
-  const [speechError, setSpeechError] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
-  
-  // Voice Mode State (类似电话模式的纯语音对话)
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const lastBotMessageIdRef = useRef<string | null>(null);
-  
-  // Manual Memory Crystallization State
-  const [isCrystalizing, setIsCrystalizing] = useState(false);
-  const [generatedEcho, setGeneratedEcho] = useState<JournalEcho | undefined>(undefined);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-  
-  // 标记是否已经初始化过history（防止在用户交互后重置history）
-  const hasInitializedHistoryRef = useRef<boolean>(false);
+  // 场景生成状态管理（使用自定义Hook）
+  const sceneGeneration = useSceneGeneration({
+    isStoryMode: !!customScenario || (character?.id?.startsWith('story_') ?? false),
+    autoGenerate: settings.autoGenerateStoryScenes || false,
+    lastMessage: safeHistory[safeHistory.length - 1],
+    defaultBackgroundUrl: character?.backgroundUrl || null,
+  });
+
+  // 流式响应处理（使用自定义Hook）
+  const streamResponse = useStreamResponse({
+    onUpdateHistory,
+    onLoadingChange: setIsLoading,
+  });
 
   // Determine mode
   const isStoryMode = !!customScenario || (character?.id?.startsWith('story_') ?? false);
   const isScenarioMode = !!customScenario; // Specifically for Node-based scenarios
 
-  const scrollToBottom = () => {
+  // 滚动到底部（使用useCallback优化）
+  const scrollToBottom = React.useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
-  useEffect(scrollToBottom, [safeHistory, isCinematic]); 
+  useEffect(() => {
+    scrollToBottom();
+  }, [safeHistory.length, uiState.isCinematic, scrollToBottom]); 
 
   // Note: Session reset is no longer needed with unified AI service
   // The aiService handles context management automatically
 
-  // 存储上一次的character.id和customScenario.id，用于检测切换
-  const prevCharacterIdRef = useRef<string | undefined>(character?.id);
-  const prevScenarioIdRef = useRef<string | undefined>(customScenario?.id);
-  
-  // 检测character或scenario是否切换了
-  useEffect(() => {
-    const characterChanged = prevCharacterIdRef.current !== character?.id;
-    const scenarioChanged = prevScenarioIdRef.current !== customScenario?.id;
-    
-    if (characterChanged || scenarioChanged) {
-      console.log('[ChatWindow] character或scenario切换，重置初始化标记:', {
-        prevCharacterId: prevCharacterIdRef.current,
-        newCharacterId: character?.id,
-        prevScenarioId: prevScenarioIdRef.current,
-        newScenarioId: customScenario?.id,
-        currentHistoryLength: safeHistory.length
-      });
-      hasInitializedHistoryRef.current = false;
-      prevCharacterIdRef.current = character?.id;
-      prevScenarioIdRef.current = customScenario?.id;
-    }
-  }, [character?.id, customScenario?.id]);
-  
-  // 初始化history：只在首次加载且history为空时执行
-  // 使用useEffect + hasInitializedHistoryRef确保不会在用户交互后重置history
-  useEffect(() => {
-    if (!character) return;
-
-    // 关键检查：
-    // 1. 还没有初始化过
-    // 2. history确实为空
-    // 如果history已经有内容（用户已经交互过），就不再初始化
-    const shouldInitialize = !hasInitializedHistoryRef.current && safeHistory.length === 0;
-    
-    console.log('[ChatWindow] 检查是否需要初始化history:', {
-      shouldInitialize,
-      hasInitialized: hasInitializedHistoryRef.current,
-      historyLength: safeHistory.length,
-      characterId: character.id,
-      customScenarioId: customScenario?.id
-    });
-    
-    if (shouldInitialize) {
-      console.log('[ChatWindow] ========== 开始初始化history ==========');
-      hasInitializedHistoryRef.current = true; // 立即标记为已初始化，防止重复执行
-      
-      if (customScenario && onUpdateScenarioState) {
-          // Scenario Mode: 确保 scenarioState 已初始化
-          let targetNodeId = scenarioState?.currentNodeId;
-          
-          // 如果 scenarioState 未初始化或 currentNodeId 无效，使用 startNodeId
-          if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
-            targetNodeId = customScenario.startNodeId;
-            
-            // 更新 scenarioState
-            if (onUpdateScenarioState) {
-              onUpdateScenarioState(targetNodeId);
-            }
-          }
-          
-          const startNode = customScenario.nodes[targetNodeId];
-          if (startNode) {
-            console.log('[ChatWindow] Scenario Mode: 调用handleScenarioTransition');
-            handleScenarioTransition(startNode, null);
-          } else {
-            console.error('[ChatWindow] 找不到起始节点:', {
-              targetNodeId,
-              availableNodes: Object.keys(customScenario.nodes)
-            });
-          }
-      } else if (!isStoryMode) {
-        // Normal Mode
-        console.log('[ChatWindow] Normal Mode: 初始化firstMessage');
-        const initMsg = { id: 'init', role: 'model' as const, text: character.firstMessage, timestamp: Date.now() };
-        onUpdateHistory([initMsg]);
-        console.log('[ChatWindow] Normal Mode: firstMessage已添加:', initMsg);
-      } else if (isStoryMode && !customScenario) {
-        // Main Story Mode
-        console.log('[ChatWindow] Main Story Mode: 初始化firstMessage');
-        const initMsg = { id: 'init_story', role: 'model' as const, text: character.firstMessage, timestamp: Date.now() };
-        onUpdateHistory([initMsg]);
-        console.log('[ChatWindow] Main Story Mode: firstMessage已添加:', initMsg);
-      }
-      
-      console.log('[ChatWindow] ========== history初始化完成 ==========');
-    } else if (!hasInitializedHistoryRef.current && safeHistory.length > 0) {
-      // history已经有内容（可能是从外部加载的），标记为已初始化（防止后续被重置）
-      console.log('[ChatWindow] history已有内容，标记为已初始化，防止被重置:', {
-        historyLength: safeHistory.length,
-        historyPreview: safeHistory.map(m => ({ id: m.id, role: m.role }))
-      });
-      hasInitializedHistoryRef.current = true;
-    }
-  }, [character?.id, customScenario?.id]);
-
-  useEffect(() => {
-    if (!isStoryMode || !settings.autoGenerateStoryScenes) return;
-    
-    const lastMsg = safeHistory[safeHistory.length - 1];
-    if (lastMsg && lastMsg.role === 'model' && !isGeneratingScene) {
-        const generate = async () => {
-            setIsGeneratingScene(true);
-            try {
-                const desc = await aiService.generateSceneDescription(history);
-                if (desc) {
-                    const prompt = `${desc}. Style: Modern Chinese Anime (Manhua), High Quality, Cinematic Lighting, Vibrant Colors. Aspect Ratio: 16:9.`;
-                    const img = await aiService.generateImageFromPrompt(prompt, '16:9');
-                    if (img) setSceneImageUrl(img);
-                }
-            } catch (e) {
-                console.error("Scene generation error (UI handled):", e);
-            } finally {
-                setIsGeneratingScene(false);
-            }
-        };
-        const timeoutId = setTimeout(generate, 500);
-        return () => clearTimeout(timeoutId);
-    }
-  }, [history, isStoryMode, settings.autoGenerateStoryScenes]);
-
-  const stopAudio = () => {
-    if (sourceNodeRef.current) { 
-        try { sourceNodeRef.current.stop(); } catch(e) {/* already stopped */} 
-        sourceNodeRef.current = null; 
-    }
-    setPlayingMessageId(null);
-    setIsPlayingAudio(false);
-  };
-  
-  const handlePlayAudio = async (msgId: string, text: string) => {
-    if (playingMessageId === msgId) {
-      stopAudio();
-      return;
-    }
-    stopAudio(); 
-    setAudioLoadingId(msgId);
-
-    try {
-      if (!audioContextRef.current) {
-         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
-      }
-      const ctx = audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-
-      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
-      if (!base64Audio) throw new Error("No audio data generated");
-
-      const audioBytes = decode(base64Audio);
-      const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
-
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
-      source.onended = () => {
-        setPlayingMessageId(null);
-        setIsPlayingAudio(false);
-      };
-      
-      sourceNodeRef.current = source;
-      source.start();
-      
-      setPlayingMessageId(msgId);
-      setIsPlayingAudio(true);
-    } catch (e) {
-      console.error("Audio playback failed", e);
-      showAlert("语音播放失败，请检查网络或稍后重试", "错误", "error");
-    } finally {
-      setAudioLoadingId(null);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopAudio();
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-      }
-    };
-  }, []);
-
-  const handleScenarioTransition = async (node: StoryNode, choiceText: string | null) => {
+  // 场景转换处理函数（需要在useHistoryInitialization之前定义）
+  const handleScenarioTransition = React.useCallback(async (node: StoryNode, choiceText: string | null) => {
     setIsLoading(true);
     const tempBotId = `bot_${Date.now()}`;
     
@@ -479,25 +284,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     try {
       // 处理随机事件
-      if (node.randomEvents && node.randomEvents.length > 0 && onUpdateScenarioStateData) {
-        node.randomEvents.forEach(randomEvent => {
-          if (Math.random() < randomEvent.probability) {
-            // 触发随机事件
-            const effect = randomEvent.effect;
-            if (effect.type === 'event') {
-              onUpdateScenarioStateData({ events: [effect.target] });
-              console.log(`[ChatWindow] 触发随机事件: ${effect.target}`);
-            } else if (effect.type === 'item') {
-              onUpdateScenarioStateData({ items: [effect.target] });
-              console.log(`[ChatWindow] 触发随机物品: ${effect.target}`);
-            } else if (effect.type === 'favorability' && effect.value) {
-              const currentFavorability = scenarioState?.favorability?.[effect.target] || 0;
-              const newValue = Math.max(0, Math.min(100, currentFavorability + effect.value));
-              onUpdateScenarioStateData({ favorability: { [effect.target]: newValue } });
-              console.log(`[ChatWindow] 随机事件改变好感度: ${effect.target} -> ${newValue}`);
-            }
-          }
-        });
+      if (node.randomEvents && node.randomEvents.length > 0 && onUpdateScenarioStateData && scenarioState) {
+        const randomUpdates = processRandomEvents(node, scenarioState);
+        if (randomUpdates) {
+          onUpdateScenarioStateData(randomUpdates);
+        }
       }
 
       // 更新已访问节点（通过onUpdateScenarioState实现，因为visitedNodes需要特殊处理）
@@ -523,11 +314,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           // 添加小延迟以显示对话顺序
           await new Promise(resolve => setTimeout(resolve, 300));
         }
+        currentHistory = [...safeHistory]; // 更新当前历史
       }
       
       if (nodeType === 'ai-dynamic') {
         // AI动态生成模式：使用AI根据节点prompt生成内容
-        console.log('[ChatWindow] AI动态节点生成:', { nodeId: node.id, prompt: node.prompt });
+        logger.debug('[ChatWindow] AI动态节点生成:', { nodeId: node.id, prompt: node.prompt });
         
         // 检查当前配置模式
         const config = await AIConfigManager.getUserConfig();
@@ -542,32 +334,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         
         // 构建系统指令
-        let systemInstruction = focusedCharacter.systemInstruction || '';
-        if (focusedCharacter.mbti) systemInstruction += `\nMBTI: ${focusedCharacter.mbti}`;
-        if (focusedCharacter.speechStyle) systemInstruction += `\nSpeaking Style: ${focusedCharacter.speechStyle}`;
-        if (focusedCharacter.catchphrases) systemInstruction += `\nCommon Phrases: ${focusedCharacter.catchphrases.join(', ')}`;
-        if (focusedCharacter.secrets) systemInstruction += `\nSecrets: ${focusedCharacter.secrets}`;
-        
-        // 添加对话风格
-        const dialogueStyle = settings?.dialogueStyle || 'mobile-chat';
-        const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
-        systemInstruction += styleInstruction;
-        
-        // 添加场景上下文
-        if (userProfile) {
-          const scenarioContext = createScenarioContext(userProfile);
-          systemInstruction = `${scenarioContext}\n\n${systemInstruction}`;
-        }
-        
-        // 添加节点场景描述作为上下文
-        if (customScenario) {
-          systemInstruction += `\n\n[当前场景上下文]\n剧本标题：${customScenario.title}`;
-          if (customScenario.description) {
-            systemInstruction += `\n剧本描述：${customScenario.description}`;
-          }
-        }
-        systemInstruction += `\n\n[场景节点说明]\n${node.prompt || node.title}`;
-        systemInstruction += `\n\n请根据上述场景描述，生成符合角色性格的对话内容和旁白。`;
+        const systemInstruction = buildSystemInstruction(
+          focusedCharacter,
+          settings,
+          userProfile,
+          customScenario ? `\n\n[当前场景上下文]\n剧本标题：${customScenario.title}${customScenario.description ? `\n剧本描述：${customScenario.description}` : ''}\n\n[场景节点说明]\n${node.prompt || node.title}\n\n请根据上述场景描述，生成符合角色性格的对话内容和旁白。` : undefined
+        );
         
         // 转换消息历史（不包含当前节点的内容）
         const historyMessages = currentHistory.map(msg => ({
@@ -615,7 +387,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         return [...prevHistory, msg];
                       }
                     } catch (error) {
-                      console.error('[ChatWindow] AI动态节点更新history错误:', error);
+                      logger.error('[ChatWindow] AI动态节点更新history错误:', error);
                       return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
                     }
                   });
@@ -623,7 +395,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   setIsLoading(false);
                 }
               } catch (error) {
-                console.error('[ChatWindow] AI动态节点处理chunk错误:', error);
+                logger.error('[ChatWindow] AI动态节点处理chunk错误:', error);
                 setIsLoading(false);
               }
             }
@@ -654,7 +426,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               return [...prevHistory, botMsg];
             });
           } catch (error) {
-            console.error('[ChatWindow] AI动态节点生成失败（本地模式）:', error);
+            logger.error('[ChatWindow] AI动态节点生成失败（本地模式）:', error);
             // 如果AI生成失败，回退到使用prompt内容
             const nodeContent = node.prompt || node.title || '【场景内容】';
             const botMsg: Message = {
@@ -731,7 +503,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
        // renderChoices 函数会根据 scenarioState.currentNodeId 和 node.options 来显示选项
        
     } catch (e) {
-        console.error("Scenario transition failed", e);
+        logger.error("Scenario transition failed", e);
         onUpdateHistory((prevHistory) => {
           if (typeof prevHistory === 'function' || !Array.isArray(prevHistory)) {
             return [{id: tempBotId, role: 'model', text: "【系统错误：剧本执行失败，请稍后重试】", timestamp: Date.now()}];
@@ -741,7 +513,72 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [safeHistory, onUpdateHistory, onUpdateScenarioState, onUpdateScenarioStateData, scenarioState, customScenario, character, settings, userProfile, participatingCharacters]);
+
+  // 历史记录初始化（使用自定义Hook）
+  useHistoryInitialization({
+    character,
+    customScenario,
+    scenarioState,
+    safeHistory,
+    isStoryMode,
+    onUpdateHistory,
+    onUpdateScenarioState,
+    handleScenarioTransition,
+  });
+
+  // 音频播放处理（使用audioPlayback Hook的状态）
+  const handlePlayAudio = React.useCallback(async (msgId: string, text: string) => {
+    if (audioPlayback.playingMessageId === msgId) {
+      audioPlayback.stopAudio();
+      return;
+    }
+    audioPlayback.stopAudio();
+    audioPlayback.setLoadingMessageId(msgId);
+
+    try {
+      if (!audioPlayback.audioContextRef.current) {
+        audioPlayback.audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+      }
+      const ctx = audioPlayback.audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
+      if (!base64Audio) throw new Error("No audio data generated");
+
+      const audioBytes = decodeBase64ToBytes(base64Audio);
+      const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      source.onended = () => {
+        audioPlayback.setPlayingMessageId(null);
+      };
+      
+      audioPlayback.sourceNodeRef.current = source;
+      source.start();
+      
+      audioPlayback.setPlayingMessageId(msgId);
+    } catch (e) {
+      logger.error("Audio playback failed", e);
+      showAlert("语音播放失败，请检查网络或稍后重试", "错误", "error");
+    } finally {
+      audioPlayback.setLoadingMessageId(null);
+    }
+  }, [audioPlayback, character.voiceName]);
+
+  // 音频清理Effect（修复依赖项）
+  useEffect(() => {
+    return () => {
+      audioPlayback.stopAudio();
+      if (audioPlayback.audioContextRef.current && audioPlayback.audioContextRef.current.state !== 'closed') {
+        audioPlayback.audioContextRef.current.close();
+      }
+    };
+  }, [audioPlayback.stopAudio]);
 
   const handleOptionClick = (optionId: string) => {
       // 如果正在加载，阻止处理
@@ -750,25 +587,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
       
       if (!customScenario || !scenarioState) {
-          console.error('[ChatWindow] 缺少 customScenario 或 scenarioState');
+          logger.error('[ChatWindow] 缺少 customScenario 或 scenarioState');
           return;
       }
       
       const currentNodeId = scenarioState.currentNodeId;
       if (!currentNodeId) {
-          console.error('[ChatWindow] scenarioState.currentNodeId 为空');
+          logger.error('[ChatWindow] scenarioState.currentNodeId 为空');
           return;
       }
       
       const currentNode = customScenario.nodes[currentNodeId];
       if (!currentNode) {
-          console.error('[ChatWindow] 找不到当前节点:', currentNodeId);
+          logger.error('[ChatWindow] 找不到当前节点:', currentNodeId);
           return;
       }
       
       const option = currentNode.options?.find(o => o.id === optionId);
       if (!option) {
-          console.error('[ChatWindow] 找不到选项:', optionId);
+          logger.error('[ChatWindow] 找不到选项:', optionId);
           return;
       }
       
@@ -778,7 +615,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       const nextNode = customScenario.nodes[option.nextNodeId];
       if (!nextNode) {
-          console.error('[ChatWindow] 找不到下一个节点:', option.nextNodeId);
+          logger.error('[ChatWindow] 找不到下一个节点:', option.nextNodeId);
           return;
       }
       
@@ -795,18 +632,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   const change = effect.value || 0;
                   const newValue = Math.max(0, Math.min(100, currentFavorability + change)); // 限制在 0-100 之间
                   favorabilityUpdates[effect.target] = newValue;
-                  console.log(`[ChatWindow] 好感度变化: ${effect.target} ${currentFavorability} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
+                  logger.debug(`[ChatWindow] 好感度变化: ${effect.target} ${currentFavorability} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
               } else if (effect.type === 'event') {
                   // 触发事件（去重）
                   if (!scenarioState.events?.includes(effect.target)) {
                       newEvents.push(effect.target);
-                      console.log(`[ChatWindow] 触发事件: ${effect.target}`);
+                      logger.debug(`[ChatWindow] 触发事件: ${effect.target}`);
                   }
               } else if (effect.type === 'item') {
                   // 收集物品（去重）
                   if (!scenarioState.items?.includes(effect.target)) {
                       newItems.push(effect.target);
-                      console.log(`[ChatWindow] 收集物品: ${effect.target}`);
+                      logger.debug(`[ChatWindow] 收集物品: ${effect.target}`);
                   }
               }
           });
@@ -837,7 +674,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     // 防止并发请求：如果已有请求在进行，忽略新的请求
     if (isLoading) {
-      console.warn('[ChatWindow] 已有请求在进行中，忽略新请求');
+      logger.warn('[ChatWindow] 已有请求在进行中，忽略新请求');
       return;
     }
     
@@ -845,75 +682,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setInput('');
     setIsLoading(true);
     
-    // 温度感引擎：分析用户情绪
-    if (engine && engineReady) {
-      try {
-        const emotion = await engine.analyzeEmotion({
-          text: userText,
-        });
-        console.log('[ChatWindow] 温度感引擎情绪分析:', emotion);
-      } catch (error) {
-        console.error('[ChatWindow] 温度感引擎情绪分析失败:', error);
-      }
-    }
-
-    // 情绪感知系统：分析情绪
-    let emotionAnalysisResult = null;
-    if (emotionSystem.isReady) {
-      try {
-        emotionAnalysisResult = await emotionSystem.analyzeEmotion(userText, 'conversation');
-        console.log('[ChatWindow] 情绪感知系统分析:', emotionAnalysisResult);
-        
-        // 记录情绪记忆
-        if (companionMemorySystem.isReady && emotionAnalysisResult) {
-          companionMemorySystem.recordEmotionMemory(
-            emotionAnalysisResult.primaryEmotion,
-            emotionAnalysisResult.intensity,
-            userText
-          ).catch((error) => {
-            console.error('[ChatWindow] 记录情绪记忆失败:', error);
-          });
-        }
-      } catch (error) {
-        console.error('[ChatWindow] 情绪感知系统分析失败:', error);
-      }
-    }
-
-    // 记忆系统：提取记忆
-    if (memorySystem.isReady) {
-      try {
-        const memories = await memorySystem.extractAndSave(
-          userText,
-          MemorySource.CONVERSATION,
-          userMsg.id
-        );
-        console.log('[ChatWindow] 提取的记忆:', memories);
-        
-        // 记录成长数据（记忆数量）
-        if (growthSystem.isReady && memories.length > 0) {
-          growthSystem.recordGrowth({ memoryCount: memories.length }).catch((error) => {
-            console.error('[ChatWindow] 记录成长数据失败:', error);
-          });
-        }
-      } catch (error) {
-        console.error('[ChatWindow] 记忆提取失败:', error);
-      }
-    }
-    
-    // 更新最后互动时间（陪伴系统）
-    if (companionSystem.isReady) {
-      companionSystem.updateLastInteractionTime();
-    }
-    
-    // 记录成长数据（对话次数）
-    if (growthSystem.isReady) {
-      growthSystem.recordGrowth({ conversationCount: 1 }).catch((error) => {
-        console.error('[ChatWindow] 记录成长数据失败:', error);
-      });
-    }
-    
+    // 先创建用户消息对象（需要在系统集成之前创建，因为记忆系统需要userMsg.id）
     const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: userText, timestamp: Date.now() };
     const tempBotId = `bot_${Date.now()}`;
+    
+    // 系统集成：分析用户输入并集成各个系统（使用统一的Hook）
+    await systemIntegration.analyzeAndIntegrate(userText, userMsg.id);
     
     // 使用函数式更新，确保获取最新的history状态
     // 注意：用户消息需要立即添加到history，这样后续的响应才能正确追加
@@ -957,202 +731,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       });
       
+      // 统一模式和本地模式都使用相同的AI响应生成逻辑
+      // 统一模式：获取相关记忆用于上下文
+      let relevantMemories: any[] = [];
       if (config.mode === 'unified') {
         console.log('[ChatWindow] 使用统一接入模式调用大模型');
         
-        // 统一接入模式：使用新的 aiService
-        // 构建系统指令
-        let systemInstruction = character.systemInstruction || '';
-        if (character.mbti) systemInstruction += `\nMBTI: ${character.mbti}`;
-        if (character.speechStyle) systemInstruction += `\nSpeaking Style: ${character.speechStyle}`;
-        if (character.catchphrases) systemInstruction += `\nCommon Phrases: ${character.catchphrases.join(', ')}`;
-        if (character.secrets) systemInstruction += `\nSecrets: ${character.secrets}`;
+        // 温度感引擎：计算温度感（使用系统集成Hook）
+        const currentTemperature = await systemIntegration.calculateTemperature(userText);
         
-        // 添加对话风格
-        const dialogueStyle = settings?.dialogueStyle || 'mobile-chat';
-        const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
-        systemInstruction += styleInstruction;
-        
-        // 添加场景上下文
-        if (userProfile) {
-          const scenarioContext = createScenarioContext(userProfile);
-          systemInstruction = `${scenarioContext}\n\n${systemInstruction}`;
-        }
-        
-        // 转换消息历史：使用包含用户消息的完整历史
-        // 注意：这里使用historyWithUserMsg而不是safeHistory，确保包含刚添加的用户消息
-        const historyMessages = historyWithUserMsg.map(msg => ({
-          role: msg.role === 'model' ? 'assistant' : 'user' as 'user' | 'assistant' | 'system',
-          content: msg.text,
-        }));
-        
-        console.log('[ChatWindow] 统一模式 - 构建AI请求的historyMessages:', {
-          historyWithUserMsgLength: historyWithUserMsg.length,
-          historyMessagesLength: historyMessages.length,
-          lastMsg: historyMessages[historyMessages.length - 1],
-          allRoles: historyMessages.map(m => m.role)
-        });
-        
-        // 温度感引擎：计算温度感
-        let currentTemperature = null;
-        if (engine && engineReady) {
-          try {
-            const emotion = await engine.analyzeEmotion({ text: userText });
-            const hour = new Date().getHours();
-            const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : 
-                             hour >= 12 && hour < 18 ? 'afternoon' :
-                             hour >= 18 && hour < 22 ? 'evening' : 'night';
-            
-            currentTemperature = await engine.calculateTemperature({
-              userEmotion: emotion.type,
-              context: {
-                timeOfDay,
-                device: 'desktop',
-                userActivity: {
-                  sessionDuration: Date.now() - (scenarioState?.startTime || Date.now()),
-                  messageCount: historyWithUserMsg.length,
-                  lastInteraction: 1000,
-                },
-                conversation: {
-                  length: historyWithUserMsg.length,
-                  sentiment: emotion.type === 'happy' ? 'positive' : emotion.type === 'sad' ? 'negative' : 'neutral',
-                },
-              },
-            });
-            console.log('[ChatWindow] 温度感计算:', currentTemperature);
-            
-            // 根据温度感调整UI
-            if (currentTemperature) {
-              await engine.adjustTemperature(currentTemperature.level, {
-                elements: ['button', '.card', 'input'],
-                animation: true,
-              });
-            }
-          } catch (error) {
-            console.error('[ChatWindow] 温度感计算失败:', error);
-          }
-        }
-        
-        // 获取相关记忆用于上下文
-        let relevantMemories: any[] = [];
-        if (memorySystem.isReady && emotionMemoryFusion) {
-          try {
-            relevantMemories = await memorySystem.getRelevantMemories(userText, 3);
-            console.log('[ChatWindow] 相关记忆:', relevantMemories);
-            
-            // 将记忆添加到系统指令中
-            if (relevantMemories.length > 0) {
-              const memoryContext = relevantMemories
-                .map(m => `- ${m.content}`)
-                .join('\n');
-              systemInstruction += `\n\n[用户记忆]\n${memoryContext}`;
-            }
-          } catch (error) {
-            console.error('[ChatWindow] 获取相关记忆失败:', error);
-          }
-        }
-
-        // 使用统一AI服务
-        // 为当前请求创建独立的状态，避免闭包捕获旧请求的状态
-        const currentRequestId = tempBotId; // 使用tempBotId作为请求ID
-        let requestFullResponseText = ''; // 当前请求的响应文本（每个请求独立）
-        let hasAddedBotMessage = false; // 标记是否已添加机器人消息（使用ref方式避免闭包问题）
-        
-        await aiService.generateTextStream(
-          {
-            prompt: userText,
-            systemInstruction: systemInstruction,
-            messages: historyMessages, // 历史消息（不包含当前用户输入）
-            temperature: 0.7,
-            maxTokens: 2048,
-          },
-          (chunk) => {
-            try {
-              if (!chunk.done && chunk.content) {
-                requestFullResponseText += chunk.content;
-                const msg = { id: currentRequestId, role: 'model' as const, text: requestFullResponseText, timestamp: Date.now() };
-                
-                // 使用函数式更新，确保获取最新的history状态，避免闭包问题
-                // 通过消息ID匹配确保更新正确的消息
-                onUpdateHistory(prevHistory => {
-                  try {
-                    // 防御性检查：确保prevHistory是数组，且不是函数
-                    if (typeof prevHistory === 'function') {
-                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
-                      return [];
-                    }
-                    if (!Array.isArray(prevHistory)) {
-                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
-                      return [];
-                    }
-                    
-                    // 检查用户消息是否存在（确保用户消息没有被丢失）
-                    const userMsgExists = prevHistory.some(m => m.id === userMsg.id && m.role === 'user');
-                    if (!userMsgExists) {
-                      console.warn('[ChatWindow] ⚠️ 用户消息不在history中，重新添加:', {
-                        userMsgId: userMsg.id,
-                        prevHistoryLength: prevHistory.length,
-                        prevHistoryIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      // 如果用户消息不在history中，先添加用户消息，然后再添加机器人消息
-                      prevHistory = [...prevHistory, userMsg];
-                    }
-                    
-                    // 检查最后一条消息是否是我们刚刚添加的机器人消息
-                    const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
-                    const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
-                    
-                    if (!hasAddedBotMessage && !isLastMsgOurs) {
-                      // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
-                      hasAddedBotMessage = true;
-                      return [...prevHistory, msg];
-                    } else if (isLastMsgOurs) {
-                      // 最后一条是我们的消息，更新它
-                      hasAddedBotMessage = true;
-                      return [...prevHistory.slice(0, -1), msg];
-                    } else {
-                      // 其他情况，追加新消息
-                      hasAddedBotMessage = true;
-                      return [...prevHistory, msg];
-                    }
-                  } catch (error) {
-                    console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
-                    // 返回安全的默认值，确保不返回函数
-                    return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
-                  }
-                });
-              } else if (chunk.done) {
-                // 完成 - 确保完成信号能够正常处理（即使isLoading已经变为false）
-                setIsLoading(false);
-                
-                // 温度感引擎：通知消息接收（异步处理，不阻塞）
-                if (engine && engineReady && requestFullResponseText) {
-                  engine.getPluginManager()?.dispatchEvent('messageReceived', {
-                    message: requestFullResponseText,
-                    context: { character: character.name },
-                  }).catch((error) => {
-                    console.error('[ChatWindow] 通知消息接收失败:', error);
-                  });
-                }
-
-                // 记忆系统：从AI回复中提取记忆
-                if (memorySystem.isReady && requestFullResponseText) {
-                  memorySystem.extractAndSave(
-                    requestFullResponseText,
-                    MemorySource.CONVERSATION,
-                    currentRequestId
-                  ).catch((error) => {
-                    console.error('[ChatWindow] 从AI回复提取记忆失败:', error);
-                  });
-                }
-      }
-    } catch (error) { 
-              console.error('[ChatWindow] 处理chunk时发生错误:', error);
-              // 确保即使出错也能恢复加载状态
-              setIsLoading(false);
-            }
-          }
-        );
+        // 获取相关记忆用于上下文（使用系统集成Hook）
+        relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
       } else {
         console.log('[ChatWindow] 使用本地配置模式调用大模型', {
           provider: config.textProvider || 'gemini',
@@ -1164,192 +753,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             doubao: !!AIConfigManager.getLocalApiKeys().doubao,
           }
         });
-        
-        // 本地配置模式：使用新的 aiService（具备多provider容错能力）
-        // 构建系统指令
-        let systemInstruction = character.systemInstruction || '';
-        if (character.mbti) systemInstruction += `\nMBTI: ${character.mbti}`;
-        if (character.speechStyle) systemInstruction += `\nSpeaking Style: ${character.speechStyle}`;
-        if (character.catchphrases) systemInstruction += `\nCommon Phrases: ${character.catchphrases.join(', ')}`;
-        if (character.secrets) systemInstruction += `\nSecrets: ${character.secrets}`;
-        
-        // 添加对话风格
-        const dialogueStyle = settings?.dialogueStyle || 'mobile-chat';
-        const styleInstruction = getDialogueStyleInstruction(dialogueStyle);
-        systemInstruction += styleInstruction;
-        
-        // 添加场景上下文
-        if (userProfile) {
-          const scenarioContext = createScenarioContext(userProfile);
-          systemInstruction = `${scenarioContext}\n\n${systemInstruction}`;
-        }
-        
-        // 转换消息历史：使用包含用户消息的完整历史
-        // 注意：这里使用historyWithUserMsg而不是safeHistory，确保包含刚添加的用户消息
-        const historyMessages = historyWithUserMsg.map(msg => ({
-          role: msg.role === 'model' ? 'assistant' : 'user' as 'user' | 'assistant' | 'system',
-          content: msg.text,
-        }));
-        
-        console.log('[ChatWindow] 本地模式 - 构建AI请求的historyMessages:', {
-          historyWithUserMsgLength: historyWithUserMsg.length,
-          historyMessagesLength: historyMessages.length,
-          lastMsg: historyMessages[historyMessages.length - 1],
-          allRoles: historyMessages.map(m => m.role)
-        });
-        
-        // 使用本地AI服务（会自动尝试所有可用的provider）
-        // 为当前请求创建独立的状态，避免闭包捕获旧请求的状态
-        const currentRequestId = tempBotId; // 使用tempBotId作为请求ID
-        let requestFullResponseText = ''; // 当前请求的响应文本（每个请求独立）
-        let hasAddedBotMessage = false; // 标记是否已添加机器人消息（使用ref方式避免闭包问题）
-        
-        await aiService.generateTextStream(
-          {
-            prompt: userText,
-            systemInstruction: systemInstruction,
-            messages: historyMessages, // 历史消息（不包含当前用户输入）
-            temperature: 0.7,
-            maxTokens: 2048,
-          },
-          (chunk) => {
-            try {
-              if (!chunk.done && chunk.content) {
-                requestFullResponseText += chunk.content;
-                const msg = { id: currentRequestId, role: 'model' as const, text: requestFullResponseText, timestamp: Date.now() };
-                
-                // 使用函数式更新，确保获取最新的history状态，避免闭包问题
-                // 通过消息ID匹配确保更新正确的消息
-                onUpdateHistory(prevHistory => {
-                  try {
-                    // 防御性检查：确保prevHistory是数组，且不是函数
-                    if (typeof prevHistory === 'function') {
-                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
-                      return [];
-                    }
-                    if (!Array.isArray(prevHistory)) {
-                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
-                      return [];
-                    }
-                    
-                    // 检查用户消息是否存在（确保用户消息没有被丢失）
-                    const userMsgExists = prevHistory.some(m => m.id === userMsg.id && m.role === 'user');
-                    if (!userMsgExists) {
-                      console.warn('[ChatWindow] ⚠️ 用户消息不在history中，重新添加:', {
-                        userMsgId: userMsg.id,
-                        prevHistoryLength: prevHistory.length,
-                        prevHistoryIds: prevHistory.map(m => ({ id: m.id, role: m.role }))
-                      });
-                      // 如果用户消息不在history中，先添加用户消息，然后再添加机器人消息
-                      prevHistory = [...prevHistory, userMsg];
-                    }
-                    
-                    // 检查最后一条消息是否是我们刚刚添加的机器人消息
-                    const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
-                    const isLastMsgOurs = lastMsg && lastMsg.id === currentRequestId && lastMsg.role === 'model';
-                    
-                    if (!hasAddedBotMessage && !isLastMsgOurs) {
-                      // 还没有添加机器人消息，且最后一条不是我们的消息，添加新消息
-                      hasAddedBotMessage = true;
-                      return [...prevHistory, msg];
-                    } else if (isLastMsgOurs) {
-                      // 最后一条是我们的消息，更新它
-                      hasAddedBotMessage = true;
-                      return [...prevHistory.slice(0, -1), msg];
-                    } else {
-                      // 其他情况，追加新消息
-                      hasAddedBotMessage = true;
-                      return [...prevHistory, msg];
-                    }
-                  } catch (error) {
-                    console.error('[ChatWindow] onUpdateHistory回调中发生错误:', error);
-                    // 返回安全的默认值，确保不返回函数
-                    return Array.isArray(prevHistory) && typeof prevHistory !== 'function' ? prevHistory : [];
-                  }
-                });
-              } else if (chunk.done) {
-                // 完成
-                setIsLoading(false);
-              }
-            } catch (error) {
-              console.error('[ChatWindow] 处理chunk时发生错误:', error);
-              // 确保即使出错也能恢复加载状态
-              setIsLoading(false);
-            }
-          }
-        );
       }
+      
+      // 使用统一的AI响应生成函数
+      await generateAIResponse({
+        userText,
+        userMsg,
+        historyWithUserMsg,
+        character,
+        settings,
+        userProfile,
+        tempBotId,
+        onUpdateHistory,
+        setIsLoading,
+        engine,
+        engineReady,
+        memorySystem,
+        relevantMemories,
+      });
     } catch (error) { 
-        console.error('[ChatWindow] AI服务调用失败:', error);
-        try {
-          // 使用函数式更新，确保获取最新的history状态
-          onUpdateHistory(prevHistory => {
-            try {
-                    // 防御性检查：确保prevHistory不是函数，且是数组
-                    if (typeof prevHistory === 'function') {
-                      console.error('[ChatWindow] prevHistory是函数，这是错误的:', prevHistory);
-                      return [];
-                    }
-                    if (!Array.isArray(prevHistory)) {
-                      console.error('[ChatWindow] prevHistory不是数组:', prevHistory, typeof prevHistory);
-                      return [];
-                    }
-              return [
-                ...prevHistory, 
-                {id: tempBotId, role: 'model', text: "【系统错误：连接失败，请稍后重试】", timestamp: Date.now()}
-              ];
-            } catch (updateError) {
-              console.error('[ChatWindow] 更新错误消息时发生错误:', updateError);
-              return prevHistory;
-            }
-          });
-        } catch (updateError) {
-          console.error('[ChatWindow] 调用onUpdateHistory失败:', updateError);
-        }
+        logger.error('[ChatWindow] AI服务调用失败:', error);
+        const errorMsg = createErrorMessage(error as Error, tempBotId);
+        onUpdateHistory(prevHistory => [...prevHistory, errorMsg]);
+        showAlert(getErrorMessage(error as Error), "错误", "error");
     } finally { 
         setIsLoading(false); 
-    }
-  };
-  
-  // 辅助函数：获取对话风格指令
-  const getDialogueStyleInstruction = (style: DialogueStyle = 'mobile-chat'): string => {
-    switch (style) {
-      case 'mobile-chat':
-        return `\n\n[对话风格：即时网聊]
-- 使用短句，像微信聊天一样自然
-- 可以适当使用 Emoji 表情（😊、😢、🤔、💭 等）
-- 动作描写用 *动作内容* 格式，例如：*轻轻拍了拍你的肩膀*
-- 节奏要快，回复要简洁有力
-- 语气要轻松、亲切，像和朋友聊天
-- 避免冗长的描述，重点突出对话和互动`;
-      case 'visual-novel':
-        return `\n\n[对话风格：沉浸小说]
-- 侧重心理描写和环境渲染
-- 辞藻优美，富有文学性
-- 像读轻小说一样，有代入感和画面感
-- 可以详细描述角色的内心活动、表情、动作
-- 适当描写周围环境，营造氛围
-- 回复可以较长，但要保持节奏感
-- 注重情感表达和细节刻画`;
-      case 'stage-script':
-        return `\n\n[对话风格：剧本独白]
-- 格式严格：动作用 [动作内容] 表示，台词直接说
-- 例如：[缓缓转身] 你来了...
-- 干脆利落，适合作为创作大纲
-- 动作和台词要清晰分离
-- 避免过多的心理描写，重点在动作和对话
-- 风格要简洁、有力，像舞台剧脚本`;
-      case 'poetic':
-        return `\n\n[对话风格：诗意留白]
-- 极简、隐晦、富有哲理
-- 像《主要还是看气质》或《光遇》的风格
-- 用词要精炼，意境要深远
-- 可以适当留白，让读者自己体会
-- 避免直白的表达，多用隐喻和象征
-- 节奏要慢，每个字都要有分量
-- 注重氛围和情感，而非具体情节`;
-      default:
-        return '';
     }
   };
 
@@ -1357,137 +785,46 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
   
-  // 语音输入功能
-  const startSpeechRecognition = (autoSend: boolean = false) => {
-    setSpeechError(null);
-    
-    // 检查浏览器是否支持语音识别
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setSpeechError("您的浏览器不支持语音输入，建议使用 Chrome 浏览器。");
-      if (!isVoiceMode) {
-        showAlert("您的浏览器不支持语音输入，建议使用 Chrome 浏览器。", "提示", "warning");
-      }
-      return;
-    }
-    
-    // 如果已经在识别中，先停止旧的
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // 忽略错误
-      }
-    }
-    
+  // 自动播放音频（使用audioPlayback Hook）- 需要在handleVoiceSend之前定义
+  const autoPlayAudio = React.useCallback(async (text: string, msgId: string) => {
     try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'zh-CN'; // 设置语言为中文
-      recognition.interimResults = true; // 返回中间结果
-      recognition.continuous = isVoiceMode; // 语音模式下连续识别
+      if (!audioPlayback.audioContextRef.current) {
+        audioPlayback.audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+      }
+      const ctx = audioPlayback.audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
       
-      recognition.onstart = () => {
-        setIsListening(true);
-        setSpeechError(null);
+      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
+      if (!base64Audio) return;
+      
+      const audioBytes = decodeBase64ToBytes(base64Audio);
+      const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
+      
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      
+      source.onended = () => {
+        audioPlayback.setPlayingMessageId(null);
       };
       
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          }
-        }
-        
-        if (finalTranscript) {
-          if (autoSend && isVoiceMode) {
-            // 语音模式下自动发送
-            handleVoiceSend(finalTranscript);
-          } else {
-            // 普通模式下追加到输入框
-            setInput(prev => {
-              const trimmed = prev.trim();
-              return trimmed ? `${trimmed} ${finalTranscript}` : finalTranscript;
-            });
-          }
-        }
-      };
-      
-      recognition.onerror = (event: any) => {
-        console.error('语音识别错误:', event.error);
-        setIsListening(false);
-        
-        // 语音模式下，某些错误不显示提示，而是自动重启识别
-        if (isVoiceMode && (event.error === 'no-speech' || event.error === 'aborted')) {
-          setTimeout(() => {
-            if (isVoiceMode && !isWaitingForResponse) {
-              startSpeechRecognition(true);
-            }
-          }, 500);
-          return;
-        }
-        
-        let errorMsg = '语音识别失败';
-        if (event.error === 'no-speech') {
-          errorMsg = '未检测到语音，请重试';
-        } else if (event.error === 'audio-capture') {
-          errorMsg = '无法访问麦克风，请检查权限';
-        } else if (event.error === 'not-allowed') {
-          errorMsg = '麦克风权限被拒绝，请在浏览器设置中允许访问';
-          setIsVoiceMode(false); // 权限被拒绝时退出语音模式
-        }
-        
-        setSpeechError(errorMsg);
-        if (!isVoiceMode) {
-          showAlert(errorMsg, "语音识别错误", "error");
-        }
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-        
-        // 语音模式下，如果不是在等待响应，自动重启识别
-        if (isVoiceMode && !isWaitingForResponse && recognitionRef.current) {
-          setTimeout(() => {
-            if (isVoiceMode && !isWaitingForResponse) {
-              startSpeechRecognition(true);
-            }
-          }, 300);
-        }
-      };
-      
-      recognitionRef.current = recognition;
-      recognition.start();
+      audioPlayback.sourceNodeRef.current = source;
+      source.start();
+      audioPlayback.setPlayingMessageId(msgId);
     } catch (error) {
-      console.error('启动语音识别失败:', error);
-      setSpeechError('启动语音识别失败');
-      setIsListening(false);
-      if (!isVoiceMode) {
-        showAlert('启动语音识别失败，请重试', "错误", "error");
-      }
+      console.error('Auto play audio failed:', error);
+      audioPlayback.setPlayingMessageId(null);
     }
-  };
-  
-  const stopSpeechRecognition = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // 忽略错误
-      }
-      recognitionRef.current = null;
-    }
-    setIsListening(false);
-  };
-  
-  // 语音模式下自动发送消息
-  const handleVoiceSend = async (text: string) => {
+  }, [audioPlayback, character.voiceName]);
+
+  // 语音模式下自动发送消息（需要在startSpeechRecognition之前定义）
+  const handleVoiceSend = React.useCallback(async (text: string) => {
     if (!text.trim() || isLoading || isScenarioMode) return;
     
-    setIsWaitingForResponse(true);
-    stopSpeechRecognition(); // 发送前停止识别
+    voiceInput.setIsWaitingForResponse(true);
+    voiceInput.stopListening(); // 发送前停止识别
     
     const userText = text.trim();
     setIsLoading(true);
@@ -1505,15 +842,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     try {
       // 构建系统指令
-      let systemInstruction = character.systemInstruction || '';
-      if (character.mbti) systemInstruction += `\nMBTI: ${character.mbti}`;
-      if (character.speechStyle) systemInstruction += `\nSpeaking Style: ${character.speechStyle}`;
+      const systemInstruction = buildSystemInstruction(character, settings, userProfile);
       
       // 使用最新的历史记录生成AI回复
       const response = await aiService.generateText({
         prompt: userText,
         systemInstruction: systemInstruction,
-        messages: currentHistory,
+        messages: currentHistory.map(msg => ({
+          role: msg.role === 'model' ? 'assistant' : 'user' as const,
+          content: msg.text,
+        })),
         temperature: 0.8,
         maxTokens: 500
       });
@@ -1527,104 +865,175 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
       
       onUpdateHistory((prev) => [...prev, botMsg]);
-      lastBotMessageIdRef.current = tempBotId;
+      voiceInput.lastBotMessageIdRef.current = tempBotId;
       
       // 自动播放AI回复的语音
       await autoPlayAudio(botText, tempBotId);
       
     } catch (error) {
-      console.error('Voice send error:', error);
-      const errorMsg: Message = { 
-        id: tempBotId, 
-        role: 'model', 
-        text: "抱歉，处理您的消息时出错了。", 
-        timestamp: Date.now() 
-      };
+      logger.error("Voice send failed", error);
+      const errorMsg = createErrorMessage(error as Error, `error_${Date.now()}`);
       onUpdateHistory((prev) => [...prev, errorMsg]);
+      voiceInput.setIsWaitingForResponse(false);
+      showAlert(getErrorMessage(error as Error), "错误", "error");
     } finally {
       setIsLoading(false);
-      setIsWaitingForResponse(false);
+      voiceInput.setIsWaitingForResponse(false);
       
       // 语音模式下，等待一段时间后重新开始识别
-      if (isVoiceMode) {
+      // 使用ref来避免循环依赖
+      if (voiceInput.isVoiceMode) {
         setTimeout(() => {
-          if (isVoiceMode && !isLoading) {
-            startSpeechRecognition(true);
+          if (voiceInput.isVoiceMode && !isLoading) {
+            startSpeechRecognitionRef.current?.(true);
           }
         }, 1000);
       }
     }
-  };
-  
-  // 自动播放音频
-  const autoPlayAudio = async (text: string, msgId: string) => {
+  }, [isLoading, isScenarioMode, voiceInput, character, settings, userProfile, onUpdateHistory, autoPlayAudio]);
+
+  // 使用ref存储startSpeechRecognition函数，避免循环依赖
+  const startSpeechRecognitionRef = useRef<((autoSend?: boolean) => void) | null>(null);
+
+  // 语音输入功能（使用voiceInput Hook）
+  const startSpeechRecognition = React.useCallback((autoSend: boolean = false) => {
+    voiceInput.setError(null);
+    
+    // 检查浏览器是否支持语音识别
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      voiceInput.setError("您的浏览器不支持语音输入，建议使用 Chrome 浏览器。");
+      if (!voiceInput.isVoiceMode) {
+        showAlert("您的浏览器不支持语音输入，建议使用 Chrome 浏览器。", "提示", "warning");
+      }
+      return;
+    }
+    
+    // 如果已经在识别中，先停止旧的
+    const currentRecognition = voiceInput.getRecognition();
+    if (currentRecognition) {
+      try {
+        currentRecognition.stop();
+      } catch (e) {
+        // 忽略错误
+      }
+    }
+    
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
-      }
-      const ctx = audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN'; // 设置语言为中文
+      recognition.interimResults = true; // 返回中间结果
+      recognition.continuous = voiceInput.isVoiceMode; // 语音模式下连续识别
       
-      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
-      if (!base64Audio) return;
-      
-      const audioBytes = decode(base64Audio);
-      const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
-      
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
-      
-      source.onended = () => {
-        setPlayingMessageId(null);
-        setIsPlayingAudio(false);
+      recognition.onstart = () => {
+        voiceInput.startListening();
       };
       
-      sourceNodeRef.current = source;
-      source.start();
+      recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          if (autoSend && voiceInput.isVoiceMode) {
+            // 语音模式下自动发送
+            handleVoiceSend(finalTranscript);
+          } else {
+            // 普通模式下追加到输入框
+            setInput(prev => {
+              const trimmed = prev.trim();
+              return trimmed ? `${trimmed} ${finalTranscript}` : finalTranscript;
+            });
+          }
+        }
+      };
       
-      setPlayingMessageId(msgId);
-      setIsPlayingAudio(true);
-    } catch (e) {
-      console.error("Auto audio playback failed", e);
+      recognition.onerror = (event: any) => {
+        console.error('语音识别错误:', event.error);
+        voiceInput.stopListening();
+        
+        // 语音模式下，某些错误不显示提示，而是自动重启识别
+        if (voiceInput.isVoiceMode && (event.error === 'no-speech' || event.error === 'aborted')) {
+          setTimeout(() => {
+            if (voiceInput.isVoiceMode && !voiceInput.isWaitingForResponse) {
+              startSpeechRecognitionRef.current?.(true);
+            }
+          }, 500);
+          return;
+        }
+        
+        let errorMsg = '语音识别失败';
+        if (event.error === 'no-speech') {
+          errorMsg = '未检测到语音，请重试';
+        } else if (event.error === 'audio-capture') {
+          errorMsg = '无法访问麦克风，请检查权限';
+        } else if (event.error === 'not-allowed') {
+          errorMsg = '麦克风权限被拒绝，请在浏览器设置中允许访问';
+          voiceInput.setIsVoiceMode(false); // 权限被拒绝时退出语音模式
+        }
+        
+        voiceInput.setError(errorMsg);
+        if (!voiceInput.isVoiceMode) {
+          showAlert(errorMsg, "语音识别错误", "error");
+        }
+      };
+      
+      recognition.onend = () => {
+        voiceInput.stopListening();
+        
+        // 语音模式下，如果不是在等待响应，自动重启识别
+        if (voiceInput.isVoiceMode && !voiceInput.isWaitingForResponse && voiceInput.getRecognition()) {
+          setTimeout(() => {
+            if (voiceInput.isVoiceMode && !voiceInput.isWaitingForResponse) {
+              startSpeechRecognitionRef.current?.(true);
+            }
+          }, 300);
+        }
+      };
+      
+      voiceInput.setRecognition(recognition);
+      recognition.start();
+    } catch (error) {
+      console.error('启动语音识别失败:', error);
+      voiceInput.setError('启动语音识别失败');
+      voiceInput.stopListening();
+      if (!voiceInput.isVoiceMode) {
+        showAlert('启动语音识别失败，请重试', "错误", "error");
+      }
     }
-  };
+  }, [voiceInput, handleVoiceSend]);
+
+  // 更新ref
+  useEffect(() => {
+    startSpeechRecognitionRef.current = startSpeechRecognition;
+  }, [startSpeechRecognition]);
   
-  // 切换语音模式
-  const toggleVoiceMode = () => {
-    const newVoiceMode = !isVoiceMode;
-    setIsVoiceMode(newVoiceMode);
+  // 切换语音模式（使用voiceInput Hook）
+  const toggleVoiceMode = React.useCallback(() => {
+    const newVoiceMode = !voiceInput.isVoiceMode;
+    voiceInput.setIsVoiceMode(newVoiceMode);
     
     if (newVoiceMode) {
       // 进入语音模式：停止当前音频播放，开始语音识别
-      stopAudio();
-      setIsWaitingForResponse(false);
+      audioPlayback.stopAudio();
+      voiceInput.setIsWaitingForResponse(false);
       setTimeout(() => {
-        startSpeechRecognition(true);
+        startSpeechRecognitionRef.current?.(true);
       }, 500);
     } else {
       // 退出语音模式：停止语音识别
-      stopSpeechRecognition();
-      stopAudio();
-      setIsWaitingForResponse(false);
+      voiceInput.stopListening();
+      audioPlayback.stopAudio();
+      voiceInput.setIsWaitingForResponse(false);
     }
-  };
+  }, [voiceInput, audioPlayback]);
   
-  // 组件卸载时清理语音识别
-  useEffect(() => {
-    return () => {
-      stopSpeechRecognition();
-    };
-  }, []);
-  
-  // 语音模式切换时清理
-  useEffect(() => {
-    if (!isVoiceMode) {
-      stopSpeechRecognition();
-    }
-  }, [isVoiceMode]);
+  // 组件卸载时清理语音识别（已在useVoiceInput Hook中处理）
 
   const handleCrystalizeMemory = async () => {
     if (!activeJournalEntryId || safeHistory.length < 2 || isCrystalizing) return;
@@ -1696,29 +1105,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     });
   };
 
-  const renderChoices = () => {
-    if (!customScenario || !scenarioState || isLoading) {
-      return null;
+  // 获取当前节点的选项（用于ScenarioChoices组件）
+  const currentOptions = React.useMemo(() => {
+    if (!customScenario || !scenarioState) {
+      return [];
     }
 
     const currentNodeId = scenarioState.currentNodeId;
     if (!currentNodeId) {
-      return null;
+      return [];
     }
 
     const currentNode = customScenario.nodes[currentNodeId];
-    if (!currentNode) {
-      return null;
+    if (!currentNode?.options || !Array.isArray(currentNode.options)) {
+      return [];
     }
 
-    // 检查 options 是否存在且是数组
-    if (!currentNode.options || !Array.isArray(currentNode.options) || currentNode.options.length === 0) {
-      return null;
-    }
-
-    // 验证每个选项的结构，并确保每个选项都有唯一的 id
-    // 同时根据条件过滤选项
-    const validOptions = currentNode.options
+    // 验证并处理选项
+    return currentNode.options
       .map((opt, index) => {
         if (!opt || typeof opt !== 'object') {
           return null;
@@ -1728,178 +1132,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         return opt;
       })
-      .filter((opt): opt is NonNullable<typeof opt> => opt !== null)
-      .filter(opt => {
-        // 如果是隐藏选项，不显示
-        if (opt.hidden) {
-          return false;
-        }
-        // 检查条件
-        return checkOptionConditions(opt);
-      });
-
-    if (validOptions.length === 0) {
-      return null;
-    }
-
-    return (
-        <div 
-          className={`flex flex-wrap gap-3 justify-center mt-4 animate-fade-in ${isCinematic ? 'mb-10' : ''}`}
-          style={{ 
-            zIndex: 999,
-            position: 'relative',
-            pointerEvents: 'auto'
-          }}
-        >
-            {validOptions.map((opt, index) => {
-              const buttonText = opt.text || opt.id || '选择';
-              const isButtonDisabled = isLoading;
-              const uniqueKey = opt.id || `option-${index}`;
-              
-              return (
-                <button
-                  key={uniqueKey}
-                  id={`choice-button-${uniqueKey}`}
-                  data-option-id={opt.id}
-                  data-index={index}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (isLoading || isButtonDisabled) {
-                      return;
-                    }
-                    
-                    try {
-                      handleOptionClick(opt.id);
-                    } catch (error) {
-                      console.error('[ChatWindow] 处理选项点击时出错:', error);
-                    }
-                  }}
-                  className="bg-indigo-600/80 backdrop-blur-md hover:bg-indigo-500 text-white px-6 py-3 rounded-xl shadow-lg border border-indigo-400/50 transition-all active:scale-95"
-                  style={{
-                    backgroundColor: isButtonDisabled ? 'rgba(79, 70, 229, 0.4)' : 'rgba(79, 70, 229, 0.8)',
-                    color: '#ffffff',
-                    padding: '12px 24px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(99, 102, 241, 0.5)',
-                    cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-                    zIndex: 999,
-                    position: 'relative',
-                    minWidth: '120px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    whiteSpace: 'nowrap',
-                    opacity: isButtonDisabled ? 0.6 : 1,
-                    pointerEvents: isButtonDisabled ? 'none' : 'auto',
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                  disabled={isButtonDisabled}
-                  aria-label={`选择: ${buttonText}`}
-                >
-                    {buttonText}
-                </button>
-              );
-            })}
-        </div>
-    );
-  };
+      .filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+  }, [customScenario, scenarioState]);
   
   if (!character) {
     return null;
   }
 
-  const backgroundImage = isStoryMode && sceneImageUrl ? sceneImageUrl : character.backgroundUrl;
+  // 背景图片预加载
+  const backgroundImage = React.useMemo(() => {
+    return isStoryMode && sceneGeneration.sceneImageUrl ? sceneGeneration.sceneImageUrl : character.backgroundUrl;
+  }, [isStoryMode, sceneGeneration.sceneImageUrl, character.backgroundUrl]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
-      <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000" style={{ backgroundImage: `url(${backgroundImage})`, filter: isCinematic ? 'brightness(0.9)' : (isStoryMode ? 'blur(0px) brightness(0.6)' : 'blur(4px) opacity(0.6)') }} />
+      <BackgroundLayer
+        backgroundImage={backgroundImage}
+        character={character}
+        isStoryMode={isStoryMode}
+        isCinematic={uiState.isCinematic}
+      />
       
-      {!isStoryMode && !isCinematic && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="relative h-[85vh] w-[85vh] max-w-full flex items-end justify-center pb-10">
-              <div className="absolute inset-0 opacity-40 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${character.colorAccent}66 0%, transparent 70%)` }} />
-            <img src={character.avatarUrl} alt={character.name} className="h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.2)] animate-fade-in transition-transform duration-75 will-change-transform" />
-          </div>
-        </div>
-      )}
+      <CharacterAvatar
+        character={character}
+        isStoryMode={isStoryMode}
+        isCinematic={uiState.isCinematic}
+      />
 
       {/* Header Bar */}
-      {!isCinematic && (
-        <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center transition-opacity duration-500">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" onClick={handleBackClick} className="!p-2"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></Button>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-wider">{customScenario ? customScenario.title : character.name}</h2>
-              <span className="text-xs uppercase tracking-widest opacity-80" style={{ color: character.colorAccent }}>{customScenario ? '原创剧本' : '已连接'}</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-               {/* 语音模式切换按钮 */}
-               <button 
-                  onClick={toggleVoiceMode} 
-                  className={`p-2 rounded-full transition-all border ${
-                    isVoiceMode 
-                      ? 'bg-red-500/20 hover:bg-red-500/30 border-red-400/50 text-red-400' 
-                      : 'bg-white/10 hover:bg-white/20 border-white/10'
-                  }`}
-                  title={isVoiceMode ? '退出语音模式' : '进入语音模式（纯语音对话）'}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
-                  </svg>
-               </button>
-               
-               <button 
-                  onClick={() => setIsCinematic(true)} 
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/10"
-                  title="进入沉浸模式"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                  </svg>
-               </button>
+      <HeaderBar
+        character={character}
+        customScenario={customScenario}
+        isCinematic={uiState.isCinematic}
+        isVoiceMode={voiceInput.isVoiceMode}
+        isListening={voiceInput.isListening}
+        isWaitingForResponse={voiceInput.isWaitingForResponse}
+        isGeneratingScene={sceneGeneration.isGeneratingScene}
+        isPlayingAudio={audioPlayback.isPlaying}
+        isCrystalizing={isCrystalizing}
+        generatedEcho={generatedEcho}
+        onBack={handleBackClick}
+        onToggleVoiceMode={toggleVoiceMode}
+        onToggleCinematic={() => uiState.setIsCinematic(true)}
+        onCrystalize={activeJournalEntryId ? handleCrystalizeMemory : undefined}
+        onTriggerESoulLetter={handleTriggerESoulLetter}
+        isTriggeringLetter={isTriggeringLetter}
+      />
 
-              {activeJournalEntryId && (
-                  <button 
-                    onClick={handleCrystalizeMemory} 
-                    disabled={isCrystalizing}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all text-xs font-bold ${
-                        generatedEcho 
-                        ? 'bg-indigo-500/80 border-indigo-400 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
-                        : 'bg-white/10 border-white/20 text-indigo-300 hover:bg-white/20 hover:text-white'
-                    }`}
-                  >
-                     {isCrystalizing ? '凝结中...' : generatedEcho ? '记忆已凝结' : '凝结记忆'}
-                  </button>
-              )}
-
-             <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-white/10 rounded-full border border-white/20 backdrop-blur-sm">
-               {isVoiceMode && (
-                 <div className="flex items-center space-x-2 mr-2">
-                   <div className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-400 animate-pulse' : isWaitingForResponse ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
-                   <span className="text-xs font-mono">
-                     {isListening ? "正在聆听" : isWaitingForResponse ? "等待回复" : isPlayingAudio ? "播放中" : "待机"}
-                   </span>
-                 </div>
-               )}
-               {!isVoiceMode && (
-                 <>
-                   {isGeneratingScene && <span className="text-xs text-orange-400 animate-pulse mr-2">正在生成场景...</span>}
-                   {isPlayingAudio && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1" />}
-                   <span className="text-xs font-mono">{isPlayingAudio ? "正在播放" : "待机"}</span>
-                 </>
-               )}
-             </div>
-          </div>
-        </div>
-      )}
-
-      {isCinematic && (
+      {uiState.isCinematic && (
         <button 
-          onClick={() => setIsCinematic(false)}
+          onClick={() => uiState.setIsCinematic(false)}
           className="absolute top-4 right-4 z-50 p-3 rounded-full bg-black/40 hover:bg-black/60 text-white/50 hover:text-white transition-all backdrop-blur-md"
         >
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -1918,7 +1200,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       ))}
 
       {/* Main Chat Area */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
+      <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
         
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%)' }}>
@@ -1934,64 +1216,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <p className="text-xs mt-2 opacity-50">history类型: {typeof history}, 是否为数组: {Array.isArray(history) ? '是' : '否'}, 长度: {safeHistory.length}</p>
             </div>
           )}
-          {safeHistory.map((msg, index) => {
-            if (!msg || !msg.text) {
-              console.warn('[ChatWindow] 无效的消息:', msg);
-              return null;
-            }
-            
-            const isUserMsg = msg.role === 'user';
-            const willBeHidden = isCinematic && isUserMsg;
-            
-            
-            return (
-              <div 
-                key={`msg-${msg.id}-${index}`} 
-                className={`flex w-full ${isUserMsg ? 'justify-end' : 'justify-start'}`}
-                style={willBeHidden ? { opacity: 0, height: 0, overflow: 'hidden' } : {}}
-              > 
-                <div 
-                  className={`
-                    max-w-[85%] sm:max-w-[70%] rounded-2xl overflow-hidden backdrop-blur-md shadow-lg text-sm sm:text-base leading-relaxed 
-                    ${msg.role === 'user' ? 'bg-white/10 text-white border border-white/20 rounded-br-none' : 'text-white rounded-bl-none'}
-                    ${isCinematic ? '!bg-black/60 !border-none !text-lg !font-medium !text-center !w-full !max-w-2xl !mx-auto !rounded-xl' : ''} 
-                  `} 
-                  style={!isCinematic && msg.role !== 'user' ? { backgroundColor: `${character.colorAccent}33`, borderColor: `${character.colorAccent}4D`, borderWidth: '1px' } : {}}
-                >
-                  {msg.image ? (
-                     <div className="p-1"><img src={msg.image} alt="Generated" className="w-full h-auto rounded-xl shadow-inner" /></div>
-                  ) : (
-                     <div className={`px-5 py-3 flex flex-col ${isCinematic ? 'items-center' : 'items-start'}`}>
-                         <RichTextRenderer text={msg.text} colorAccent={character.colorAccent} />
-                         {msg.role === 'model' && !isCinematic && (
-                             <div className="mt-2 w-full flex justify-end">
-                                 <button 
-                                   onClick={() => handlePlayAudio(msg.id, msg.text)}
-                                   disabled={audioLoadingId === msg.id}
-                                   className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white/70 hover:text-white hover:scale-110 active:scale-95"
-                                 >
-                                   {audioLoadingId === msg.id ? (
-                                     <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                                   ) : (
-                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 ${playingMessageId === msg.id ? 'text-pink-300 animate-pulse' : ''}`}>
-                                        <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.106a.75.75 0 0 1 1.06 0 2.25 2.25 0 0 1 0 3.182.75.75 0 0 0 0-3.182.75.75 0 0 1 0-1.06Z" />
-                                     </svg>
-                                   )}
-                                 </button>
-                             </div>
-                         )}
-                         {/* 互动按钮 */}
-                         {!isCinematic && (
-                           <div className="mt-3 flex items-center gap-2">
-                             {/* 互动按钮已移除，可在留言板测试 */}
-                           </div>
-                         )}
-                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {safeHistory
+            .filter(msg => msg && msg.text)
+            .map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isUser={msg.role === 'user'}
+                isCinematic={uiState.isCinematic}
+                colorAccent={character.colorAccent}
+                onPlayAudio={handlePlayAudio}
+                audioLoadingId={audioPlayback.loadingMessageId}
+                playingMessageId={audioPlayback.playingMessageId}
+                showAudioButton={!uiState.isCinematic}
+              />
+            ))}
           {isLoading && safeHistory.length > 0 && (<div className="flex justify-start w-full"><div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /></div></div>)}
           <div ref={messagesEndRef} />
         </div>
@@ -2004,55 +1243,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             pointerEvents: 'auto'
           }}
         >
-            {isScenarioMode ? renderChoices() : null}
+            {isScenarioMode && scenarioState && (
+              <ScenarioChoices
+                options={currentOptions}
+                scenarioState={scenarioState}
+                isLoading={isLoading}
+                isCinematic={uiState.isCinematic}
+                onOptionClick={handleOptionClick}
+              />
+            )}
             
-            {!isScenarioMode && !isCinematic && (
+            {!isScenarioMode && !uiState.isCinematic && (
                 <>
                   {/* 语音模式UI */}
-                  {isVoiceMode ? (
-                    <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                      <div className="relative">
-                        <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
-                          isListening 
-                            ? 'bg-red-500/20 border-4 border-red-400 animate-pulse' 
-                            : isWaitingForResponse || isPlayingAudio
-                            ? 'bg-yellow-500/20 border-4 border-yellow-400'
-                            : 'bg-green-500/20 border-4 border-green-400'
-                        }`}>
-                          {isListening ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                            </svg>
-                          ) : isWaitingForResponse ? (
-                            <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-                          ) : isPlayingAudio ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06Z"/>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-semibold text-white mb-2">
-                          {isListening ? '正在聆听...' : isWaitingForResponse ? '正在处理...' : isPlayingAudio ? '正在播放回复...' : '语音模式'}
-                        </p>
-                        <p className="text-sm text-white/60">
-                          {isListening ? '请说话' : isWaitingForResponse ? 'AI正在思考' : isPlayingAudio ? '请稍候' : '点击顶部按钮退出语音模式'}
-                        </p>
-                      </div>
-                    </div>
+                  {voiceInput.isVoiceMode ? (
+                    <VoiceModeUI
+                      isListening={voiceInput.isListening}
+                      isWaitingForResponse={voiceInput.isWaitingForResponse}
+                      isPlayingAudio={audioPlayback.isPlaying}
+                      onExit={toggleVoiceMode}
+                    />
                   ) : (
                     /* 普通文本输入模式 */
                     <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
                        {/* 表情按钮 */}
                        <button
-                         onClick={() => setShowEmojiPicker(true)}
+                         onClick={() => uiState.setShowEmojiPicker(true)}
                          disabled={isLoading}
                          className="mr-2 p-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                          title="选择表情"
@@ -2076,16 +1292,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                        
                        {/* 语音输入按钮 */}
                        <button
-                         onClick={isListening ? stopSpeechRecognition : () => startSpeechRecognition(false)}
+                         onClick={voiceInput.isListening ? voiceInput.stopListening : () => startSpeechRecognition(false)}
                          disabled={isLoading}
                          className={`ml-2 p-2 rounded-lg transition-all ${
-                           isListening 
+                           voiceInput.isListening 
                              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 animate-pulse' 
                              : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                         title={isListening ? '停止语音输入' : '开始语音输入'}
+                         title={voiceInput.isListening ? '停止语音输入' : '开始语音输入'}
                        >
-                         {isListening ? (
+                         {voiceInput.isListening ? (
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                              <path d="M6 6h12v12H6z"/>
                            </svg>
@@ -2105,30 +1321,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* 表情选择器 */}
-      {showEmojiPicker && (
+      {uiState.showEmojiPicker && (
         <EmojiPicker
           userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
           onSelect={(emoji) => {
             setInput((prev) => prev + emoji.code);
-            setShowEmojiPicker(false);
+            uiState.setShowEmojiPicker(false);
           }}
-          onClose={() => setShowEmojiPicker(false)}
+          onClose={() => uiState.setShowEmojiPicker(false)}
         />
       )}
 
       {/* 卡片制作工具 */}
-      {showCardMaker && (
+      {uiState.showCardMaker && (
         <CardMaker
           userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
           onSave={(card) => {
             console.log('保存的卡片:', card);
-            setShowCardMaker(false);
+            uiState.setShowCardMaker(false);
           }}
           onSend={(card, recipientId) => {
             console.log('发送卡片:', card, '给用户:', recipientId);
-            setShowCardMaker(false);
+            uiState.setShowCardMaker(false);
           }}
-          onClose={() => setShowCardMaker(false)}
+          onClose={() => uiState.setShowCardMaker(false)}
         />
       )}
 

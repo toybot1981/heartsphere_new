@@ -30,3 +30,4 @@ public class UnreadCountResponse {
     private Map<MessageCategory, Long> categoryUnread;
 }
 
+

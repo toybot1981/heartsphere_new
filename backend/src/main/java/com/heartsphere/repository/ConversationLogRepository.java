@@ -44,3 +44,4 @@ public interface ConversationLogRepository extends JpaRepository<ConversationLog
     List<ConversationLog> findByUserIdAndCharacterId(@Param("userId") Long userId, @Param("characterId") Long characterId);
 }
 
+

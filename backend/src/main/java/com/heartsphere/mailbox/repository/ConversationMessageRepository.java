@@ -91,3 +91,4 @@ public interface ConversationMessageRepository extends JpaRepository<Conversatio
     List<ConversationMessage> findByConversationIdAndIsDeletedFalse(Long conversationId);
 }
 
+

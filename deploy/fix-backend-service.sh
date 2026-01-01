@@ -217,3 +217,4 @@ echo -e "  查看日志: journalctl -u ${APP_NAME}-backend -f"
 echo -e "  重启服务: systemctl restart ${APP_NAME}-backend"
 echo -e "  停止服务: systemctl stop ${APP_NAME}-backend"
 
+

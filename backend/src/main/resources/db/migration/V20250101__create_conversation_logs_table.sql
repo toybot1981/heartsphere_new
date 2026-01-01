@@ -33,3 +33,4 @@ CREATE TABLE IF NOT EXISTS conversation_logs (
     UNIQUE KEY uk_session (session_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对话日志表';
 
+

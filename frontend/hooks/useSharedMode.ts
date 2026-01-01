@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ShareConfig } from '../services/api/heartconnect/types';
 import { setSharedModeState, clearSharedModeState, getSharedModeState } from '../services/api/base/sharedModeState';
 import { heartConnectApi } from '../services/api/heartconnect';
+import { logger } from '../utils/logger';
 
 interface SharedModeState {
   isActive: boolean;
@@ -69,7 +70,7 @@ export const useSharedMode = () => {
     // 通知所有监听器
     notifyListeners();
     
-    console.log('[useSharedMode] 进入共享模式:', shareConfig.id, visitorId, shareConfig);
+    logger.debug('[useSharedMode] 进入共享模式:', shareConfig.id, visitorId, shareConfig);
   };
   
   /**
@@ -89,7 +90,7 @@ export const useSharedMode = () => {
     // 通知所有监听器
     notifyListeners();
     
-    console.log('[useSharedMode] 离开共享模式');
+    logger.debug('[useSharedMode] 离开共享模式');
   };
   
   /**

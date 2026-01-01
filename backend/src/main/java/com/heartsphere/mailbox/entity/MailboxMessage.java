@@ -1,5 +1,6 @@
 package com.heartsphere.mailbox.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.heartsphere.entity.User;
 import com.heartsphere.mailbox.enums.MessageCategory;
 import com.heartsphere.mailbox.enums.MessageType;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "mailbox_messages")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MailboxMessage {
     
     @Id
@@ -27,10 +29,12 @@ public class MailboxMessage {
     private Long id;
     
     /**
-     * 接收者用户
+     * 接收者用户（懒加载，序列化时忽略，使用receiverId）
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User receiver;
     
     /**

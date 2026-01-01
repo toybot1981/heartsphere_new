@@ -8,6 +8,7 @@ import { WorldScene } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
 import { eraApi, worldApi } from '../services/api';
 import { showAlert } from '../utils/dialog';
+import { logger } from '../utils/logger';
 
 /**
  * 场景操作 Hook
@@ -29,12 +30,12 @@ export const useEraHandlers = (
       if (onClose) {
         onClose();
       }
-      console.log("[useEraHandlers] 跳过服务器提交: 未登录或游客模式");
+      logger.debug("[useEraHandlers] 跳过服务器提交: 未登录或游客模式");
       return;
     }
 
     try {
-      console.log("[useEraHandlers] 开始提交场景到服务器");
+      logger.debug("[useEraHandlers] 开始提交场景到服务器");
       
       // 获取用户的默认世界ID（通常是"心域"世界）
       let worldId: number | null = null;
@@ -58,10 +59,10 @@ export const useEraHandlers = (
       const eraId = numericMatch ? parseInt(numericMatch[0], 10) : null;
       const isEditing = eraId !== null && editingScene;
 
-      let savedEra: any;
+      let savedEra: { id: number; name: string; description: string; worldId: number; imageUrl?: string; systemEraId?: number | null };
       if (eraId && isEditing) {
         // 更新现有场景
-        console.log(`[useEraHandlers] 更新场景: eraId=${eraId}, worldId=${worldId}`);
+        logger.debug(`[useEraHandlers] 更新场景: eraId=${eraId}, worldId=${worldId}`);
         savedEra = await eraApi.updateEra(eraId, {
           name: newScene.name,
           description: newScene.description,
@@ -71,10 +72,10 @@ export const useEraHandlers = (
           imageUrl: newScene.imageUrl || undefined,
           systemEraId: newScene.systemEraId || null,
         }, token);
-        console.log(`[useEraHandlers] 场景更新成功: ID=${eraId}`);
+        logger.debug(`[useEraHandlers] 场景更新成功: ID=${eraId}`);
       } else {
         // 创建新场景
-        console.log(`[useEraHandlers] 创建场景: worldId=${worldId}`);
+        logger.debug(`[useEraHandlers] 创建场景: worldId=${worldId}`);
         savedEra = await eraApi.createEra({
           name: newScene.name,
           description: newScene.description,
@@ -84,13 +85,13 @@ export const useEraHandlers = (
           imageUrl: newScene.imageUrl || undefined,
           systemEraId: newScene.systemEraId || null,
         }, token);
-        console.log(`[useEraHandlers] 场景创建成功: ID=${savedEra.id}`);
+        logger.debug(`[useEraHandlers] 场景创建成功: ID=${savedEra.id}`);
       }
 
       // 刷新场景列表，更新显示
-      console.log("[useEraHandlers] 刷新场景列表");
+      logger.debug("[useEraHandlers] 刷新场景列表");
       const updatedEras = await eraApi.getAllEras(token);
-      console.log(`[useEraHandlers] 获取到 ${updatedEras.length} 个场景`);
+      logger.debug(`[useEraHandlers] 获取到 ${updatedEras.length} 个场景`);
       
       // 重新构建 userWorldScenes
       const worlds = await worldApi.getAllWorlds(token);
@@ -119,14 +120,14 @@ export const useEraHandlers = (
       dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
       dispatch({ type: 'SET_CUSTOM_SCENES', payload: [] });
       
-      console.log(`[useEraHandlers] 场景列表已刷新，共 ${scenesWithMemories.length} 个场景`);
+      logger.debug(`[useEraHandlers] 场景列表已刷新，共 ${scenesWithMemories.length} 个场景`);
       
       if (onClose) {
         onClose();
       }
-    } catch (error: any) {
-      console.error(`[useEraHandlers] 场景提交失败: ID=${newScene.id}`, error);
-      const errorMessage = error.message || '未知错误';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`[useEraHandlers] 场景提交失败: ID=${newScene.id}`, error);
       showAlert(`场景提交失败: ${errorMessage}`, '提交失败', 'error');
       throw error; // 重新抛出错误，让调用方知道失败
     }
@@ -152,7 +153,7 @@ export const useEraHandlers = (
     const eraId = numericMatch ? parseInt(numericMatch[0], 10) : null;
     const isNumericId = eraId !== null && !isNaN(eraId);
     
-    console.log(`[useEraHandlers] 删除场景检查: sceneId=${sceneId}, 提取的eraId=${eraId}, token存在=${!!token}, isGuest=${isGuest}, isNumericId=${isNumericId}`);
+    logger.debug(`[useEraHandlers] 删除场景检查: sceneId=${sceneId}, 提取的eraId=${eraId}, token存在=${!!token}, isGuest=${isGuest}, isNumericId=${isNumericId}`);
     
     if (!token || isGuest || !isNumericId) {
       const reasons = [];
@@ -160,7 +161,7 @@ export const useEraHandlers = (
       if (isGuest) reasons.push('游客模式');
       if (!isNumericId) reasons.push(`无效ID (sceneId=${sceneId}, 无法提取数字)`);
       
-      console.warn(`[useEraHandlers] 跳过服务器删除: ${reasons.join('、')}`);
+      logger.warn(`[useEraHandlers] 跳过服务器删除: ${reasons.join('、')}`);
       
       if (onClose) {
         onClose();
@@ -169,14 +170,14 @@ export const useEraHandlers = (
     }
 
     try {
-      console.log(`[useEraHandlers] 删除场景: sceneId=${sceneId}, eraId=${eraId}`);
+      logger.debug(`[useEraHandlers] 删除场景: sceneId=${sceneId}, eraId=${eraId}`);
       await eraApi.deleteEra(eraId, token);
-      console.log(`[useEraHandlers] 场景删除成功: ID=${eraId}`);
+      logger.debug(`[useEraHandlers] 场景删除成功: ID=${eraId}`);
       
       // 刷新场景列表，更新显示
-      console.log("[useEraHandlers] 刷新场景列表");
+      logger.debug("[useEraHandlers] 刷新场景列表");
       const updatedEras = await eraApi.getAllEras(token);
-      console.log(`[useEraHandlers] 获取到 ${updatedEras.length} 个场景`);
+      logger.debug(`[useEraHandlers] 获取到 ${updatedEras.length} 个场景`);
       
       // 重新构建 userWorldScenes
       const worlds = await worldApi.getAllWorlds(token);
@@ -211,13 +212,13 @@ export const useEraHandlers = (
       );
       dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: updatedCustomCharacters });
       
-      console.log(`[useEraHandlers] 场景列表已刷新，共 ${scenesWithMemories.length} 个场景`);
+      logger.debug(`[useEraHandlers] 场景列表已刷新，共 ${scenesWithMemories.length} 个场景`);
       
       if (onClose) {
         onClose();
       }
-    } catch (error: any) {
-      console.error(`[useEraHandlers] 场景删除失败: ID=${sceneId}`, error);
+    } catch (error: unknown) {
+      logger.error(`[useEraHandlers] 场景删除失败: ID=${sceneId}`, error);
       const errorMessage = error.message || '未知错误';
       showAlert(`场景删除失败: ${errorMessage}`, '删除失败', 'error');
       throw error; // 重新抛出错误，让调用方知道失败

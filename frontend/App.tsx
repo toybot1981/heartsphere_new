@@ -67,6 +67,7 @@ import { heartConnectApi } from './services/api/heartconnect';
 import { ConnectionRequestModal } from './components/heartconnect/ConnectionRequestModal';
 import { getToken } from './services/api/base/tokenStorage';
 import type { ShareConfig } from './services/api/heartconnect/types';
+import { logger } from './utils/logger';
 
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
@@ -307,23 +308,23 @@ const AppContent: React.FC = () => {
           let shareConfig: ShareConfig;
           if (providedShareConfig) {
             shareConfig = providedShareConfig;
-            console.log('[App] handleNavigateToShared: 使用事件中提供的 shareConfig', shareConfig.id);
+            logger.debug('[App] handleNavigateToShared: 使用事件中提供的 shareConfig', shareConfig.id);
           } else {
             // 如果没有提供 shareConfig，说明已经在 SharedHeartSphereCard 中调用了 enterSharedMode
             // 这里只需要设置屏幕即可
-            console.log('[App] handleNavigateToShared: shareConfig 已在事件发送前设置，直接导航');
+            logger.debug('[App] handleNavigateToShared: shareConfig 已在事件发送前设置，直接导航');
             dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
             return;
           }
           
           // 进入共享模式
-          console.log('[App] handleNavigateToShared: 进入共享模式', shareConfig.id, visitorId);
+          logger.debug('[App] handleNavigateToShared: 进入共享模式', shareConfig.id, visitorId);
           enterSharedMode(shareConfig, visitorId);
           
           // 设置屏幕为共享心域页面
           dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
         } catch (err) {
-          console.error('[App] handleNavigateToShared 失败:', err);
+          logger.error('[App] handleNavigateToShared 失败:', err);
         }
       }
     };
@@ -386,8 +387,8 @@ const AppContent: React.FC = () => {
             // 通过更新 gameState 来重新触发 useEffect
             dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
           } else {
-            console.error(`[DataLoader ${gameState.currentScreen}] 重试后token仍不存在，无法加载数据`);
-            console.error(`[DataLoader ${gameState.currentScreen}] 检测到用户已登录但token丢失，清除用户信息并提示重新登录`);
+            logger.error(`[DataLoader ${gameState.currentScreen}] 重试后token仍不存在，无法加载数据`);
+            logger.error(`[DataLoader ${gameState.currentScreen}] 检测到用户已登录但token丢失，清除用户信息并提示重新登录`);
             // 如果用户已登录但token丢失，清除用户信息并提示重新登录
             if (gameState.userProfile && !gameState.userProfile.isGuest) {
               dispatch({ type: 'SET_USER_PROFILE', payload: null });
@@ -413,11 +414,11 @@ const AppContent: React.FC = () => {
         // 如果本地已有数据，先显示本地数据，然后后台同步
         if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
           loadAndSyncWorldDataHook(token, screenName).catch(error => {
-            console.error(`[DataLoader ${screenName}] 后台同步失败:`, error);
+            logger.error(`[DataLoader ${screenName}] 后台同步失败:`, error);
           });
               } else {
           loadAndSyncWorldDataHook(token, screenName).catch(error => {
-            console.error(`[DataLoader ${screenName}] 加载失败:`, error);
+            logger.error(`[DataLoader ${screenName}] 加载失败:`, error);
           });
         }
       }
@@ -488,7 +489,7 @@ const AppContent: React.FC = () => {
         setEditingMainStorySceneId(result.sceneId);
           setShowMainStoryEditor(true);
       } catch (error) {
-        console.error('[App] 编辑主线故事出错:', error);
+        logger.error('[App] 编辑主线故事出错:', error);
           showAlert('打开编辑器失败，请稍后重试', '错误', 'error');
       }
     }
@@ -645,7 +646,7 @@ const AppContent: React.FC = () => {
   
   // 检查 currentScenarioLocal 的查找，记录错误
   if (!currentScenarioLocal && gameState.selectedScenarioId) {
-    console.error('[App] 找不到对应的 scenario', {
+    logger.error('[App] 找不到对应的 scenario', {
       selectedScenarioId: gameState.selectedScenarioId,
       selectedScenarioIdType: typeof gameState.selectedScenarioId,
       availableIds: gameState.customScenarios.map(s => ({ id: s.id, title: s.title }))
@@ -782,6 +783,10 @@ const AppContent: React.FC = () => {
           onBack={() => {
             dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
           }}
+          onOpenQuickConnect={() => {
+            logger.debug('[App] 从个人主页打开共享心域');
+            setShowQuickConnectModal(true);
+          }}
           />
       )}
 
@@ -862,7 +867,7 @@ const AppContent: React.FC = () => {
           dispatch={dispatch}
           onSceneObjectSelect={(scene) => {
             // 当选择场景时，保存场景对象
-            console.log('[App] 选择共享场景:', scene);
+            logger.debug('[App] 选择共享场景:', scene);
             setSelectedSharedScene(scene);
             dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: scene.id });
             dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedCharacterSelection' });
@@ -891,7 +896,7 @@ const AppContent: React.FC = () => {
       {gameState.currentScreen === 'sharedChat' && (currentCharacterLocal || gameState.tempStoryCharacter) && (
         <ErrorBoundary
           onError={(error, errorInfo) => {
-            console.error('[App] SharedChatWindow错误:', error, errorInfo);
+            logger.error('[App] SharedChatWindow错误:', error, errorInfo);
           }}
         >
           <SharedChatWindow
@@ -978,7 +983,7 @@ const AppContent: React.FC = () => {
       {gameState.currentScreen === 'chat' && currentCharacterLocal && (
         <ErrorBoundary
           onError={(error, errorInfo) => {
-            console.error('[App] ChatWindow错误:', error, errorInfo);
+            logger.error('[App] ChatWindow错误:', error, errorInfo);
           }}
         >
           <ChatWindow 
@@ -1106,7 +1111,7 @@ const AppContent: React.FC = () => {
                           dispatch({ type: 'SET_USER_WORLD_SCENES', payload: updatedScenes });
                           dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });
                       } catch (error) {
-                          console.error('刷新剧本数据失败:', error);
+                          logger.error('刷新剧本数据失败:', error);
                       }
                       dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });
                   }}
@@ -1128,12 +1133,12 @@ const AppContent: React.FC = () => {
           onBindAccount={() => { setShowSettingsModal(false); setShowLoginModal(true); }}
           onOpenRecycleBin={() => setShowRecycleBin(true)}
           onOpenQuickConnect={() => {
-            console.log('[App] onOpenQuickConnect 被调用');
+            logger.debug('[App] onOpenQuickConnect 被调用');
             // 注意：不再在这里清除共享模式状态，让 QuickConnectModal 自己决定
             // 如果用户在共享模式下，应该保持共享模式状态，搜索共享心域主人的E-SOUL
             // 如果不在共享模式下，QuickConnectModal 会清除共享模式状态
             setShowQuickConnectModal(true);
-            console.log('[App] showQuickConnectModal 设置为 true');
+            logger.debug('[App] showQuickConnectModal 设置为 true');
           }}
           onOpenMembership={async () => {
             setShowSettingsModal(false);
@@ -1145,7 +1150,7 @@ const AppContent: React.FC = () => {
                 setCurrentMembership(membership);
               }
             } catch (error) {
-              console.error('加载会员信息失败:', error);
+              logger.error('加载会员信息失败:', error);
             }
             setShowMembershipModal(true);
           }}
@@ -1167,7 +1172,7 @@ const AppContent: React.FC = () => {
           onClose={() => setShowQuickConnectModal(false)}
           onSelectCharacter={(characterId) => {
             // 处理角色选择
-            console.log('选择了角色:', characterId);
+            logger.debug('选择了角色:', characterId);
             setShowQuickConnectModal(false);
             // 这里可以添加导航到角色的逻辑
           }}
@@ -1210,7 +1215,7 @@ const AppContent: React.FC = () => {
                   dispatch({ type: 'SET_CUSTOM_SCENES', payload: updatedCustomScenes });
                   dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {} });
                 } catch (error) {
-                  console.error('刷新数据失败:', error);
+                  logger.error('刷新数据失败:', error);
                 }
               }
             }
@@ -1245,7 +1250,7 @@ const AppContent: React.FC = () => {
       {showMainStoryEditor && editingMainStory && editingMainStorySceneId && (() => {
           const editorScene = currentScenes.find(s => s.id === editingMainStorySceneId) || currentScenes[0];
           if (!editorScene) {
-              console.error('[MainStoryEditor] 无法找到场景:', editingMainStorySceneId);
+              logger.error('[MainStoryEditor] 无法找到场景:', editingMainStorySceneId);
               return null;
           }
           return (
@@ -1352,7 +1357,7 @@ const AppContent: React.FC = () => {
             try {
               await heartConnectApi.createWarmMessage(shareConfig.id, message);
             } catch (err) {
-              console.error('发送暖心留言失败:', err);
+              logger.error('发送暖心留言失败:', err);
             }
           }
           leaveSharedMode();
@@ -1431,7 +1436,7 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
               return;
             }
           } catch (err) {
-            console.warn('获取用户信息失败，将显示手动进入按钮:', err);
+            logger.warn('获取用户信息失败，将显示手动进入按钮:', err);
             // 如果获取用户信息失败，继续显示页面，让用户手动点击进入
           }
         } else {
@@ -1441,9 +1446,11 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
         // 需要审批，显示请求模态框
         setShowRequestModal(true);
       }
-    } catch (err: any) {
-      console.error('加载共享配置失败:', err);
-      setError(err.response?.data?.message || '加载失败，请检查共享码是否正确');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const responseData = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      logger.error('加载共享配置失败:', err);
+      setError(responseData || errorMessage || '加载失败，请检查共享码是否正确');
     } finally {
       setLoading(false);
     }
@@ -1470,8 +1477,8 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
       } else {
         setError('无法获取用户信息，请重新登录');
       }
-    } catch (err: any) {
-      console.error('进入共享模式失败:', err);
+    } catch (err: unknown) {
+      logger.error('进入共享模式失败:', err);
       setError('进入共享模式失败，请稍后重试');
     }
   };

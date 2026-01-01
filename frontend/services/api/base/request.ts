@@ -2,6 +2,7 @@
 
 import { getSharedModeState } from './sharedModeState';
 import { API_BASE_URL } from '../config';
+import { logger } from '../../../utils/logger';
 
 export interface RequestOptions extends RequestInit {
   signal?: AbortSignal;
@@ -54,7 +55,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       }
     } catch (err) {
       // 静默处理，不影响正常请求
-      console.debug('获取认证token失败:', err);
+      logger.debug('获取认证token失败:', err);
     }
     
     // 2.5. 添加共享模式标识（如果存在且接口需要）
@@ -80,7 +81,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         }
       } catch (err) {
         // 静默处理，不影响正常请求
-        console.error('[request] 检查共享模式时发生错误:', err);
+        logger.error('[request] 检查共享模式时发生错误:', err);
       }
     }
     
@@ -114,25 +115,25 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     }
     
     // 3.5. 在实际调用API之前打印传输参数和请求头
-    console.log(`[request] ========== API调用信息 ==========`);
-    console.log(`[request] URL: ${fullUrl}`);
-    console.log(`[request] Method: ${method}`);
-    console.log(`[request] 请求头:`, Object.fromEntries(headers.entries()));
+    logger.debug(`[request] ========== API调用信息 ==========`);
+    logger.debug(`[request] URL: ${fullUrl}`);
+    logger.debug(`[request] Method: ${method}`);
+    logger.debug(`[request] 请求头:`, Object.fromEntries(headers.entries()));
     if (requestBody) {
       if (requestBody instanceof FormData) {
-        console.log(`[request] Body: FormData (${requestBody instanceof FormData ? '是' : '否'})`);
+        logger.debug(`[request] Body: FormData (${requestBody instanceof FormData ? '是' : '否'})`);
       } else {
         try {
           const bodyStr = typeof requestBody === 'string' ? requestBody : JSON.stringify(requestBody);
-          console.log(`[request] Body:`, bodyStr.length > 500 ? bodyStr.substring(0, 500) + '...' : bodyStr);
+          logger.debug(`[request] Body:`, bodyStr.length > 500 ? bodyStr.substring(0, 500) + '...' : bodyStr);
         } catch (e) {
-          console.log(`[request] Body: [无法序列化]`);
+          logger.debug(`[request] Body: [无法序列化]`);
         }
       }
     } else {
-      console.log(`[request] Body: null`);
+      logger.debug(`[request] Body: null`);
     }
-    console.log(`[request] ========== API调用信息结束 ==========`);
+    logger.debug(`[request] ========== API调用信息结束 ==========`);
 
     // 4. 发送请求
     const response = await fetch(fullUrl, {
@@ -164,7 +165,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
           url.includes('/heartconnect/config/by-code')
         );
         if (!isSubscriptionPlans404 && !isShareConfigNotFound) {
-          console.error(`[${requestId}] 错误响应文本:`, errorText);
+          logger.error(`[${requestId}] 错误响应文本:`, errorText);
         }
         
         // 尝试解析JSON错误响应
@@ -177,7 +178,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         }
       } catch (e) {
         if (!(response.status === 404 && url.includes('/subscription-plans'))) {
-          console.error(`[${requestId}] 解析错误响应失败:`, e);
+          logger.error(`[${requestId}] 解析错误响应失败:`, e);
         }
       }
       
@@ -206,7 +207,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         );
         if (isShareConfigNotFound) {
           // 静默处理，不输出错误日志
-          console.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
+          logger.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
         } else {
           errorMessage = errorMessage || '资源不存在或已被删除';
         }
@@ -271,17 +272,18 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       // 非 JSON 响应，返回文本
       return text as unknown as T;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 对于某些特定的404错误，不记录为错误（如共享配置不存在是正常情况）
-    const isShareConfigNotFound = error?.message && (
-      error.message.includes("共享配置不存在") ||
-      error.message.includes("共享码不存在")
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isShareConfigNotFound = errorMessage && (
+      errorMessage.includes("共享配置不存在") ||
+      errorMessage.includes("共享码不存在")
     );
     
     if (!isSubscriptionPlansRequest && !isShareConfigNotFound) {
-      console.error(`[${requestId}] 请求异常:`, error);
+      logger.error(`[${requestId}] 请求异常:`, error);
     } else if (isShareConfigNotFound) {
-      console.debug(`[${requestId}] 资源不存在（正常情况）:`, error.message);
+      logger.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
     }
     throw error;
   }

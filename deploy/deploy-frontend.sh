@@ -200,8 +200,8 @@ cat > .env.production <<EOF
 # 部署环境
 VITE_DEPLOY_ENV=${DEPLOY_ENV}
 
-# API 基础URL（相对路径，使用空字符串表示使用相对路径）
-VITE_API_BASE_URL=${API_BASE_URL}
+# API 基础URL（使用相对路径，留空表示使用相对路径）
+VITE_API_BASE_URL=
 
 # 大模型 API Key 配置（从主环境变量文件读取）
 VITE_GEMINI_API_KEY=${GEMINI_API_KEY:-}

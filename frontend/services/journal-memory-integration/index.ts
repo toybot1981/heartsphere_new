@@ -6,3 +6,4 @@ export { JournalMemoryIntegration } from './JournalMemoryIntegration';
 export type { JournalMemoryIntegrationConfig } from './JournalMemoryIntegration';
 
 
+

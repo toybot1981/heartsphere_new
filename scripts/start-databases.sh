@@ -46,3 +46,4 @@ echo "MongoDB: $(pgrep -f mongod > /dev/null && echo '运行中' || echo '未运
 
 
 
+

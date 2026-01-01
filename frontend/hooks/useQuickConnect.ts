@@ -6,6 +6,7 @@ import type {
   FilterType,
 } from '../services/api/quickconnect/types';
 import { useQuickConnectCache } from './useQuickConnectCache';
+import { logger } from '../utils/logger';
 
 interface QuickConnectState {
   characters: QuickConnectCharacter[];
@@ -101,11 +102,12 @@ export const useQuickConnect = () => {
         recentCount: response.recentCount,
         isLoading: false,
       }));
-    } catch (error: any) {
-      console.error('[useQuickConnect] 加载失败:', error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('[useQuickConnect] 加载失败:', error);
       setState(prev => ({
         ...prev,
-        error: error.message || '加载失败，请重试',
+        error: errorMessage || '加载失败，请重试',
         isLoading: false,
       }));
     }
@@ -136,11 +138,12 @@ export const useQuickConnect = () => {
         totalCount: response.totalCount,
         isSearching: false,
       }));
-    } catch (error: any) {
-      console.error('[useQuickConnect] 搜索失败:', error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('[useQuickConnect] 搜索失败:', error);
       setState(prev => ({
         ...prev,
-        error: error.message || '搜索失败，请重试',
+        error: errorMessage || '搜索失败，请重试',
         isSearching: false,
       }));
     }
@@ -209,8 +212,8 @@ export const useQuickConnect = () => {
         ...prev,
         favoriteCount: wasFavorite ? prev.favoriteCount - 1 : prev.favoriteCount + 1,
       }));
-    } catch (error: any) {
-      console.error('[useQuickConnect] 切换收藏失败:', error);
+    } catch (error: unknown) {
+      logger.error('[useQuickConnect] 切换收藏失败:', error);
       // 回滚状态
       setState(prev => ({
         ...prev,
@@ -237,8 +240,8 @@ export const useQuickConnect = () => {
       await quickConnectApi.reorderFavorites(items);
       // 重新加载列表以获取最新排序
       await loadCharacters({ filter: 'favorite', sortBy: 'favorite' });
-    } catch (error: any) {
-      console.error('[useQuickConnect] 调整收藏顺序失败:', error);
+    } catch (error: unknown) {
+      logger.error('[useQuickConnect] 调整收藏顺序失败:', error);
       throw error;
     }
   }, [loadCharacters]);

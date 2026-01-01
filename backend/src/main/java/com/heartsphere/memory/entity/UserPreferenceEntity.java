@@ -73,3 +73,4 @@ public class UserPreferenceEntity {
     private LocalDateTime updatedAt;
 }
 
+

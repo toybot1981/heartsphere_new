@@ -68,3 +68,4 @@ public interface UserFactRepository extends JpaRepository<UserFactEntity, String
     void deleteById(@Param("factId") String factId);
 }
 
+
