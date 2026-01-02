@@ -136,7 +136,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://\${DB_HOST:localhost}:\${DB_PORT:3306}/\${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://\${DB_HOST:localhost}:\${DB_PORT:3306}/\${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: \${DB_USER:root}
     password: \${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
