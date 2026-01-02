@@ -106,7 +106,7 @@ if [ "$UPDATE_FRONTEND" = true ]; then
     cd "${SCRIPT_DIR}/frontend"
     
     echo -e "${YELLOW}安装/更新依赖...${NC}"
-    npm install --legacy-peer-deps
+    npm install
     
     echo -e "${YELLOW}构建新版本...${NC}"
     npm run build

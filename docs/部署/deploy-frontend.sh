@@ -51,14 +51,9 @@ echo -e "${YELLOW}[3/6] 构建前端项目...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}/frontend"
 
-# 配置 npm 使用淘宝镜像源
-echo -e "${YELLOW}配置 npm 使用淘宝镜像源...${NC}"
-npm config set registry https://registry.npmmirror.com
-npm config set disturl https://npmmirror.com/dist
-npm config set electron_mirror https://npmmirror.com/mirrors/electron/
-npm config set sass_binary_site https://npmmirror.com/mirrors/node-sass/
-npm config set puppeteer_download_host https://npmmirror.com/mirrors
-echo -e "${GREEN}npm 镜像源已配置为淘宝源${NC}"
+# 清理旧的构建产物和环境变量文件
+echo -e "${YELLOW}清理旧的构建产物...${NC}"
+rm -rf dist .env.production
 
 # 检查是否存在 node_modules，如果没有则安装依赖
 if [ ! -d "node_modules" ]; then
@@ -76,6 +71,10 @@ if [ -f "${APP_HOME}/.env" ]; then
     
     # 创建 .env.production 文件（Vite 会自动读取）
     cat > .env.production <<EOF
+# API 基础 URL 配置（生产环境使用相对路径，通过 nginx 代理）
+# 留空使用相对路径 /api，nginx 会自动转发到后端
+VITE_API_BASE_URL=
+
 # 大模型 API Key 配置
 # 注意: Vite 只读取以 VITE_ 开头的环境变量
 VITE_GEMINI_API_KEY=${GEMINI_API_KEY:-}
@@ -116,6 +115,12 @@ EOF
 else
     echo -e "${YELLOW}警告: 未找到 ${APP_HOME}/.env 文件，将使用默认配置${NC}"
     echo -e "${YELLOW}提示: 可以在部署后运行 ./configure-api-keys.sh 配置 API Key${NC}"
+    # 即使没有 .env 文件，也要创建 .env.production 确保使用相对路径
+    cat > .env.production <<EOF
+# API 基础 URL 配置（生产环境使用相对路径，通过 nginx 代理）
+VITE_API_BASE_URL=
+EOF
+    chmod 600 .env.production
 fi
 
 # 构建生产版本
@@ -149,9 +154,9 @@ server {
         try_files \$uri \$uri/ /index.html;
     }
 
-    # 后端 API 代理
+    # 后端 API 代理（必须在静态文件location之前，确保API请求不被拦截）
     location /api/ {
-        proxy_pass http://localhost:${BACKEND_PORT};
+        proxy_pass http://localhost:${BACKEND_PORT}/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -165,14 +170,18 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+        
+        # 禁用缓冲，确保请求立即转发
+        proxy_buffering off;
     }
 
     # 图片文件代理
     location /api/images/files/ {
-        proxy_pass http://localhost:${BACKEND_PORT};
+        proxy_pass http://localhost:${BACKEND_PORT}/api/images/files/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     # 静态资源缓存

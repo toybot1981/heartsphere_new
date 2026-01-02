@@ -1,311 +1,326 @@
-# HeartSphere 部署指南
+# 心域系统部署文档
 
-本目录包含用于在阿里云 ECS 上部署 HeartSphere 应用的完整脚本。
+本目录包含完整的前后端部署脚本、环境变量配置和数据库导入导出工具。
 
-## 脚本说明
+## 📁 文件说明
 
-### 1. 前端部署脚本 (`deploy-frontend.sh`)
+### 部署脚本
+- `deploy-all.sh` - 一键部署前后端（推荐）
+- `deploy-backend.sh` - 仅部署后端服务
+- `deploy-frontend.sh` - 仅部署前端服务
 
-用于部署前端 React 应用。
+### 数据库脚本
+- `export-database.sh` - 导出数据库到本地文件
+- `import-database.sh` - 从备份文件导入数据库（支持远程MySQL）
 
-**功能：**
-- 交互式配置部署环境（开发/生产/自定义路径）
-- 自动安装 Node.js 和 Nginx
-- 构建前端项目
-- 配置 Nginx 反向代理
-- API 使用相对地址，支持不同根路径
+### 配置文件
+- `env.template` - 环境变量配置模板
 
-**使用方法：**
+## 🚀 快速开始
+
+### 1. 准备工作
+
+#### 1.1 配置环境变量
 ```bash
-sudo ./deploy-frontend.sh
+# 复制环境变量模板
+cp deploy/env.template /opt/heartsphere/.env
+
+# 编辑环境变量文件
+vi /opt/heartsphere/.env
 ```
 
-**配置项：**
-- 部署环境选择（开发/生产/自定义）
-- 根路径配置（默认为 `/`）
-- 域名配置
-- 前端端口（默认 80）
-- 后端端口（默认 8081）
+**必须配置的项：**
+- `DB_NAME` - 数据库名
+- `DB_USER` - 数据库用户
+- `DB_PASSWORD` - 数据库密码
+- `DB_HOST` - 数据库主机（本地使用 localhost，远程使用IP或域名）
+- `DB_PORT` - 数据库端口（默认 3306）
+- `JWT_SECRET` - JWT密钥（使用 `openssl rand -base64 32` 生成）
 
-### 2. 后端部署脚本 (`deploy-backend.sh`)
+**可选配置的项：**
+- 大模型 API Key（Gemini、OpenAI、Qwen、Doubao）
+- 微信登录配置
+- 图片存储路径
 
-用于部署后端 Spring Boot 应用。
+#### 1.2 确保有 root 权限
+所有部署脚本需要 root 权限运行。
 
-**功能：**
-- 交互式配置数据库连接参数
-- 自动安装 Java 17 和 Maven
-- 构建后端项目
-- 配置 systemd 服务
-- 配置 Nginx 反向代理
-
-**使用方法：**
-```bash
-sudo ./deploy-backend.sh
-```
-
-**配置项：**
-- 数据库主机地址
-- 数据库端口（默认 3306）
-- 数据库名称（默认 heartsphere）
-- 数据库用户名（默认 heartsphere）
-- 数据库密码
-- 后端端口（默认 8081）
-- 域名配置
-- JWT 密钥（自动生成或手动输入）
-
-### 3. Nginx 配置脚本 (`setup-nginx.sh`)
-
-用于单独配置 Nginx 反向代理。
-
-**使用方法：**
-```bash
-sudo ./setup-nginx.sh
-```
-
-### 4. 启动服务脚本 (`start-services.sh`)
-
-启动所有服务（后端和 Nginx）。
-
-**使用方法：**
-```bash
-sudo ./start-services.sh
-```
-
-### 5. 停止服务脚本 (`stop-services.sh`)
-
-停止所有服务。
-
-**使用方法：**
-```bash
-sudo ./stop-services.sh
-```
-
-### 6. 修复服务脚本 (`fix-backend-service.sh`)
-
-诊断和修复后端服务启动问题。
-
-**使用方法：**
-```bash
-sudo ./fix-backend-service.sh
-```
-
-### 7. 检查服务脚本 (`check-backend-service.sh`)
-
-快速诊断后端服务问题。
-
-**使用方法：**
-```bash
-sudo ./check-backend-service.sh
-```
-
-## 完整部署流程
-
-### 第一步：准备服务器
-
-1. 确保服务器已安装必要的系统工具
-2. 确保有 root 权限
-3. 确保网络连接正常
-
-### 第二步：上传代码
-
-将项目代码上传到服务器，例如：
-```bash
-# 在本地打包
-tar -czf heartsphere_new.tar.gz heartsphere_new/
-
-# 上传到服务器
-scp heartsphere_new.tar.gz root@your-server-ip:/root/
-
-# 在服务器上解压
-ssh root@your-server-ip
-cd /root
-tar -xzf heartsphere_new.tar.gz
-```
-
-### 第三步：部署后端
+### 2. 一键部署（推荐）
 
 ```bash
-cd /root/heartsphere_new/deploy
-sudo ./deploy-backend.sh
-```
-
-脚本会提示输入：
-- 数据库主机地址（阿里云 RDS 地址）
-- 数据库端口
-- 数据库名称
-- 数据库用户名
-- 数据库密码
-- 后端端口
-- 域名
-- JWT 密钥（建议选择自动生成）
-
-### 第四步：部署前端
-
-```bash
-cd /root/heartsphere_new/deploy
-sudo ./deploy-frontend.sh
-```
-
-脚本会提示输入：
-- 部署环境（选择生产环境）
-- 根路径（默认为 `/`）
-- 域名
-- 前端端口（默认 80）
-- 后端端口（默认 8081）
-
-### 第五步：验证部署
-
-```bash
-# 检查后端服务
-sudo systemctl status heartsphere-backend
-
-# 检查 Nginx
-sudo systemctl status nginx
-
-# 查看后端日志
-sudo journalctl -u heartsphere-backend -f
-
-# 查看 Nginx 日志
-sudo journalctl -u nginx -f
-```
-
-## 配置说明
-
-### 环境变量文件
-
-部署后，环境变量文件位于：`/opt/heartsphere/.env`
-
-可以手动编辑此文件来修改配置：
-```bash
-sudo vi /opt/heartsphere/.env
-sudo systemctl restart heartsphere-backend
-```
-
-### Nginx 配置
-
-- 前端配置：`/etc/nginx/conf.d/heartsphere-frontend.conf`
-- 后端配置：`/etc/nginx/conf.d/heartsphere-backend.conf`
-
-修改配置后需要重新加载：
-```bash
-sudo nginx -t  # 测试配置
-sudo systemctl reload nginx  # 重新加载配置
-```
-
-### 服务管理
-
-```bash
-# 后端服务
-sudo systemctl start heartsphere-backend    # 启动
-sudo systemctl stop heartsphere-backend     # 停止
-sudo systemctl restart heartsphere-backend  # 重启
-sudo systemctl status heartsphere-backend   # 状态
-sudo journalctl -u heartsphere-backend -f   # 日志
-
-# Nginx 服务
-sudo systemctl start nginx                  # 启动
-sudo systemctl stop nginx                   # 停止
-sudo systemctl restart nginx                # 重启
-sudo systemctl status nginx                 # 状态
-sudo journalctl -u nginx -f                 # 日志
-```
-
-## 目录结构
-
-部署后的目录结构：
-```
-/opt/heartsphere/
-├── backend/
-│   ├── app.jar                          # 后端 JAR 文件
-│   └── application-prod.yml             # 生产环境配置
-├── frontend/                            # 前端静态文件
-├── logs/
-│   └── backend.log                      # 后端日志
-├── uploads/
-│   └── images/                          # 上传的图片
-└── .env                                 # 环境变量文件
-```
-
-## 常见问题
-
-### 1. 后端服务启动失败
-
-运行诊断脚本：
-```bash
-sudo ./check-backend-service.sh
-sudo ./fix-backend-service.sh
-```
-
-查看详细日志：
-```bash
-sudo journalctl -u heartsphere-backend -n 100
-```
-
-### 2. Nginx 配置错误
-
-测试配置：
-```bash
-sudo nginx -t
-```
-
-查看错误日志：
-```bash
-sudo tail -f /var/log/nginx/error.log
-```
-
-### 3. 数据库连接失败
-
-检查数据库配置：
-```bash
-sudo cat /opt/heartsphere/.env | grep DB_
-```
-
-测试数据库连接：
-```bash
-mysql -h <DB_HOST> -P <DB_PORT> -u <DB_USER> -p <DB_NAME>
-```
-
-### 4. 端口被占用
-
-检查端口占用：
-```bash
-sudo netstat -tlnp | grep 8081
-sudo netstat -tlnp | grep 80
-```
-
-## 安全建议
-
-1. **修改默认密码**：确保数据库密码足够复杂
-2. **配置防火墙**：只开放必要的端口（80, 443, 22）
-3. **使用 HTTPS**：建议配置 SSL 证书
-4. **定期备份**：备份数据库和重要文件
-5. **更新系统**：定期更新系统和依赖包
-
-## 更新部署
-
-### 更新后端
-
-```bash
-cd /root/heartsphere_new
-git pull  # 或重新上传新版本
-
 cd deploy
-sudo ./deploy-backend.sh
+./deploy-all.sh
 ```
 
-### 更新前端
+这个脚本会：
+1. 检查环境变量配置
+2. 创建应用用户和目录
+3. 部署后端服务（自动安装 Java、Maven）
+4. 部署前端服务（自动安装 Node.js、Nginx）
+5. 可选：导入数据库
+6. 检查服务状态
+
+### 3. 分步部署
+
+#### 3.1 仅部署后端
+```bash
+./deploy-backend.sh
+```
+
+#### 3.2 仅部署前端
+```bash
+./deploy-frontend.sh
+```
+
+## 💾 数据库管理
+
+### 导出数据库
+
+#### 导出本地数据库
+```bash
+# 使用环境变量中的配置
+./export-database.sh
+
+# 或指定参数
+./export-database.sh heartsphere /tmp/db_backup
+```
+
+#### 导出远程数据库
+```bash
+# 先配置环境变量中的数据库信息，或使用参数
+DB_HOST=remote-host.com DB_USER=root DB_PASSWORD=password ./export-database.sh heartsphere /tmp/db_backup
+```
+
+**导出内容：**
+- 数据库结构（表、索引、约束）
+- 所有表的数据
+- 存储过程和函数
+- 自动生成的导入脚本
+
+**输出位置：**
+- 默认：`deploy/database_backup/heartsphere_YYYYMMDD_HHMMSS/`
+- 包含压缩文件：`heartsphere_YYYYMMDD_HHMMSS.tar.gz`
+
+### 导入数据库
+
+#### 导入到本地数据库
+```bash
+# 使用最新备份
+./import-database.sh
+
+# 或指定备份目录
+./import-database.sh /tmp/db_backup/heartsphere_20241224_120000
+```
+
+#### 导入到远程数据库
+```bash
+./import-database.sh \
+  /tmp/db_backup/heartsphere_20241224_120000 \
+  heartsphere \
+  remote-host.com \
+  root \
+  password \
+  3306
+```
+
+**参数说明：**
+1. 备份目录（可选，默认使用最新备份）
+2. 数据库名（默认：heartsphere）
+3. 数据库主机（默认：localhost）
+4. 数据库用户（默认：root）
+5. 数据库密码（默认：从环境变量读取）
+6. 数据库端口（默认：3306）
+
+**导入过程：**
+1. 测试数据库连接
+2. 创建数据库（如果不存在）
+3. 导入数据库结构
+4. 导入所有表数据
+5. 导入存储过程和函数
+6. 验证导入结果
+
+### 使用备份目录中的导入脚本
+
+每个备份目录都包含一个 `import.sh` 脚本，可以直接使用：
 
 ```bash
-cd /root/heartsphere_new
-git pull  # 或重新上传新版本
-
-cd deploy
-sudo ./deploy-frontend.sh
+cd /tmp/db_backup/heartsphere_20241224_120000
+./import.sh heartsphere localhost root password 3306
 ```
 
-## 支持
+## 🔧 服务管理
 
-如遇到问题，请查看：
-- 后端日志：`journalctl -u heartsphere-backend -n 100`
-- Nginx 日志：`journalctl -u nginx -n 100`
-- 系统日志：`dmesg | tail`
+### 后端服务
+```bash
+# 启动
+systemctl start heartsphere-backend
+
+# 停止
+systemctl stop heartsphere-backend
+
+# 重启
+systemctl restart heartsphere-backend
+
+# 查看状态
+systemctl status heartsphere-backend
+
+# 查看日志
+journalctl -u heartsphere-backend -f
+```
+
+### 前端服务（Nginx）
+```bash
+# 启动
+systemctl start nginx
+
+# 停止
+systemctl stop nginx
+
+# 重启
+systemctl restart nginx
+
+# 查看状态
+systemctl status nginx
+
+# 查看日志
+journalctl -u nginx -f
+# 或
+tail -f /var/log/nginx/heartsphere-access.log
+tail -f /var/log/nginx/heartsphere-error.log
+```
+
+## 📋 系统要求
+
+### 后端
+- **操作系统**: CentOS 7+, Ubuntu 18.04+, 或其他 Linux 发行版
+- **Java**: OpenJDK 17+
+- **Maven**: 3.6+
+- **MySQL**: 8.0+（本地或远程）
+
+### 前端
+- **Node.js**: 18+
+- **Nginx**: 1.18+
+
+### 系统资源
+- **内存**: 至少 2GB RAM
+- **磁盘**: 至少 10GB 可用空间
+- **CPU**: 2 核心以上推荐
+
+## 🔍 故障排查
+
+### 后端服务无法启动
+
+1. **检查 Java 环境**
+   ```bash
+   java -version
+   ```
+
+2. **检查日志**
+   ```bash
+   journalctl -u heartsphere-backend -n 50
+   ```
+
+3. **检查数据库连接**
+   ```bash
+   mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} -e "SELECT 1;"
+   ```
+
+4. **检查端口占用**
+   ```bash
+   netstat -tlnp | grep 8081
+   ```
+
+### 前端服务无法访问
+
+1. **检查 Nginx 状态**
+   ```bash
+   systemctl status nginx
+   ```
+
+2. **检查 Nginx 配置**
+   ```bash
+   nginx -t
+   ```
+
+3. **检查端口占用**
+   ```bash
+   netstat -tlnp | grep 80
+   ```
+
+4. **检查防火墙**
+   ```bash
+   # CentOS/RHEL
+   firewall-cmd --list-ports
+   firewall-cmd --add-port=80/tcp --permanent
+   firewall-cmd --reload
+   
+   # Ubuntu
+   ufw status
+   ufw allow 80/tcp
+   ```
+
+### 数据库连接失败
+
+1. **检查 MySQL 服务**
+   ```bash
+   systemctl status mysqld  # CentOS/RHEL
+   systemctl status mysql   # Ubuntu
+   ```
+
+2. **测试连接**
+   ```bash
+   mysql -h${DB_HOST} -P${DB_PORT} -u${DB_USER} -p${DB_PASSWORD} -e "SELECT 1;"
+   ```
+
+3. **检查远程访问权限**
+   ```sql
+   -- 在 MySQL 中执行
+   GRANT ALL PRIVILEGES ON *.* TO '用户名'@'%' IDENTIFIED BY '密码';
+   FLUSH PRIVILEGES;
+   ```
+
+4. **检查防火墙**
+   ```bash
+   # 确保 MySQL 端口（3306）已开放
+   firewall-cmd --list-ports
+   firewall-cmd --add-port=3306/tcp --permanent
+   firewall-cmd --reload
+   ```
+
+## 📝 注意事项
+
+1. **首次部署前必须配置环境变量**
+   - 复制 `env.template` 到 `/opt/heartsphere/.env`
+   - 修改数据库配置和 API Key
+
+2. **数据库导入前建议备份**
+   - 导入会覆盖现有数据
+   - 建议先导出现有数据库
+
+3. **生产环境安全建议**
+   - 使用强密码
+   - 定期更新 JWT_SECRET
+   - 配置防火墙规则
+   - 使用 HTTPS（配置 SSL 证书）
+   - 定期备份数据库
+
+4. **性能优化**
+   - 根据实际负载调整 JVM 内存参数
+   - 配置 Nginx 缓存
+   - 使用 CDN 加速静态资源
+
+## 📞 支持
+
+如遇到问题，请检查：
+1. 系统日志：`journalctl -u heartsphere-backend -n 100`
+2. Nginx 日志：`/var/log/nginx/heartsphere-error.log`
+3. 应用日志：`/opt/heartsphere/logs/backend.log`
+
+## 📄 许可证
+
+本项目遵循相应的开源许可证。
+
+
+
+
+

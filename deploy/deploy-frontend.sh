@@ -188,19 +188,10 @@ cd "${PROJECT_ROOT}/frontend" || {
     exit 1
 }
 
-# 配置 npm 使用淘宝镜像源
-echo -e "${YELLOW}配置 npm 使用淘宝镜像源...${NC}"
-npm config set registry https://registry.npmmirror.com
-npm config set disturl https://npmmirror.com/dist
-npm config set electron_mirror https://npmmirror.com/mirrors/electron/
-npm config set sass_binary_site https://npmmirror.com/mirrors/node-sass/
-npm config set puppeteer_download_host https://npmmirror.com/mirrors
-echo -e "${GREEN}npm 镜像源已配置为淘宝源${NC}"
-
 # 检查是否存在 node_modules，如果没有则安装依赖
 if [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}安装前端依赖...${NC}"
-    npm install --legacy-peer-deps
+    npm install
 fi
 
 # 创建前端环境变量文件
@@ -209,8 +200,8 @@ cat > .env.production <<EOF
 # 部署环境
 VITE_DEPLOY_ENV=${DEPLOY_ENV}
 
-# API 基础URL（使用相对路径，留空表示使用相对路径）
-VITE_API_BASE_URL=
+# API 基础URL（相对路径，使用空字符串表示使用相对路径）
+VITE_API_BASE_URL=${API_BASE_URL}
 
 # 大模型 API Key 配置（从主环境变量文件读取）
 VITE_GEMINI_API_KEY=${GEMINI_API_KEY:-}
@@ -287,7 +278,7 @@ server {
         try_files \$uri \$uri/ ${LOCATION_PATH}index.html;
     }
 
-    # 后端 API 代理（使用相对路径）
+    # 后端 API 代理（必须在静态文件location之前，确保API请求不被拦截）
     location ${LOCATION_PATH}api/ {
         proxy_pass http://localhost:${BACKEND_PORT}/api/;
         proxy_http_version 1.1;
@@ -303,6 +294,9 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+        
+        # 禁用缓冲，确保请求立即转发
+        proxy_buffering off;
     }
 
     # 图片文件代理
