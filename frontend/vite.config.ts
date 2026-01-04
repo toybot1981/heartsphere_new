@@ -37,8 +37,6 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
-          '@emotion/cache',
-          '@emotion/utils',
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
@@ -94,7 +92,6 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
-          '@emotion/cache',
         ],
       },
       build: {
