@@ -116,6 +116,11 @@ export default defineConfig(({ mode }) => {
                 return;
               }
 
+              // 将所有 @emotion 和 @mui 相关包打包到同一个 chunk，避免循环依赖
+              if (id.includes('node_modules/@emotion/') || id.includes('node_modules/@mui/')) {
+                return 'vendor-mui-emotion';
+              }
+
               // 大组件单独打包
               if (id.includes('/admin/AdminScreen')) {
                 return 'admin';
