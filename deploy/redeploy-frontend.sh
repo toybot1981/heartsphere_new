@@ -170,11 +170,20 @@ rm -rf dist
 rm -rf node_modules/.cache
 rm -rf .cache
 
-# 确保React版本正确
+# 确保React版本正确（应该是 18.x.x）
 echo -e "${YELLOW}检查React版本...${NC}"
 REACT_VERSION=$(node -p "require('./node_modules/react/package.json').version")
 REACT_DOM_VERSION=$(node -p "require('./node_modules/react-dom/package.json').version")
+REACT_MAJOR_VERSION=$(echo $REACT_VERSION | cut -d'.' -f1)
+
 echo -e "${GREEN}React: ${REACT_VERSION}, React-DOM: ${REACT_DOM_VERSION}${NC}"
+
+# 检查是否是 React 18
+if [ "$REACT_MAJOR_VERSION" != "18" ]; then
+    echo -e "${YELLOW}警告: React 版本不是 18.x.x，当前是 ${REACT_VERSION}${NC}"
+    echo -e "${YELLOW}建议降级到 React 18.2.0 以解决兼容性问题${NC}"
+    echo -e "${YELLOW}执行: npm install react@^18.2.0 react-dom@^18.2.0 @types/react@^18.2.0 @types/react-dom@^18.2.0 --legacy-peer-deps${NC}"
+fi
 
 # 构建项目（使用详细输出以便调试）
 echo -e "${YELLOW}开始构建（这可能需要几分钟）...${NC}"
