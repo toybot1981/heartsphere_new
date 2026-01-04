@@ -78,29 +78,23 @@ EOF
 
 ```bash
 cd /path/to/heartsphere_new/frontend
-
-cat > .env.production <<EOF
-# API 基础URL（使用相对路径，通过 nginx 代理）
-# 空字符串表示使用相对路径 /api
-VITE_API_BASE_URL=
-EOF
-```
-
-#### 步骤3：重新构建
-
-```bash
-cd /path/to/heartsphere_new/frontend
 npm run build
 ```
 
-#### 步骤4：部署到生产环境
+#### 步骤3：上传到服务器
 
 ```bash
-sudo cp -r /path/to/heartsphere_new/frontend/dist/* /opt/heartsphere/frontend/
+# 方式1: 使用 scp
+scp -r frontend/dist/* user@server:/opt/heartsphere/frontend/
+
+# 方式2: 在服务器上执行
+cd /opt/heartsphere/frontend
+sudo rm -rf *
+sudo cp -r /path/to/local/dist/* .
 sudo chown -R heartsphere:heartsphere /opt/heartsphere/frontend
 ```
 
-#### 步骤5：重启 nginx（如果需要）
+#### 步骤4：重启 nginx（如果需要）
 
 ```bash
 sudo systemctl restart nginx
