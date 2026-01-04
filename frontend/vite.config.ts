@@ -79,6 +79,11 @@ export default defineConfig(({ mode }) => {
         ],
       },
       build: {
+        // 确保模块正确解析和初始化
+        target: 'esnext',
+        modulePreload: {
+          polyfill: true,
+        },
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
@@ -86,6 +91,14 @@ export default defineConfig(({ mode }) => {
             mobile: path.resolve(__dirname, 'mobile.html'),
           },
           output: {
+            // 确保 chunk 加载顺序正确
+            chunkFileNames: (chunkInfo) => {
+              // vendor-react 应该优先加载
+              if (chunkInfo.name === 'vendor-react') {
+                return 'assets/vendor-react-[hash].js';
+              }
+              return 'assets/[name]-[hash].js';
+            },
             // 使用函数形式的 manualChunks，避免空 chunk 问题
             manualChunks: (id) => {
               // React 相关库 - 最高优先级，必须在所有其他检查之前
