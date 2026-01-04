@@ -37,6 +37,8 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
+          '@emotion/cache',
+          '@emotion/utils',
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
@@ -92,6 +94,8 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
+          '@emotion/cache',
+          '@emotion/utils',
         ],
       },
       build: {
@@ -111,11 +115,6 @@ export default defineConfig(({ mode }) => {
               // 排除入口文件，避免立即执行问题
               if (id.endsWith('mobile.tsx') || id.endsWith('main.tsx') || id.endsWith('admin.tsx')) {
                 return;
-              }
-
-              // 将所有 @emotion 和 @mui 相关包打包到同一个 chunk，避免循环依赖
-              if (id.includes('node_modules/@emotion/') || id.includes('node_modules/@mui/')) {
-                return 'vendor-mui-emotion';
               }
 
               // 大组件单独打包
