@@ -6,6 +6,7 @@ import ShortTermMemoryManagement from './ShortTermMemoryManagement';
 import LongTermMemoryManagement from './LongTermMemoryManagement';
 import MemoryStatistics from './MemoryStatistics';
 import MemoryMaintenance from './MemoryMaintenance';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 记忆系统管理主组件
@@ -15,7 +16,7 @@ interface MemoryManagementProps {
   adminToken: string | null;
 }
 
-const MemoryManagement: React.FC<MemoryManagementProps> = ({ adminToken }) => {
+const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }) => {
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
@@ -54,6 +55,15 @@ const MemoryManagement: React.FC<MemoryManagementProps> = ({ adminToken }) => {
         {activeTab === 5 && <MemoryMaintenance adminToken={adminToken} />}
       </Box>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const MemoryManagement: React.FC<MemoryManagementProps> = (props) => {
+  return (
+    <MUIProvider>
+      <MemoryManagementContent {...props} />
+    </MUIProvider>
   );
 };
 

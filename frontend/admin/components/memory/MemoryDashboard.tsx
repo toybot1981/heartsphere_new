@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { adminMemoryApi, MemorySystemDashboard } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 记忆系统概览仪表板
@@ -17,7 +18,7 @@ interface MemoryDashboardProps {
   adminToken: string | null;
 }
 
-const MemoryDashboard: React.FC<MemoryDashboardProps> = ({ adminToken }) => {
+const MemoryDashboardContent: React.FC<MemoryDashboardProps> = ({ adminToken }) => {
   const [dashboard, setDashboard] = useState<MemorySystemDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +168,15 @@ const MemoryDashboard: React.FC<MemoryDashboardProps> = ({ adminToken }) => {
         )}
       </Grid>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const MemoryDashboard: React.FC<MemoryDashboardProps> = (props) => {
+  return (
+    <MUIProvider>
+      <MemoryDashboardContent {...props} />
+    </MUIProvider>
   );
 };
 

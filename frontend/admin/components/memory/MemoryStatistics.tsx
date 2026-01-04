@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { adminMemoryApi, MemoryStatistics, PerformanceMetrics } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 记忆系统统计分析组件
@@ -17,7 +18,7 @@ interface MemoryStatisticsProps {
   adminToken: string | null;
 }
 
-const MemoryStatisticsComponent: React.FC<MemoryStatisticsProps> = ({ adminToken }) => {
+const MemoryStatisticsContent: React.FC<MemoryStatisticsProps> = ({ adminToken }) => {
   const [statistics, setStatistics] = useState<MemoryStatistics | null>(null);
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,6 +162,15 @@ const MemoryStatisticsComponent: React.FC<MemoryStatisticsProps> = ({ adminToken
         </Grid>
       )}
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const MemoryStatisticsComponent: React.FC<MemoryStatisticsProps> = (props) => {
+  return (
+    <MUIProvider>
+      <MemoryStatisticsContent {...props} />
+    </MUIProvider>
   );
 };
 

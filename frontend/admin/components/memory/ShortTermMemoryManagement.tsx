@@ -17,6 +17,7 @@ import {
   Grid,
 } from '@mui/material';
 import { adminMemoryApi, SessionInfo, RedisCacheStats } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 短时记忆管理组件
@@ -25,7 +26,7 @@ interface ShortTermMemoryManagementProps {
   adminToken: string | null;
 }
 
-const ShortTermMemoryManagement: React.FC<ShortTermMemoryManagementProps> = ({ adminToken }) => {
+const ShortTermMemoryManagementContent: React.FC<ShortTermMemoryManagementProps> = ({ adminToken }) => {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [cacheStats, setCacheStats] = useState<RedisCacheStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -203,6 +204,15 @@ const ShortTermMemoryManagement: React.FC<ShortTermMemoryManagementProps> = ({ a
         </Table>
       </TableContainer>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const ShortTermMemoryManagement: React.FC<ShortTermMemoryManagementProps> = (props) => {
+  return (
+    <MUIProvider>
+      <ShortTermMemoryManagementContent {...props} />
+    </MUIProvider>
   );
 };
 

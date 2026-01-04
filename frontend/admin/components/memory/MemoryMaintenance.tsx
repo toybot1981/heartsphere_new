@@ -8,8 +8,10 @@ import {
   CardContent,
   Alert,
   CircularProgress,
+  Grid,
 } from '@mui/material';
 import { adminMemoryApi } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 数据维护组件
@@ -18,7 +20,7 @@ interface MemoryMaintenanceProps {
   adminToken: string | null;
 }
 
-const MemoryMaintenance: React.FC<MemoryMaintenanceProps> = ({ adminToken }) => {
+const MemoryMaintenanceContent: React.FC<MemoryMaintenanceProps> = ({ adminToken }) => {
   const [cleanupType, setCleanupType] = useState('');
   const [archiveType, setArchiveType] = useState('');
   const [beforeDate, setBeforeDate] = useState('');
@@ -136,6 +138,15 @@ const MemoryMaintenance: React.FC<MemoryMaintenanceProps> = ({ adminToken }) => 
         </Grid>
       </Grid>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const MemoryMaintenance: React.FC<MemoryMaintenanceProps> = (props) => {
+  return (
+    <MUIProvider>
+      <MemoryMaintenanceContent {...props} />
+    </MUIProvider>
   );
 };
 

@@ -24,6 +24,7 @@ import {
   ExtractionTask,
   ExtractionConfig,
 } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 长时记忆管理组件
@@ -32,7 +33,7 @@ interface LongTermMemoryManagementProps {
   adminToken: string | null;
 }
 
-const LongTermMemoryManagement: React.FC<LongTermMemoryManagementProps> = ({ adminToken }) => {
+const LongTermMemoryManagementContent: React.FC<LongTermMemoryManagementProps> = ({ adminToken }) => {
   const [memories, setMemories] = useState<UserMemory[]>([]);
   const [stats, setStats] = useState<LongTermMemoryStats | null>(null);
   const [extractionTasks, setExtractionTasks] = useState<ExtractionTask[]>([]);
@@ -217,6 +218,15 @@ const LongTermMemoryManagement: React.FC<LongTermMemoryManagementProps> = ({ adm
         </Table>
       </TableContainer>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const LongTermMemoryManagement: React.FC<LongTermMemoryManagementProps> = (props) => {
+  return (
+    <MUIProvider>
+      <LongTermMemoryManagementContent {...props} />
+    </MUIProvider>
   );
 };
 

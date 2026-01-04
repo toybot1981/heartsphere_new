@@ -19,6 +19,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { adminMemoryApi, UserMemory, UserSearchResult } from '../../../services/api/admin/memory';
+import { MUIProvider } from '../MUIProvider';
 
 /**
  * 用户记忆管理组件
@@ -27,7 +28,7 @@ interface UserMemoryManagementProps {
   adminToken: string | null;
 }
 
-const UserMemoryManagement: React.FC<UserMemoryManagementProps> = ({ adminToken }) => {
+const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ adminToken }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -234,6 +235,15 @@ const UserMemoryManagement: React.FC<UserMemoryManagementProps> = ({ adminToken 
         </DialogActions>
       </Dialog>
     </Box>
+  );
+};
+
+// 使用 MUI Provider 包装组件，解决 withEmotionCache 错误
+const UserMemoryManagement: React.FC<UserMemoryManagementProps> = (props) => {
+  return (
+    <MUIProvider>
+      <UserMemoryManagementContent {...props} />
+    </MUIProvider>
   );
 };
 

@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
             changeOrigin: true,
             // 如果后端路径不包含 /api 前缀，需要取消注释下面这行
             // rewrite: (path) => path.replace(/^\/api/, '')
+          },
+          // 开发环境图片代理配置
+          '/images': {
+            target: 'http://localhost:8080',
+            changeOrigin: true,
           }
         }
       },
