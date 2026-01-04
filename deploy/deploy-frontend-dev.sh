@@ -3,9 +3,8 @@
 # 使用方法: ./deploy-frontend-dev.sh
 # 
 # 功能:
-# - 设置 development 环境变量（API Base URL: http://localhost:8080）
-# - 构建前端项目
-# - 将构建产物拷贝到 /opt/heartsphere/frontend/dist/dev
+# - 设置 development 环境变量（API Base URL: http://localhost:8081）
+# - 构建前端项目到项目目录下的 dist/dev
 
 set -e
 
@@ -22,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 FRONTEND_DIR="${PROJECT_ROOT}/frontend"
 DIST_DIR="${FRONTEND_DIR}/dist"
-DEPLOY_DIR="/opt/heartsphere/frontend/dist/dev"
+DEV_DIST_DIR="${FRONTEND_DIR}/dist/dev"
 
 # Development 环境配置
 DEPLOY_ENV="development"
@@ -33,34 +32,19 @@ echo -e "${GREEN}Development 环境前端部署脚本${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
-# 检查是否为 root 用户（可能需要 root 权限访问 /opt 目录）
-if [ "$EUID" -ne 0 ]; then 
-    echo -e "${YELLOW}提示: 建议使用 root 用户运行此脚本（需要访问 /opt 目录）${NC}"
-    read -p "继续执行? [y/N]: " confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}部署已取消${NC}"
-        exit 0
-    fi
-fi
-
 # ==================== 配置确认 ====================
 echo -e "${BLUE}========== 部署配置 ==========${NC}"
 echo -e "部署环境: ${GREEN}${DEPLOY_ENV}${NC}"
 echo -e "API Base URL: ${GREEN}${API_BASE_URL}${NC}"
-echo -e "部署目录: ${GREEN}${DEPLOY_DIR}${NC}"
+echo -e "构建输出目录: ${GREEN}${DEV_DIST_DIR}${NC}"
 echo ""
-read -p "确认配置是否正确? [y/N]: " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}部署已取消${NC}"
-    exit 0
-fi
 
 # ==================== 开始部署 ====================
 echo ""
 echo -e "${GREEN}开始部署流程...${NC}"
 
 # 1. 检查前端目录
-echo -e "${YELLOW}[1/5] 检查前端目录...${NC}"
+echo -e "${YELLOW}[1/4] 检查前端目录...${NC}"
 if [ ! -d "$FRONTEND_DIR" ]; then
     echo -e "${RED}错误: 前端目录不存在: ${FRONTEND_DIR}${NC}"
     exit 1
@@ -73,7 +57,7 @@ echo -e "${GREEN}前端目录检查通过${NC}"
 echo ""
 
 # 2. 设置 API Base URL 环境变量
-echo -e "${YELLOW}[2/5] 设置 API Base URL 环境变量...${NC}"
+echo -e "${YELLOW}[2/4] 设置 API Base URL 环境变量...${NC}"
 
 # 读取现有的环境变量（如果有）
 if [ -f "${PROJECT_ROOT}/.env" ]; then
@@ -126,48 +110,43 @@ echo -e "${GREEN}环境变量文件已创建: .env.development${NC}"
 echo -e "${BLUE}API Base URL: ${GREEN}${API_BASE_URL}${NC}"
 echo ""
 
-# 3. 检查是否需要构建
-echo -e "${YELLOW}[3/5] 检查是否需要构建...${NC}"
-if [ ! -d "$DIST_DIR" ] || [ -z "$(ls -A "$DIST_DIR" 2>/dev/null)" ]; then
-    echo -e "${YELLOW}dist 目录不存在或为空，需要构建...${NC}"
-    BUILD_NEEDED=true
-else
-    read -p "dist 目录已存在，是否重新构建? [y/N]: " rebuild
-    if [[ "$rebuild" =~ ^[Yy]$ ]]; then
-        BUILD_NEEDED=true
-    else
-        BUILD_NEEDED=false
-    fi
+# 3. 构建前端项目
+echo -e "${YELLOW}[3/4] 构建前端项目...${NC}"
+
+# 检查 node_modules
+if [ ! -d "node_modules" ]; then
+    echo -e "${YELLOW}安装前端依赖...${NC}"
+    npm install
 fi
 
-# 4. 构建前端项目
-if [ "$BUILD_NEEDED" = true ]; then
-    echo -e "${YELLOW}[4/5] 构建前端项目...${NC}"
-    
-    # 检查 node_modules
-    if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}安装前端依赖...${NC}"
-        npm install
-    fi
-    
-    # 构建（使用 development 模式）
-    echo -e "${YELLOW}开始构建（development 模式）...${NC}"
-    npm run build
-    
-    if [ ! -d "dist" ]; then
-        echo -e "${RED}构建失败，未找到 dist 目录！${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}构建完成${NC}"
-else
-    echo -e "${YELLOW}[4/5] 跳过构建，使用现有 dist 目录${NC}"
+# 构建（使用 development 模式）
+echo -e "${YELLOW}开始构建（development 模式）...${NC}"
+npm run build
+
+if [ ! -d "dist" ]; then
+    echo -e "${RED}构建失败，未找到 dist 目录！${NC}"
+    exit 1
 fi
+
+# 将构建产物移动到 dist/dev 目录
+echo -e "${YELLOW}移动构建产物到 dist/dev...${NC}"
+mkdir -p "$DEV_DIST_DIR"
+if [ -d "$DEV_DIST_DIR" ] && [ -n "$(ls -A "$DEV_DIST_DIR" 2>/dev/null)" ]; then
+    BACKUP_DIR="${DEV_DIST_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
+    echo -e "${YELLOW}备份现有文件到: ${BACKUP_DIR}${NC}"
+    cp -r "$DEV_DIST_DIR" "$BACKUP_DIR" 2>/dev/null || true
+    rm -rf "$DEV_DIST_DIR"/*
+fi
+
+# 移动构建产物到 dist/dev
+cp -r dist/* "$DEV_DIST_DIR"/
+
+echo -e "${GREEN}构建完成${NC}"
 echo ""
 
-# 5. 验证构建产物
-echo -e "${YELLOW}[5/5] 验证构建产物...${NC}"
-if grep -r "localhost:8080" dist/assets/*.js 2>/dev/null | head -1; then
+# 4. 验证构建产物
+echo -e "${YELLOW}[4/4] 验证构建产物...${NC}"
+if grep -r "localhost:8081" "${DEV_DIST_DIR}"/assets/*.js 2>/dev/null | head -1; then
     echo -e "${GREEN}✅ 验证通过: 构建产物中包含 ${API_BASE_URL}${NC}"
 else
     echo -e "${YELLOW}⚠️  未在构建产物中找到 ${API_BASE_URL}${NC}"
@@ -175,55 +154,7 @@ else
 fi
 echo ""
 
-# 6. 部署到目标目录
-echo -e "${YELLOW}[部署] 拷贝构建产物到部署目录...${NC}"
-
-# 创建部署目录（如果不存在）
-if [ ! -d "$DEPLOY_DIR" ]; then
-    echo -e "${YELLOW}创建部署目录: ${DEPLOY_DIR}${NC}"
-    mkdir -p "$DEPLOY_DIR"
-fi
-
-# 备份现有文件（如果存在）
-if [ -d "$DEPLOY_DIR" ] && [ -n "$(ls -A "$DEPLOY_DIR" 2>/dev/null)" ]; then
-    BACKUP_DIR="${DEPLOY_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
-    echo -e "${YELLOW}备份现有文件到: ${BACKUP_DIR}${NC}"
-    cp -r "$DEPLOY_DIR" "$BACKUP_DIR" 2>/dev/null || true
-    echo -e "${GREEN}备份完成${NC}"
-fi
-
-# 清空部署目录（可选）
-read -p "是否清空部署目录后再拷贝? [y/N]: " clear_dir
-if [[ "$clear_dir" =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}清空部署目录...${NC}"
-    rm -rf "${DEPLOY_DIR}"/*
-    echo -e "${GREEN}目录已清空${NC}"
-fi
-
-# 拷贝构建产物
-echo -e "${YELLOW}拷贝构建产物...${NC}"
-cp -r dist/* "$DEPLOY_DIR"/
-
-# 设置权限（如果是以 root 用户运行）
-if [ "$EUID" -eq 0 ]; then
-    # 检查是否存在 heartsphere 用户
-    if id "heartsphere" &>/dev/null; then
-        chown -R heartsphere:heartsphere "$DEPLOY_DIR"
-        echo -e "${GREEN}已设置文件权限（heartsphere:heartsphere）${NC}"
-    else
-        # 如果没有 heartsphere 用户，设置为当前用户
-        CURRENT_USER=${SUDO_USER:-$USER}
-        if [ -n "$CURRENT_USER" ]; then
-            chown -R "$CURRENT_USER:$CURRENT_USER" "$DEPLOY_DIR"
-            echo -e "${GREEN}已设置文件权限（${CURRENT_USER}:${CURRENT_USER}）${NC}"
-        fi
-    fi
-fi
-
-echo -e "${GREEN}部署完成${NC}"
-echo ""
-
-# 7. 完成
+# 5. 完成
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}部署完成！${NC}"
 echo -e "${GREEN}========================================${NC}"
@@ -231,14 +162,11 @@ echo ""
 echo -e "${BLUE}部署信息:${NC}"
 echo -e "  部署环境: ${GREEN}${DEPLOY_ENV}${NC}"
 echo -e "  API Base URL: ${GREEN}${API_BASE_URL}${NC}"
-echo -e "  部署目录: ${GREEN}${DEPLOY_DIR}${NC}"
-if [ -n "$BACKUP_DIR" ]; then
-    echo -e "  备份位置: ${GREEN}${BACKUP_DIR}${NC}"
-fi
+echo -e "  构建输出目录: ${GREEN}${DEV_DIST_DIR}${NC}"
 echo ""
 echo -e "${YELLOW}下一步:${NC}"
-echo -e "  1. 检查部署结果: ${CYAN}ls -la ${DEPLOY_DIR}${NC}"
-echo -e "  2. 如果使用 Nginx，重新加载配置: ${CYAN}sudo systemctl reload nginx${NC}"
-echo -e "  3. 访问前端: ${CYAN}http://localhost${NC} (或配置的域名)"
+echo -e "  1. 检查构建结果: ${CYAN}ls -la ${DEV_DIST_DIR}${NC}"
+echo -e "  2. 如果使用 Nginx，重新加载配置: ${CYAN}nginx -s reload${NC}"
+echo -e "  3. 访问前端: ${CYAN}http://localhost:8080${NC}"
 echo ""
 echo -e "${GREEN}完成！${NC}"
