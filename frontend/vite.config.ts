@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => {
           '@antv/x6-react-components',
           'antd',
           'reactflow',
+          '@mui/material',
+          '@emotion/react',
+          '@emotion/styled',
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
@@ -80,6 +83,9 @@ export default defineConfig(({ mode }) => {
           '@antv/x6-react-components',
           'antd',
           'reactflow',
+          '@mui/material',
+          '@emotion/react',
+          '@emotion/styled',
         ],
       },
       build: {
@@ -133,8 +139,13 @@ export default defineConfig(({ mode }) => {
                   return 'vendor-react';
                 }
                 
-                // 其他可能依赖 React 的 UI 库
-                if (id.includes('/@emotion/react') || id.includes('/@emotion/styled')) {
+                // @mui (Material-UI) 及其所有依赖 - 必须与 React 在同一 chunk
+                if (id.includes('/@mui/') || id.includes('/@emotion/')) {
+                  return 'vendor-react';
+                }
+                
+                // 其他可能依赖 React 的库
+                if (id.includes('/material-ui') || id.includes('/styled-components')) {
                   return 'vendor-react';
                 }
               }
