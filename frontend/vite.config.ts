@@ -112,7 +112,13 @@ export default defineConfig(({ mode }) => {
         modulePreload: {
           polyfill: true,
         },
+        // 禁用某些可能导致问题的优化
+        cssCodeSplit: true,
+        // 确保 sourcemap 可用于调试（生产环境可以关闭）
+        sourcemap: false,
         rollupOptions: {
+          // 允许更好的代码分割和模块解析
+          preserveEntrySignatures: 'allow-extension',
           input: {
             main: path.resolve(__dirname, 'index.html'),
             admin: path.resolve(__dirname, 'admin.html'),
@@ -127,6 +133,15 @@ export default defineConfig(({ mode }) => {
               }
               return 'assets/[name]-[hash].js';
             },
+            // 确保模块正确解析，避免循环依赖问题
+            format: 'es',
+            // 使用更安全的模块导出方式，避免 TDZ (Temporal Dead Zone) 问题
+            generatedCode: {
+              constBindings: true,
+              objectShorthand: false, // 避免对象简写可能导致的问题
+            },
+            // 确保模块正确排序，避免初始化顺序问题
+            experimentalMinChunkSize: 20000, // 最小 chunk 大小，避免过度分割
             manualChunks: (id) => {
               // 关键修复：优先处理 React 相关包，确保它们始终在同一个 chunk
               // 必须在所有其他逻辑之前检查，避免被其他规则捕获
@@ -159,9 +174,8 @@ export default defineConfig(({ mode }) => {
               }
               
               // 修复 mobile-core 初始化顺序问题：
-              // 将 MobileApp 及其核心依赖（hooks, contexts, utils, services, components）打包在一起
-              // 避免循环依赖和初始化顺序问题
-              // 策略：将所有 mobile 核心代码和其直接依赖打包到一个 chunk
+              // 将 MobileApp 及其所有核心依赖打包在一起，避免循环依赖和初始化顺序问题
+              // 策略：将所有 mobile 核心代码、共享模块和其直接依赖打包到一个 chunk
               if (id.includes('/mobile.tsx') ||
                   id.includes('/mobile/MobileApp') ||
                   id.includes('/mobile/components/MobileBottomNav') ||
@@ -171,9 +185,12 @@ export default defineConfig(({ mode }) => {
                   id.includes('/mobile/utils/buildScreenProps') ||
                   id.includes('/mobile/MobileScenarioBuilder') ||
                   id.includes('/contexts/GameStateContext') ||
+                  id.includes('/contexts/types/gameState.types') ||
+                  id.includes('/contexts/constants/defaultState') ||
                   id.includes('/hooks/useGameState') ||
                   id.includes('/hooks/useJournalHandlers') ||
                   id.includes('/hooks/useSharedMode') ||
+                  id.includes('/reducers/gameStateReducer') ||
                   id.includes('/utils/sceneMapping') ||
                   id.includes('/utils/dialog') ||
                   id.includes('/utils/dataTransformers') ||
@@ -181,13 +198,18 @@ export default defineConfig(({ mode }) => {
                   id.includes('/services/sync/SyncService') ||
                   id.includes('/services/sync/syncConfig') ||
                   (id.includes('/services/api') && !id.includes('/services/api/admin')) ||
+                  id.includes('/services/ai/AIService') ||
+                  id.includes('/services/api/base/sharedModeState') ||
+                  id.includes('/services/api/heartconnect') ||
                   id.includes('/components/LoginModal') ||
                   id.includes('/components/SettingsModal') ||
                   id.includes('/components/MailboxModal') ||
                   id.includes('/components/EraConstructorModal') ||
-                  id.includes('/components/CharacterConstructorModal')) {
+                  id.includes('/components/CharacterConstructorModal') ||
+                  // 将共享的 types 文件也包含进来（如果被 mobile 使用）
+                  (id.includes('/types') && !id.includes('/types/admin'))) {
                 // 注意：services/api 包含多个子模块，但排除 admin API
-                // 共享的 components 也被包含，因为它们被 MobileApp 直接使用
+                // 共享的 components、types、reducers 也被包含，确保初始化顺序正确
                 return 'mobile-core';
               }
               
@@ -206,8 +228,10 @@ export default defineConfig(({ mode }) => {
                 return 'mobile-screens';
               }
               
-              // 将AI服务相关单独打包
-              if (id.includes('/services/ai') || id.includes('/services/gemini')) {
+              // 将AI服务相关单独打包（但如果被 mobile-core 使用，已经在上面处理了）
+              // 注意：由于 mobile-core 已经包含了 /services/ai/AIService，这里只处理其他 AI 服务
+              if ((id.includes('/services/ai') || id.includes('/services/gemini')) && 
+                  !id.includes('/services/ai/AIService')) {
                 return 'vendor-ai';
               }
               
