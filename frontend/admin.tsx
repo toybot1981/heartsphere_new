@@ -5,6 +5,7 @@ import { AdminScreen } from './admin/AdminScreen';
 import { GameState } from './types';
 import { storageService } from './services/storage';
 import { showConfirm } from './utils/dialog';
+import { MUIProvider } from './admin/components/MUIProvider';
 
 // 创建初始的 GameState（admin 页面只需要基本结构）
 const initialGameState: GameState = {
@@ -111,7 +112,9 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AdminApp />
+    <MUIProvider>
+      <AdminApp />
+    </MUIProvider>
   </React.StrictMode>
 );
 

@@ -4,6 +4,7 @@ import './src/index.css';
 import { MobileApp } from './mobile/MobileApp';
 import { GameStateProvider } from './contexts/GameStateContext';
 import { MobileErrorBoundary } from './mobile/components/MobileErrorBoundary';
+import { MUIProvider } from './admin/components/MUIProvider';
 
 const MobileAppWrapper: React.FC = () => {
   const handleSwitchToPC = () => {
@@ -28,6 +29,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <MobileAppWrapper />
+    <MUIProvider>
+      <MobileAppWrapper />
+    </MUIProvider>
   </React.StrictMode>
 );
