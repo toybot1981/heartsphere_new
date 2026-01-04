@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@antv/x6": "^3.1.4",
-    "@antv/x6-plugin-minimap": "^2.0.7",
+    "@antv/x6-plugin-minimap": "^3.0.0",
     "@antv/x6-react-components": "^2.0.9",
     "@antv/x6-react-shape": "^3.0.1",
     "@emotion/react": "^11.14.0",
