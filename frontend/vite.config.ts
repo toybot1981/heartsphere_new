@@ -124,10 +124,14 @@ export default defineConfig(({ mode }) => {
               // 必须在所有其他逻辑之前检查，避免被其他规则捕获
               
               // 1. 所有 React 核心包 - 最高优先级（使用更宽泛的匹配）
-              if (id.includes('node_modules/react') || 
-                  id.includes('node_modules/react-dom') ||
-                  id.includes('node_modules/react-is') ||
-                  id.includes('node_modules/scheduler')) {
+              // 匹配所有包含 'react' 的 node_modules 路径
+              if (id.includes('node_modules') && (
+                  id.includes('/react') || 
+                  id.includes('/react-dom') ||
+                  id.includes('/react-is') ||
+                  id.includes('/scheduler') ||
+                  id.includes('/react-refresh')
+              )) {
                 return 'vendor-react';
               }
               
@@ -141,6 +145,7 @@ export default defineConfig(({ mode }) => {
               
               // Phase 5优化: 更细粒度的代码分割
               // 将大组件单独打包（但不包含 React，React 已在上面处理）
+              // 注意：应用代码不包含 React，因为它们会从 vendor-react 导入
               if (id.includes('/admin/AdminScreen')) {
                 return 'admin';
               }
@@ -166,6 +171,7 @@ export default defineConfig(({ mode }) => {
                 return 'vendor-ai';
               }
               // 将其他node_modules打包（排除已处理的 React 相关包）
+              // 注意：上面的 React 检查已经处理了所有 react 相关包，这里不会再匹配到
               if (id.includes('node_modules')) {
                 return 'vendor';
               }
