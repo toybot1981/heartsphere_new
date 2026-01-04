@@ -9,7 +9,28 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0', // 允许所有网络接口访问
       },
-      plugins: [react()],
+      plugins: [
+        react({
+          // 确保 React 17+ 的 JSX 转换
+          jsxRuntime: 'automatic',
+        }),
+      ],
+      optimizeDeps: {
+        // 预构建依赖，确保 React 相关依赖正确解析
+        include: [
+          'react',
+          'react-dom',
+          'react/jsx-runtime',
+          '@antv/x6',
+          '@antv/x6-react-shape',
+          '@antv/x6-react-components',
+        ],
+        // 强制重新构建这些依赖，确保使用正确的 React 版本
+        force: true,
+        esbuildOptions: {
+          jsx: 'automatic',
+        },
+      },
       define: {
         // 兼容旧的环境变量名和新的 VITE_ 前缀
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
@@ -44,7 +65,18 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-        }
+          // 确保所有依赖使用同一个 React 实例，避免多个 React 实例导致的错误
+          'react': path.resolve(__dirname, 'node_modules/react'),
+          'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+        },
+        // 强制去重，确保只有一个 React 实例
+        dedupe: [
+          'react', 
+          'react-dom',
+          'react/jsx-runtime',
+          '@antv/x6-react-shape',
+          '@antv/x6-react-components',
+        ],
       },
       build: {
         rollupOptions: {
@@ -56,14 +88,28 @@ export default defineConfig(({ mode }) => {
           output: {
             // 使用函数形式的 manualChunks，避免空 chunk 问题
             manualChunks: (id) => {
-              // React 相关库
-              if (id.includes('node_modules') && (
-                  id.includes('/react') || 
-                  id.includes('/react-dom') ||
-                  id.includes('/react-is') ||
-                  id.includes('/scheduler')
-              )) {
-                return 'vendor-react';
+              // React 相关库 - 最高优先级，必须在所有其他检查之前
+              // 使用更宽泛的匹配，确保所有 React 相关包都被捕获
+              if (id.includes('node_modules')) {
+                // React 核心包
+                if (id.includes('/react') || 
+                    id.includes('/react-dom') ||
+                    id.includes('/react-is') ||
+                    id.includes('/scheduler') ||
+                    id.includes('/react-refresh') ||
+                    id.includes('/react/jsx-runtime')) {
+                  return 'vendor-react';
+                }
+                
+                // @antv/x6-react 相关包 - 必须与 React 在同一 chunk
+                if (id.includes('/@antv/x6-react')) {
+                  return 'vendor-react';
+                }
+                
+                // antd 可能依赖 React，也放到 vendor-react（如果项目使用了 antd）
+                if (id.includes('/antd/') && (id.includes('react') || id.includes('React'))) {
+                  return 'vendor-react';
+                }
               }
               
               // 大组件单独打包
