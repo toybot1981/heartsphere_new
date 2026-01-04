@@ -26,7 +26,7 @@ DEPLOY_DIR="/opt/heartsphere/frontend"
 
 # Development 环境配置
 DEPLOY_ENV="development"
-API_BASE_URL="http://localhost:8080"
+API_BASE_URL="http://localhost:8081"
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Development 环境前端部署脚本${NC}"
@@ -88,7 +88,7 @@ cat > ".env.development" <<EOF
 VITE_DEPLOY_ENV=${DEPLOY_ENV}
 
 # API 基础URL配置
-# Development 环境默认使用 http://localhost:8080
+# Development 环境默认使用 http://localhost:8081
 VITE_API_BASE_URL=${API_BASE_URL}
 
 # 大模型 API Key 配置（从主环境变量文件读取）
