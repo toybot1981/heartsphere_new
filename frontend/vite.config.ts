@@ -22,8 +22,6 @@ export default defineConfig(({ mode }) => {
           'react-dom',
           'react/jsx-runtime',
           '@antv/x6',
-          '@antv/x6-react-shape',
-          '@antv/x6-react-components',
           'antd',
           'reactflow',
           '@mui/material',
@@ -76,11 +74,9 @@ export default defineConfig(({ mode }) => {
         },
         // 强制去重，确保只有一个 React 实例
         dedupe: [
-          'react', 
+          'react',
           'react-dom',
           'react/jsx-runtime',
-          '@antv/x6-react-shape',
-          '@antv/x6-react-components',
           'antd',
           'reactflow',
           '@mui/material',
@@ -101,73 +97,18 @@ export default defineConfig(({ mode }) => {
             mobile: path.resolve(__dirname, 'mobile.html'),
           },
           output: {
-            // 确保 chunk 加载顺序正确
-            chunkFileNames: (chunkInfo) => {
-              // vendor-react 应该优先加载（使用 00- 前缀确保排序）
-              if (chunkInfo.name === 'vendor-react') {
-                return 'assets/00-vendor-react-[hash].js';
-              }
-              return 'assets/[name]-[hash].js';
-            },
-            // 确保模块正确排序，避免初始化顺序问题
-            experimentalMinChunkSize: 20000,
-            // 使用函数形式的 manualChunks，避免空 chunk 问题
             manualChunks: (id) => {
-              // React 相关库 - 最高优先级，必须在所有其他检查之前
-              // 使用更宽泛的匹配，确保所有 React 相关包都被捕获
-              if (id.includes('node_modules')) {
-                // React 核心包
-                if (id.includes('/react') || 
-                    id.includes('/react-dom') ||
-                    id.includes('/react-is') ||
-                    id.includes('/scheduler') ||
-                    id.includes('/react-refresh') ||
-                    id.includes('/react/jsx-runtime')) {
-                  return 'vendor-react';
-                }
-                
-                // @antv/x6-react 相关包 - 必须与 React 在同一 chunk
-                if (id.includes('/@antv/x6-react')) {
-                  return 'vendor-react';
-                }
-                
-                // antd 及其所有依赖 - 必须与 React 在同一 chunk（antd 依赖 React）
-                if (id.includes('/antd/') || id.includes('/rc-')) {
-                  return 'vendor-react';
-                }
-                
-                // reactflow - 必须与 React 在同一 chunk
-                if (id.includes('/reactflow') || id.includes('/@xyflow')) {
-                  return 'vendor-react';
-                }
-                
-                // @mui (Material-UI) 及其所有依赖 - 必须与 React 在同一 chunk
-                if (id.includes('/@mui/') || id.includes('/@emotion/')) {
-                  return 'vendor-react';
-                }
-                
-                // 其他可能依赖 React 的库
-                if (id.includes('/material-ui') || id.includes('/styled-components')) {
-                  return 'vendor-react';
-                }
+              // 排除入口文件，避免立即执行问题
+              if (id.endsWith('mobile.tsx') || id.endsWith('main.tsx') || id.endsWith('admin.tsx')) {
+                return;
               }
-              
+
               // 大组件单独打包
               if (id.includes('/admin/AdminScreen')) {
                 return 'admin';
               }
-              if (id.includes('/mobile/MobileApp') || id.includes('/mobile.tsx')) {
+              if (id.includes('/mobile/MobileApp')) {
                 return 'mobile-core';
-              }
-              
-              // AI 服务相关
-              if (id.includes('/services/ai') || id.includes('/services/gemini')) {
-                return 'vendor-ai';
-              }
-              
-              // 其他 node_modules
-              if (id.includes('node_modules')) {
-                return 'vendor';
               }
             },
           },
