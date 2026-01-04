@@ -51,16 +51,38 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             admin: path.resolve(__dirname, 'admin.html'),
+            mobile: path.resolve(__dirname, 'mobile.html'),
           },
           output: {
-            manualChunks: {
-              // 将大组件单独打包
-              'admin': ['./admin/AdminScreen'],
-              'mobile': ['./mobile/MobileApp'],
-              // 将React相关库单独打包
-              'vendor-react': ['react', 'react-dom'],
-              // 将AI服务相关单独打包
-              'vendor-ai': ['./services/gemini'],
+            // 使用函数形式的 manualChunks，避免空 chunk 问题
+            manualChunks: (id) => {
+              // React 相关库
+              if (id.includes('node_modules') && (
+                  id.includes('/react') || 
+                  id.includes('/react-dom') ||
+                  id.includes('/react-is') ||
+                  id.includes('/scheduler')
+              )) {
+                return 'vendor-react';
+              }
+              
+              // 大组件单独打包
+              if (id.includes('/admin/AdminScreen')) {
+                return 'admin';
+              }
+              if (id.includes('/mobile/MobileApp') || id.includes('/mobile.tsx')) {
+                return 'mobile-core';
+              }
+              
+              // AI 服务相关
+              if (id.includes('/services/ai') || id.includes('/services/gemini')) {
+                return 'vendor-ai';
+              }
+              
+              // 其他 node_modules
+              if (id.includes('node_modules')) {
+                return 'vendor';
+              }
             },
           },
         },

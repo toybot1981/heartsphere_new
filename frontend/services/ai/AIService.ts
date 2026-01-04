@@ -1595,46 +1595,6 @@ The content MUST be in Chinese. The story should be engaging, with clear charact
     return this.businessServices.media.analyzeImageForEra(base64Image);
   }
 
-  /**
-   * 生成主线剧情
-   * @deprecated 使用 businessServices.story.generateMainStory 代替
-   */
-  async generateMainStory(
-    eraName: string,
-    eraDescription: string,
-    characters: Array<{name: string, role: string, bio: string}>,
-    optionalPrompt?: string
-  ): Promise<any> {
-    return this.businessServices.story.generateMainStory(eraName, eraDescription, characters, optionalPrompt);
-  }
-
-  /**
-   * 从提示词生成场景
-   * @deprecated 使用 businessServices.story.generateScenarioFromPrompt 代替
-   */
-  async generateScenarioFromPrompt(prompt: string): Promise<any> {
-    return this.businessServices.story.generateScenarioFromPrompt(prompt);
-  }
-
-  /**
-   * 根据标题、场景、简介、标签和角色生成剧本节点流程
-   * @deprecated 使用 businessServices.story.generateScriptWithCharacters 代替
-   */
-  async generateScriptWithCharacters(params: {
-    title: string;
-    sceneName: string;
-    sceneDescription?: string;
-    description?: string;
-    tags?: string;
-    characters: Array<{
-      id: string;
-      name: string;
-      role?: string;
-      bio?: string;
-    }>;
-  }): Promise<any> {
-    return this.businessServices.story.generateScriptWithCharacters(params);
-  }
 
   /**
    * 生成用户头像
