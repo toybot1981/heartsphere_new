@@ -13,19 +13,26 @@ import { adminMemoryApi, MemorySystemDashboard } from '../../../services/api/adm
 /**
  * 记忆系统概览仪表板
  */
-const MemoryDashboard: React.FC = () => {
+interface MemoryDashboardProps {
+  adminToken: string | null;
+}
+
+const MemoryDashboard: React.FC<MemoryDashboardProps> = ({ adminToken }) => {
   const [dashboard, setDashboard] = useState<MemorySystemDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (adminToken) {
+      loadDashboard();
+    }
+  }, [adminToken]);
 
   const loadDashboard = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
-      const data = await adminMemoryApi.getDashboard();
+      const data = await adminMemoryApi.getDashboard(adminToken);
       setDashboard(data);
       setError(null);
     } catch (err: any) {

@@ -54,13 +54,14 @@ public class SharedModeInterceptor implements HandlerInterceptor {
             String sharedMode = request.getHeader(SHARED_MODE_HEADER);
             String shareConfigIdStr = request.getHeader(SHARE_CONFIG_ID_HEADER);
             
-            log.info("========== [SharedModeInterceptor] 处理请求 ==========");
-            log.info("请求路径: {}", request.getRequestURI());
-            log.info("请求头 X-Shared-Mode: {}", sharedMode);
-            log.info("请求头 X-Share-Config-Id: {}", shareConfigIdStr);
+            // 只在DEBUG级别记录详细日志，减少生产环境日志量
+            log.debug("========== [SharedModeInterceptor] 处理请求 ==========");
+            log.debug("请求路径: {}", request.getRequestURI());
+            log.debug("请求头 X-Shared-Mode: {}", sharedMode);
+            log.debug("请求头 X-Share-Config-Id: {}", shareConfigIdStr);
             
             if ("true".equals(sharedMode) && shareConfigIdStr != null) {
-                log.info("检测到共享模式请求头，开始处理: shareConfigId={}", shareConfigIdStr);
+                log.debug("检测到共享模式请求头，开始处理: shareConfigId={}", shareConfigIdStr);
                 try {
                     Long shareConfigId = Long.parseLong(shareConfigIdStr);
                     
@@ -104,13 +105,13 @@ public class SharedModeInterceptor implements HandlerInterceptor {
                         
                         // 根据访问权限类型验证
                         HeartSphereShareConfig.AccessPermission accessPermission = shareConfig.getAccessPermission();
-                        log.info("验证访问权限: shareConfigId={}, visitorId={}, accessPermission={}", 
+                        log.debug("验证访问权限: shareConfigId={}, visitorId={}, accessPermission={}", 
                             shareConfigId, visitorId, accessPermission);
                         
                         if (accessPermission == HeartSphereShareConfig.AccessPermission.FREE) {
                             // 自由访问，直接允许（即使未登录也可以）
                             hasAccess = true;
-                            log.info("自由访问权限，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
+                            log.debug("自由访问权限，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
                         } else if (accessPermission == HeartSphereShareConfig.AccessPermission.APPROVAL) {
                             // 需要审批，检查是否有已批准的连接
                             if (visitorId != null) {
@@ -125,7 +126,7 @@ public class SharedModeInterceptor implements HandlerInterceptor {
                                 hasAccess = connectionOpt.isPresent();
                                 
                                 if (hasAccess) {
-                                    log.info("已批准的连接，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
+                                    log.debug("已批准的连接，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
                                 } else {
                                     // 检查是否有待审批的请求
                                     var requestOpt = connectionRequestRepository
@@ -163,7 +164,7 @@ public class SharedModeInterceptor implements HandlerInterceptor {
                                     .isPresent();
                                 
                                 if (hasAccess) {
-                                    log.info("已邀请的连接，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
+                                    log.debug("已邀请的连接，允许访问: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
                                 } else {
                                     log.warn("未找到已邀请的连接: shareConfigId={}, visitorId={}", shareConfigId, visitorId);
                                 }
@@ -183,7 +184,8 @@ public class SharedModeInterceptor implements HandlerInterceptor {
                                 );
                             SharedModeContext.set(info);
                             
-                            log.info("✅ 设置共享模式上下文成功: shareConfigId={}, visitorId={}, ownerId={}, accessPermission={}", 
+                            // 只在DEBUG级别记录成功日志，避免频繁请求时产生大量日志
+                            log.debug("✅ 设置共享模式上下文成功: shareConfigId={}, visitorId={}, ownerId={}, accessPermission={}", 
                                 shareConfigId, visitorId, ownerId, accessPermission);
                         } else {
                             log.warn("❌ 访问权限验证失败: shareConfigId={}, visitorId={}, accessPermission={}", 

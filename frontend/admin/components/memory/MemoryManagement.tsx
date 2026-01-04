@@ -11,7 +11,11 @@ import MemoryMaintenance from './MemoryMaintenance';
  * 记忆系统管理主组件
  * 提供记忆系统的完整管理功能
  */
-const MemoryManagement: React.FC = () => {
+interface MemoryManagementProps {
+  adminToken: string | null;
+}
+
+const MemoryManagement: React.FC<MemoryManagementProps> = ({ adminToken }) => {
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
@@ -42,12 +46,12 @@ const MemoryManagement: React.FC = () => {
       </Tabs>
 
       <Box sx={{ mt: 2 }}>
-        {activeTab === 0 && <MemoryDashboard />}
-        {activeTab === 1 && <UserMemoryManagement />}
-        {activeTab === 2 && <ShortTermMemoryManagement />}
-        {activeTab === 3 && <LongTermMemoryManagement />}
-        {activeTab === 4 && <MemoryStatistics />}
-        {activeTab === 5 && <MemoryMaintenance />}
+        {activeTab === 0 && <MemoryDashboard adminToken={adminToken} />}
+        {activeTab === 1 && <UserMemoryManagement adminToken={adminToken} />}
+        {activeTab === 2 && <ShortTermMemoryManagement adminToken={adminToken} />}
+        {activeTab === 3 && <LongTermMemoryManagement adminToken={adminToken} />}
+        {activeTab === 4 && <MemoryStatistics adminToken={adminToken} />}
+        {activeTab === 5 && <MemoryMaintenance adminToken={adminToken} />}
       </Box>
     </Box>
   );

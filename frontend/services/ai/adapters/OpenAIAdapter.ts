@@ -148,17 +148,15 @@ export class OpenAIAdapter extends BaseAdapter {
     this.validateRequest(request, ['prompt']);
 
     const model = request.model || AIConfigManager.getDefaultModel('openai', 'text');
-    const url = `${this.baseUrl}/chat/completions`;
-
-    const messages: Array<{ role: string; content: string }> = [];
-
+    
+    // 构建初始消息历史
+    const messages: Array<any> = [];
     if (request.systemInstruction) {
       messages.push({
         role: 'system',
         content: request.systemInstruction,
       });
     }
-
     if (request.messages && request.messages.length > 0) {
       messages.push(...request.messages.map(msg => ({
         role: msg.role,
@@ -171,13 +169,54 @@ export class OpenAIAdapter extends BaseAdapter {
       });
     }
 
-    const requestBody = {
+    // 递归处理流式响应，支持多次 function call
+    await this.processStreamWithFunctionCalls(
+      model,
+      messages,
+      request,
+      onChunk,
+      0, // 递归深度
+      10 // 最大递归深度（防止无限循环）
+    );
+  }
+
+  /**
+   * 处理流式响应，支持 Function Calling 的递归调用
+   */
+  private async processStreamWithFunctionCalls(
+    model: string,
+    messages: Array<any>,
+    request: TextGenerationRequest,
+    onChunk: (chunk: TextGenerationChunk) => void,
+    depth: number,
+    maxDepth: number
+  ): Promise<void> {
+    if (depth >= maxDepth) {
+      console.warn('[OpenAIAdapter] 达到最大递归深度，停止处理 function calls');
+      return;
+    }
+
+    const url = `${this.baseUrl}/chat/completions`;
+
+    const requestBody: any = {
       model,
       messages,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 2048,
       stream: true,
     };
+
+    // 添加 Function Calling 支持
+    if (request.functionDefinitions && request.functionDefinitions.length > 0) {
+      requestBody.tools = request.functionDefinitions.map(fn => ({
+        type: 'function',
+        function: {
+          name: fn.name,
+          description: fn.description,
+          parameters: fn.parameters,
+        },
+      }));
+    }
 
     try {
       const response = await fetch(url, {
@@ -201,6 +240,8 @@ export class OpenAIAdapter extends BaseAdapter {
       }
 
       let buffer = '';
+      let functionCallBuffer: any = null;
+      let assistantMessage: any = { role: 'assistant', content: '' };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -215,7 +256,39 @@ export class OpenAIAdapter extends BaseAdapter {
           
           const data = line.slice(6);
           if (data === '[DONE]') {
-            onChunk({ content: '', done: true });
+            // 检查是否有 function call 需要处理
+            if (functionCallBuffer && request.onFunctionCall) {
+              // 将 assistant message 添加到历史
+              messages.push(assistantMessage);
+              
+              // 执行 function call
+              try {
+                const functionResult = await request.onFunctionCall(functionCallBuffer);
+                
+                // 将 function call 结果添加到消息历史
+                messages.push({
+                  role: 'function',
+                  name: functionCallBuffer.name,
+                  content: JSON.stringify(functionResult),
+                });
+
+                // 递归调用以继续流式响应
+                await this.processStreamWithFunctionCalls(
+                  model,
+                  messages,
+                  request,
+                  onChunk,
+                  depth + 1,
+                  maxDepth
+                );
+                return;
+              } catch (error) {
+                console.error('[OpenAIAdapter] Function call execution failed:', error);
+                // 继续处理，不中断
+              }
+            } else {
+              onChunk({ content: '', done: true });
+            }
             return;
           }
 
@@ -223,8 +296,30 @@ export class OpenAIAdapter extends BaseAdapter {
             const json = JSON.parse(data);
             const delta = json.choices?.[0]?.delta;
             const content = delta?.content || '';
+            const functionCall = delta?.function_call;
 
+            // 处理 Function Call
+            if (functionCall) {
+              if (functionCall.name) {
+                functionCallBuffer = {
+                  name: functionCall.name,
+                  arguments: functionCall.arguments || '',
+                };
+                assistantMessage.function_call = {
+                  name: functionCall.name,
+                  arguments: functionCall.arguments || '',
+                };
+              } else if (functionCall.arguments && functionCallBuffer) {
+                functionCallBuffer.arguments += functionCall.arguments;
+                if (assistantMessage.function_call) {
+                  assistantMessage.function_call.arguments += functionCall.arguments;
+                }
+              }
+            }
+
+            // 处理文本内容
             if (content) {
+              assistantMessage.content += content;
               onChunk({
                 content,
                 done: false,
@@ -232,7 +327,40 @@ export class OpenAIAdapter extends BaseAdapter {
             }
 
             // 检查是否完成
-            if (json.choices?.[0]?.finish_reason) {
+            const finishReason = json.choices?.[0]?.finish_reason;
+            if (finishReason) {
+              // 如果是 function_call，执行函数并递归
+              if (finishReason === 'function_call' && functionCallBuffer && request.onFunctionCall) {
+                // 将 assistant message 添加到历史
+                messages.push(assistantMessage);
+                
+                // 执行 function call
+                try {
+                  const functionResult = await request.onFunctionCall(functionCallBuffer);
+                  
+                  // 将 function call 结果添加到消息历史
+                  messages.push({
+                    role: 'function',
+                    name: functionCallBuffer.name,
+                    content: JSON.stringify(functionResult),
+                  });
+
+                  // 递归调用以继续流式响应
+                  await this.processStreamWithFunctionCalls(
+                    model,
+                    messages,
+                    request,
+                    onChunk,
+                    depth + 1,
+                    maxDepth
+                  );
+                  return;
+                } catch (error) {
+                  console.error('[OpenAIAdapter] Function call execution failed:', error);
+                  // 继续处理，不中断
+                }
+              }
+
               const usage = json.usage ? {
                 inputTokens: json.usage.prompt_tokens || 0,
                 outputTokens: json.usage.completion_tokens || 0,

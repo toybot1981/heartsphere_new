@@ -71,8 +71,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
     return (
         <div className="space-y-6">
             {/* 统计卡片 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
                     <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">注册用户</h3>
                     <p className="text-3xl font-bold text-white">{statistics.totalUsers.toLocaleString()}</p>
                     <p className="text-xs text-slate-400 mt-1">总注册用户数</p>
@@ -81,13 +81,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                     <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">用户场景</h3>
                     <p className="text-3xl font-bold text-indigo-400">{statistics.totalScenes.toLocaleString()}</p>
                     <p className="text-xs text-slate-400 mt-1">用户构建的场景总数</p>
-                </div>
-                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
                     <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">剧本数量</h3>
                     <p className="text-3xl font-bold text-pink-400">{statistics.totalScripts.toLocaleString()}</p>
                     <p className="text-xs text-slate-400 mt-1">用户创建的剧本总数</p>
-                </div>
-                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
                     <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">角色数量</h3>
                     <p className="text-3xl font-bold text-emerald-400">{statistics.totalCharacters.toLocaleString()}</p>
                     <p className="text-xs text-slate-400 mt-1">用户创建的角色总数</p>
@@ -132,7 +132,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ adminToken }) => {
                         >
                             年
                         </button>
-                    </div>
+            </div>
                 </div>
 
                 {statistics.trends && statistics.trends.length > 0 ? (

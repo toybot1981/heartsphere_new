@@ -65,6 +65,10 @@ export type {
   SubscriptionPlan,
   AdminUser,
   UserPageResponse,
+  GraphDefinition,
+  GraphNode,
+  GraphEdge,
+  GraphDefinitionCreateRequest,
 } from './api/admin/types';
 
 // 微信模块（已迁移）

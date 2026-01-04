@@ -9,4 +9,5 @@ export { ShareCodeDisplay } from './ShareCodeDisplay';
 export { QRCodeGenerator } from './QRCodeGenerator';
 export { SharedModeBanner } from './SharedModeBanner';
 export { WarmMessageModal } from './WarmMessageModal';
+export { WarmMessagesList } from './WarmMessagesList';
 

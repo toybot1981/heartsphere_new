@@ -14,13 +14,17 @@ interface UseDeviceModeProps {
 }
 
 export const useDeviceMode = ({ gameState, gameStateRef }: UseDeviceModeProps) => {
-  const [isMobileMode, setIsMobileMode] = useState(checkIsMobile());
+  // PC版本（/）不再自动检测移动设备，始终显示PC界面
+  // 移动端使用独立的 /mobile.html 页面
+  // 只有在 mobile.html 页面中才应该检测移动设备
+  const [isMobileMode, setIsMobileMode] = useState(false);
 
-  // 切换到移动端
+  // 切换到移动端 - 跳转到独立的 mobile.html 页面
   const handleSwitchToMobile = useCallback(async (): Promise<void> => {
     // Save PC state before switching
     await storageService.saveState({ ...gameState, lastLoginTime: Date.now() });
-    setIsMobileMode(true);
+    // 跳转到独立的移动端页面
+    window.location.href = '/mobile.html';
   }, [gameState]);
 
   // 切换到PC端
@@ -30,39 +34,22 @@ export const useDeviceMode = ({ gameState, gameStateRef }: UseDeviceModeProps) =
     // loadGameData();
   }, []);
 
-  // Responsive adaptation listener
-  useEffect(() => {
-    const handleResize = () => {
-      const shouldBeMobile = checkIsMobile();
-      if (shouldBeMobile !== isMobileMode) {
-        // If switching FROM PC to Mobile, save PC state first
-        if (!isMobileMode) {
-          storageService.saveState({ ...gameStateRef.current, lastLoginTime: Date.now() });
-        }
-        setIsMobileMode(shouldBeMobile);
-        
-        // If switching FROM Mobile to PC, we need to reload data because MobileApp maintained its own state
-        if (!shouldBeMobile) {
-          // Delay slightly to ensure DB write finishes if MobileApp was unmounting
-          // Note: GameStateProvider already handles loading, no need to reload here
-          // setTimeout(() => loadGameData(), 200); 
-        }
-      }
-    };
-
-    // Debounce resize
-    let timeoutId: any;
-    const debouncedResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleResize, 300);
-    };
-
-    window.addEventListener('resize', debouncedResize);
-    return () => {
-      window.removeEventListener('resize', debouncedResize);
-      clearTimeout(timeoutId);
-    };
-  }, [isMobileMode, gameStateRef]);
+  // PC版本不再自动响应窗口大小变化切换模式
+  // 移动端使用独立的 /mobile.html 页面，不需要在这里处理响应式切换
+  // 如果需要响应式切换，应该在 mobile.html 页面中单独处理
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     const shouldBeMobile = checkIsMobile();
+  //     if (shouldBeMobile !== isMobileMode) {
+  //       // If switching FROM PC to Mobile, save PC state first
+  //       if (!isMobileMode) {
+  //         storageService.saveState({ ...gameStateRef.current, lastLoginTime: Date.now() });
+  //       }
+  //       setIsMobileMode(shouldBeMobile);
+  //     }
+  //   };
+  //   // ... resize listener code ...
+  // }, [isMobileMode, gameStateRef]);
 
   return {
     isMobileMode,

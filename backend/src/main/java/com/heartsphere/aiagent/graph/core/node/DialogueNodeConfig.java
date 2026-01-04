@@ -1,5 +1,6 @@
 package com.heartsphere.aiagent.graph.core.node;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,7 @@ public class DialogueNodeConfig {
      * 对话文本内容
      */
     @JsonProperty("text")
+    @JsonAlias({"content"})
     private String text;
     
     /**
@@ -51,6 +53,7 @@ public class DialogueNodeConfig {
      * thought - 内心独白
      */
     @JsonProperty("type")
+    @JsonAlias({"dialogueType"})
     private String type;
     
     /**

@@ -149,11 +149,53 @@ export class GeminiAdapter extends BaseAdapter {
     this.validateRequest(request, ['prompt']);
 
     const model = request.model || AIConfigManager.getDefaultModel('gemini', 'text');
-    const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}`;
+    
+    // 构建初始消息历史
+    const contents: Array<any> = [];
+    if (request.messages && request.messages.length > 0) {
+      contents.push(...request.messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      })));
+    } else {
+      contents.push({
+        role: 'user',
+        parts: [{ text: request.prompt }],
+      });
+    }
 
-    // 构建请求体（与generateText相同）
+    // 递归处理流式响应，支持多次 function call
+    await this.processStreamWithFunctionCalls(
+      model,
+      contents,
+      request,
+      onChunk,
+      0,
+      10
+    );
+  }
+
+  /**
+   * 处理流式响应，支持 Function Calling 的递归调用
+   */
+  private async processStreamWithFunctionCalls(
+    model: string,
+    contents: Array<any>,
+    request: TextGenerationRequest,
+    onChunk: (chunk: TextGenerationChunk) => void,
+    depth: number,
+    maxDepth: number
+  ): Promise<void> {
+    if (depth >= maxDepth) {
+      console.warn('[GeminiAdapter] 达到最大递归深度，停止处理 function calls');
+      return;
+    }
+
+    const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}`;
+    
+    // 构建请求体
     const requestBody: any = {
-      contents: [],
+      contents,
     };
 
     if (request.systemInstruction) {
@@ -162,22 +204,21 @@ export class GeminiAdapter extends BaseAdapter {
       };
     }
 
-    if (request.messages && request.messages.length > 0) {
-      requestBody.contents = request.messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      }));
-    } else {
-      requestBody.contents = [{
-        role: 'user',
-        parts: [{ text: request.prompt }],
-      }];
-    }
-
     requestBody.generationConfig = {
       temperature: request.temperature ?? 0.7,
       maxOutputTokens: request.maxTokens ?? 2048,
     };
+
+    // 添加 Function Calling 支持（Gemini 格式）
+    if (request.functionDefinitions && request.functionDefinitions.length > 0) {
+      requestBody.tools = [{
+        functionDeclarations: request.functionDefinitions.map(fn => ({
+          name: fn.name,
+          description: fn.description,
+          parameters: fn.parameters,
+        })),
+      }];
+    }
 
     try {
       const response = await fetch(url, {
@@ -200,7 +241,8 @@ export class GeminiAdapter extends BaseAdapter {
       }
 
       let buffer = '';
-      let fullContent = '';
+      let functionCallBuffer: any = null;
+      let modelMessage: any = { role: 'model', parts: [] };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -215,18 +257,81 @@ export class GeminiAdapter extends BaseAdapter {
           
           try {
             const data = JSON.parse(line);
-            const chunkText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const candidate = data.candidates?.[0];
+            const parts = candidate?.content?.parts || [];
             
-            if (chunkText) {
-              fullContent += chunkText;
-              onChunk({
-                content: chunkText,
-                done: false,
-              });
+            // 处理每个 part
+            for (const part of parts) {
+              // 处理文本内容
+              if (part.text) {
+                if (!modelMessage.parts.find((p: any) => p.text)) {
+                  modelMessage.parts.push({ text: part.text });
+                } else {
+                  const textPart = modelMessage.parts.find((p: any) => p.text);
+                  textPart.text += part.text;
+                }
+                onChunk({
+                  content: part.text,
+                  done: false,
+                });
+              }
+              
+              // 处理 Function Call
+              if (part.functionCall) {
+                functionCallBuffer = {
+                  name: part.functionCall.name,
+                  arguments: JSON.stringify(part.functionCall.args || {}),
+                };
+                if (!modelMessage.parts.find((p: any) => p.functionCall)) {
+                  modelMessage.parts.push({
+                    functionCall: {
+                      name: part.functionCall.name,
+                      args: part.functionCall.args || {},
+                    },
+                  });
+                }
+              }
             }
 
             // 检查是否完成
-            if (data.candidates?.[0]?.finishReason) {
+            const finishReason = candidate?.finishReason;
+            if (finishReason) {
+              // 如果是 function_call，执行函数并递归
+              if (finishReason === 'STOP' && functionCallBuffer && request.onFunctionCall) {
+                // 将 model message 添加到历史
+                contents.push(modelMessage);
+                
+                // 执行 function call
+                try {
+                  const functionResult = await request.onFunctionCall(functionCallBuffer);
+                  
+                  // 将 function call 结果添加到消息历史
+                  contents.push({
+                    role: 'user',
+                    parts: [{
+                      functionResponse: {
+                        name: functionCallBuffer.name,
+                        response: functionResult,
+                      },
+                    }],
+                  });
+
+                  // 递归调用以继续流式响应
+                  await this.processStreamWithFunctionCalls(
+                    model,
+                    contents,
+                    request,
+                    onChunk,
+                    depth + 1,
+                    maxDepth
+                  );
+                  return;
+                } catch (error) {
+                  console.error('[GeminiAdapter] Function call execution failed:', error);
+                  // 继续处理，不中断
+                }
+              }
+
               const usage = data.usageMetadata ? {
                 inputTokens: data.usageMetadata.promptTokenCount || 0,
                 outputTokens: data.usageMetadata.candidatesTokenCount || 0,

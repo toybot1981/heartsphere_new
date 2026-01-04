@@ -10,7 +10,8 @@ public enum MessageCategory {
     ESOUL_LETTER("esoul_letter", "E-SOUL来信"),
     RESONANCE("resonance", "共鸣消息"),
     SYSTEM("system", "系统消息"),
-    USER_MESSAGE("user_message", "用户消息");
+    USER_MESSAGE("user_message", "用户消息"),
+    WARM_MESSAGE("warm_message", "暖心留言");
     
     private final String code;
     private final String description;

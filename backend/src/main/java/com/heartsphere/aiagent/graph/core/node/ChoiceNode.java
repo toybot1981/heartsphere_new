@@ -193,16 +193,53 @@ public class ChoiceNode implements GraphEngine.GraphNode {
     public GraphEngine.GraphState execute(GraphEngine.GraphState state) {
         log.info("[ChoiceNode] 执行选择节点: {}, 选项数量: {}", id, options.size());
         
+        // 获取可用选项
+        List<ChoiceOption> availableOptions = getAvailableOptions(state);
+        
+        // 将选项转换为Map格式，确保前端能正确解析
+        List<Map<String, Object>> optionMaps = new ArrayList<>();
+        int optionIndex = 0;
+        for (ChoiceOption option : availableOptions) {
+            Map<String, Object> optionMap = new java.util.HashMap<>();
+            
+            // 如果选项没有id，自动生成一个（使用nextNodeId或索引）
+            String optionId = option.getId();
+            if (optionId == null || optionId.isEmpty()) {
+                // 使用nextNodeId作为id，如果没有则使用索引
+                optionId = option.getNextNodeId() != null ? option.getNextNodeId() : ("opt_" + optionIndex);
+                log.debug("[ChoiceNode] 选项缺少id，自动生成: {}", optionId);
+            }
+            
+            optionMap.put("id", optionId);
+            optionMap.put("text", option.getText());
+            optionMap.put("nextNodeId", option.getNextNodeId());
+            // 如果选项有effect，可以添加effect信息
+            if (option.getEffect() != null) {
+                Map<String, Object> effectMap = new java.util.HashMap<>();
+                if (option.getEffect().getFavorabilityChange() != null) {
+                    effectMap.put("favorabilityChange", option.getEffect().getFavorabilityChange());
+                }
+                if (option.getEffect().getSkillChange() != null) {
+                    effectMap.put("skillChange", option.getEffect().getSkillChange());
+                }
+                if (!effectMap.isEmpty()) {
+                    optionMap.put("effect", effectMap);
+                }
+            }
+            optionMaps.add(optionMap);
+            optionIndex++;
+        }
+        
         // 将选择节点信息存储到状态中
         state.setData("current_choice", this);
         state.setData("choice_prompt", prompt);
-        state.setData("choice_options", getAvailableOptions(state));
+        state.setData("choice_options", optionMaps); // 使用Map格式而不是对象格式
         
         // 标记当前需要用户选择
         state.setData("waiting_for_choice", true);
         state.setData("choice_node_id", id);
         
-        log.debug("[ChoiceNode] 选择节点执行完成，等待用户选择");
+        log.debug("[ChoiceNode] 选择节点执行完成，等待用户选择，可用选项数量: {}", optionMaps.size());
         
         return state;
     }
@@ -492,9 +529,18 @@ public class ChoiceNode implements GraphEngine.GraphNode {
         // 查找选项
         ChoiceOption selectedOption = null;
         for (ChoiceOption option : options) {
-            if (option.getId().equals(optionId)) {
+            // 优先通过id匹配
+            if (option.getId() != null && option.getId().equals(optionId)) {
                 selectedOption = option;
                 break;
+            }
+            // 如果id为null，尝试通过nextNodeId匹配（向后兼容）
+            if (option.getId() == null || option.getId().isEmpty()) {
+                if (option.getNextNodeId() != null && option.getNextNodeId().equals(optionId)) {
+                    selectedOption = option;
+                    log.debug("[ChoiceNode] 通过nextNodeId匹配选项: {}", optionId);
+                    break;
+                }
             }
         }
         

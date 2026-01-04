@@ -16,6 +16,10 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Stri
     List<JournalEntry> findByWorld_Id(Long worldId);
     List<JournalEntry> findByEra_Id(Long eraId);
     List<JournalEntry> findByCharacter_Id(Long characterId);
+    
+    // 查找所有引用某个era的日记（包括已删除的），用于强制删除
+    @Query("SELECT j FROM JournalEntry j WHERE j.era.id = :eraId")
+    List<JournalEntry> findAllByEra_Id(@Param("eraId") Long eraId);
 
     /**
      * 使用JOIN FETCH优化查询，避免N+1问题

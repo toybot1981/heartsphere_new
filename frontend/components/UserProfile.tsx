@@ -22,7 +22,6 @@ interface UserProfileProps {
   onNavigateToCharacter?: (characterId: string, sceneId: string) => void;
   onNavigateToJournal?: () => void;
   onBack?: () => void; // 返回按钮回调（可选，PC端需要，移动端可能不需要）
-  onOpenQuickConnect?: () => void; // 打开共享心域入口
 }
 
 interface UserStatistics {
@@ -56,7 +55,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   onNavigateToCharacter,
   onNavigateToJournal,
   onBack,
-  onOpenQuickConnect,
 }) => {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [editedNickname, setEditedNickname] = useState(userProfile.nickname);
@@ -708,24 +706,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           )}
         </div>
 
-        {/* 心域连接区域 - 左右并列，扁平清新风格 */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          {/* 打开共享心域 - 左侧 */}
-          {onOpenQuickConnect && (
-            <button
-              onClick={onOpenQuickConnect}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
-            >
-              <span className="text-2xl">🌟</span>
-              <span className="text-sm">打开共享心域</span>
-              <span className="text-xs text-blue-600">探索他人的心域</span>
-            </button>
-          )}
-          
-          {/* 心域共享 - 右侧，样式与左侧一致 */}
+        {/* 心域共享区域 */}
+        <div className="mb-4">
           <button
             onClick={() => setShowShareConfigModal(true)}
-            className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
+            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
           >
             <span className="text-2xl">🔗</span>
             <span className="text-sm">心域共享</span>

@@ -23,7 +23,11 @@ import { adminMemoryApi, UserMemory, UserSearchResult } from '../../../services/
 /**
  * 用户记忆管理组件
  */
-const UserMemoryManagement: React.FC = () => {
+interface UserMemoryManagementProps {
+  adminToken: string | null;
+}
+
+const UserMemoryManagement: React.FC<UserMemoryManagementProps> = ({ adminToken }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -34,9 +38,10 @@ const UserMemoryManagement: React.FC = () => {
   const [selectedMemory, setSelectedMemory] = useState<UserMemory | null>(null);
 
   const handleSearch = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
-      const result = await adminMemoryApi.searchUsers(searchKeyword, 0, 20);
+      const result = await adminMemoryApi.searchUsers(adminToken, searchKeyword, 0, 20);
       setUsers(result.content || []);
       setError(null);
     } catch (err: any) {
@@ -47,10 +52,11 @@ const UserMemoryManagement: React.FC = () => {
   };
 
   const handleViewMemories = async (userId: number) => {
+    if (!adminToken) return;
     try {
       setLoading(true);
       setSelectedUserId(userId);
-      const result = await adminMemoryApi.getUserMemories(userId, undefined, 0, 20);
+      const result = await adminMemoryApi.getUserMemories(adminToken, userId, undefined, 0, 20);
       setMemories(result.content || []);
       setError(null);
     } catch (err: any) {
@@ -61,9 +67,10 @@ const UserMemoryManagement: React.FC = () => {
   };
 
   const handleViewMemoryDetail = async (memoryId: string) => {
+    if (!adminToken) return;
     try {
       setLoading(true);
-      const memory = await adminMemoryApi.getMemoryDetail(memoryId);
+      const memory = await adminMemoryApi.getMemoryDetail(adminToken, memoryId);
       setSelectedMemory(memory);
       setMemoryDetailOpen(true);
       setError(null);

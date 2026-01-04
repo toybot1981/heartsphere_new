@@ -40,7 +40,11 @@
       "Bash(npm run dev:*)",
       "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home mvn:*)",
       "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home java:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(while read dir)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)"
     ]
   }
 }

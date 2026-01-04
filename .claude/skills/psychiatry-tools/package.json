@@ -1,0 +1,56 @@
+{
+  "name": "psychiatry-tools",
+  "version": "1.0.0",
+  "description": "心理医生专用工具集 - Claude Code Skills",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"运行测试...\" && exit 0"
+  },
+  "keywords": [
+    "psychiatry",
+    "mental-health",
+    "clinical",
+    "assessment",
+    "treatment",
+    "crisis-intervention"
+  ],
+  "author": "HeartSphere Psychiatry Team",
+  "license": "MIT",
+  "skills": {
+    "patient-record": {
+      "name": "患者病历管理",
+      "file": "patient-record.js",
+      "description": "创建、查看、更新患者病历"
+    },
+    "assessment-scale": {
+      "name": "心理评估量表",
+      "file": "assessment-scale.js",
+      "description": "执行和评分各种心理评估量表"
+    },
+    "emotion-analysis": {
+      "name": "情绪分析",
+      "file": "emotion-analysis.js",
+      "description": "分析患者情绪状态和趋势"
+    },
+    "treatment-plan": {
+      "name": "治疗计划",
+      "file": "treatment-plan.js",
+      "description": "生成个性化治疗计划"
+    },
+    "session-record": {
+      "name": "会话记录",
+      "file": "session-record.js",
+      "description": "记录和管理治疗会话"
+    },
+    "crisis-intervention": {
+      "name": "危机干预",
+      "file": "crisis-intervention.js",
+      "description": "评估和处理危机情况"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -322,10 +322,10 @@ public class DashScopeAdapter implements ModelAdapter {
                     log.info("[DashScopeAdapter] 流式响应完成 - 总chunks={}", chunkCount[0]);
                     // 如果流完成但没有收到done信号，发送一个完成信号
                     if (chunkCount[0] > 0) {
-                        TextGenerationResponse finalResponse = new TextGenerationResponse();
-                        finalResponse.setProvider(getProviderType());
-                        finalResponse.setModel(request.getModel() != null ? request.getModel() : "qwen-max");
-                        handler.handle(finalResponse, true);
+                    TextGenerationResponse finalResponse = new TextGenerationResponse();
+                    finalResponse.setProvider(getProviderType());
+                    finalResponse.setModel(request.getModel() != null ? request.getModel() : "qwen-max");
+                    handler.handle(finalResponse, true);
                     }
                 }
             );
@@ -1054,7 +1054,7 @@ public class DashScopeAdapter implements ModelAdapter {
         result.setModel(request.getModel() != null ? request.getModel() : "qwen-max");
         
         try {
-            // 提取内容
+        // 提取内容
             JsonNode choices = response.get("choices");
             if (choices != null && choices.isArray() && choices.size() > 0) {
                 JsonNode choice = choices.get(0);
@@ -1072,7 +1072,7 @@ public class DashScopeAdapter implements ModelAdapter {
             // 提取 Token 使用量
             JsonNode usage = response.get("usage");
             if (usage != null) {
-                TextGenerationResponse.TokenUsage tokenUsage = new TextGenerationResponse.TokenUsage();
+            TextGenerationResponse.TokenUsage tokenUsage = new TextGenerationResponse.TokenUsage();
                 if (usage.has("prompt_tokens")) {
                     tokenUsage.setInputTokens(usage.get("prompt_tokens").asInt());
                 }

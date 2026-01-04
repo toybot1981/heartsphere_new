@@ -6,7 +6,8 @@ import { ResourcePicker } from '../../components/ResourcePicker';
 import { aiService } from '../../services/ai';
 import { AppSettings } from '../../types';
 import { storageService } from '../../services/storage';
-import { showConfirm } from '../../utils/dialog';
+import { showConfirm, showAlert } from '../../utils/dialog';
+import { constructCharacterAvatarPrompt, constructCharacterBackgroundPrompt } from '../../utils/promptConstructors';
 
 interface MainStory {
     id: number;
@@ -55,6 +56,8 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const backgroundInputRef = useRef<HTMLInputElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+    const [isGeneratingBackground, setIsGeneratingBackground] = useState(false);
     const [generateError, setGenerateError] = useState('');
     const [optionalPrompt, setOptionalPrompt] = useState('');
 
@@ -242,6 +245,177 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
         }
     };
 
+    const handleGenerateAvatar = async () => {
+        if (!formData.name || !formData.role || !formData.bio) {
+            setUploadError('请先填写剧情名称、角色定位和简介');
+            return;
+        }
+
+        setIsGeneratingAvatar(true);
+        setUploadError('');
+
+        try {
+            // 构建提示词（后台管理没有worldStyle，使用默认风格）
+            const prompt = constructCharacterAvatarPrompt(
+                formData.name,
+                formData.role || '叙事者',
+                formData.bio,
+                formData.themeColor || 'indigo-500'
+            );
+            
+            // 调用AI生成图片（3:4比例，适合头像）
+            const response = await aiService.generateImage({
+                prompt: prompt,
+                aspectRatio: '3:4',
+                width: 1024,
+                height: 1366,
+                numberOfImages: 1
+            });
+
+            if (response.images && response.images.length > 0) {
+                const generatedImage = response.images[0];
+                let imageDataUrl = '';
+
+                // 处理返回的图片
+                if (generatedImage.base64) {
+                    imageDataUrl = `data:image/png;base64,${generatedImage.base64}`;
+                } else if (generatedImage.url) {
+                    try {
+                        const proxyResult = await imageApi.proxyDownload(generatedImage.url);
+                        if (proxyResult.success && proxyResult.dataUrl) {
+                            imageDataUrl = proxyResult.dataUrl;
+                        } else {
+                            imageDataUrl = generatedImage.url;
+                        }
+                    } catch (e) {
+                        imageDataUrl = generatedImage.url;
+                    }
+                }
+
+                if (imageDataUrl) {
+                    // 自动上传到服务器
+                    setIsUploadingAvatar(true);
+                    try {
+                        const uploadResult = await imageApi.uploadBase64Image(imageDataUrl, 'character', adminToken || undefined);
+                        
+                        if (uploadResult.success && uploadResult.url) {
+                            setFormData({...formData, avatarUrl: uploadResult.url});
+                            showAlert('头像生成并上传成功！', '成功', 'success');
+                        } else {
+                            throw new Error(uploadResult.error || '上传失败');
+                        }
+                    } catch (uploadErr: any) {
+                        console.error('上传生成的头像失败:', uploadErr);
+                        setUploadError('头像生成成功，但上传失败: ' + (uploadErr.message || '未知错误'));
+                    } finally {
+                        setIsUploadingAvatar(false);
+                    }
+                } else {
+                    throw new Error('生成的图片数据无效');
+                }
+            } else {
+                throw new Error('未生成图片');
+            }
+        } catch (err: any) {
+            console.error('AI生成头像失败:', err);
+            const errorMsg = err.message || '未知错误';
+            if (errorMsg.includes('API key') || errorMsg.includes('配置')) {
+                setUploadError('AI生成失败：请检查设置中的图片生成API Key配置');
+            } else {
+                setUploadError('AI生成头像失败: ' + errorMsg);
+            }
+        } finally {
+            setIsGeneratingAvatar(false);
+        }
+    };
+
+    const handleGenerateBackground = async () => {
+        if (!formData.name || !formData.bio) {
+            setUploadError('请先填写剧情名称和简介');
+            return;
+        }
+
+        // 获取场景名称（从eras中查找）
+        const selectedEra = eras.find(e => e.id === formData.systemEraId);
+        const eraName = selectedEra?.name || '场景';
+
+        setIsGeneratingBackground(true);
+        setUploadError('');
+
+        try {
+            // 构建提示词
+            const prompt = constructCharacterBackgroundPrompt(
+                formData.name,
+                formData.bio,
+                eraName
+            );
+            
+            // 调用AI生成图片（16:9比例，适合背景）
+            const response = await aiService.generateImage({
+                prompt: prompt,
+                aspectRatio: '16:9',
+                width: 1920,
+                height: 1080,
+                numberOfImages: 1
+            });
+
+            if (response.images && response.images.length > 0) {
+                const generatedImage = response.images[0];
+                let imageDataUrl = '';
+
+                // 处理返回的图片
+                if (generatedImage.base64) {
+                    imageDataUrl = `data:image/png;base64,${generatedImage.base64}`;
+                } else if (generatedImage.url) {
+                    try {
+                        const proxyResult = await imageApi.proxyDownload(generatedImage.url);
+                        if (proxyResult.success && proxyResult.dataUrl) {
+                            imageDataUrl = proxyResult.dataUrl;
+                        } else {
+                            imageDataUrl = generatedImage.url;
+                        }
+                    } catch (e) {
+                        imageDataUrl = generatedImage.url;
+                    }
+                }
+
+                if (imageDataUrl) {
+                    // 自动上传到服务器
+                    setIsUploadingBackground(true);
+                    try {
+                        const uploadResult = await imageApi.uploadBase64Image(imageDataUrl, 'character', adminToken || undefined);
+                        
+                        if (uploadResult.success && uploadResult.url) {
+                            setFormData({...formData, backgroundUrl: uploadResult.url});
+                            showAlert('背景图生成并上传成功！', '成功', 'success');
+                        } else {
+                            throw new Error(uploadResult.error || '上传失败');
+                        }
+                    } catch (uploadErr: any) {
+                        console.error('上传生成的背景图失败:', uploadErr);
+                        setUploadError('背景图生成成功，但上传失败: ' + (uploadErr.message || '未知错误'));
+                    } finally {
+                        setIsUploadingBackground(false);
+                    }
+                } else {
+                    throw new Error('生成的图片数据无效');
+                }
+            } else {
+                throw new Error('未生成图片');
+            }
+        } catch (err: any) {
+            console.error('AI生成背景图失败:', err);
+            const errorMsg = err.message || '未知错误';
+            if (errorMsg.includes('API key') || errorMsg.includes('配置')) {
+                setUploadError('AI生成失败：请检查设置中的图片生成API Key配置');
+            } else {
+                setUploadError('AI生成背景图失败: ' + errorMsg);
+            }
+        } finally {
+            setIsGeneratingBackground(false);
+        }
+    };
+
     if (viewMode === 'list') {
         return (
             <div className="space-y-4">
@@ -390,8 +564,15 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                                     placeholder="头像URL或点击上传"
                                 />
                                 <button 
+                                    onClick={handleGenerateAvatar}
+                                    disabled={!formData.name || !formData.role || !formData.bio || isGeneratingAvatar || isUploadingAvatar}
+                                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded disabled:opacity-50"
+                                >
+                                    {isGeneratingAvatar ? '生成中...' : '🤖 AI生成'}
+                                </button>
+                                <button 
                                     onClick={() => avatarInputRef.current?.click()} 
-                                    disabled={isUploadingAvatar}
+                                    disabled={isUploadingAvatar || isGeneratingAvatar}
                                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
                                 >
                                     {isUploadingAvatar ? '上传中...' : '上传'}
@@ -433,8 +614,15 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                                     placeholder="背景图URL或点击上传"
                                 />
                                 <button 
+                                    onClick={handleGenerateBackground}
+                                    disabled={!formData.name || !formData.bio || isGeneratingBackground || isUploadingBackground}
+                                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded disabled:opacity-50"
+                                >
+                                    {isGeneratingBackground ? '生成中...' : '🤖 AI生成'}
+                                </button>
+                                <button 
                                     onClick={() => backgroundInputRef.current?.click()} 
-                                    disabled={isUploadingBackground}
+                                    disabled={isUploadingBackground || isGeneratingBackground}
                                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
                                 >
                                     {isUploadingBackground ? '上传中...' : '上传'}

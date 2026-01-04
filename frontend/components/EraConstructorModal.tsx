@@ -22,6 +22,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState('');
   const [showResourcePicker, setShowResourcePicker] = useState(false);
   
@@ -104,6 +105,91 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         setImageMode('upload');
     } catch (e) {
         showAlert('复制失败，请手动复制：\n' + prompt, '错误', 'error');
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!name || !description) {
+        setError('请先填写场景名称和简介。');
+        return;
+    }
+
+    setIsGeneratingImage(true);
+    setError('');
+
+    try {
+        // 构建提示词
+        const prompt = constructEraCoverPrompt(name, description, worldStyle);
+        
+        // 调用AI生成图片（3:4比例，适合场景封面）
+        const response = await aiService.generateImage({
+            prompt: prompt,
+            aspectRatio: '3:4',
+            width: 1024,
+            height: 1366,
+            numberOfImages: 1
+        });
+
+        if (response.images && response.images.length > 0) {
+            const generatedImage = response.images[0];
+            let imageDataUrl = '';
+
+            // 处理返回的图片（可能是URL或base64）
+            if (generatedImage.base64) {
+                imageDataUrl = `data:image/png;base64,${generatedImage.base64}`;
+            } else if (generatedImage.url) {
+                // 如果是URL，需要先下载转换为base64
+                try {
+                    const proxyResult = await imageApi.proxyDownload(generatedImage.url);
+                    if (proxyResult.success && proxyResult.dataUrl) {
+                        imageDataUrl = proxyResult.dataUrl;
+                    } else {
+                        imageDataUrl = generatedImage.url;
+                    }
+                } catch (e) {
+                    imageDataUrl = generatedImage.url;
+                }
+            }
+
+            if (imageDataUrl) {
+                // 先显示预览
+                setImageUrl(imageDataUrl);
+                setImageMode('upload');
+
+                // 自动上传到服务器
+                setIsUploading(true);
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    const uploadResult = await imageApi.uploadBase64Image(imageDataUrl, 'era', token || undefined);
+                    
+                    if (uploadResult.success && uploadResult.url) {
+                        setImageUrl(uploadResult.url);
+                        showAlert('图片生成并上传成功！', '成功', 'success');
+                    } else {
+                        throw new Error(uploadResult.error || '上传失败');
+                    }
+                } catch (uploadErr: any) {
+                    console.error('上传生成的图片失败:', uploadErr);
+                    setError('图片生成成功，但上传失败: ' + (uploadErr.message || '未知错误') + '。将使用本地预览。');
+                } finally {
+                    setIsUploading(false);
+                }
+            } else {
+                throw new Error('生成的图片数据无效');
+            }
+        } else {
+            throw new Error('未生成图片');
+        }
+    } catch (err: any) {
+        console.error('AI生成图片失败:', err);
+        const errorMsg = err.message || '未知错误';
+        if (errorMsg.includes('API key') || errorMsg.includes('配置')) {
+            setError('AI生成失败：请检查设置中的图片生成API Key配置');
+        } else {
+            setError('AI生成图片失败: ' + errorMsg);
+        }
+    } finally {
+        setIsGeneratingImage(false);
     }
   };
 
@@ -405,8 +491,15 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                         >
                             🖼️ 选择预置资源
                         </Button>
+                        <Button 
+                            onClick={handleGenerateImage} 
+                            disabled={!name || !description || isGeneratingImage || isUploading} 
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-xs disabled:opacity-50"
+                        >
+                            {isGeneratingImage ? '生成中...' : '🤖 AI 生成图片'}
+                        </Button>
                         <Button onClick={handleGetPrompt} disabled={!name || !description} variant="secondary" className="text-xs">
-                            📋 获取 AI 提示词
+                            📋 获取提示词
                         </Button>
                         {imageUrl && (
                             <Button onClick={handleAnalyzeImage} disabled={isLoading || isUploading} className="bg-gradient-to-r from-pink-600 to-purple-600 text-xs">

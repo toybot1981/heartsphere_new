@@ -31,8 +31,12 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   initialState = DEFAULT_GAME_STATE
 }) => {
   // 在初始化时检查是否有 token，如果有则直接设置为 entryPoint，避免闪烁
+  // 如果是mobile版本，则默认显示第一个底部tab（realWorld）
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
-  const initialScreen = hasToken ? 'entryPoint' : initialState.currentScreen;
+  const isMobile = typeof window !== 'undefined' && (window.location.pathname.includes('/mobile') || window.location.pathname.includes('mobile.html'));
+  const initialScreen = hasToken 
+    ? (isMobile ? 'realWorld' : 'entryPoint')  // mobile版本默认显示realWorld，PC版本显示entryPoint
+    : initialState.currentScreen;
   const [state, dispatch] = useReducer(gameStateReducer, {
     ...initialState,
     currentScreen: initialScreen
@@ -84,12 +88,16 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       };
 
       // 确定应该显示的页面
+      // 如果是mobile版本，默认显示第一个底部tab（realWorld）
+      const isMobile = typeof window !== 'undefined' && (window.location.pathname.includes('/mobile') || window.location.pathname.includes('mobile.html'));
       let targetScreen: GameState['currentScreen'];
       if (hasToken || loadedState.userProfile) {
-        // 如果有 token 或用户已登录，确保停留在 entryPoint
-        targetScreen = (loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen) 
-          ? 'entryPoint' 
-          : loadedState.currentScreen;
+        // 如果有 token 或用户已登录，mobile版本显示realWorld，PC版本显示entryPoint
+        if (loadedState.currentScreen === 'profileSetup' || !loadedState.currentScreen) {
+          targetScreen = isMobile ? 'realWorld' : 'entryPoint';
+        } else {
+          targetScreen = loadedState.currentScreen;
+        }
       } else {
         // 如果没有 token 且没有用户信息，显示 profileSetup
         targetScreen = 'profileSetup';
@@ -117,9 +125,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
       aiService.updateConfigFromAppSettings(mergedSettings);
     } else {
-      // 即使没有保存的状态，如果有 token，也应该显示 entryPoint
+      // 即使没有保存的状态，如果有 token，也应该显示 entryPoint（PC）或 realWorld（Mobile）
       if (hasToken) {
-        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+        const isMobile = typeof window !== 'undefined' && (window.location.pathname.includes('/mobile') || window.location.pathname.includes('mobile.html'));
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: isMobile ? 'realWorld' : 'entryPoint' });
       }
       aiService.updateConfigFromAppSettings(DEFAULT_GAME_STATE.settings);
     }

@@ -1,5 +1,6 @@
 package com.heartsphere.controller;
 
+import com.heartsphere.security.UserDetailsImpl;
 import com.heartsphere.service.ImageStorageService;
 import com.heartsphere.util.ImageUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -37,24 +40,51 @@ public class ImageController {
     private WebClient webClient;
 
     /**
+     * 获取当前用户ID（用于用户资源路径）
+     */
+    private String getCurrentUserId() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                return String.valueOf(userDetails.getId());
+            }
+        } catch (Exception e) {
+            logger.warning("无法获取用户ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * 上传图片文件
      * @param file 图片文件
      * @param category 图片分类（可选，默认为general）
+     * @param isSystemResource 是否为系统资源（可选，默认为false）。如果为true，则不包含userId
      */
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadImage(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "category", defaultValue = "general") String category) {
+            @RequestParam(value = "category", defaultValue = "general") String category,
+            @RequestParam(value = "isSystemResource", defaultValue = "false") Boolean isSystemResource) {
         logger.info("========== 收到图片上传请求 ==========");
         logger.info("文件名: " + (file != null ? file.getOriginalFilename() : "null"));
         logger.info("文件大小: " + (file != null ? file.getSize() + " bytes" : "null"));
         logger.info("文件类型: " + (file != null ? file.getContentType() : "null"));
         logger.info("分类: " + category);
+        logger.info("系统资源: " + isSystemResource);
         
         try {
-            // 保存图片，返回相对路径
-            String relativePath = imageStorageService.saveImage(file, category);
-            logger.info("图片上传成功，相对路径: " + relativePath);
+            String relativePath;
+            if (isSystemResource != null && isSystemResource) {
+                // 系统资源：不包含userId
+                relativePath = imageStorageService.saveImage(file, category, null);
+                logger.info("系统资源上传成功，相对路径: " + relativePath);
+            } else {
+                // 用户资源：包含userId
+                String userId = getCurrentUserId();
+                relativePath = imageStorageService.saveImage(file, category, userId);
+                logger.info("用户资源上传成功，相对路径: " + relativePath);
+            }
             
             // 转换为完整URL返回给前端
             String fullUrl = imageUrlUtils.toFullUrl(relativePath);
@@ -89,6 +119,7 @@ public class ImageController {
         try {
             String base64Data = request.get("base64");
             String category = request.getOrDefault("category", "general");
+            Boolean isSystemResource = Boolean.parseBoolean(request.getOrDefault("isSystemResource", "false"));
             
             if (base64Data == null || base64Data.isEmpty()) {
                 Map<String, Object> response = new HashMap<>();
@@ -97,8 +128,15 @@ public class ImageController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // 保存图片，返回相对路径
-            String relativePath = imageStorageService.saveBase64Image(base64Data, category);
+            String relativePath;
+            if (isSystemResource) {
+                // 系统资源：不包含userId
+                relativePath = imageStorageService.saveBase64Image(base64Data, category, null);
+            } else {
+                // 用户资源：包含userId
+                String userId = getCurrentUserId();
+                relativePath = imageStorageService.saveBase64Image(base64Data, category, userId);
+            }
             
             // 转换为完整URL返回给前端
             String fullUrl = imageUrlUtils.toFullUrl(relativePath);

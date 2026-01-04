@@ -8,6 +8,20 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0', // 允许所有网络接口访问
+        // 开发环境代理配置：将 /api 请求转发到后端服务器
+        // 如果 VITE_API_BASE_URL 未设置或为空，使用默认后端地址
+        // 如果设置了 VITE_API_BASE_URL（如 http://localhost:8081），使用该地址
+        proxy: {
+          '/api': {
+            // 确保代理目标不为空：如果 VITE_API_BASE_URL 未设置或为空字符串，使用默认后端地址
+            target: (env.VITE_API_BASE_URL && env.VITE_API_BASE_URL.trim() !== '') 
+              ? env.VITE_API_BASE_URL 
+              : 'http://localhost:8081',
+            changeOrigin: true,
+            secure: false,
+            // 不重写路径，保持 /api 前缀，直接转发到后端
+          },
+        },
       },
       plugins: [react()],
       define: {
@@ -51,16 +65,44 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             admin: path.resolve(__dirname, 'admin.html'),
+            mobile: path.resolve(__dirname, 'mobile.html'),
           },
           output: {
-            manualChunks: {
+            manualChunks: (id) => {
+              // Phase 5优化: 更细粒度的代码分割
               // 将大组件单独打包
-              'admin': ['./admin/AdminScreen'],
-              'mobile': ['./mobile/MobileApp'],
+              if (id.includes('/admin/AdminScreen')) {
+                return 'admin';
+              }
+              if (id.includes('/mobile/MobileApp')) {
+                return 'mobile-core';
+              }
+              // 将Screen组件按功能分组打包
+              if (id.includes('/mobile/screens/MobileChatWindowScreen') || 
+                  id.includes('/mobile/screens/MobileSharedChatWindowScreen')) {
+                return 'mobile-chat';
+              }
+              if (id.includes('/mobile/screens/MobileConnectionSpaceScreen')) {
+                return 'mobile-connection';
+              }
+              if (id.includes('/mobile/screens/MobileScenarioBuilderScreen')) {
+                return 'mobile-builder';
+              }
+              if (id.includes('/mobile/screens/')) {
+                return 'mobile-screens';
+              }
               // 将React相关库单独打包
-              'vendor-react': ['react', 'react-dom'],
+              if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+                return 'vendor-react';
+              }
               // 将AI服务相关单独打包
-              'vendor-ai': ['./services/gemini'],
+              if (id.includes('/services/ai') || id.includes('/services/gemini')) {
+                return 'vendor-ai';
+              }
+              // 将其他node_modules打包
+              if (id.includes('node_modules')) {
+                return 'vendor';
+              }
             },
           },
         },

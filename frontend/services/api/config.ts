@@ -7,8 +7,9 @@
  * 获取 API 基础 URL
  * 优先级：环境变量 > 默认值
  * - 如果 VITE_API_BASE_URL 为空或未设置，使用相对路径（返回空字符串）
- * - 开发环境默认：http://localhost:8081
+ * - 开发环境默认：使用相对路径（空字符串），通过 Vite 代理转发
  * - 生产环境默认：使用相对路径（空字符串）
+ * - 如果需要指定后端地址，可通过环境变量 VITE_API_BASE_URL 设置（如：http://localhost:8081）
  */
 export function getApiBaseUrl(): string {
   // 优先使用环境变量（Vite 中通过 import.meta.env 访问）
@@ -22,14 +23,10 @@ export function getApiBaseUrl(): string {
     return import.meta.env.VITE_API_BASE_URL || '';
   }
   
-  // 根据环境自动判断
-  if (import.meta.env.PROD) {
-    // 生产环境默认使用相对路径
-    return '';
-  } else {
-    // 开发环境默认使用 localhost
-    return 'http://localhost:8081';
-  }
+  // 默认使用相对路径（开发和生产环境都使用相对路径）
+  // 开发环境通过 Vite 的 proxy 配置转发到后端
+  // 生产环境通过 nginx 等反向代理转发到后端
+  return '';
 }
 
 /**

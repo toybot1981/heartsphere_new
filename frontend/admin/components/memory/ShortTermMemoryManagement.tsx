@@ -21,21 +21,28 @@ import { adminMemoryApi, SessionInfo, RedisCacheStats } from '../../../services/
 /**
  * 短时记忆管理组件
  */
-const ShortTermMemoryManagement: React.FC = () => {
+interface ShortTermMemoryManagementProps {
+  adminToken: string | null;
+}
+
+const ShortTermMemoryManagement: React.FC<ShortTermMemoryManagementProps> = ({ adminToken }) => {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [cacheStats, setCacheStats] = useState<RedisCacheStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSessions();
-    loadCacheStats();
-  }, []);
+    if (adminToken) {
+      loadSessions();
+      loadCacheStats();
+    }
+  }, [adminToken]);
 
   const loadSessions = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
-      const result = await adminMemoryApi.getSessions(undefined, undefined, undefined, undefined, 0, 20);
+      const result = await adminMemoryApi.getSessions(adminToken, undefined, undefined, undefined, undefined, 0, 20);
       setSessions(result.content || []);
       setError(null);
     } catch (err: any) {
@@ -46,8 +53,9 @@ const ShortTermMemoryManagement: React.FC = () => {
   };
 
   const loadCacheStats = async () => {
+    if (!adminToken) return;
     try {
-      const stats = await adminMemoryApi.getRedisCacheStats();
+      const stats = await adminMemoryApi.getRedisCacheStats(adminToken);
       setCacheStats(stats);
     } catch (err: any) {
       console.error('加载缓存统计失败:', err);
@@ -55,10 +63,10 @@ const ShortTermMemoryManagement: React.FC = () => {
   };
 
   const handleTerminateSession = async (sessionId: string) => {
-    if (!window.confirm('确定要终止此会话吗？')) return;
+    if (!adminToken || !window.confirm('确定要终止此会话吗？')) return;
     
     try {
-      await adminMemoryApi.terminateSession(sessionId);
+      await adminMemoryApi.terminateSession(adminToken, sessionId);
       await loadSessions();
     } catch (err: any) {
       setError(err.message || '终止会话失败');
@@ -66,10 +74,10 @@ const ShortTermMemoryManagement: React.FC = () => {
   };
 
   const handleCleanupExpired = async () => {
-    if (!window.confirm('确定要清理所有过期会话吗？')) return;
+    if (!adminToken || !window.confirm('确定要清理所有过期会话吗？')) return;
     
     try {
-      const count = await adminMemoryApi.cleanupExpiredSessions();
+      const count = await adminMemoryApi.cleanupExpiredSessions(adminToken);
       alert(`已清理 ${count} 个过期会话`);
       await loadSessions();
     } catch (err: any) {
@@ -78,10 +86,10 @@ const ShortTermMemoryManagement: React.FC = () => {
   };
 
   const handleClearCache = async () => {
-    if (!window.confirm('确定要清理缓存吗？')) return;
+    if (!adminToken || !window.confirm('确定要清理缓存吗？')) return;
     
     try {
-      await adminMemoryApi.clearCache();
+      await adminMemoryApi.clearCache(adminToken);
       await loadCacheStats();
       alert('缓存已清理');
     } catch (err: any) {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -67,7 +67,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                 { section: 'scenarios', label: '互动剧本', icon: '📜' },
                 { section: 'events', label: '剧本事件', icon: '🎯' },
                 { section: 'items', label: '剧本物品', icon: '🎁' },
-                { section: 'main-stories', label: '主线剧情', icon: '📖' }
+                { section: 'main-stories', label: '主线剧情', icon: '📖' },
+                { section: 'graph', label: 'Graph流程编辑器', icon: '🔄' }
             ]
         },
         {

@@ -11,14 +11,14 @@ SET NAMES utf8mb4;
 INSERT INTO `system_eras` (`name`, `description`, `image_url`, `start_year`, `end_year`, `is_active`, `sort_order`) VALUES
 
 -- ========== 现实时代 ==========
-('我的大学', '大学时代，青春校园生活', 'http://localhost:8081/api/images/files/general/2025/12/79209fab-04d2-47f3-a8c9-6700a6533a71.png', 2018, 2022, TRUE, 1),
+('我的大学', '大学时代，青春校园生活', 'general/2025/12/79209fab-04d2-47f3-a8c9-6700a6533a71.png', 2018, 2022, TRUE, 1),
 ('我的中学', '中学时代，青涩年华', 'placeholder://era/my_high_school.jpg', 2015, 2018, TRUE, 2),
 ('我的工作', '职场时代，工作环境', 'placeholder://era/my_workplace.jpg', 2022, NULL, TRUE, 3),
 ('我的童年', '童年时代，纯真回忆', 'placeholder://era/my_childhood.jpg', 2005, 2015, TRUE, 4),
 ('我的故乡', '故乡时代，家乡记忆', 'placeholder://era/my_hometown.jpg', NULL, NULL, TRUE, 5),
 
 -- ========== 历史时代 - 中国古代 ==========
-('三国时代', '三国争霸时代，英雄辈出', 'http://localhost:8081/api/images/files/general/2025/12/5d9703ae-8a7d-41e5-9d9b-d312364edfc9.png', 220, 280, TRUE, 10),
+('三国时代', '三国争霸时代，英雄辈出', 'general/2025/12/5d9703ae-8a7d-41e5-9d9b-d312364edfc9.png', 220, 280, TRUE, 10),
 ('秦王朝', '大秦帝国，统一六国', 'placeholder://era/qin_dynasty.jpg', 221, 207, TRUE, 11),
 ('唐朝盛世', '大唐盛世，文化繁荣', 'placeholder://era/tang_dynasty.jpg', 618, 907, TRUE, 12),
 ('宋朝文雅', '宋朝文雅时代，诗词盛行', 'placeholder://era/song_dynasty.jpg', 960, 1279, TRUE, 13),
@@ -31,7 +31,7 @@ INSERT INTO `system_eras` (`name`, `description`, `image_url`, `start_year`, `en
 
 -- ========== 虚幻时代 - 奇幻魔法 ==========
 ('魔法世界', '魔法世界，奇幻大陆', 'placeholder://era/magic_world.jpg', NULL, NULL, TRUE, 30),
-('童话世界', '童话世界，梦幻王国', 'http://localhost:8081/api/images/files/general/2025/12/3870b2e4-0983-42c9-add3-d30612d7d778.png', NULL, NULL, TRUE, 31),
+('童话世界', '童话世界，梦幻王国', 'general/2025/12/3870b2e4-0983-42c9-add3-d30612d7d778.png', NULL, NULL, TRUE, 31),
 ('蒸汽朋克', '蒸汽朋克时代，机械美学', 'placeholder://era/steampunk.jpg', 1850, 1900, TRUE, 32),
 
 -- ========== 历史时代 - 世界古代 ==========

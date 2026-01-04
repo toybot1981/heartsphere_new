@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { adminApi, imageApi } from '../../services/api';
 import { InputGroup, TextInput } from './AdminUIComponents';
 import { useAdminState } from '../contexts/AdminStateContext';
-import { useImageUpload } from '../hooks/useImageUpload';
 import { showAlert } from '../../utils/dialog';
 
 interface ResourcesManagementProps {
@@ -15,7 +14,6 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
     onReload,
 }) => {
     const { resourceCategory, setResourceCategory } = useAdminState();
-    const { uploadImage } = useImageUpload(adminToken);
     const [resources, setResources] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [editingResource, setEditingResource] = useState<any | null>(null);
@@ -319,9 +317,10 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                                                     const file = e.target.files?.[0];
                                                     if (!file || !adminToken) return;
                                                     try {
-                                                        const url = await uploadImage(file, 'general');
-                                                        if (url) {
-                                                            setEditResourceUrl(url);
+                                                        // 系统资源上传，不包含userId
+                                                        const url = await imageApi.uploadImage(file, 'general', adminToken, true);
+                                                        if (url && url.success && url.url) {
+                                                            setEditResourceUrl(url.url);
                                                             // 上传成功后，图片会在预览框中显示，无需提示框
                                                         } else {
                                                             showAlert('图片上传失败：未返回URL', '上传失败', 'error');

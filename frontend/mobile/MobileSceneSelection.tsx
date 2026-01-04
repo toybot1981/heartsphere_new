@@ -27,13 +27,20 @@ export const MobileSceneSelection: React.FC<MobileSceneSelectionProps> = ({ scen
                 <span className="text-xs text-gray-500">共 {uniqueScenes.length} 个场景</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-20">
+            <div className="flex-1 overflow-y-auto pb-20 overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="flex flex-col gap-6 p-4">
                     {uniqueScenes.map(scene => (
                         <div 
                             key={scene.id} 
                             onClick={() => onSelectScene(scene.id)}
-                            className="relative h-48 w-full rounded-2xl overflow-hidden group border border-white/10 shadow-lg active:scale-[0.98] transition-transform"
+                            className="relative h-48 w-full rounded-2xl overflow-hidden group border border-white/10 shadow-lg active:scale-[0.97] transition-transform touch-manipulation cursor-pointer"
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    onSelectScene(scene.id);
+                                }
+                            }}
                         >
                             <img src={scene.imageUrl} alt={scene.name} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
@@ -52,7 +59,7 @@ export const MobileSceneSelection: React.FC<MobileSceneSelectionProps> = ({ scen
                     {/* Create New Scene Card */}
                     <button 
                         onClick={onCreateScene}
-                        className="h-24 w-full rounded-2xl border-2 border-dashed border-gray-700 hover:border-pink-500/50 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-pink-400 transition-colors bg-white/5"
+                        className="h-24 w-full rounded-2xl border-2 border-dashed border-gray-700 active:border-pink-500/50 flex flex-col items-center justify-center gap-2 text-gray-500 active:text-pink-400 transition-all active:scale-[0.98] touch-manipulation min-h-[96px]"
                     >
                         <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xl font-bold">+</div>
                         <span className="text-sm font-bold">创造新场景</span>

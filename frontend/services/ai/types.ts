@@ -14,6 +14,23 @@ export type AIProvider = 'gemini' | 'openai' | 'qwen' | 'dashscope' | 'doubao';
 export type AIMode = 'unified' | 'local';
 
 /**
+ * Function Definition（用于 Function Calling）
+ */
+export interface FunctionDefinition {
+  name: string;
+  description: string;
+  parameters: Record<string, any>;
+}
+
+/**
+ * Function Call（AI 返回的函数调用）
+ */
+export interface FunctionCall {
+  name: string;
+  arguments: string;  // JSON 字符串
+}
+
+/**
  * 文本生成请求
  */
 export interface TextGenerationRequest {
@@ -28,6 +45,8 @@ export interface TextGenerationRequest {
   temperature?: number;  // 可选：0-1，默认0.7
   maxTokens?: number;  // 可选：最大输出Token数
   stream?: boolean;  // 可选：是否流式返回，默认false
+  functionDefinitions?: FunctionDefinition[];  // 可选：Function Calling 定义
+  onFunctionCall?: (functionCall: FunctionCall) => Promise<any>;  // 可选：Function Call 回调
 }
 
 /**

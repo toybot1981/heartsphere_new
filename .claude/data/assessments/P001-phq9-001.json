@@ -1,0 +1,10 @@
+{
+  "patientId": "P001",
+  "scale": "PHQ-9",
+  "totalScore": 16,
+  "maxScore": 27,
+  "severity": "中度抑郁",
+  "recommendation": "建议心理治疗或药物治疗",
+  "answers": [2, 2, 2, 3, 2, 2, 0, 2, 1],
+  "evaluatedAt": "2025-01-03T12:05:00.000Z"
+}

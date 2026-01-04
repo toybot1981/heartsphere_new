@@ -243,21 +243,27 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   // --- LIST VIEW ---
   if (view === 'list') {
       return (
-          <div className="h-full bg-slate-950 p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-24 overflow-y-auto">
+          <div className="h-full bg-slate-950 p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-24 overflow-y-auto overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="flex justify-between items-center mb-6">
                   <div>
                       <div className="flex items-center gap-3">
                           <h1 className="text-3xl font-bold text-white">日记</h1>
                           <button 
                             onClick={onSwitchToPC}
-                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1 rounded-full text-xs border border-slate-700 transition-colors flex items-center gap-1"
+                            className="bg-slate-800 active:bg-slate-700 text-slate-300 active:text-white px-3 py-2 rounded-full text-xs border border-slate-700 transition-all active:scale-95 touch-manipulation min-h-[44px] flex items-center gap-1"
                           >
                              <span>💻</span> PC端
                           </button>
                       </div>
                       <p className="text-slate-400 text-xs mt-1">记录你的现实瞬间</p>
                   </div>
-                  <button onClick={startNew} className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white flex items-center justify-center shadow-lg font-bold text-2xl active:scale-95 transition-transform">+</button>
+                  <button 
+                    onClick={startNew} 
+                    className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white flex items-center justify-center shadow-lg font-bold text-2xl active:scale-90 transition-transform touch-manipulation"
+                    aria-label="新建日记"
+                  >
+                    +
+                  </button>
               </div>
 
               {/* Search Bar */}
@@ -267,7 +273,9 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="检索记忆/#标签"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-base min-h-[44px]"
+                      autoComplete="off"
+                      inputMode="search"
                   />
               </div>
 
@@ -278,10 +286,10 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                           <button
                               key={tag}
                               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                              className={`px-3 py-2 rounded-full text-xs font-medium transition-all min-h-[44px] active:scale-95 touch-manipulation ${
                                   selectedTag === tag
                                       ? 'bg-indigo-600 text-white'
-                                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                      : 'bg-slate-800 text-slate-300 active:bg-slate-700'
                               }`}
                           >
                               {tag}
@@ -306,8 +314,9 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                           </p>
                           <button 
                             onClick={handleGreetingQuestionClick}
-                            className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white p-2 rounded-lg transition-all ml-2"
+                            className="bg-indigo-600/20 active:bg-indigo-600 text-indigo-300 active:text-white min-w-[44px] min-h-[44px] p-2 rounded-lg transition-all active:scale-95 touch-manipulation ml-2 flex items-center justify-center"
                             title="回应"
+                            aria-label="回应问候"
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -319,12 +328,36 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
 
               <div className="space-y-4">
                   {filteredEntries.length === 0 && (
-                      <p className="text-center text-slate-600 mt-10">
-                          {searchQuery || selectedTag ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
-                      </p>
+                      <div className="flex flex-col items-center justify-center py-12 px-4 mt-10">
+                          <div className="text-6xl mb-4 opacity-50">
+                              {searchQuery || selectedTag ? '🔍' : '📝'}
+                          </div>
+                          <p className="text-center text-slate-400 text-base mb-4">
+                              {searchQuery || selectedTag ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
+                          </p>
+                          {!searchQuery && !selectedTag && (
+                              <button
+                                  onClick={startNew}
+                                  className="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold rounded-xl active:scale-95 transition-transform touch-manipulation"
+                              >
+                                  开始记录
+                              </button>
+                          )}
+                      </div>
                   )}
                   {filteredEntries.sort((a,b) => b.timestamp - a.timestamp).map(entry => (
-                      <div key={entry.id} onClick={() => openEntry(entry)} className="bg-slate-900 rounded-xl p-4 border border-slate-800 active:bg-slate-800">
+                      <div 
+                        key={entry.id} 
+                        onClick={() => openEntry(entry)} 
+                        className="bg-slate-900 rounded-xl p-4 border border-slate-800 active:bg-slate-800 active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                openEntry(entry);
+                            }
+                        }}
+                      >
                           <div className="flex justify-between items-start mb-2">
                               <h3 className="text-white font-bold truncate flex-1">{entry.title}</h3>
                               <span className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleDateString()}</span>
@@ -363,11 +396,22 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
       return (
           <div className="h-full bg-slate-950 flex flex-col pb-24">
               <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-4 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
-                  <button onClick={() => setView('list')} className="text-slate-400">&larr;</button>
+                  <button 
+                    onClick={() => setView('list')} 
+                    className="text-slate-400 min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95 transition-transform touch-manipulation"
+                    aria-label="返回"
+                  >
+                    &larr;
+                  </button>
                   <h2 className="text-white font-bold truncate flex-1">{selectedEntry.title}</h2>
-                  <button onClick={startEdit} className="text-indigo-400 text-sm">编辑</button>
+                  <button 
+                    onClick={startEdit} 
+                    className="text-indigo-400 text-sm min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                  >
+                    编辑
+                  </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {selectedEntry.imageUrl && (
                       <img src={selectedEntry.imageUrl} className="w-full rounded-xl mb-6 shadow-lg" alt="Mind Projection" />
                   )}
@@ -385,7 +429,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                                           setSelectedTag(trimmedTag);
                                           setView('list');
                                       }}
-                                      className="text-xs px-2 py-1 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30"
+                                      className="text-xs px-3 py-2 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
                                   >
                                       {trimmedTag}
                                   </span>
@@ -405,7 +449,17 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                       <Button fullWidth onClick={() => onExplore(selectedEntry)} className="bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">
                           带着问题进入心域
                       </Button>
-                      <button onClick={() => { onDeleteEntry(selectedEntry.id); setView('list'); }} className="w-full text-center text-red-400 text-sm py-2">删除日记</button>
+                      <button 
+                        onClick={() => { 
+                          if (confirm('确定要删除这篇日记吗？')) {
+                            onDeleteEntry(selectedEntry.id); 
+                            setView('list');
+                          }
+                        }} 
+                        className="w-full text-center text-red-400 text-sm py-3 min-h-[44px] active:scale-95 transition-transform touch-manipulation rounded-lg active:bg-red-500/10"
+                      >
+                        删除日记
+                      </button>
                   </div>
               </div>
           </div>
@@ -416,18 +470,27 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   return (
       <div className="h-full bg-slate-950 flex flex-col pb-20">
            <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
-                <button onClick={() => setView(selectedEntry ? 'detail' : 'list')} className="text-slate-400">取消</button>
+                <button 
+                  onClick={() => setView(selectedEntry ? 'detail' : 'list')} 
+                  className="text-slate-400 min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                >
+                  取消
+                </button>
                 <h2 className="text-white font-bold">{selectedEntry ? '编辑' : '新建'}</h2>
-                <button onClick={handleSave} disabled={isGenerating} className="text-pink-500 font-bold disabled:opacity-50">
-                    {isGenerating ? '...' : '保存'}
+                <button 
+                  onClick={handleSave} 
+                  disabled={isGenerating} 
+                  className="text-pink-500 font-bold disabled:opacity-50 min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation disabled:active:scale-100"
+                >
+                    {isGenerating ? '保存中...' : '保存'}
                 </button>
            </div>
-           <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+           <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                {/* 模板选择 */}
                <div className="flex items-center gap-2 mb-2">
                    <button
                        onClick={() => setShowTemplates(!showTemplates)}
-                       className="text-xs flex items-center gap-1 text-indigo-400 border border-indigo-800 rounded-full px-3 py-1 bg-indigo-900/10"
+                       className="text-xs flex items-center gap-1 text-indigo-400 border border-indigo-800 rounded-full px-3 py-2 bg-indigo-900/10 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
                    >
                        <span>📝</span> 模板
                    </button>
@@ -441,7 +504,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                                <button
                                    key={template.id}
                                    onClick={() => applyTemplate(template.id)}
-                                   className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                                   className="p-3 bg-slate-800 active:bg-slate-700 rounded-lg text-left transition-all active:scale-95 touch-manipulation min-h-[80px]"
                                >
                                    <div className="text-xs font-bold text-white mb-1">{template.icon} {template.name}</div>
                                    <div className="text-[10px] text-slate-400">{template.description}</div>
@@ -455,13 +518,16 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                  value={title} 
                  onChange={e => setTitle(e.target.value)} 
                  placeholder="标题..." 
-                 className="bg-transparent text-xl font-bold text-white placeholder-slate-600 outline-none" 
+                 className="bg-transparent text-xl font-bold text-white placeholder-slate-600 outline-none min-h-[44px] px-2" 
+                 autoFocus={!selectedEntry}
+                 inputMode="text"
                />
                <textarea 
                  value={content} 
                  onChange={e => setContent(e.target.value)} 
                  placeholder="写下你的想法..." 
-                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-600 outline-none resize-none leading-relaxed min-h-[200px]" 
+                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-600 outline-none resize-none leading-relaxed min-h-[300px] px-2 text-base" 
+                 inputMode="text"
                />
                
                {/* Tags Section */}
@@ -477,7 +543,8 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                                    {tag}
                                    <button
                                        onClick={() => removeTag(tag)}
-                                       className="text-indigo-400 hover:text-white"
+                                       className="text-indigo-400 active:text-white min-w-[20px] min-h-[20px] flex items-center justify-center active:scale-110 transition-transform touch-manipulation"
+                                       aria-label="删除标签"
                                    >
                                        ×
                                    </button>
@@ -491,7 +558,8 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                        onChange={(e) => setTagInput(e.target.value)}
                        onKeyDown={handleTagInputKeyDown}
                        placeholder="添加标签(Enter)..."
-                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-base text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none min-h-[44px]"
+                       inputMode="text"
                    />
                </div>
                
@@ -502,7 +570,11 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                )}
 
                <div className="flex justify-end gap-2">
-                   <button onClick={handleMirror} className="text-xs flex items-center gap-1 text-cyan-400 border border-cyan-800 rounded-full px-3 py-1 bg-cyan-900/10">
+                   <button 
+                     onClick={handleMirror} 
+                     className="text-xs flex items-center gap-1 text-cyan-400 border border-cyan-800 rounded-full px-3 py-2 bg-cyan-900/10 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                     disabled={!content.trim()}
+                   >
                        <span>🔮</span> 本我镜像分析
                    </button>
                </div>

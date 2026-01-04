@@ -13,22 +13,29 @@ import { adminMemoryApi, MemoryStatistics, PerformanceMetrics } from '../../../s
 /**
  * 记忆系统统计分析组件
  */
-const MemoryStatisticsComponent: React.FC = () => {
+interface MemoryStatisticsProps {
+  adminToken: string | null;
+}
+
+const MemoryStatisticsComponent: React.FC<MemoryStatisticsProps> = ({ adminToken }) => {
   const [statistics, setStatistics] = useState<MemoryStatistics | null>(null);
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (adminToken) {
+      loadData();
+    }
+  }, [adminToken]);
 
   const loadData = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
       const [stats, perf] = await Promise.all([
-        adminMemoryApi.getStatistics(),
-        adminMemoryApi.getPerformanceMetrics(),
+        adminMemoryApi.getStatistics(adminToken),
+        adminMemoryApi.getPerformanceMetrics(adminToken),
       ]);
       setStatistics(stats);
       setPerformance(perf);

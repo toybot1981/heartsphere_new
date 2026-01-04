@@ -1,0 +1,75 @@
+{
+  "patientId": "P001",
+  "assessedAt": "2025-02-21T14:00:00.000Z",
+  "situation": "患者说：'最近压力很大，项目又延期了，有时候想不如死了算了，反正活着也没意思。最近工作压力大，感觉自己很失败，对不起家人。'",
+
+  "detectedSymptoms": [
+    {
+      "symptom": "suicideIdeation",
+      "count": 3,
+      "keywords": ["想不如死了", "自杀", "活着没意思"]
+    },
+    {
+      "symptom": "hopelessness",
+      "count": 2,
+      "keywords": ["活着没意思", "很失败"]
+    },
+    {
+      "symptom": "severeDepression",
+      "count": 1,
+      "keywords": ["压力大"]
+    }
+  ],
+
+  "riskLevel": "high",
+  "urgency": "24小时内",
+  "totalScore": 22,
+  "recommendation": "需要密切监测，考虑提高治疗强度和频率",
+
+  "immediateActions": [
+    "⚠️ 立即评估自杀风险",
+    "📞 联系患者家属（妻子）",
+    "🏠 评估居家环境安全性",
+    "💊 评估是否需要调整药物",
+    "📋 制定安全计划",
+    "🔄 增加治疗频率至每周2次"
+  ],
+
+  "safetyPlan": {
+    "warningSigns": [
+      "自杀或死亡想法增多",
+      "社交完全退缩",
+      "绝望感明显",
+      "整理物品或送走心爱之物"
+    ],
+    "copingStrategies": [
+      "立即联系治疗师或家人",
+      "去安全的地方（如与家人在一起）",
+      "提醒自己'这种感觉会过去的'",
+      "从事分散注意力的活动"
+    ],
+    "emergencyContacts": [
+      { "name": "主治医生", "phone": "****" },
+      { "name": "妻子（紧急联系人）", "phone": "****" },
+      { "name": "心理危机热线", "phone": "400-161-9995" },
+      { "name": "急救", "phone": "120" }
+    ],
+    "environment": [
+      "移除所有药物（由家属保管）",
+      "移除危险物品",
+      "24小时监护"
+    ]
+  },
+
+  "medicationAdjustment": {
+    "current": "舍曲林50mg",
+    "recommendation": "考虑增加至75mg-100mg",
+    "reason": "症状加重，需要加强治疗"
+  },
+
+  "followUp": {
+    "nextVisit": "2025-02-22T14:00:00.000Z",
+    "frequency": "每周2次，直到风险降低",
+    "monitoring": "每日电话随访1次，持续1周"
+  }
+}

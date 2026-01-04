@@ -1,5 +1,7 @@
 package com.heartsphere.aiagent.graph.core.node;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,6 +52,7 @@ public class ChoiceNodeConfig {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ChoiceOptionConfig {
         @JsonProperty("id")
         private String id;

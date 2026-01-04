@@ -18,6 +18,7 @@ import { ChatInput } from '../chat/ChatInput';
 import { useUIState } from '../chat/hooks/useUIState';
 import { showAlert } from '../../utils/dialog';
 import { AIConfigManager } from '../../services/ai/config';
+import { logger } from '../../utils/logger';
 
 interface SharedChatWindowProps {
   character: Character;
@@ -56,20 +57,39 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   }, [safeHistory.length, scrollToBottom]);
 
   // 加载消息历史（独立的权限控制和数据加载）
+  // 使用 useRef 避免重复加载
+  const historyLoadedRef = useRef<string | null>(null);
+  
+  // 当共享模式退出时，自动返回
+  useEffect(() => {
+    if (!isActive || !shareConfig) {
+      // 共享模式已退出，自动返回
+      logger.debug('[SharedChatWindow] 共享模式已退出，自动返回');
+      onBack();
+    }
+  }, [isActive, shareConfig, onBack]);
+  
   useEffect(() => {
     const loadHistory = async () => {
       if (!isActive || !shareConfig) {
+        historyLoadedRef.current = null;
+        return;
+      }
+
+      // 如果已经加载过相同的sessionId，不再重复加载
+      if (historyLoadedRef.current === sessionId) {
+        logger.debug('[SharedChatWindow] 消息历史已加载，跳过重复加载');
         return;
       }
 
       try {
         const token = getToken();
         if (!token) {
-          console.warn('[SharedChatWindow] 未登录，无法加载消息历史');
+          logger.warn('[SharedChatWindow] 未登录，无法加载消息历史');
           return;
         }
 
-        console.log('[SharedChatWindow] 加载消息历史，sessionId:', sessionId);
+        logger.debug('[SharedChatWindow] 加载消息历史，sessionId:', sessionId);
         const result = await sharedApi.getChatMessages(sessionId, token, 100);
 
         if (result && result.messages) {
@@ -81,16 +101,19 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
             timestamp: msg.timestamp || Date.now(),
           }));
 
-          console.log('[SharedChatWindow] 加载到消息数量:', messages.length);
+          logger.debug('[SharedChatWindow] 加载到消息数量:', messages.length);
           onUpdateHistory(messages);
+          historyLoadedRef.current = sessionId; // 标记已加载
         }
       } catch (err) {
-        console.error('[SharedChatWindow] 加载消息历史失败:', err);
+        logger.error('[SharedChatWindow] 加载消息历史失败:', err);
       }
     };
 
     loadHistory();
-  }, [isActive, shareConfig, sessionId, onUpdateHistory]);
+    // 移除 onUpdateHistory 依赖，避免函数变化导致重复调用
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, shareConfig, sessionId]);
 
   // 发送消息（独立的API调用逻辑）
   const handleSend = useCallback(async () => {
@@ -130,7 +153,7 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       // 检查当前配置模式（参照ChatWindow的方式）
       const config = await AIConfigManager.getUserConfig();
       
-      console.log('[SharedChatWindow] 大模型连接模式检测:', {
+      logger.debug('[SharedChatWindow] 大模型连接模式检测:', {
         mode: config.mode,
         textProvider: config.textProvider,
         textModel: config.textModel,
@@ -151,10 +174,10 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       // 统一模式：获取相关记忆用于上下文（共享模式不使用）
       let relevantMemories: any[] = [];
       if (config.mode === 'unified') {
-        console.log('[SharedChatWindow] 使用统一接入模式调用大模型');
+        logger.debug('[SharedChatWindow] 使用统一接入模式调用大模型');
         // 共享模式不使用记忆系统，所以不获取相关记忆
       } else {
-        console.log('[SharedChatWindow] 使用本地配置模式调用大模型', {
+        logger.debug('[SharedChatWindow] 使用本地配置模式调用大模型', {
           provider: config.textProvider || 'gemini',
           model: config.textModel,
           hasProviderConfig: {
@@ -192,15 +215,15 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               undefined,
               0.5
             );
-            console.log('[SharedChatWindow] 助手消息已保存到后端');
+            logger.debug('[SharedChatWindow] 助手消息已保存到后端');
           } catch (saveError) {
-            console.error('[SharedChatWindow] 保存助手消息失败:', saveError);
+            logger.error('[SharedChatWindow] 保存助手消息失败:', saveError);
             // 不抛出错误，不影响用户体验
           }
         },
       });
     } catch (err: any) {
-      console.error('[SharedChatWindow] 发送消息失败:', err);
+      logger.error('[SharedChatWindow] 发送消息失败:', err);
       const errorMessage = createErrorMessage(`msg_${Date.now()}_error`, err);
       onUpdateHistory((prev: Message[]) => [...prev, errorMessage]);
       showAlert(errorMessage.text, '错误', 'error');
@@ -226,7 +249,9 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       onUpdateHistory([]);
       showAlert('对话历史已清空', '成功', 'success');
     } catch (err) {
-      console.error('[SharedChatWindow] 清空对话失败:', err);
+      logger.error('[SharedChatWindow] 清空对话失败:', err);
+      // 清空后重置加载标记
+      historyLoadedRef.current = null;
       showAlert('清空对话失败，请稍后重试', '错误', 'error');
     }
   }, [sessionId, onUpdateHistory]);

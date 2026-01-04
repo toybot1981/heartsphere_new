@@ -73,8 +73,8 @@ public class AIServiceImpl implements AIService {
                 if (request.getProvider() == null || request.getProvider().isEmpty()) {
                     request.setProvider(configService.getUserTextProvider(userId));
                 }
-                if (request.getModel() == null || request.getModel().isEmpty()) {
-                    request.setModel(configService.getUserTextModel(userId));
+            if (request.getModel() == null || request.getModel().isEmpty()) {
+                request.setModel(configService.getUserTextModel(userId));
                 }
                 
                 // 即使请求中已指定provider和model，也需要从数据库获取API key和baseUrl
@@ -319,8 +319,8 @@ public class AIServiceImpl implements AIService {
                 if (request.getProvider() == null || request.getProvider().isEmpty()) {
                     request.setProvider(configService.getUserImageProvider(userId));
                 }
-                if (request.getModel() == null || request.getModel().isEmpty()) {
-                    request.setModel(configService.getUserImageModel(userId));
+            if (request.getModel() == null || request.getModel().isEmpty()) {
+                request.setModel(configService.getUserImageModel(userId));
                 }
             }
             

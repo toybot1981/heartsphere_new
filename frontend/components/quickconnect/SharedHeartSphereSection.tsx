@@ -121,37 +121,69 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
   }
   
   return (
-    <div className="mb-2">
-      {/* 标题区域 */}
-      <div className="flex items-center justify-between mb-3">
+    <div className="mb-4">
+      {/* 标题区域 - 增强视觉效果 */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="text-3xl">🌟</div>
+          <div 
+            className="text-4xl relative inline-block animate-pulse"
+            style={{
+              filter: 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.6)) drop-shadow(0 0 20px rgba(250, 204, 21, 0.4))',
+            }}
+          >
+            ⭐
+          </div>
           <div>
-            <h3 className="text-2xl font-bold text-white">发现共享心域</h3>
-            <p className="text-gray-400 text-sm">体验其他用户分享的心域世界</p>
+            <h3 
+              className="text-2xl font-bold text-white mb-1"
+              style={{
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(147, 51, 234, 0.4)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              发现共享心域
+            </h3>
+            <p 
+              className="text-gray-300 text-sm"
+              style={{
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              体验其他用户分享的心域世界
+            </p>
           </div>
         </div>
         <button
           onClick={loadSharedHeartSpheres}
-          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm whitespace-nowrap"
+          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm whitespace-nowrap font-medium shadow-lg hover:shadow-xl"
+          style={{
+            boxShadow: '0 4px 15px rgba(147, 51, 234, 0.4), 0 0 10px rgba(236, 72, 153, 0.3)',
+          }}
         >
           刷新
         </button>
       </div>
       
-      {/* 共享心域卡片 - 横向滚动 */}
-      <div className="overflow-x-auto pb-2 -mx-2 px-2">
-        <div className="flex gap-3 min-w-max">
-          {sharedHeartSpheres.map((shared) => (
+      {/* 共享心域卡片 - 横向滚动，增强展示 */}
+      <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+        <div className="flex gap-4 min-w-max">
+          {sharedHeartSpheres.map((shared, index) => (
             <div
               key={shared.shareConfigId}
               onClick={() => handleCardClick(shared)}
               className={`cursor-pointer transition-all relative flex-shrink-0 ${
                 selectedShareCode === shared.shareCode
-                  ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-gray-900 z-10'
-                  : ''
+                  ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900 z-10'
+                  : 'hover:ring-2 hover:ring-purple-500/50 hover:ring-offset-1 hover:ring-offset-gray-900'
               }`}
-              style={{ width: '240px' }} // 缩小卡片宽度
+              style={{ 
+                width: '260px',
+                transform: selectedShareCode === shared.shareCode ? 'translateY(-4px)' : 'translateY(0)',
+                transition: 'transform 0.3s ease, ring 0.3s ease',
+              }}
             >
               <SharedHeartSphereCard
                 sharedHeartSphere={shared}

@@ -1,5 +1,8 @@
 package com.heartsphere.memory.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 记忆类型枚举
  * 
@@ -39,7 +42,51 @@ public enum MemoryType {
     GROWTH_TRAJECTORY,
     MILESTONE,
     ACHIEVEMENT,
-    REFLECTION
+    REFLECTION;
+    
+    /**
+     * 从字符串值创建枚举（支持大小写不敏感和下划线格式）
+     * 前端可能发送小写下划线格式（如 "important_moment"），需要转换为枚举值
+     */
+    @JsonCreator
+    public static MemoryType fromString(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        
+        // 先尝试直接匹配（大写格式）
+        try {
+            return MemoryType.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // 如果直接匹配失败，尝试匹配小写格式
+            String upperValue = value.toUpperCase();
+            for (MemoryType type : MemoryType.values()) {
+                if (type.name().equals(upperValue)) {
+                    return type;
+                }
+            }
+            
+            // 如果还是找不到，尝试将下划线格式转换为枚举名
+            // 例如 "important_moment" -> "IMPORTANT_MOMENT"
+            String normalized = value.toUpperCase().replace("-", "_");
+            try {
+                return MemoryType.valueOf(normalized);
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException(
+                    "无法解析记忆类型: " + value + 
+                    ". 支持的值: " + java.util.Arrays.toString(MemoryType.values())
+                );
+            }
+        }
+    }
+    
+    /**
+     * 序列化为字符串（返回枚举名）
+     */
+    @JsonValue
+    public String toValue() {
+        return this.name();
+    }
 }
 
 

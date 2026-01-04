@@ -11,7 +11,8 @@ export const useImageUpload = (adminToken: string | null) => {
     const uploadImage = useCallback(async (
         file: File,
         category: string = 'general',
-        onSuccess?: (url: string) => void
+        onSuccess?: (url: string) => void,
+        isSystemResource: boolean = false
     ) => {
         if (!adminToken) {
             showAlert('请先登录', '错误', 'error');
@@ -22,7 +23,7 @@ export const useImageUpload = (adminToken: string | null) => {
         setUploadError('');
 
         try {
-            const response = await imageApi.uploadImage(file, category, adminToken);
+            const response = await imageApi.uploadImage(file, category, adminToken, isSystemResource);
             if (response.success && response.url) {
                 if (onSuccess) {
                     onSuccess(response.url);

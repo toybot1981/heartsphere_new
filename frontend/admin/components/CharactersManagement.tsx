@@ -5,6 +5,7 @@ import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
 import { useImageUpload } from '../hooks/useImageUpload';
 import { useAdminState } from '../contexts/AdminStateContext';
 import { showAlert, showConfirm } from '../../utils/dialog';
+import { CharacterSkillTab } from '../../components/character/CharacterSkillTab';
 
 interface CharactersManagementProps {
     characters: any[];
@@ -23,6 +24,7 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
     const { isUploadingAvatar, isUploadingBackground, uploadAvatar, uploadBackground } = useImageUpload(adminToken);
     const charAvatarInputRef = useRef<HTMLInputElement>(null);
     const charBackgroundInputRef = useRef<HTMLInputElement>(null);
+    const [activeTab, setActiveTab] = useState<'basic' | 'skills'>('basic');
 
     const switchToCreate = () => {
         setFormData({});
@@ -31,6 +33,7 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
     };
 
     const switchToEdit = (char: any) => {
+        console.log('[CharactersManagement] 切换到编辑模式，角色ID:', char.id);
         const editData = {
             ...char,
             targetSceneId: char.systemEraId ? char.systemEraId.toString() : '',
@@ -39,12 +42,14 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
         setFormData(editData);
         setEditingId(char.id.toString());
         setViewMode('edit');
+        setActiveTab('basic'); // 重置到基本信息标签页
     };
 
     const switchToList = () => {
         setViewMode('list');
         setEditingId(null);
         setFormData({});
+        setActiveTab('basic'); // 重置标签页
     };
 
     const saveCharacter = async () => {
@@ -202,7 +207,58 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
                 {viewMode === 'create' ? '新建角色' : '编辑角色'}
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 标签页导航（仅在编辑模式下显示技能标签） */}
+            {viewMode === 'edit' && editingId ? (
+                <div className="mb-6 border-b border-slate-800">
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log('[CharactersManagement] 切换到基本信息标签页');
+                                setActiveTab('basic');
+                            }}
+                            className={`px-4 py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'basic'
+                                    ? 'text-indigo-400 border-b-2 border-indigo-400'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            基本信息
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log('[CharactersManagement] 切换到技能管理标签页');
+                                setActiveTab('skills');
+                            }}
+                            className={`px-4 py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'skills'
+                                    ? 'text-indigo-400 border-b-2 border-indigo-400'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            技能管理
+                        </button>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* 技能管理标签页 */}
+            {viewMode === 'edit' && editingId && activeTab === 'skills' ? (
+                <div className="character-skill-management-container">
+                    <CharacterSkillTab
+                        characterId={parseInt(editingId)}
+                        characterName={formData.name}
+                        adminToken={adminToken}
+                    />
+                    <div className="flex justify-end gap-3 mt-6">
+                        <Button variant="ghost" onClick={switchToList}>返回列表</Button>
+                    </div>
+                </div>
+            ) : (
+                /* 基本信息标签页 */
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <h4 className="text-sm font-bold text-indigo-400 border-b border-indigo-900/30 pb-2">基础信息</h4>
                     <InputGroup label="姓名">
@@ -363,6 +419,8 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
                 <Button variant="ghost" onClick={switchToList}>取消</Button>
                 <Button onClick={saveCharacter} className="bg-indigo-600">保存角色</Button>
             </div>
+                </>
+            )}
         </div>
     );
 };

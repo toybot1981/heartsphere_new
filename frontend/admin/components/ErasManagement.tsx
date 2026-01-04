@@ -1,9 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../../components/Button';
 import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
 import { imageApi } from '../../services/api';
 import { ResourcePicker } from '../../components/ResourcePicker';
-import { showConfirm } from '../../utils/dialog';
+import { showConfirm, showAlert } from '../../utils/dialog';
+import { aiService } from '../../services/ai';
+import { constructEraCoverPrompt } from '../../utils/promptConstructors';
+import { AppSettings } from '../../types';
+import { storageService } from '../../services/storage';
 
 interface Era {
     id: number;
@@ -26,9 +30,53 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
     const [formData, setFormData] = useState<any>({});
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [showResourcePicker, setShowResourcePicker] = useState(false);
     const eraImageInputRef = useRef<HTMLInputElement>(null);
+
+    // 初始化 aiService 配置
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const loadedState = await storageService.loadState();
+                if (loadedState && loadedState.settings) {
+                    aiService.updateConfigFromAppSettings(loadedState.settings);
+                    return;
+                }
+                
+                const savedState = localStorage.getItem('heartsphere_game_state');
+                if (savedState) {
+                    const parsed = JSON.parse(savedState);
+                    if (parsed.settings) {
+                        aiService.updateConfigFromAppSettings(parsed.settings);
+                        return;
+                    }
+                }
+                
+                const defaultSettings: AppSettings = {
+                    autoGenerateAvatars: false,
+                    autoGenerateStoryScenes: false,
+                    autoGenerateJournalImages: false,
+                    debugMode: false,
+                    textProvider: 'gemini',
+                    imageProvider: 'gemini',
+                    videoProvider: 'gemini',
+                    audioProvider: 'gemini',
+                    enableFallback: true,
+                    geminiConfig: { apiKey: '', modelName: 'gemini-2.5-flash', imageModel: 'gemini-2.5-flash-image', videoModel: 'veo-3.1-fast-generate-preview' },
+                    openaiConfig: { apiKey: '', baseUrl: 'https://api.openai.com/v1', modelName: 'gpt-4o', imageModel: 'dall-e-3' },
+                    qwenConfig: { apiKey: '', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelName: 'qwen-max', imageModel: 'qwen-image-plus', videoModel: 'wanx-video' },
+                    doubaoConfig: { apiKey: '', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', modelName: 'ep-...', imageModel: 'doubao-image-v1', videoModel: 'doubao-video-v1' }
+                };
+                aiService.updateConfigFromAppSettings(defaultSettings);
+            } catch (e) {
+                console.error('[ErasManagement] 初始化 aiService 配置失败:', e);
+            }
+        };
+        
+        loadSettings();
+    }, []);
 
     const switchToCreate = () => {
         setFormData({});
@@ -85,6 +133,86 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
     const handleSelectPresetResource = (url: string) => {
         setFormData({...formData, imageUrl: url});
         setUploadError('');
+    };
+
+    const handleGenerateImage = async () => {
+        if (!formData.name || !formData.description) {
+            setUploadError('请先填写场景名称和简介。');
+            return;
+        }
+
+        setIsGeneratingImage(true);
+        setUploadError('');
+
+        try {
+            // 构建提示词（后台管理没有worldStyle，使用默认风格）
+            const prompt = constructEraCoverPrompt(formData.name, formData.description);
+            
+            // 调用AI生成图片（3:4比例，适合场景封面）
+            const response = await aiService.generateImage({
+                prompt: prompt,
+                aspectRatio: '3:4',
+                width: 1024,
+                height: 1366,
+                numberOfImages: 1
+            });
+
+            if (response.images && response.images.length > 0) {
+                const generatedImage = response.images[0];
+                let imageDataUrl = '';
+
+                // 处理返回的图片（可能是URL或base64）
+                if (generatedImage.base64) {
+                    imageDataUrl = `data:image/png;base64,${generatedImage.base64}`;
+                } else if (generatedImage.url) {
+                    // 如果是URL，需要先下载转换为base64
+                    try {
+                        const proxyResult = await imageApi.proxyDownload(generatedImage.url);
+                        if (proxyResult.success && proxyResult.dataUrl) {
+                            imageDataUrl = proxyResult.dataUrl;
+                        } else {
+                            imageDataUrl = generatedImage.url;
+                        }
+                    } catch (e) {
+                        imageDataUrl = generatedImage.url;
+                    }
+                }
+
+                if (imageDataUrl) {
+                    // 自动上传到服务器（作为系统资源）
+                    setIsUploadingImage(true);
+                    try {
+                        const uploadResult = await imageApi.uploadBase64Image(imageDataUrl, 'era', adminToken || undefined);
+                        
+                        if (uploadResult.success && uploadResult.url) {
+                            setFormData({...formData, imageUrl: uploadResult.url});
+                            showAlert('图片生成并上传成功！', '成功', 'success');
+                        } else {
+                            throw new Error(uploadResult.error || '上传失败');
+                        }
+                    } catch (uploadErr: any) {
+                        console.error('上传生成的图片失败:', uploadErr);
+                        setUploadError('图片生成成功，但上传失败: ' + (uploadErr.message || '未知错误'));
+                    } finally {
+                        setIsUploadingImage(false);
+                    }
+                } else {
+                    throw new Error('生成的图片数据无效');
+                }
+            } else {
+                throw new Error('未生成图片');
+            }
+        } catch (err: any) {
+            console.error('AI生成图片失败:', err);
+            const errorMsg = err.message || '未知错误';
+            if (errorMsg.includes('API key') || errorMsg.includes('配置')) {
+                setUploadError('AI生成失败：请检查设置中的图片生成API Key配置');
+            } else {
+                setUploadError('AI生成图片失败: ' + errorMsg);
+            }
+        } finally {
+            setIsGeneratingImage(false);
+        }
     };
 
     if (viewMode === 'list') {
@@ -153,10 +281,17 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
                         />
                         <button 
                             onClick={() => eraImageInputRef.current?.click()} 
-                            disabled={isUploadingImage}
+                            disabled={isUploadingImage || isGeneratingImage}
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
                         >
                             {isUploadingImage ? '上传中...' : '上传'}
+                        </button>
+                        <button 
+                            onClick={handleGenerateImage}
+                            disabled={!formData.name || !formData.description || isGeneratingImage || isUploadingImage}
+                            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded disabled:opacity-50"
+                        >
+                            {isGeneratingImage ? '生成中...' : '🤖 AI生成'}
                         </button>
                         <button 
                             onClick={() => setShowResourcePicker(true)}

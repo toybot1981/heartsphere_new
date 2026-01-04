@@ -34,10 +34,11 @@ export const BackgroundLayer = memo<BackgroundLayerProps>(({
 
   return (
     <div
-      className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+      className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000"
       style={{
         backgroundImage: bgLoaded && backgroundImage ? `url(${backgroundImage})` : 'none',
         filter: filterStyle,
+        zIndex: 0,
       }}
     >
       {!bgLoaded && !bgError && backgroundImage && (

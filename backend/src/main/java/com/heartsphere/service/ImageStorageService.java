@@ -48,12 +48,23 @@ public class ImageStorageService {
     }
 
     /**
-     * 保存图片文件
+     * 保存图片文件（系统资源，不包含userId）
      * @param file 上传的文件
      * @param category 图片分类（如：era, character, journal等）
-     * @return 图片访问URL
+     * @return 图片相对路径（格式：category/year/month/filename）
      */
     public String saveImage(MultipartFile file, String category) throws IOException {
+        return saveImage(file, category, null);
+    }
+
+    /**
+     * 保存图片文件（用户资源，包含userId）
+     * @param file 上传的文件
+     * @param category 图片分类（如：era, character, journal等）
+     * @param userId 用户ID（如果为null，则为系统资源，路径格式：category/year/month/filename；如果不为null，则为用户资源，路径格式：userId/category/year/month/filename）
+     * @return 图片相对路径
+     */
+    public String saveImage(MultipartFile file, String category, String userId) throws IOException {
         logger.info("[ImageStorageService] 开始保存图片，分类: " + category);
         
         if (file == null || file.isEmpty()) {
@@ -78,7 +89,7 @@ public class ImageStorageService {
         logger.info("[ImageStorageService] 存储类型: " + storageType);
         switch (storageType.toLowerCase()) {
             case "local":
-                return saveToLocal(file, category);
+                return saveToLocal(file, category, userId);
             case "oss":
                 // TODO: 实现OSS存储
                 throw new UnsupportedOperationException("OSS存储暂未实现");
@@ -86,21 +97,34 @@ public class ImageStorageService {
                 // TODO: 实现S3存储
                 throw new UnsupportedOperationException("S3存储暂未实现");
             default:
-                return saveToLocal(file, category);
+                return saveToLocal(file, category, userId);
         }
     }
 
     /**
      * 保存到本地文件系统
+     * @param file 上传的文件
+     * @param category 图片分类
+     * @param userId 用户ID（如果为null，则为系统资源）
+     * @return 相对路径（格式：category/year/month/filename 或 userId/category/year/month/filename）
      */
-    private String saveToLocal(MultipartFile file, String category) throws IOException {
-        logger.info("[ImageStorageService] 开始保存到本地文件系统");
+    private String saveToLocal(MultipartFile file, String category, String userId) throws IOException {
+        logger.info("[ImageStorageService] 开始保存到本地文件系统，userId: " + (userId != null ? userId : "系统资源"));
         
-        // 创建目录结构：uploads/images/{category}/{year}/{month}/
+        // 创建目录结构
+        // 系统资源：uploads/images/{category}/{year}/{month}/
+        // 用户资源：uploads/images/{userId}/{category}/{year}/{month}/
         String year = String.valueOf(java.time.Year.now().getValue());
         String month = String.format("%02d", java.time.MonthDay.now().getMonthValue());
         
-        Path categoryPath = Paths.get(localStoragePath, category, year, month);
+        Path categoryPath;
+        if (userId != null && !userId.isEmpty()) {
+            // 用户资源：包含 userId
+            categoryPath = Paths.get(localStoragePath, userId, category, year, month);
+        } else {
+            // 系统资源：不包含 userId
+            categoryPath = Paths.get(localStoragePath, category, year, month);
+        }
         logger.info("[ImageStorageService] 目标目录: " + categoryPath.toAbsolutePath());
         Files.createDirectories(categoryPath);
         logger.info("[ImageStorageService] 目录创建成功");
@@ -120,9 +144,15 @@ public class ImageStorageService {
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
         logger.info("[ImageStorageService] 文件保存成功");
 
-        // 返回相对路径（不以 / 开头，与 /files/ 匹配）
-        // 格式：category/year/month/filename
-        String relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
+        // 返回相对路径
+        // 系统资源格式：category/year/month/filename
+        // 用户资源格式：userId/category/year/month/filename
+        String relativePath;
+        if (userId != null && !userId.isEmpty()) {
+            relativePath = String.format("%s/%s/%s/%s/%s", userId, category, year, month, filename);
+        } else {
+            relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
+        }
         logger.info("[ImageStorageService] 返回图片相对路径: " + relativePath);
         // 注意：不再拼接baseUrl，直接返回相对路径
         // 前端或DTO转换器需要使用 ImageUrlUtils.toFullUrl() 来拼接完整URL
@@ -172,9 +202,16 @@ public class ImageStorageService {
     }
 
     /**
-     * 保存Base64图片（用于前端直接上传base64数据）
+     * 保存Base64图片（用于前端直接上传base64数据，系统资源）
      */
     public String saveBase64Image(String base64Data, String category) throws IOException {
+        return saveBase64Image(base64Data, category, null);
+    }
+
+    /**
+     * 保存Base64图片（用于前端直接上传base64数据，用户资源）
+     */
+    public String saveBase64Image(String base64Data, String category, String userId) throws IOException {
         if (base64Data == null || base64Data.isEmpty()) {
             throw new IllegalArgumentException("Base64数据不能为空");
         }
@@ -209,9 +246,18 @@ public class ImageStorageService {
         }
 
         // 创建目录
+        // 系统资源：uploads/images/{category}/{year}/{month}/
+        // 用户资源：uploads/images/{userId}/{category}/{year}/{month}/
         String year = String.valueOf(java.time.Year.now().getValue());
         String month = String.format("%02d", java.time.MonthDay.now().getMonthValue());
-        Path categoryPath = Paths.get(localStoragePath, category, year, month);
+        Path categoryPath;
+        if (userId != null && !userId.isEmpty()) {
+            // 用户资源：包含 userId
+            categoryPath = Paths.get(localStoragePath, userId, category, year, month);
+        } else {
+            // 系统资源：不包含 userId
+            categoryPath = Paths.get(localStoragePath, category, year, month);
+        }
         Files.createDirectories(categoryPath);
 
         // 生成文件名
@@ -222,9 +268,15 @@ public class ImageStorageService {
         Path targetPath = categoryPath.resolve(filename);
         Files.write(targetPath, imageBytes);
 
-        // 返回相对路径（不以 / 开头，与 /files/ 匹配）
-        // 格式：category/year/month/filename
-        String relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
+        // 返回相对路径
+        // 系统资源格式：category/year/month/filename
+        // 用户资源格式：userId/category/year/month/filename
+        String relativePath;
+        if (userId != null && !userId.isEmpty()) {
+            relativePath = String.format("%s/%s/%s/%s/%s", userId, category, year, month, filename);
+        } else {
+            relativePath = String.format("%s/%s/%s/%s", category, year, month, filename);
+        }
         // 注意：不再拼接baseUrl，直接返回相对路径
         // 前端或DTO转换器需要使用 ImageUrlUtils.toFullUrl() 来拼接完整URL
         return relativePath;

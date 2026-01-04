@@ -2,6 +2,7 @@ package com.heartsphere.admin.service;
 
 import com.heartsphere.admin.dto.*;
 import com.heartsphere.admin.entity.SystemAdmin;
+import com.heartsphere.admin.repository.AdminOperationLogRepository;
 import com.heartsphere.admin.repository.SystemAdminRepository;
 import com.heartsphere.exception.BusinessException;
 import org.slf4j.Logger;
@@ -24,6 +25,9 @@ public class SystemAdminService {
 
     @Autowired
     private SystemAdminRepository adminRepository;
+
+    @Autowired
+    private AdminOperationLogRepository adminOperationLogRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -117,14 +121,65 @@ public class SystemAdminService {
      */
     @Transactional
     public void deleteAdmin(Long id) {
+        if (id == null) {
+            logger.error("删除管理员失败: ID 为 null");
+            throw new RuntimeException("管理员ID不能为空");
+        }
+
         SystemAdmin admin = adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("管理员不存在"));
+                .orElseThrow(() -> {
+                    logger.error("删除管理员失败: 管理员不存在, ID={}", id);
+                    return new RuntimeException("管理员不存在: ID=" + id);
+                });
+
+        if (admin == null) {
+            logger.error("删除管理员失败: 查询到的管理员为 null, ID={}", id);
+            throw new RuntimeException("管理员数据异常: ID=" + id);
+        }
 
         // 不能删除自己
         // 注意：这里需要通过当前登录的管理员ID来判断，暂时先允许删除
         
-        adminRepository.delete(admin);
-        logger.info("删除管理员成功: ID={}, username={}", admin.getId(), admin.getUsername());
+        try {
+            logger.info("开始删除管理员: ID={}, username={}", admin.getId(), admin.getUsername());
+            
+            // 先删除关联的操作日志（避免外键约束问题）
+            try {
+                long logCount = adminOperationLogRepository.count();
+                logger.debug("当前操作日志总数: {}", logCount);
+                
+                // 删除该管理员的所有操作日志
+                int deletedLogs = adminOperationLogRepository.deleteByAdminId(admin.getId());
+                logger.info("已删除管理员操作日志: {} 条, adminId={}", deletedLogs, admin.getId());
+            } catch (Exception e) {
+                logger.warn("删除管理员操作日志时出错（可能没有日志）: adminId={}, error={}", 
+                        admin.getId(), e.getMessage(), e);
+                // 继续执行删除操作，因为可能没有日志
+            }
+            
+            // 删除管理员
+            adminRepository.delete(admin);
+            logger.info("删除管理员成功: ID={}, username={}", admin.getId(), admin.getUsername());
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 已经在内部 catch 中处理，这里不应该到达
+            throw e;
+        } catch (IllegalArgumentException e) {
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "参数错误";
+            logger.error("删除管理员失败（参数错误）: ID={}, username={}, error={}", 
+                    admin.getId(), admin.getUsername(), errorMsg, e);
+            throw new RuntimeException("删除管理员失败: " + errorMsg, e);
+        } catch (RuntimeException e) {
+            // 重新抛出 RuntimeException（包括我们自己的异常）
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = e.getMessage() != null && !e.getMessage().isEmpty() 
+                    ? e.getMessage() 
+                    : ("删除操作失败: " + e.getClass().getSimpleName());
+            logger.error("删除管理员失败: ID={}, username={}, error={}, exceptionType={}, cause={}", 
+                    admin.getId(), admin.getUsername(), errorMsg, e.getClass().getName(), 
+                    e.getCause() != null ? e.getCause().getClass().getName() : "null", e);
+            throw new RuntimeException("删除管理员失败: " + errorMsg, e);
+        }
     }
 
     /**

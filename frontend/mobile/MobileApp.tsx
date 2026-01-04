@@ -1,25 +1,35 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, CustomScenario } from '../types';
 import { aiService } from '../services/ai/AIService';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
 import { authApi, journalApi, worldApi, eraApi, characterApi, systemScriptApi, scriptApi, presetScriptApi } from '../services/api';
-import { sharedApi } from '../services/api/heartconnect';
 import { getWorldIdForSceneId, initCustomSceneMappings } from '../utils/sceneMapping';
 import { useJournalHandlers } from '../hooks/useJournalHandlers';
+import { useGameState } from '../contexts/GameStateContext';
+import { useSharedMode } from '../hooks/useSharedMode';
+import { syncService } from '../services/sync/SyncService';
+import { initSyncConfigs } from '../services/sync/syncConfig';
 import { MobileBottomNav } from './components/MobileBottomNav';
-import { MobileRealWorld } from './MobileRealWorld';
+import { MobileErrorBoundary } from './components/MobileErrorBoundary';
 import { showAlert, showConfirm } from '../utils/dialog';
-import { MobileSceneSelection } from './MobileSceneSelection';
-import { MobileCharacterSelection } from './MobileCharacterSelection';
-import { UserProfile } from '../components/UserProfile';
-import { MobileScenarioBuilder } from './MobileScenarioBuilder'; // Imported Mobile Builder
-import { ChatWindow } from '../components/ChatWindow';
-import { ConnectionSpace } from '../components/ConnectionSpace';
 import { LoginModal } from '../components/LoginModal';
 import { SettingsModal } from '../components/SettingsModal';
 import { MailboxModal } from '../components/MailboxModal';
+import type { ShareConfig } from '../services/api/heartconnect/types';
+
+// Phase 5优化: 使用懒加载导入Screen组件（除了ProfileSetup需要在初始化时使用）
+import { MobileProfileSetupScreen } from './screens/MobileProfileSetupScreen';
+// 其他Screen组件通过路由系统懒加载，不需要在这里导入
+
+// 导入MobileScenarioBuilder组件
+import { MobileScenarioBuilder } from './MobileScenarioBuilder';
+
+// 导入路由渲染系统（第一阶段构建的架构）
+import { renderCurrentScreen } from './utils/renderScreen';
+import type { ScreenPropsBuilder } from './utils/buildScreenProps';
+import { MobileQuickConnectModal } from './components/modals/MobileQuickConnectModal';
 
 // Modals reuse
 import { EraConstructorModal } from '../components/EraConstructorModal';
@@ -32,45 +42,77 @@ interface MobileAppProps {
 export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     
     // --- STATE ---
-    const DEFAULT_STATE: GameState = {
-        currentScreen: 'profileSetup',
-        userProfile: null,
-        selectedSceneId: null,
-        selectedCharacterId: null,
-        selectedScenarioId: null,
-        tempStoryCharacter: null,
-        editingScenarioId: null,
-        history: {},
-        customAvatars: {},
-        generatingAvatarId: null,
-        customCharacters: {},
-        customScenarios: [],
-        customScenes: [],
-        userWorldScenes: [],
-        journalEntries: [],
-        activeJournalEntryId: null,
-        settings: { 
-          autoGenerateAvatars: false, 
-          autoGenerateStoryScenes: false,
-          autoGenerateJournalImages: false,
-          debugMode: false,
-          textProvider: 'gemini',
-          imageProvider: 'gemini',
-          videoProvider: 'gemini',
-          audioProvider: 'gemini',
-          enableFallback: true,
-          geminiConfig: { apiKey: '', modelName: 'gemini-2.5-flash', imageModel: 'gemini-2.5-flash-image', videoModel: 'veo-3.1-fast-generate-preview' },
-          openaiConfig: { apiKey: '', baseUrl: 'https://api.openai.com/v1', modelName: 'gpt-4o', imageModel: 'dall-e-3' },
-          qwenConfig: { apiKey: '', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelName: 'qwen-max', imageModel: 'qwen-image-plus', videoModel: 'wanx-video' },
-          doubaoConfig: { apiKey: '', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', modelName: 'ep-...', imageModel: 'doubao-image-v1', videoModel: 'doubao-video-v1' }
-        },
-        mailbox: [],
-        lastLoginTime: Date.now(),
-        sceneMemories: {},
-        debugLogs: []
-    };
-
-    const [gameState, setGameState] = useState<GameState>(DEFAULT_STATE);
+    // 使用GameStateProvider提供的状态管理
+    const { state: gameState, dispatch } = useGameState();
+    
+    // 共享模式状态管理（复用PC版本的Hook）
+    const { isActive: isSharedModeActive, shareConfig, leaveSharedMode, enterSharedMode } = useSharedMode();
+    
+    // 共享场景列表（用于共享模式下获取场景）
+    const [sharedScenes, setSharedScenes] = useState<WorldScene[]>([]);
+    
+    // 在共享模式下加载共享场景数据
+    useEffect(() => {
+        if (!isSharedModeActive || !shareConfig) {
+            setSharedScenes([]);
+            return;
+        }
+        
+        const loadSharedScenes = async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+                
+                const { sharedApi } = await import('../services/api/heartconnect');
+                const { convertErasToWorldScenes } = await import('../utils/dataTransformers');
+                
+                const worlds = await sharedApi.getSharedWorlds(token);
+                const eras = await sharedApi.getSharedEras(token);
+                
+                // 加载所有场景的角色数据
+                const allCharacters: any[] = [];
+                const characterPromises = eras.map(async (era) => {
+                    try {
+                        const characters = await sharedApi.getSharedCharactersByEraId(era.id, token);
+                        return characters.map((char: any) => ({ ...char, eraId: era.id }));
+                    } catch (err) {
+                        return [];
+                    }
+                });
+                const characterArrays = await Promise.all(characterPromises);
+                characterArrays.forEach((chars) => allCharacters.push(...chars));
+                
+                const convertedCharacters = allCharacters.map((char: any) => ({
+                    id: `character_${char.id}`,
+                    name: char.name || '未命名角色',
+                    description: char.description || '',
+                    avatarUrl: char.avatarUrl || '',
+                    personality: char.personality || '',
+                    background: char.background || '',
+                    eraId: char.eraId?.toString() || '',
+                    worldId: eras.find(e => e.id === char.eraId)?.worldId?.toString() || '',
+                }));
+                
+                const scenes = convertErasToWorldScenes(
+                    worlds,
+                    eras,
+                    convertedCharacters,
+                    undefined,
+                    undefined,
+                    true
+                );
+                
+                setSharedScenes(scenes);
+                console.log('[MobileApp] 共享场景数据已加载，数量:', scenes.length);
+            } catch (err) {
+                console.error('[MobileApp] 加载共享场景失败:', err);
+                setSharedScenes([]);
+            }
+        };
+        
+        loadSharedScenes();
+    }, [isSharedModeActive, shareConfig]);
+    
     const [isLoaded, setIsLoaded] = useState(false);
     const [profileNickname, setProfileNickname] = useState('');
     const [showGuestNicknameModal, setShowGuestNicknameModal] = useState(false);
@@ -82,32 +124,186 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     const [showCharacterCreator, setShowCharacterCreator] = useState(false);
     const [showScenarioBuilder, setShowScenarioBuilder] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showQuickConnect, setShowQuickConnect] = useState(false);
 
     // --- INIT & STORAGE ---
+    // 注意：GameStateProvider会自动加载状态，这里只需要初始化场景映射和同步服务
     useEffect(() => {
         const init = async () => {
-            const loaded = await storageService.loadState();
-            if (loaded) {
-                setGameState(prev => ({ ...prev, ...loaded, currentScreen: loaded.userProfile ? 'realWorld' : 'profileSetup', debugLogs: [] }));
-                if (loaded.settings) aiService.updateConfigFromAppSettings(loaded.settings as AppSettings);
-            }
-            setIsLoaded(true);
+            // 初始化同步配置
+            initSyncConfigs();
             
             // 初始化场景映射（如果已登录）
             const token = localStorage.getItem('auth_token');
             if (token) {
                 await initCustomSceneMappings();
             }
+            setIsLoaded(true);
         };
         init();
     }, []);
 
+    // 自动登录检查（类似PC版本的useAuthHandlers中的checkAuth）
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = localStorage.getItem('auth_token');
+            console.log('[MobileApp] 检查本地存储中的token:', !!token);
+            console.log('[MobileApp] 当前userProfile:', gameState.userProfile);
+            // 只在有token但没有用户信息时执行自动登录
+            if (token && (!gameState.userProfile || gameState.userProfile.isGuest)) {
+                try {
+                    console.log('[MobileApp] 尝试自动登录...');
+                    const userInfo = await authApi.getCurrentUser(token);
+                    console.log('[MobileApp] 自动登录成功:', userInfo);
+                    
+                    // 获取日记列表
+                    const journalEntries = await journalApi.getAllJournalEntries(token);
+                    
+                    // 获取世界列表
+                    const remoteWorlds = await worldApi.getAllWorlds(token);
+                    
+                    // 获取场景列表
+                    const eras = await eraApi.getAllEras(token);
+                    
+                    // 获取角色列表
+                    const characters = await characterApi.getAllCharacters(token);
+                    
+                    // 将后端数据转换为前端需要的WorldScene格式
+                    const userWorldScenes: WorldScene[] = [];
+                    
+                    // 按世界分组场景
+                    const erasByWorldId = new Map<number, typeof eras[0][]>();
+                    eras.forEach(era => {
+                        const worldId = era.worldId || (era as any).world?.id || (era as any).worldId;
+                        if (worldId) {
+                            if (!erasByWorldId.has(worldId)) {
+                                erasByWorldId.set(worldId, []);
+                            }
+                            erasByWorldId.get(worldId)?.push(era);
+                        }
+                    });
+                    
+                    // 按场景分组角色
+                    const charactersByEraId = new Map<number, typeof characters[0][]>();
+                    characters.forEach(char => {
+                        const eraId = char.eraId;
+                        if (eraId) {
+                            if (!charactersByEraId.has(eraId)) {
+                                charactersByEraId.set(eraId, []);
+                            }
+                            charactersByEraId.get(eraId)?.push(char);
+                        }
+                    });
+                    
+                    // 创建WorldScene对象
+                    remoteWorlds.forEach(world => {
+                        const worldEras = erasByWorldId.get(world.id) || [];
+                        worldEras.forEach(era => {
+                            const eraCharacters = charactersByEraId.get(era.id) || [];
+                            const scene: WorldScene = {
+                                id: era.id.toString(),
+                                name: era.name,
+                                description: era.description,
+                                imageUrl: era.imageUrl || '',
+                                systemEraId: era.systemEraId || undefined,
+                                characters: eraCharacters.map((char: any) => ({
+                                    id: char.id.toString(),
+                                    name: char.name,
+                                    age: char.age,
+                                    role: char.role,
+                                    bio: char.bio,
+                                    avatarUrl: char.avatarUrl || '',
+                                    backgroundUrl: char.backgroundUrl || '',
+                                    themeColor: char.themeColor || 'blue-500',
+                                    colorAccent: char.colorAccent || '#3b82f6',
+                                    firstMessage: char.firstMessage || '',
+                                    systemInstruction: char.systemInstruction || '',
+                                    voiceName: char.voiceName || 'Aoede',
+                                    mbti: char.mbti || 'INFJ',
+                                    tags: char.tags ? (typeof char.tags === 'string' ? char.tags.split(',').filter((tag: string) => tag.trim()) : char.tags) : [],
+                                    speechStyle: char.speechStyle || '',
+                                    catchphrases: char.catchphrases || [],
+                                    secrets: char.secrets || '',
+                                    motivations: char.motivations || '',
+                                    relationships: char.relationships || ''
+                                })),
+                                scenes: [],
+                                worldId: world.id
+                            };
+                            userWorldScenes.push(scene);
+                        });
+                    });
+                    
+                    // 更新用户信息
+                    dispatch({ type: 'SET_USER_PROFILE', payload: {
+                        id: String(userInfo.id),
+                        nickname: userInfo.nickname || userInfo.username || '用户',
+                        avatarUrl: userInfo.avatar || '',
+                        isGuest: false,
+                    }});
+                    
+                    // 更新日记列表
+                    dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: journalEntries.map(entry => ({
+                        id: entry.id,
+                        title: entry.title,
+                        content: entry.content,
+                        timestamp: new Date(entry.entryDate).getTime(),
+                        imageUrl: entry.imageUrl || '',
+                        insight: entry.insight || undefined,
+                        tags: entry.tags || undefined,
+                        syncStatus: 1 as any,
+                        lastSyncTime: Date.now(),
+                        syncError: undefined,
+                    }))});
+                    
+                    // 更新世界场景
+                    dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
+                    
+                    // 如果有场景，选择第一个
+                    if (userWorldScenes.length > 0 && !gameState.selectedSceneId) {
+                        dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: userWorldScenes[0].id });
+                    }
+                    
+                    console.log('[MobileApp] 自动登录完成，用户信息已加载');
+                } catch (err: any) {
+                    console.error('[MobileApp] 自动登录失败:', err.message || err);
+                    // token无效，清除
+                    localStorage.removeItem('auth_token');
+                }
+            }
+        };
+        
+        checkAuth();
+    }, []); // 只在组件挂载时执行一次
+
+    // 监听navigateToShared事件（用于从外部进入共享心域）
+    useEffect(() => {
+        const handleNavigateToShared = async (event: Event) => {
+            const customEvent = event as CustomEvent<{ shareConfig: ShareConfig; visitorId: number }>;
+            const { shareConfig, visitorId } = customEvent.detail || {};
+            
+            if (shareConfig && visitorId) {
+                console.log('[MobileApp] 收到navigateToShared事件:', shareConfig, visitorId);
+                try {
+                    enterSharedMode(shareConfig, visitorId);
+                    dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+                } catch (err) {
+                    console.error('[MobileApp] 进入共享模式失败:', err);
+                }
+            }
+        };
+        
+        window.addEventListener('navigateToShared', handleNavigateToShared);
+        return () => {
+            window.removeEventListener('navigateToShared', handleNavigateToShared);
+        };
+    }, [enterSharedMode, dispatch]);
+
+    // 更新AI服务配置（当settings变化时）
     useEffect(() => {
         if (!isLoaded) return;
         aiService.updateConfigFromAppSettings(gameState.settings);
-        const t = setTimeout(() => storageService.saveState({ ...gameState, lastLoginTime: Date.now() }), 1000);
-        return () => clearTimeout(t);
-    }, [gameState, isLoaded]);
+    }, [gameState.settings, isLoaded]);
 
     // 数据刷新机制：当进入realWorld或sceneSelection时，如果是登录用户，刷新数据
     useEffect(() => {
@@ -138,6 +334,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 let worlds, eras;
                 if (isSharedMode) {
                     // 共享模式：调用共享模式专用接口
+                    const { sharedApi } = await import('../services/api/heartconnect');
                     worlds = await sharedApi.getSharedWorlds(token);
                     eras = await sharedApi.getSharedEras(token);
                 } else {
@@ -231,10 +428,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 });
                 
                 // 更新游戏状态
-                setGameState(prev => ({
-                    ...prev,
-                    userWorldScenes: userWorldScenes
-                }));
+                dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
                 
                 console.log('[Mobile DataLoader] 数据加载完成，共', userWorldScenes.length, '个场景');
             } catch (error) {
@@ -248,55 +442,47 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     // --- ACTIONS ---
 
     const handleSwitchToPCWrapper = async () => {
-        await storageService.saveState({ ...gameState, lastLoginTime: Date.now() });
+        // GameStateProvider会自动保存状态，这里只需要切换模式
         onSwitchToPC();
     };
 
     const handleProfileSubmit = () => {
         if (!profileNickname.trim()) return;
-        // 确保关闭访客昵称输入框，并且不触发登录框
+        dispatch({ 
+            type: 'SET_USER_PROFILE', 
+            payload: { nickname: profileNickname.trim(), avatarUrl: '', isGuest: true, id: `guest_${Date.now()}` }
+        });
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'realWorld' });
         setShowGuestNicknameModal(false);
         setProfileNickname('');
-        // 设置访客用户并切换到realWorld，不触发任何登录相关的逻辑
-        setGameState(prev => ({
-            ...prev,
-            userProfile: { nickname: profileNickname.trim(), avatarUrl: '', isGuest: true, id: `guest_${Date.now()}` },
-            currentScreen: 'realWorld'
-        }));
     };
 
     const handleLogout = () => {
-        console.log('[MobileApp] 开始退出登录');
-        
-        // 1. 清除认证token
-        localStorage.removeItem('auth_token');
-        console.log('[MobileApp] 已清除 auth_token');
-        
-        // 2. 清除所有UI状态
+        // 保留settings，清除其他状态
+        dispatch({ type: 'SET_USER_PROFILE', payload: null });
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'profileSetup' });
+        dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: null });
+        dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: null });
+        dispatch({ type: 'SET_SELECTED_SCENARIO_ID', payload: null });
+        dispatch({ type: 'CLEAR_HISTORY', payload: 'all' });
+        dispatch({ type: 'SET_USER_WORLD_SCENES', payload: [] });
+        dispatch({ type: 'SET_CUSTOM_SCENES', payload: [] });
+        dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {} });
+        dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [] });
+        dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: [] });
         setShowSettings(false);
-        setShowLoginModal(false);
-        setShowGuestNicknameModal(false);
-        setProfileNickname('');
-        
-        // 3. Construct a clean state but preserve settings (API keys etc)
-        const cleanState: GameState = {
-            ...DEFAULT_STATE,
-            settings: gameState.settings, 
-            currentScreen: 'profileSetup',
-            userProfile: null
-        };
-
-        // 4. Update React State immediately to show login screen
-        setGameState(cleanState);
-        console.log('[MobileApp] 已重置游戏状态');
-
-        // 5. Persist the clean state asynchronously (Fire and forget)
-        storageService.saveState(cleanState).then(() => {
-            console.log("[MobileApp] 退出登录完成，状态已保存");
-        }).catch(err => {
-            console.error("[MobileApp] 退出登录保存状态失败", err);
-        });
     };
+
+    // 兼容层：将复杂的setGameState调用转换为dispatch
+    // 用于处理需要访问prev状态的复杂更新
+    const setGameState = useCallback((updater: GameState | ((prev: GameState) => GameState)) => {
+        if (typeof updater === 'function') {
+            const newState = updater(gameState);
+            dispatch({ type: 'BATCH_UPDATE', payload: newState });
+        } else {
+            dispatch({ type: 'BATCH_UPDATE', payload: updater });
+        }
+    }, [gameState, dispatch]);
 
     const handleLoginSuccess = async (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => {
         // 从localStorage获取token
@@ -515,7 +701,11 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     };
 
     const allScenes = getCurrentScenes();
-    const currentScene = allScenes.find(s => s.id === gameState.selectedSceneId);
+    let currentScene = allScenes.find(s => s.id === gameState.selectedSceneId);
+    // 在共享模式下，如果 allScenes 中找不到，从 sharedScenes 中查找
+    if (!currentScene && isSharedModeActive && gameState.selectedSceneId) {
+        currentScene = sharedScenes.find(s => s.id === gameState.selectedSceneId);
+    }
     
     // Get Characters for current scene
     const currentSceneChars = currentScene 
@@ -573,36 +763,83 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         : [];
 
     let activeCharacter = null;
-    if (currentScene && gameState.selectedCharacterId) {
+    if (gameState.selectedCharacterId) {
+        console.log('[MobileApp] 计算 activeCharacter，selectedCharacterId:', gameState.selectedCharacterId);
+        console.log('[MobileApp] tempStoryCharacter:', gameState.tempStoryCharacter);
+        console.log('[MobileApp] currentScene:', currentScene?.id, currentScene?.name);
+        console.log('[MobileApp] currentSceneChars 数量:', currentSceneChars.length);
+        console.log('[MobileApp] isSharedModeActive:', isSharedModeActive);
+        console.log('[MobileApp] sharedScenes 数量:', sharedScenes.length);
+        
         // Also check if it's the narrator for a scenario
         if (gameState.tempStoryCharacter && gameState.tempStoryCharacter.id === gameState.selectedCharacterId) {
              activeCharacter = gameState.tempStoryCharacter;
-        } else {
+             console.log('[MobileApp] 从 tempStoryCharacter 找到角色');
+        } else if (currentScene) {
              activeCharacter = currentSceneChars.find(c => c.id === gameState.selectedCharacterId);
              // Fallback to main story if id matches
              if (!activeCharacter && currentScene.mainStory?.id === gameState.selectedCharacterId) {
                  activeCharacter = currentScene.mainStory;
+                 console.log('[MobileApp] 从 currentScene.mainStory 找到角色');
+             } else if (activeCharacter) {
+                 console.log('[MobileApp] 从 currentSceneChars 找到角色');
              }
+        }
+        
+        // 在共享模式下，如果 currentScene 中找不到，从 sharedScenes 中查找
+        if (!activeCharacter && isSharedModeActive && gameState.selectedCharacterId) {
+            console.log('[MobileApp] 在 sharedScenes 中查找角色...');
+            for (const scene of sharedScenes) {
+                const char = scene.characters.find(c => c.id === gameState.selectedCharacterId);
+                if (char) {
+                    activeCharacter = char;
+                    console.log('[MobileApp] 从 sharedScenes 中找到角色，场景:', scene.name);
+                    break;
+                }
+                // 也检查 mainStory
+                if (scene.mainStory?.id === gameState.selectedCharacterId) {
+                    activeCharacter = scene.mainStory;
+                    console.log('[MobileApp] 从 sharedScenes 中找到 mainStory，场景:', scene.name);
+                    break;
+                }
+            }
+            if (!activeCharacter) {
+                console.warn('[MobileApp] 在 sharedScenes 中未找到角色，selectedCharacterId:', gameState.selectedCharacterId);
+                console.warn('[MobileApp] sharedScenes 中的角色ID列表:', sharedScenes.flatMap(s => s.characters.map(c => c.id)));
+            }
+        }
+        
+        if (!activeCharacter) {
+            console.error('[MobileApp] ❌ 无法找到 activeCharacter，selectedCharacterId:', gameState.selectedCharacterId);
+        } else {
+            console.log('[MobileApp] ✅ 找到 activeCharacter:', activeCharacter.name, activeCharacter.id);
         }
     }
 
     const handleSelectScene = (sceneId: string) => {
+        // 在共享模式下，导航到 sharedCharacterSelection
+        const targetScreen = isSharedModeActive ? 'sharedCharacterSelection' : 'characterSelection';
         setGameState(prev => ({
             ...prev,
             selectedSceneId: sceneId,
             selectedCharacterId: null,
-            currentScreen: 'characterSelection' // Go to detail view
+            currentScreen: targetScreen // Go to detail view
         }));
     };
 
     const handleSelectCharacter = (char: Character) => {
+        console.log('[MobileApp] handleSelectCharacter 被调用，角色:', char.name, char.id);
+        console.log('[MobileApp] isSharedModeActive:', isSharedModeActive);
+        // 在共享模式下，导航到 sharedChat，并保存角色数据到 tempStoryCharacter
+        const targetScreen = isSharedModeActive ? 'sharedChat' : 'chat';
         setGameState(prev => ({
             ...prev,
             selectedCharacterId: char.id,
-            tempStoryCharacter: null,
+            // 在共享模式下，保存角色数据到 tempStoryCharacter，以便 activeCharacter 计算逻辑能够找到
+            tempStoryCharacter: isSharedModeActive ? char : null,
             selectedScenarioId: null,
             currentScenarioState: undefined,
-            currentScreen: 'chat'
+            currentScreen: targetScreen
         }));
     };
 
@@ -793,7 +1030,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         
         // 检查角色ID的来源
         const allScenes = [...WORLD_SCENES, ...gameState.customScenes, ...(gameState.userWorldScenes || [])];
-        const currentScene = allScenes.find(s => s.id === sceneId);
+        let currentScene = allScenes.find(s => s.id === sceneId);
         const existingCharInScene = currentScene?.characters.find(c => c.id === newCharacter.id);
         const existingCharInCustom = (gameState.customCharacters[sceneId] || []).find(c => c.id === newCharacter.id);
         const isEditing = !!(existingCharInScene || existingCharInCustom);
@@ -888,102 +1125,43 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     
     if (!isLoaded) return <div className="h-screen bg-black flex items-center justify-center text-white">Loading Mobile Core...</div>;
 
-    if (gameState.currentScreen === 'profileSetup') {
-        return (
-            <div className="h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-6 space-y-6">
-                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">欢迎进入我的心域</h1>
-                <p className="text-gray-400 text-center">选择你的进入方式</p>
-                <div className="w-full space-y-3">
-                    <button 
-                        onClick={() => setShowGuestNicknameModal(true)}
-                        className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white py-3 rounded-xl font-bold transition-all"
-                    >
-                        以访客身份进入
-                    </button>
-                    <button 
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('[MobileApp] 点击登录账户按钮');
-                            setShowLoginModal(true);
-                        }}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-all touch-manipulation"
-                    >
-                        登录账户
-                    </button>
-                </div>
-                <p className="text-xs text-gray-600 text-center mt-4">访客模式可快速体验，登录账户可同步数据。</p>
-                
-                {/* 访客昵称输入对话框 */}
-                {showGuestNicknameModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                        <div className="bg-slate-900 rounded-2xl border border-slate-700 p-4 sm:p-6 max-w-sm w-full shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
-                            <h3 className="text-xl font-bold text-white mb-4">访客体验</h3>
-                            <p className="text-sm text-slate-400 mb-6">输入你的昵称，以访客身份进入体验</p>
-                <input 
-                                type="text"
-                    value={profileNickname}
-                                onChange={(e) => setProfileNickname(e.target.value)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && profileNickname.trim()) {
-                                        handleProfileSubmit();
-                                    }
-                                }}
-                                placeholder="请输入昵称"
-                                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-4"
-                                autoFocus
-                />
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={handleProfileSubmit}
-                                    disabled={!profileNickname.trim()}
-                                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold transition-all"
-                                >
-                                    进入
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowGuestNicknameModal(false);
-                                        setProfileNickname('');
-                                    }}
-                                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-lg font-bold transition-all"
-                                >
-                                    取消
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {/* 登录注册模态框 - 在profileSetup页面也需要显示 */}
-                {showLoginModal && (
-                    <LoginModal
-                        onLoginSuccess={handleLoginSuccess}
-                        onCancel={() => {
-                            console.log('[MobileApp] 关闭登录模态框');
-                            setShowLoginModal(false);
-                        }}
-                        initialNickname={
-                            profileNickname.trim()
-                                ? profileNickname.trim()
-                                : undefined
-                        }
-                    />
-                )}
-            </div>
-        );
-    }
+    // ProfileSetup Screen - 使用独立的Screen组件（特殊处理，不通过路由映射）
+    // 注意：ProfileSetup在CONTENT AREA中单独处理，这里不需要重复渲染
+    // if (gameState.currentScreen === 'profileSetup') {
+    //     return (
+    //         <MobileProfileSetupScreen
+    //             onGuestEnter={handleProfileSubmit}
+    //             onLogin={() => setShowLoginModal(true)}
+    //         />
+    //     );
+    // }
 
-    return (
-        <div className="h-screen w-full bg-black text-white relative overflow-hidden">
-            
-            {/* CONTENT AREA */}
-            <div className="h-full w-full">
-                {gameState.currentScreen === 'realWorld' && (
-                    <MobileRealWorld 
-                        entries={gameState.journalEntries}
-                        onAddEntry={async (t, c, i, in_, tags) => {
-                            // 使用统一的日记处理逻辑（通过适配器）
+    // 准备handlers对象（用于新的路由渲染系统）
+    const handlers = {
+        handleNavigate: (screen: GameState['currentScreen']) => {
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: screen });
+        },
+        handleSelectScene: handleSelectScene,
+        handleSelectCharacter: handleSelectCharacter,
+        handlePlayScenario: handlePlayScenario,
+        handleBack: () => {
+            // 根据当前屏幕和共享模式状态返回到正确的页面
+            const currentScreen = gameState.currentScreen;
+            if (currentScreen === 'sharedChat') {
+                // 从 sharedChat 返回：返回到 sharedHeartSphere（共享场景列表）
+                setGameState(prev => ({ ...prev, currentScreen: 'sharedHeartSphere', selectedSceneId: null, selectedCharacterId: null }));
+            } else if (currentScreen === 'sharedCharacterSelection') {
+                // 从 sharedCharacterSelection 返回：返回到 sharedHeartSphere（共享场景列表）
+                setGameState(prev => ({ ...prev, currentScreen: 'sharedHeartSphere', selectedSceneId: null }));
+            } else if (isSharedModeActive) {
+                // 其他共享模式页面：返回到 sharedHeartSphere
+                setGameState(prev => ({ ...prev, currentScreen: 'sharedHeartSphere' }));
+            } else {
+                // 正常模式：返回到 sceneSelection
+                setGameState(prev => ({ ...prev, currentScreen: 'sceneSelection', selectedSceneId: null }));
+            }
+        },
+        handleAddEntry: async (title: string, content: string, imageUrl?: string, insight?: string, tags?: string) => {
                             const token = localStorage.getItem('auth_token');
                             if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
                                 showAlert('请先登录', '提示', 'warning');
@@ -991,26 +1169,16 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                             }
 
                             try {
-                                // 准备API请求数据
                                 const apiRequestData: any = {
-                                    title: t,
-                                    content: c,
+                    title,
+                    content,
                                     entryDate: new Date().toISOString()
                                 };
-                                if (tags) {
-                                    apiRequestData.tags = tags;
-                                }
-                                if (in_) {
-                                    apiRequestData.insight = in_;
-                                }
-                                if (i !== undefined && i !== null) {
-                                    apiRequestData.imageUrl = i;
-                                }
-                                
-                                // 直接调用API创建
+                if (tags) apiRequestData.tags = tags;
+                if (insight) apiRequestData.insight = insight;
+                if (imageUrl !== undefined && imageUrl !== null) apiRequestData.imageUrl = imageUrl;
+                
                                 await journalApi.createJournalEntry(apiRequestData, token);
-                                
-                                // 创建成功后，从服务器重新获取所有日志
                                 const allEntries = await journalApi.getAllJournalEntries(token);
                                 const mappedEntries = allEntries.map(entry => ({
                                     id: entry.id.toString(),
@@ -1022,93 +1190,61 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                                     tags: entry.tags || undefined,
                                 }));
                                 
-                                setGameState(prev => ({
-                                    ...prev,
-                                    journalEntries: mappedEntries
-                                }));
-                                
+                setGameState(prev => ({ ...prev, journalEntries: mappedEntries }));
                                 console.log('[Mobile] 日记创建成功，已从服务器重新加载');
                             } catch (error) {
                                 console.error('[Mobile] 日记创建失败:', error);
                                 showAlert('日记创建失败，请重试', '错误', 'error');
                             }
-                        }}
-                        onUpdateEntry={async (e) => {
-                            // 检查是否为临时ID
-                            const isTemporaryId = e.id.startsWith('entry_') || e.id.startsWith('e_');
+        },
+        handleUpdateEntry: async (entry: JournalEntry) => {
+            const isTemporaryId = entry.id.startsWith('entry_') || entry.id.startsWith('e_');
                             if (isTemporaryId) {
-                                console.warn('[Mobile] 临时ID无法更新，跳过');
+                showAlert('临时日记无法更新', '提示', 'warning');
                                 return;
                             }
 
                             const token = localStorage.getItem('auth_token');
-                            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+            if (!token) {
                                 showAlert('请先登录', '提示', 'warning');
                                 return;
                             }
 
                             try {
-                                const apiRequestData: any = {
-                                    title: e.title,
-                                    content: e.content,
-                                    entryDate: new Date(e.timestamp).toISOString()
-                                };
-                                if (e.tags) {
-                                    apiRequestData.tags = e.tags;
-                                }
-                                if (e.imageUrl !== undefined && e.imageUrl !== null) {
-                                    apiRequestData.imageUrl = e.imageUrl;
-                                }
-                                // 总是包含insight字段
-                                if (e.insight !== undefined) {
-                                    apiRequestData.insight = e.insight !== null ? e.insight : null;
-                                }
-                                
-                                // 直接调用API更新
-                                await journalApi.updateJournalEntry(e.id, apiRequestData, token);
-                                
-                                // 更新成功后，从服务器重新获取所有日志
-                                const allEntries = await journalApi.getAllJournalEntries(token);
-                                const mappedEntries = allEntries.map(entry => ({
-                                    id: entry.id.toString(),
+                await journalApi.updateJournalEntry(parseInt(entry.id), {
                                     title: entry.title,
                                     content: entry.content,
-                                    timestamp: new Date(entry.entryDate).getTime(),
                                     imageUrl: entry.imageUrl || undefined,
                                     insight: entry.insight || undefined,
                                     tags: entry.tags || undefined,
-                                }));
-                                
-                                setGameState(prev => ({
-                                    ...prev,
-                                    journalEntries: mappedEntries
-                                }));
-                                
-                                console.log('[Mobile] 日记更新成功，已从服务器重新加载');
+                }, token);
+                
+                const allEntries = await journalApi.getAllJournalEntries(token);
+                const mappedEntries = allEntries.map(e => ({
+                    id: e.id.toString(),
+                    title: e.title,
+                    content: e.content,
+                    timestamp: new Date(e.entryDate).getTime(),
+                    imageUrl: e.imageUrl || undefined,
+                    insight: e.insight || undefined,
+                    tags: e.tags || undefined,
+                }));
+                
+                setGameState(prev => ({ ...prev, journalEntries: mappedEntries }));
                             } catch (error) {
                                 console.error('[Mobile] 日记更新失败:', error);
                                 showAlert('日记更新失败，请重试', '错误', 'error');
                             }
-                        }}
-                        onDeleteEntry={async (id) => {
-                            // 检查是否为临时ID
-                            const isTemporaryId = id.startsWith('entry_') || id.startsWith('e_');
-                            if (isTemporaryId) {
-                                console.warn('[Mobile] 临时ID无法删除，跳过');
-                                return;
-                            }
-
+        },
+        handleDeleteEntry: async (id: string) => {
                             const token = localStorage.getItem('auth_token');
-                            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+            if (!token) {
                                 showAlert('请先登录', '提示', 'warning');
                                 return;
                             }
 
                             try {
-                                // 直接调用API删除
-                                await journalApi.deleteJournalEntry(id, token);
-                                
-                                // 删除成功后，从服务器重新获取所有日志
+                await journalApi.deleteJournalEntry(parseInt(id), token);
                                 const allEntries = await journalApi.getAllJournalEntries(token);
                                 const mappedEntries = allEntries.map(entry => ({
                                     id: entry.id.toString(),
@@ -1120,115 +1256,69 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                                     tags: entry.tags || undefined,
                                 }));
                                 
-                                setGameState(prev => ({
-                                    ...prev,
-                                    journalEntries: mappedEntries
-                                }));
-                                
-                                console.log('[Mobile] 日记删除成功，已从服务器重新加载');
+                setGameState(prev => ({ ...prev, journalEntries: mappedEntries }));
                             } catch (error) {
                                 console.error('[Mobile] 日记删除失败:', error);
                                 showAlert('日记删除失败，请重试', '错误', 'error');
                             }
-                        }}
-                        onExplore={(entry) => {
-                            setGameState(prev => ({ ...prev, activeJournalEntryId: entry.id, currentScreen: 'sceneSelection' }));
-                        }}
-                        onConsultMirror={(c, r) => aiService.generateMirrorInsight(c, r)}
-                        autoGenerateImage={gameState.settings.autoGenerateJournalImages}
-                        onSwitchToPC={handleSwitchToPCWrapper}
-                        userName={gameState.userProfile?.nickname}
-                    />
-                )}
+        },
+        handleExplore: (entry: JournalEntry) => {
+            dispatch({ type: 'SET_ACTIVE_JOURNAL_ENTRY_ID', payload: entry.id });
+            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' });
+        },
+        handleSaveScenario: handleSaveScenario,
+        handleOpenSettings: () => setShowSettings(true),
+        handleOpenLoginModal: () => setShowLoginModal(true),
+        handleOpenEraCreator: () => setShowEraCreator(true),
+        handleOpenCharacterCreator: () => setShowCharacterCreator(true),
+        handleOpenScenarioBuilder: () => setShowScenarioBuilder(true),
+        handleOpenQuickConnect: () => {
+            console.log('[MobileApp] handleOpenQuickConnect被调用，打开快速连接Modal');
+            setShowQuickConnect(true);
+        },
+        handleLogout: handleLogout,
+        handleSwitchToPC: handleSwitchToPCWrapper,
+        handleLoginSuccess: handleLoginSuccess,
+        handleConsultMirror: (content: string, recentContext: string[]) => aiService.generateMirrorInsight(content, recentContext),
+    };
 
-                {gameState.currentScreen === 'sceneSelection' && (
-                    <MobileSceneSelection 
-                        scenes={allScenes}
-                        onSelectScene={handleSelectScene}
-                        onCreateScene={() => setShowEraCreator(true)}
-                    />
-                )}
+    // 准备computed对象（用于新的路由渲染系统）
+    const computed = {
+        allScenes,
+        currentScene,
+        currentSceneChars,
+        currentSceneScenarios,
+        activeCharacter,
+    };
 
-                {gameState.currentScreen === 'characterSelection' && currentScene && (
-                    <MobileCharacterSelection 
-                        scene={currentScene}
-                        characters={currentSceneChars}
-                        scenarios={currentSceneScenarios}
-                        onBack={() => setGameState(prev => ({ ...prev, currentScreen: 'sceneSelection', selectedSceneId: null }))}
-                        onSelectCharacter={handleSelectCharacter}
-                        onPlayScenario={handlePlayScenario}
-                        onAddCharacter={() => setShowCharacterCreator(true)}
-                        onAddScenario={() => setShowScenarioBuilder(true)}
-                    />
-                )}
+    // 使用新的路由渲染系统（第一阶段构建的架构）
+    const screenBuilder: ScreenPropsBuilder = {
+        gameState,
+        dispatch,
+        handlers,
+        computed,
+    };
 
-                {gameState.currentScreen === 'connectionSpace' && gameState.userProfile && (
-                    <ConnectionSpace 
-                        characters={allScenes.flatMap(s => [...s.characters, ...(gameState.customCharacters[s.id]||[])])}
-                        userProfile={gameState.userProfile}
-                        onConnect={(char) => {
-                             // Find scene for char to set context
-                             const s = allScenes.find(sc => [...sc.characters, ...(gameState.customCharacters[sc.id]||[])].some(c => c.id === char.id));
-                             if (s) {
-                                 setGameState(prev => ({
-                                     ...prev,
-                                     selectedSceneId: s.id,
-                                     selectedCharacterId: char.id,
-                                     currentScreen: 'chat'
-                                 }));
-                             }
-                        }}
-                        onBack={() => setGameState(prev => ({...prev, currentScreen: 'sceneSelection'}))}
-                    />
-                )}
+    const renderedScreen = renderCurrentScreen(gameState, screenBuilder);
 
-                {gameState.currentScreen === 'mobileProfile' && gameState.userProfile && (
-                    <UserProfile 
-                        userProfile={gameState.userProfile}
-                        journalEntries={gameState.journalEntries}
-                        mailbox={gameState.mailbox}
-                        history={gameState.history}
-                        gameState={gameState}
-                        onOpenSettings={() => setShowSettings(true)}
-                        onLogout={handleLogout}
-                        onUpdateProfile={(profile) => setGameState(prev => ({ ...prev, userProfile: profile }))}
-                        onNavigateToScene={(sceneId) => {
-                            setGameState(prev => ({ 
-                                ...prev, 
-                                selectedSceneId: sceneId, 
-                                currentScreen: 'sceneSelection' 
-                            }));
-                        }}
-                        onNavigateToCharacter={(characterId, sceneId) => {
-                            setGameState(prev => ({ 
-                                ...prev, 
-                                selectedSceneId: sceneId,
-                                selectedCharacterId: characterId,
-                                currentScreen: 'chat'
-                            }));
-                        }}
-                        onNavigateToJournal={() => {
-                            setGameState(prev => ({ ...prev, currentScreen: 'realWorld' }));
+    return (
+        <MobileErrorBoundary>
+        <div className="h-screen w-full bg-black text-white relative overflow-hidden">
+            
+            {/* CONTENT AREA */}
+            <div className="h-full w-full">
+                {/* ProfileSetupScreen特殊处理，不走路由系统 */}
+                {gameState.currentScreen === 'profileSetup' && (
+                    <MobileProfileSetupScreen
+                        onGuestEnter={handleProfileSubmit}
+                        onLogin={() => {
+                            console.log('[MobileApp] 登录按钮被点击，显示登录模态框');
+                            setShowLoginModal(true);
                         }}
                     />
                 )}
-
-                {gameState.currentScreen === 'chat' && activeCharacter && (
-                    <div className="h-full pb-0 relative z-20"> 
-                        <ChatWindow 
-                            character={activeCharacter}
-                            customScenario={gameState.selectedScenarioId ? gameState.customScenarios.find(s => s.id === gameState.selectedScenarioId) : undefined}
-                            history={gameState.history[activeCharacter.id] || []}
-                            scenarioState={gameState.currentScenarioState}
-                            settings={gameState.settings}
-                            userProfile={gameState.userProfile!}
-                            activeJournalEntryId={gameState.activeJournalEntryId}
-                            onUpdateHistory={(msgs) => setGameState(prev => ({...prev, history: {...prev.history, [activeCharacter!.id]: msgs}}))}
-                            onUpdateScenarioState={(nodeId) => setGameState(prev => ({ ...prev, currentScenarioState: { ...prev.currentScenarioState!, currentNodeId: nodeId } }))}
-                            onBack={() => setGameState(prev => ({...prev, currentScreen: 'characterSelection', selectedCharacterId: null, tempStoryCharacter: null, selectedScenarioId: null }))}
-                        />
-                    </div>
-                )}
+                {/* 使用新的路由渲染系统（第一阶段构建的架构） */}
+                {gameState.currentScreen !== 'profileSetup' && renderedScreen}
             </div>
 
             {/* MODALS */}
@@ -1245,9 +1335,13 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             )}
             
             {showLoginModal && (
+                <div className="fixed inset-0 z-[9999]">
                 <LoginModal
                     onLoginSuccess={handleLoginSuccess}
-                    onCancel={() => setShowLoginModal(false)}
+                        onCancel={() => {
+                            console.log('[MobileApp] 关闭登录模态框');
+                            setShowLoginModal(false);
+                        }}
                     initialNickname={
                         gameState.currentScreen === 'profileSetup' && profileNickname.trim()
                             ? profileNickname.trim()
@@ -1255,6 +1349,49 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                                 ? gameState.userProfile.nickname 
                                 : undefined
                     }
+                    />
+                </div>
+            )}
+            
+            {showQuickConnect && (
+                <MobileQuickConnectModal
+                    isOpen={showQuickConnect}
+                    onClose={() => setShowQuickConnect(false)}
+                    onEnterSharedMode={() => {
+                        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+                    }}
+                    onSelectCharacter={(quickConnectCharacter) => {
+                        // 在共享模式下，选择角色后导航到共享聊天窗口
+                        console.log('[MobileApp] 选择共享角色:', quickConnectCharacter);
+                        
+                        // 将QuickConnectCharacter转换为Character对象
+                        const character: Character = {
+                            id: quickConnectCharacter.characterId.toString(),
+                            name: quickConnectCharacter.characterName || quickConnectCharacter.name || '未知角色',
+                            age: quickConnectCharacter.age || 0,
+                            role: quickConnectCharacter.role || '角色',
+                            bio: quickConnectCharacter.bio || '',
+                            avatarUrl: quickConnectCharacter.avatarUrl || '',
+                            backgroundUrl: quickConnectCharacter.backgroundUrl || '',
+                            themeColor: quickConnectCharacter.themeColor || 'blue-500',
+                            colorAccent: quickConnectCharacter.colorAccent || '#3b82f6',
+                            firstMessage: quickConnectCharacter.firstMessage || '',
+                            systemInstruction: quickConnectCharacter.systemInstruction || '',
+                            voiceName: quickConnectCharacter.voiceName || 'Aoede',
+                            mbti: quickConnectCharacter.mbti || 'INFJ',
+                            tags: quickConnectCharacter.tags ? (typeof quickConnectCharacter.tags === 'string' ? quickConnectCharacter.tags.split(',').filter((tag: string) => tag.trim()) : quickConnectCharacter.tags) : [],
+                            speechStyle: quickConnectCharacter.speechStyle || '',
+                            catchphrases: quickConnectCharacter.catchphrases || [],
+                            secrets: quickConnectCharacter.secrets || '',
+                            motivations: quickConnectCharacter.motivations || '',
+                            relationships: quickConnectCharacter.relationships || '',
+                        };
+                        
+                        // 保存到tempStoryCharacter（用于sharedChat）
+                        dispatch({ type: 'SET_TEMP_STORY_CHARACTER', payload: character });
+                        dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: character.id });
+                        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedChat' });
+                    }}
                 />
             )}
             
@@ -1335,5 +1472,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 />
             )}
         </div>
+        </MobileErrorBoundary>
     );
 };

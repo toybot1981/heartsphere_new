@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { heartConnectApi } from '../../services/api/heartconnect';
 import { QRCodeGenerator } from './QRCodeGenerator';
+import { WarmMessagesList } from './WarmMessagesList';
+import { logger } from '../../utils/logger';
 import type { ShareConfig } from '../../services/api/heartconnect/types';
 
 interface ShareCodeDisplayProps {
@@ -17,6 +19,7 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   
   const shareUrl = `${window.location.origin}/share/${shareConfig.shareCode}`;
   
@@ -26,7 +29,7 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('复制失败:', err);
+      logger.error('复制失败:', err);
     }
   };
   
@@ -40,7 +43,7 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       await heartConnectApi.regenerateShareCode(shareConfig.id);
       onRegenerate?.();
     } catch (err) {
-      console.error('重新生成共享码失败:', err);
+      logger.error('重新生成共享码失败:', err);
     } finally {
       setLoading(false);
     }
@@ -113,6 +116,13 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       {/* 操作按钮 */}
       <div className="flex gap-2">
         <button
+          onClick={() => setShowMessages(!showMessages)}
+          className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+        >
+          <span>💌</span>
+          <span>{showMessages ? '隐藏留言' : '查看留言'}</span>
+        </button>
+        <button
           onClick={handleRegenerate}
           disabled={loading}
           className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
@@ -120,6 +130,16 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
           {loading ? '生成中...' : '重新生成共享码'}
         </button>
       </div>
+
+      {/* 留言列表 */}
+      {showMessages && (
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <WarmMessagesList
+            shareConfigId={shareConfig.id}
+            onClose={() => setShowMessages(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

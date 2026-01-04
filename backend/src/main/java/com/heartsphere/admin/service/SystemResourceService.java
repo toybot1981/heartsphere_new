@@ -111,7 +111,10 @@ public class SystemResourceService {
         if (description != null) resource.setDescription(description);
         if (prompt != null) resource.setPrompt(prompt);
         if (tags != null) resource.setTags(tags);
-        if (url != null && !url.isEmpty()) resource.setUrl(url);
+        // 将完整URL转换为相对路径存储
+        if (url != null && !url.isEmpty()) {
+            resource.setUrl(imageUrlUtils.toRelativePath(url));
+        }
         
         SystemResource updated = resourceRepository.save(resource);
         return toDTO(updated);

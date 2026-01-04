@@ -19,7 +19,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.heartsphere.emotion.repository",
         "com.heartsphere.mailbox.repository",
         "com.heartsphere.memory.repository",
-        "com.heartsphere.memory.repository.jpa"
+        "com.heartsphere.memory.repository.jpa",
+        "com.heartsphere.skill.repository"
     }
 )
 public class HeartSphereApplication {

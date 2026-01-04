@@ -14,6 +14,8 @@ import { sharedApi } from '../../services/api/heartconnect';
 import { getToken } from '../../services/api/base/tokenStorage';
 import { convertErasToWorldScenes } from '../../utils/dataTransformers';
 import { WarmMessageModal } from '../heartconnect/WarmMessageModal';
+import { SharedHeartSphereWrapper } from '../transitions';
+import { pageTransitionManager } from '../../hooks/usePageTransition';
 
 interface SharedHeartSphereScreenProps {
   onSceneSelect: (sceneId: string) => void;
@@ -113,26 +115,29 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
         return;
       }
     }
-    leaveSharedMode();
+    
+    // 先导航到心域连接页面，再离开共享模式，避免停留在提示页面
     setShowWarmMessageModal(false);
-    onBack();
+    dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'connectionSpace' });
+    // 延迟离开共享模式，确保导航先完成
+    setTimeout(() => {
+      leaveSharedMode();
+    }, 100);
   };
 
   const handleSkipWarmMessage = () => {
-    leaveSharedMode();
+    // 先导航到心域连接页面，再离开共享模式，避免停留在提示页面
     setShowWarmMessageModal(false);
-    onBack();
+    dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'connectionSpace' });
+    // 延迟离开共享模式，确保导航先完成
+    setTimeout(() => {
+      leaveSharedMode();
+    }, 100);
   };
 
+  // 如果不在共享模式，直接返回 null，让导航逻辑处理
   if (!isActive || !shareConfig) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">未进入共享模式</p>
-          <Button onClick={onBack}>返回</Button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (loading) {
@@ -162,7 +167,7 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
   }
 
   return (
-    <>
+    <SharedHeartSphereWrapper>
       <div className="h-full flex flex-col p-8 bg-gradient-to-br from-gray-900 to-black">
         {/* 头部 */}
         <div className="flex justify-between items-center mb-6">
@@ -244,7 +249,7 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
         onSubmit={handleWarmMessageSubmit}
         ownerName={ownerName}
       />
-    </>
+    </SharedHeartSphereWrapper>
   );
 };
 

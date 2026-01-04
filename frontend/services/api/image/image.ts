@@ -40,15 +40,20 @@ export const imageApi = {
    * @param file - 图片文件
    * @param category - 图片分类，默认为 'general'
    * @param token - 可选，用户token
+   * @param isSystemResource - 是否为系统资源，默认为 false。如果为 true，则不包含 userId
    */
   uploadImage: (
     file: File,
     category: string = 'general',
-    token?: string
+    token?: string,
+    isSystemResource: boolean = false
   ): Promise<ImageUploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('category', category);
+    if (isSystemResource) {
+      formData.append('isSystemResource', 'true');
+    }
 
     const headers: Record<string, string> = {};
     if (token) {

@@ -14,9 +14,22 @@ export const AdminSidebarItem: React.FC<{ label: string; icon: string; active: b
     </button>
 );
 
-export const AdminHeader: React.FC<{ title: string; onBack: () => void; onLogout: () => void }> = ({ title, onBack, onLogout }) => (
+export const AdminHeader: React.FC<{ title: string; onBack?: () => void; onLogout: () => void }> = ({ title, onBack, onLogout }) => (
     <div className="h-16 bg-slate-900 border-b border-slate-700 flex justify-between items-center px-6 shrink-0">
-        <h2 className="text-lg font-bold text-slate-100">{title}</h2>
+        <div className="flex items-center gap-4">
+            {onBack && (
+                <button 
+                    onClick={onBack} 
+                    className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors"
+                    title="返回应用首页"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+            )}
+            <h2 className="text-lg font-bold text-slate-100">{title}</h2>
+        </div>
         <div className="flex items-center gap-4">
             <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded border border-slate-700">Admin Mode</span>
             <button onClick={onLogout} className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">

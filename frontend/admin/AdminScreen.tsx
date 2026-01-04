@@ -22,6 +22,7 @@ import { AdminsManagement } from './components/AdminsManagement';
 import { BillingManagement } from './components/billing';
 import { HeartSphereConnectionManagement } from './components/heartSphereConnection';
 import { MemoryManagement } from './components/memory';
+import { GraphManagement } from './components/GraphManagement';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -84,6 +85,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'billing': '计费管理',
             'heartsphere-connection': '心域连接管理',
             'memory': '记忆系统管理',
+            'graph': 'Graph流程编辑器',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -94,7 +96,6 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             <div className="flex-1 flex flex-col min-w-0">
                 <AdminHeader 
                     title={getTitle()} 
-                onBack={onBack}
                     onLogout={handleLogout} 
                 />
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
@@ -186,7 +187,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                        await loadSystemData(adminToken);
                                 }
                             }}
                         />
@@ -244,7 +245,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                    await loadSystemData(adminToken);
                                 }
                             }}
                         />
@@ -304,7 +305,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             adminToken={adminToken}
                             onReload={async () => {
                                 if (adminToken) {
-                                    await loadSystemData(adminToken);
+                                                                        await loadSystemData(adminToken);
                                 }
                             }}
                         />
@@ -316,11 +317,21 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                         />
                     )}
                     {activeSection === 'memory' && (
-                        <MemoryManagement />
+                        <MemoryManagement adminToken={adminToken} />
                     )}
-                </div>
-            </div>
-        </div>
+                    {activeSection === 'graph' && (
+                        <GraphManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                                                    )}
+                                                </div>
+                                        </div>
+                                </div>
     );
 };
 

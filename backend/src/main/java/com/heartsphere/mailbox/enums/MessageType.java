@@ -28,7 +28,10 @@ public enum MessageType {
     // 用户消息类型
     USER_PRIVATE_MESSAGE("user_private_message", "私信消息"),
     USER_REPLY("user_reply", "回复消息"),
-    USER_INTERACTION("user_interaction", "互动消息");
+    USER_INTERACTION("user_interaction", "互动消息"),
+    
+    // 暖心留言类型
+    WARM_MESSAGE("warm_message", "暖心留言");
     
     private final String code;
     private final String description;

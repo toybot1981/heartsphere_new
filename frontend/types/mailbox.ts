@@ -31,6 +31,9 @@ export enum MessageType {
   USER_PRIVATE_MESSAGE = 'user_private_message',
   USER_REPLY = 'user_reply',
   USER_INTERACTION = 'user_interaction',
+  
+  // 暖心留言类型
+  WARM_MESSAGE = 'warm_message',
 }
 
 /**
@@ -41,6 +44,7 @@ export enum MessageCategory {
   RESONANCE = 'resonance',
   SYSTEM = 'system',
   USER_MESSAGE = 'user_message',
+  WARM_MESSAGE = 'warm_message',
 }
 
 /**

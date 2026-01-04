@@ -299,12 +299,20 @@ server {
         proxy_buffering off;
     }
 
-    # 图片文件代理
-    location ${LOCATION_PATH}api/images/files/ {
-        proxy_pass http://localhost:${BACKEND_PORT}/api/images/files/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    # 图片文件服务（新路径结构：/images/**）
+    location ${LOCATION_PATH}images/ {
+        alias ${APP_HOME}/backend/uploads/images/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        add_header Access-Control-Allow-Origin *;
+        client_max_body_size 50M;
+        
+        # 禁止访问隐藏文件
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
     }
 
     # 静态资源缓存

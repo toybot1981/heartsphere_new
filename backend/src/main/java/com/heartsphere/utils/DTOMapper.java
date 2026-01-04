@@ -41,11 +41,9 @@ public class DTOMapper {
         dto.setDescription(era.getDescription());
         dto.setStartYear(era.getStartYear());
         dto.setEndYear(era.getEndYear());
-        // 转换图片URL（相对路径 -> 完整URL）
-        String imageUrl = era.getImageUrl();
-        if (imageUrl != null && imageUrlUtils != null) {
-            imageUrl = imageUrlUtils.toFullUrl(imageUrl);
-        }
+        // 智能处理图片URL：如果是系统预置图片直接使用，如果是placeholder优先使用用户图片
+        Long userId = era.getUser() != null ? era.getUser().getId() : null;
+        String imageUrl = smartImageUrl(era.getImageUrl(), userId);
         dto.setImageUrl(imageUrl);
         dto.setSystemEraId(era.getSystemEraId());
         dto.setWorldId(era.getWorld() != null ? era.getWorld().getId() : null);
@@ -57,13 +55,10 @@ public class DTOMapper {
     
     public static CharacterDTO toCharacterDTO(Character character) {
         if (character == null) return null;
-        // 转换图片URL（相对路径 -> 完整URL）
-        String avatarUrl = character.getAvatarUrl();
-        String backgroundUrl = character.getBackgroundUrl();
-        if (imageUrlUtils != null) {
-            avatarUrl = imageUrlUtils.toFullUrl(avatarUrl);
-            backgroundUrl = imageUrlUtils.toFullUrl(backgroundUrl);
-        }
+        // 智能处理图片URL：如果是系统预置图片直接使用，如果是placeholder优先使用用户图片
+        Long userId = character.getUser() != null ? character.getUser().getId() : null;
+        String avatarUrl = smartImageUrl(character.getAvatarUrl(), userId);
+        String backgroundUrl = smartImageUrl(character.getBackgroundUrl(), userId);
         return new CharacterDTO(
             character.getId(),
             character.getName(),
@@ -123,7 +118,10 @@ public class DTOMapper {
         dto.setTags(entry.getTags());
         String insight = entry.getInsight();
         dto.setInsight(insight);
-        dto.setImageUrl(entry.getImageUrl());
+        // 智能处理图片URL：如果是系统预置图片直接使用，如果是placeholder优先使用用户图片
+        Long userId = entry.getUser() != null ? entry.getUser().getId() : null;
+        String imageUrl = smartImageUrl(entry.getImageUrl(), userId);
+        dto.setImageUrl(imageUrl);
         // 添加日志记录
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DTOMapper.class.getName());
         logger.info(String.format("[DTOMapper] toJournalEntryDTO - 转换字段, ID: %s, Insight: %s (长度: %s), ImageUrl: %s", 
@@ -159,6 +157,53 @@ public class DTOMapper {
         dto.setUpdatedAt(script.getUpdatedAt());
         // systemScriptId 不需要设置，因为这是输入参数，不是从实体映射的
         return dto;
+    }
+    
+    /**
+     * 智能处理图片URL
+     * 规则：
+     * 1. 如果URL是系统预置图片（不以userId开头），直接使用系统预置图片
+     * 2. 如果URL是用户图片（以userId开头），使用用户图片（URL包含userId）
+     * 3. 如果URL是placeholder，保持placeholder（后续可以扩展为查找用户实际图片）
+     * 4. 最终转换为完整URL
+     * 
+     * 说明：
+     * - 系统预置图片格式：category/year/month/filename（如：character/2025/12/xxx.png）
+     * - 用户图片格式：userId/category/year/month/filename（如：70/character/2025/12/xxx.png）
+     * - placeholder格式：placeholder://category/xxx.jpg
+     * 
+     * @param imageUrl 原始图片URL（可能是相对路径、placeholder或绝对URL）
+     * @param userId 用户ID（用于识别用户图片和系统预置图片）
+     * @return 处理后的完整URL
+     */
+    private static String smartImageUrl(String imageUrl, Long userId) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+        
+        // 如果已经是绝对URL（http://或https://开头），直接返回
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            return imageUrl;
+        }
+        
+        // 如果URL是placeholder，保持placeholder（可以后续扩展为查找用户实际图片）
+        // placeholder格式：placeholder://category/xxx.jpg
+        if (imageUrl.startsWith("placeholder://")) {
+            // placeholder不需要转换为完整URL，保持原样
+            // 前端应该处理placeholder的显示，或者后端可以扩展为查找用户实际图片
+            return imageUrl;
+        }
+        
+        // 系统预置图片和用户图片都直接转换为完整URL
+        // 系统预置图片格式：category/year/month/filename
+        // 用户图片格式：userId/category/year/month/filename
+        // ImageUrlUtils.toFullUrl() 会自动处理相对路径的拼接
+        if (imageUrlUtils != null) {
+            return imageUrlUtils.toFullUrl(imageUrl);
+        }
+        
+        // 如果没有imageUrlUtils，返回原始URL
+        return imageUrl;
     }
 }
 

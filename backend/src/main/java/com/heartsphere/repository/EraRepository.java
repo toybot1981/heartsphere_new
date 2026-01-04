@@ -27,4 +27,14 @@ public interface EraRepository extends JpaRepository<Era, Long> {
     @EntityGraph(attributePaths = {"world", "user"})
     @Query("SELECT e FROM Era e WHERE e.user.id = :userId AND e.isDeleted = true")
     List<Era> findDeletedByUser_Id(@Param("userId") Long userId);
+    
+    // 查找所有引用某个world的时代（包括已删除的），用于强制删除
+    @EntityGraph(attributePaths = {"world", "user"})
+    @Query("SELECT e FROM Era e WHERE e.world.id = :worldId")
+    List<Era> findAllByWorld_Id(@Param("worldId") Long worldId);
+    
+    // 查找用户的所有时代（包括已删除的），用于强制删除
+    @EntityGraph(attributePaths = {"world", "user"})
+    @Query("SELECT e FROM Era e WHERE e.user.id = :userId")
+    List<Era> findAllByUser_Id(@Param("userId") Long userId);
 }

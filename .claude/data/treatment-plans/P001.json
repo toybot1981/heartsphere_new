@@ -1,0 +1,79 @@
+{
+  "patientId": "P001",
+  "diagnosis": "抑郁症",
+  "severity": "moderate",
+  "goals": [
+    "改善睡眠质量",
+    "缓解抑郁症状",
+    "恢复工作功能",
+    "减少自责和负面思维"
+  ],
+  "plan": {
+    "phases": [
+      {
+        "name": "急性期治疗",
+        "duration": "6-12周",
+        "objectives": [
+          "缓解抑郁症状",
+          "恢复社会功能",
+          "降低自杀风险"
+        ],
+        "frequency": "每周1-2次"
+      },
+      {
+        "name": "巩固期治疗",
+        "duration": "4-9个月",
+        "objectives": [
+          "巩固疗效",
+          "预防复发",
+          "改善认知功能"
+        ],
+        "frequency": "每2-4周1次"
+      }
+    ],
+    "medications": [
+      {
+        "class": "抗抑郁药",
+        "firstLine": "舍曲林、艾司西酞普兰、氟西汀",
+        "notes": "从小剂量开始，逐渐滴定至有效剂量"
+      }
+    ],
+    "psychotherapy": [
+      {
+        "type": "认知行为治疗(CBT)",
+        "frequency": "每周1次，12-20次",
+        "techniques": [
+          "认知重构",
+          "行为激活",
+          "问题解决训练"
+        ]
+      }
+    ],
+    "lifestyle": [
+      {
+        "area": "睡眠",
+        "recommendations": [
+          "建立规律作息时间",
+          "避免睡前刺激活动",
+          "创造舒适的睡眠环境"
+        ]
+      },
+      {
+        "area": "运动",
+        "recommendations": [
+          "每周3-5次有氧运动，每次30分钟",
+          "从轻度活动开始，逐渐增加强度"
+        ]
+      }
+    ],
+    "monitoring": [
+      {
+        "scale": "PHQ-9",
+        "frequency": "每周1次",
+        "target": "分数降低50%或<5分"
+      }
+    ]
+  },
+  "createdAt": "2025-01-03T12:10:00.000Z",
+  "status": "active"
+}

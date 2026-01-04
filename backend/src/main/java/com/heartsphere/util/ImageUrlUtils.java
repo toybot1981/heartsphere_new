@@ -56,17 +56,29 @@ public class ImageUrlUtils {
                     baseUrl.append(":").append(serverPort);
                 }
                 
-                // 添加应用上下文路径和图片API路径
-                baseUrl.append(contextPath).append("/api/images");
+                // 添加应用上下文路径和图片路径（改为 /images，不再使用 /api/images）
+                baseUrl.append(contextPath).append("/images");
                 
                 return baseUrl.toString();
             }
         } catch (Exception e) {
-            // 如果获取请求失败（比如在非HTTP上下文中），使用默认值
+            // 如果获取请求失败（比如在非HTTP上下文中），记录警告
+            java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
+                .warning("无法从请求上下文获取baseUrl: " + e.getMessage());
         }
         
-        // 如果无法获取请求上下文，使用默认值
-        return "http://localhost:8081/api/images";
+        // 如果无法获取请求上下文，尝试从环境变量获取
+        String envBaseUrl = System.getenv("IMAGE_BASE_URL");
+        if (envBaseUrl != null && !envBaseUrl.trim().isEmpty()) {
+            return envBaseUrl.trim();
+        }
+        
+        // 如果环境变量也没有，记录错误并返回空字符串（让调用者处理）
+        java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
+            .severe("无法获取图片baseUrl：未配置IMAGE_BASE_URL环境变量，且无法从请求上下文获取。请在生产环境配置IMAGE_BASE_URL环境变量。");
+        
+        // 返回空字符串，让调用者知道无法生成URL
+        return "";
     }
     
     /**
@@ -89,10 +101,21 @@ public class ImageUrlUtils {
         
         // 如果是相对路径，拼接baseUrl
         String baseUrl = getBaseUrl();
+        
+        // 如果baseUrl为空，说明无法获取，记录警告并返回相对路径（让前端处理）
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
+                .warning("无法获取baseUrl，返回相对路径: " + path);
+            // 返回相对路径，前端可以通过相对路径访问
+            String normalizedPath = path.startsWith("/") ? path : "/" + path;
+            return normalizedPath;
+        }
+        
         String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         
-        // 相对路径格式：category/year/month/filename，需要添加 /files/ 前缀
-        String normalizedPath = path.startsWith("/files/") ? path : (path.startsWith("/") ? "/files" + path : "/files/" + path);
+        // 相对路径格式：category/year/month/filename 或 userId/category/year/month/filename
+        // 直接拼接，不需要添加 /files/ 前缀
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
         
         return normalizedBaseUrl + normalizedPath;
     }
@@ -126,11 +149,15 @@ public class ImageUrlUtils {
                 return url;
             }
             
-            // 如果是同域名，提取路径部分（去除 /api/images/files/ 或 /files/ 前缀）
+            // 如果是同域名，提取路径部分（去除 /images/ 前缀，兼容旧格式）
             String path = urlUri.getPath();
-            if (path.startsWith("/api/images/files/")) {
+            if (path.startsWith("/images/")) {
+                path = path.substring("/images/".length());
+            } else if (path.startsWith("/api/images/files/")) {
+                // 兼容旧格式
                 path = path.substring("/api/images/files/".length());
             } else if (path.startsWith("/files/")) {
+                // 兼容旧格式
                 path = path.substring("/files/".length());
             }
             

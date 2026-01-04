@@ -49,6 +49,9 @@ public class JournalEntryController {
     @Autowired
     private CharacterRepository characterRepository;
 
+    @Autowired
+    private com.heartsphere.util.ImageUrlUtils imageUrlUtils;
+
     // 获取当前用户的所有记录（支持搜索和标签筛选）
     @GetMapping
     public ResponseEntity<List<JournalEntryDTO>> getAllJournalEntries(
@@ -218,11 +221,11 @@ public class JournalEntryController {
                 journalEntry.setTags(tagsObj instanceof String ? (String) tagsObj : tagsObj.toString());
             }
 
-            // 处理图片URL
+            // 处理图片URL（将完整URL转换为相对路径存储）
             Object imageUrlObj = journalEntryMap.get("imageUrl");
             if (imageUrlObj != null) {
                 String imageUrlValue = imageUrlObj instanceof String ? (String) imageUrlObj : imageUrlObj.toString();
-                journalEntry.setImageUrl(imageUrlValue);
+                journalEntry.setImageUrl(imageUrlUtils.toRelativePath(imageUrlValue));
             } else {
                 journalEntry.setImageUrl(null);
             }
@@ -278,8 +281,8 @@ public class JournalEntryController {
         journalEntry.setContent(journalEntryDTO.getContent());
         journalEntry.setTags(journalEntryDTO.getTags());
         
-        // 更新图片URL
-        journalEntry.setImageUrl(journalEntryDTO.getImageUrl());
+        // 更新图片URL（将完整URL转换为相对路径存储）
+        journalEntry.setImageUrl(imageUrlUtils.toRelativePath(journalEntryDTO.getImageUrl()));
         
         // 更新insight字段
         // 如果DTO中的insight不为null，则更新（包括空字符串，表示用户想清空）

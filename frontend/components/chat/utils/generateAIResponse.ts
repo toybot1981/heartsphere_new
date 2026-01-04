@@ -8,6 +8,8 @@ import { aiService } from '../../../services/ai';
 import { createStreamHandler } from './createStreamHandler';
 import { buildSystemInstruction } from '../../../utils/chat/systemInstruction';
 import { MemorySource } from '../../../services/memory-system/types/MemoryTypes';
+import { skillService } from '../../../services/skill/SkillService';
+import { FunctionDefinition, FunctionCall } from '../../../services/ai/types';
 
 interface GenerateAIResponseOptions {
   userText: string;
@@ -70,6 +72,44 @@ export const generateAIResponse = async ({
     content: msg.text,
   }));
   
+  // 获取角色可用技能（用于 Function Calling）
+  let functionDefinitions: FunctionDefinition[] = [];
+  let onFunctionCall: ((functionCall: FunctionCall) => Promise<any>) | undefined;
+  
+  if (character.id) {
+    try {
+      functionDefinitions = await skillService.getCharacterAvailableSkills(character.id);
+      
+      // 设置 Function Call 回调
+      onFunctionCall = async (functionCall: FunctionCall) => {
+        try {
+          console.log('[generateAIResponse] Function Call:', functionCall);
+          
+          // 解析参数
+          const parameters = JSON.parse(functionCall.arguments);
+          
+          // 执行技能
+          const result = await skillService.executeSkill(
+            functionCall.name,
+            character.id!,
+            parameters
+          );
+          
+          console.log('[generateAIResponse] 技能执行结果:', result);
+          
+          // 返回结果（AI 会继续处理）
+          return result;
+        } catch (error) {
+          console.error('[generateAIResponse] Function Call 执行失败:', error);
+          return { error: error instanceof Error ? error.message : String(error) };
+        }
+      };
+    } catch (error) {
+      console.error('[generateAIResponse] 获取角色技能失败:', error);
+      // 继续执行，不使用技能
+    }
+  }
+  
   // 创建流式响应处理函数
   const streamHandler = createStreamHandler({
     requestId: tempBotId,
@@ -117,6 +157,8 @@ export const generateAIResponse = async ({
       messages: historyMessages,
       temperature: 0.7,
       maxTokens: 2048,
+      functionDefinitions: functionDefinitions.length > 0 ? functionDefinitions : undefined,
+      onFunctionCall: onFunctionCall,
     },
     streamHandler
   );

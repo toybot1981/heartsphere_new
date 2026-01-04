@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 管理员用户管理控制器
@@ -120,6 +122,53 @@ public class AdminUserController extends BaseAdminController {
         validateAdmin(authHeader);
         adminUserService.forceDeleteUser(id);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 批量删除用户
+     */
+    @PostMapping("/batch-delete")
+    public ResponseEntity<Map<String, Object>> batchDeleteUsers(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Map<String, Object> request
+    ) {
+        validateAdmin(authHeader);
+        
+        @SuppressWarnings("unchecked")
+        List<Object> userIdsRaw = (List<Object>) request.get("userIds");
+        Boolean force = (Boolean) request.getOrDefault("force", false);
+        
+        if (userIdsRaw == null || userIdsRaw.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "用户ID列表不能为空"));
+        }
+        
+        // 将List中的Integer或Number转换为Long
+        List<Long> userIds = userIdsRaw.stream()
+                .map(id -> {
+                    if (id instanceof Long) {
+                        return (Long) id;
+                    } else if (id instanceof Integer) {
+                        return ((Integer) id).longValue();
+                    } else if (id instanceof Number) {
+                        return ((Number) id).longValue();
+                    } else {
+                        throw new IllegalArgumentException("用户ID必须是数字类型: " + id);
+                    }
+                })
+                .collect(Collectors.toList());
+        
+        AdminUserService.BatchDeleteResult result = adminUserService.batchDeleteUsers(userIds, force);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("deletedCount", result.getSuccessCount());
+        response.put("totalCount", userIds.size());
+        response.put("failedCount", result.getFailedUserIds().size());
+        response.put("successUserIds", result.getSuccessUserIds());
+        response.put("failedUserIds", result.getFailedUserIds());
+        response.put("failureMessages", result.getFailureMessages());
+        
+        return ResponseEntity.ok(response);
     }
 }
 

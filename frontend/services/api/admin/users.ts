@@ -100,5 +100,42 @@ export const adminUsersApi = {
       },
     });
   },
+
+  /**
+   * 批量删除用户
+   * @param userIds 用户ID列表
+   * @param force 是否强制删除
+   * @param token 管理员token
+   */
+  batchDelete: (
+    userIds: number[],
+    force: boolean,
+    token: string
+  ): Promise<{
+    success: boolean;
+    deletedCount: number;
+    totalCount: number;
+    failedCount: number;
+    successUserIds: number[];
+    failedUserIds: number[];
+    failureMessages: Record<number, string>;
+  }> => {
+    return request<{
+      success: boolean;
+      deletedCount: number;
+      totalCount: number;
+      failedCount: number;
+      successUserIds: number[];
+      failedUserIds: number[];
+      failureMessages: Record<number, string>;
+    }>(`/admin/users/batch-delete`, {
+      method: 'POST',
+      body: JSON.stringify({ userIds, force }),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
 };
 

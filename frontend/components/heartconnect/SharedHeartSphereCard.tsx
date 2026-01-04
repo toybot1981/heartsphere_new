@@ -173,44 +173,106 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
   
   return (
     <>
-      <div className={`relative bg-gradient-to-br from-purple-900/80 via-pink-900/80 to-blue-900/80 rounded-xl p-3 border-2 shadow-lg transition-all ${
+      <div className={`relative bg-gradient-to-br from-purple-900/80 via-pink-900/80 to-blue-900/80 rounded-xl p-4 border-2 shadow-lg transition-all transform ${
         isSelected 
-          ? 'border-blue-500 shadow-blue-500/50 ring-2 ring-blue-500/30 ring-offset-1 ring-offset-transparent z-10' 
-          : 'border-purple-500/50 hover:shadow-purple-500/50'
-      }`}>
-        {/* 醒目标识 - 缩小 */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 bg-yellow-400/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-yellow-400/50 z-10">
-          <span className="text-sm">🌟</span>
-          <span className="text-yellow-300 font-semibold text-xs whitespace-nowrap">共享心域</span>
+          ? 'border-blue-500 shadow-blue-500/50 ring-2 ring-blue-500/30 ring-offset-1 ring-offset-transparent z-10 scale-105' 
+          : 'border-purple-500/50 hover:shadow-purple-500/50 hover:scale-[1.02]'
+      }`}
+      style={{
+        boxShadow: isSelected 
+          ? '0 20px 40px rgba(59, 130, 246, 0.4), 0 0 20px rgba(147, 51, 234, 0.3), inset 0 2px 10px rgba(255, 255, 255, 0.1)' 
+          : '0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(147, 51, 234, 0.2), inset 0 1px 5px rgba(255, 255, 255, 0.05)',
+        transformStyle: 'preserve-3d',
+        perspective: '1000px',
+      }}>
+        {/* 醒目标识 - 增强立体感 */}
+        <div 
+          className="absolute top-2 right-2 flex items-center gap-1 bg-gradient-to-r from-yellow-400/30 via-yellow-300/30 to-amber-400/30 backdrop-blur-md px-2.5 py-1 rounded-full border-2 border-yellow-400/60 z-10 shadow-lg"
+          style={{
+            boxShadow: '0 4px 15px rgba(250, 204, 21, 0.5), 0 0 10px rgba(250, 204, 21, 0.3), inset 0 1px 3px rgba(255, 255, 255, 0.3)',
+            transform: 'translateZ(10px)',
+          }}
+        >
+          <span 
+          className="text-base inline-block animate-pulse"
+          style={{
+            filter: 'drop-shadow(0 0 4px rgba(250, 204, 21, 0.8))',
+            textShadow: '0 0 8px rgba(250, 204, 21, 0.6)',
+          }}
+        >
+          ⭐
+        </span>
+          <span className="text-yellow-200 font-bold text-xs whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">共享心域</span>
         </div>
         
-        {/* 封面图片 - 缩小 */}
+        {/* 封面图片 - 增强立体感 */}
         {sharedHeartSphere.coverImageUrl && (
-          <div className="mb-2 rounded-lg overflow-hidden">
+          <div 
+            className="mb-2 rounded-lg overflow-hidden relative"
+            style={{
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.1)',
+              transform: 'translateZ(5px)',
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10 pointer-events-none" />
             <img
               src={sharedHeartSphere.coverImageUrl}
               alt={sharedHeartSphere.heartSphereName}
               className="w-full h-24 object-cover"
+              style={{
+                filter: 'brightness(1.05) contrast(1.1)',
+              }}
             />
           </div>
         )}
         
-        {/* 主人信息 - 缩小 */}
+        {/* 主人信息 - 增强立体感 */}
         <div className="flex items-center gap-2 mb-2 pt-6">
           {sharedHeartSphere.ownerAvatar ? (
-            <img
-              src={sharedHeartSphere.ownerAvatar}
-              alt={sharedHeartSphere.ownerName}
-              className="w-8 h-8 rounded-full border border-white/30 flex-shrink-0"
-            />
+            <div
+              className="relative"
+              style={{
+                filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4))',
+                transform: 'translateZ(8px)',
+              }}
+            >
+              <img
+                src={sharedHeartSphere.ownerAvatar}
+                alt={sharedHeartSphere.ownerName}
+                className="w-8 h-8 rounded-full border-2 border-white/40 flex-shrink-0"
+                style={{
+                  boxShadow: '0 4px 12px rgba(147, 51, 234, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                }}
+              />
+            </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-              {sharedHeartSphere.ownerName?.[0] || 'U'}
+            <div 
+              className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 relative"
+              style={{
+                boxShadow: '0 4px 12px rgba(147, 51, 234, 0.5), 0 0 8px rgba(236, 72, 153, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+                transform: 'translateZ(8px)',
+              }}
+            >
+              <span className="relative z-10">{sharedHeartSphere.ownerName?.[0] || 'U'}</span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-white truncate">{sharedHeartSphere.heartSphereName}</h3>
-            <p className="text-gray-300 text-xs truncate">主人：{sharedHeartSphere.ownerName}</p>
+            <h3 
+              className="text-sm font-bold text-white truncate"
+              style={{
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.5), 0 0 8px rgba(147, 51, 234, 0.3)',
+              }}
+            >
+              {sharedHeartSphere.heartSphereName}
+            </h3>
+            <p 
+              className="text-gray-200 text-xs truncate"
+              style={{
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+              }}
+            >
+              主人：{sharedHeartSphere.ownerName}
+            </p>
           </div>
         </div>
         
@@ -219,36 +281,69 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
           <p className="text-gray-200 mb-2 line-clamp-2 break-words text-xs">{sharedHeartSphere.description}</p>
         )}
         
-        {/* 统计信息 - 缩小 */}
+        {/* 统计信息 - 增强立体感 */}
         <div className="flex items-center gap-3 mb-2 text-xs">
-          <div className="flex items-center gap-1 text-gray-300">
-            <span>👁️</span>
-            <span>{sharedHeartSphere.viewCount || 0}</span>
+          <div 
+            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            style={{
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <span className="text-sm">👁️</span>
+            <span className="font-semibold">{sharedHeartSphere.viewCount || 0}</span>
           </div>
-          <div className="flex items-center gap-1 text-gray-300">
-            <span>💬</span>
-            <span>{sharedHeartSphere.requestCount || 0}</span>
+          <div 
+            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            style={{
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <span className="text-sm">💬</span>
+            <span className="font-semibold">{sharedHeartSphere.requestCount || 0}</span>
           </div>
-          <div className="flex items-center gap-1 text-gray-300">
-            <span>✅</span>
-            <span>{sharedHeartSphere.approvedCount || 0}</span>
+          <div 
+            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            style={{
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <span className="text-sm">✅</span>
+            <span className="font-semibold">{sharedHeartSphere.approvedCount || 0}</span>
           </div>
         </div>
         
-        {/* 共享范围 - 缩小 */}
+        {/* 共享范围 - 增强立体感 */}
         <div className="mb-2 flex flex-wrap gap-1.5">
           {sharedHeartSphere.shareType === 'all' && (
-            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs border border-blue-500/30 whitespace-nowrap">
+            <span 
+              className="px-2 py-0.5 bg-gradient-to-r from-blue-500/30 to-blue-600/30 text-blue-200 rounded-full text-xs border border-blue-400/50 whitespace-nowrap font-medium"
+              style={{
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+              }}
+            >
               全部共享
             </span>
           )}
           {sharedHeartSphere.worldCount && sharedHeartSphere.worldCount > 0 && (
-            <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs border border-purple-500/30 whitespace-nowrap">
+            <span 
+              className="px-2 py-0.5 bg-gradient-to-r from-purple-500/30 to-purple-600/30 text-purple-200 rounded-full text-xs border border-purple-400/50 whitespace-nowrap font-medium"
+              style={{
+                boxShadow: '0 2px 8px rgba(147, 51, 234, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+              }}
+            >
               {sharedHeartSphere.worldCount} 个世界
             </span>
           )}
           {sharedHeartSphere.eraCount && sharedHeartSphere.eraCount > 0 && (
-            <span className="px-2 py-0.5 bg-pink-500/20 text-pink-300 rounded-full text-xs border border-pink-500/30 whitespace-nowrap">
+            <span 
+              className="px-2 py-0.5 bg-gradient-to-r from-pink-500/30 to-pink-600/30 text-pink-200 rounded-full text-xs border border-pink-400/50 whitespace-nowrap font-medium"
+              style={{
+                boxShadow: '0 2px 8px rgba(236, 72, 153, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+              }}
+            >
               {sharedHeartSphere.eraCount} 个场景
             </span>
           )}

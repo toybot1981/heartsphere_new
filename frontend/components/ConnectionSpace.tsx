@@ -1,7 +1,14 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Character, UserProfile } from '../types';
 import { Button } from './Button';
+import { heartConnectApi } from '../services/api/heartconnect';
+import type { SharedHeartSphere, ShareConfig } from '../services/api/heartconnect/types';
+import { useSharedMode } from '../hooks/useSharedMode';
+import { getToken } from '../services/api/base/tokenStorage';
+import { authApi } from '../services/api';
+import { useGameState } from '../contexts/GameStateContext';
+import { logger } from '../utils/logger';
 
 interface ConnectionSpaceProps {
   characters: Character[];
@@ -21,6 +28,7 @@ interface Star {
   speedY: number;
   characterId?: string; // If this star represents a character
   character?: Character;
+  sharedHeartSphere?: SharedHeartSphere; // 共享心域数据
   pulseSpeed: number;
   pulseOffset: number;
   glow: number;
@@ -41,10 +49,46 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedStar, setSelectedStar] = useState<Star | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [sharedHeartSpheres, setSharedHeartSpheres] = useState<SharedHeartSphere[]>([]);
+  const [loadingSharedSpheres, setLoadingSharedSpheres] = useState(false);
   const starsRef = useRef<Star[]>([]);
   const shootingStarsRef = useRef<ShootingStar[]>([]);
   const animationFrameRef = useRef<number>(0);
   const mouseRef = useRef<{x: number, y: number}>({ x: 0, y: 0 });
+  const { enterSharedMode, visitorId: currentVisitorId } = useSharedMode();
+  const { dispatch } = useGameState();
+
+  // 加载共享心域列表
+  useEffect(() => {
+    logger.debug('[ConnectionSpace] ========== 加载共享心域列表 ==========');
+    setLoadingSharedSpheres(true);
+    
+    const loadSharedHeartSpheres = async () => {
+      try {
+        logger.debug('[ConnectionSpace] 调用heartConnectApi.getPublicSharedHeartSpheres()...');
+        const data = await heartConnectApi.getPublicSharedHeartSpheres();
+        logger.debug('[ConnectionSpace] getPublicSharedHeartSpheres返回:', data);
+        logger.debug('[ConnectionSpace] 返回数据数量:', data?.length || 0);
+        
+        if (data && data.length > 0) {
+          logger.debug('[ConnectionSpace] 有共享心域数据，开始处理...');
+          setSharedHeartSpheres(data);
+          logger.debug('[ConnectionSpace] sharedHeartSpheres状态已更新，数量:', data.length);
+        } else {
+          logger.debug('[ConnectionSpace] 没有共享心域数据');
+          setSharedHeartSpheres([]);
+        }
+      } catch (err: unknown) {
+        logger.error('[ConnectionSpace] ❌ 加载共享心域失败:', err);
+        setSharedHeartSpheres([]);
+      } finally {
+        setLoadingSharedSpheres(false);
+        logger.debug('[ConnectionSpace] ========== 共享心域列表加载完成 ==========');
+      }
+    };
+    
+    loadSharedHeartSpheres();
+  }, []);
 
   // Initialize Stars
   useEffect(() => {
@@ -95,10 +139,31 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
       glow: 15
     }));
 
-    starsRef.current = [...bgStars, ...charStars];
+    // Create Shared Heart Sphere Stars (更大、更显著的颜色)
+    const sharedStars: Star[] = sharedHeartSpheres.map((shared, index) => {
+      // 使用更显著的颜色：金色、紫色、青色等
+      const colors = ['#fbbf24', '#a855f7', '#06b6d4', '#f59e0b', '#ec4899'];
+      const color = colors[index % colors.length];
+      return {
+        id: `shared_${shared.shareCode}`,
+        x: Math.random() * (canvas.width - 150) + 75,
+        y: Math.random() * (canvas.height - 150) + 75,
+        size: 18 + Math.random() * 8, // 更大的尺寸（15-26像素，比之前更大）
+        color: color,
+        baseColor: color,
+        speedX: (Math.random() - 0.5) * 0.15,
+        speedY: (Math.random() - 0.5) * 0.15,
+        sharedHeartSphere: shared,
+        pulseSpeed: 0.08 + Math.random() * 0.08, // 更快的脉冲速度
+        pulseOffset: Math.random() * Math.PI * 2,
+        glow: 40 // 更强的光晕效果
+      };
+    });
+
+    starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
     return () => window.removeEventListener('resize', resize);
-  }, [characters]);
+  }, [characters, sharedHeartSpheres]);
 
   // Handle Mouse Move for Parallax
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -241,6 +306,40 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
                ctx.arc(drawX, drawY, currentSize + 20, -time * 0.05, -time * 0.05 + Math.PI);
                ctx.stroke();
             }
+        } else if (star.sharedHeartSphere) {
+            // Pulse effect for Shared Heart Sphere Stars (更大的脉冲效果)
+            currentSize = star.size + pulse * 4;
+            shadowBlur = 35 + pulse * 15;
+            
+            // Connection Line if selected
+            if (selectedStar?.id === star.id) {
+               // Line to center
+               const cx = canvas.width / 2;
+               const cy = canvas.height / 2;
+               
+               const grad = ctx.createLinearGradient(drawX, drawY, cx, cy);
+               grad.addColorStop(0, star.color);
+               grad.addColorStop(1, 'transparent');
+               
+               ctx.strokeStyle = grad;
+               ctx.lineWidth = 2;
+               ctx.beginPath();
+               ctx.moveTo(drawX, drawY);
+               ctx.lineTo(cx, cy);
+               ctx.stroke();
+               
+               // Rotating Reticle (larger for shared heart spheres)
+               ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+               ctx.lineWidth = 2;
+               ctx.beginPath();
+               ctx.arc(drawX, drawY, currentSize + 30, time * 0.05, time * 0.05 + Math.PI * 1.5);
+               ctx.stroke();
+               
+               ctx.strokeStyle = star.color;
+               ctx.beginPath();
+               ctx.arc(drawX, drawY, currentSize + 35, -time * 0.05, -time * 0.05 + Math.PI);
+               ctx.stroke();
+            }
         } else {
             // Twinkle bg stars
             ctx.globalAlpha = 0.3 + pulse * 0.2;
@@ -269,24 +368,124 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
 
-      // Check collision with Soul Stars
+      // Check collision with Stars (优先检测共享心域星辰，因为它们更大)
       let clicked: Star | null = null;
       
-      // Simple hit test, ignoring parallax for click accuracy simplification 
-      // (or recalculate parallax if needed for precision)
+      // 先检测共享心域星辰（更大的hitbox）
       for (const star of starsRef.current) {
-          if (star.character) {
+          if (star.sharedHeartSphere) {
               const dx = star.x - clickX;
               const dy = star.y - clickY;
               const dist = Math.sqrt(dx*dx + dy*dy);
-              if (dist < 40) { // Hitbox
+              const hitbox = 80; // 更大的hitbox因为共享心域星辰更大
+              if (dist < hitbox) {
                   clicked = star;
                   break;
               }
           }
       }
+      // 如果没点击到共享心域，再检测角色星辰
+      if (!clicked) {
+          for (const star of starsRef.current) {
+              if (star.character) {
+                  const dx = star.x - clickX;
+                  const dy = star.y - clickY;
+                  const dist = Math.sqrt(dx*dx + dy*dy);
+                  if (dist < 40) { // Hitbox
+                      clicked = star;
+                      break;
+                  }
+              }
+          }
+      }
       setSelectedStar(clicked);
   };
+
+  // 连接共享心域
+  const handleConnectSharedHeartSphere = useCallback(async () => {
+    logger.debug('[ConnectionSpace] ========== 连接共享心域 ==========');
+    logger.debug('[ConnectionSpace] selectedStar:', selectedStar);
+    logger.debug('[ConnectionSpace] selectedStar?.sharedHeartSphere:', selectedStar?.sharedHeartSphere);
+    
+    if (!selectedStar?.sharedHeartSphere) {
+      logger.warn('[ConnectionSpace] ❌ 没有选中的共享心域');
+      return;
+    }
+    
+    const shared = selectedStar.sharedHeartSphere;
+    logger.debug('[ConnectionSpace] ✅ 开始连接共享心域流程');
+    logger.debug('[ConnectionSpace] 共享心域信息:', shared);
+    logger.debug('[ConnectionSpace] shareCode:', shared.shareCode);
+    logger.debug('[ConnectionSpace] shareConfigId:', shared.shareConfigId);
+    
+    setConnecting(true);
+    logger.debug('[ConnectionSpace] connecting状态已设置为true');
+    
+    try {
+      // 获取token
+      const token = getToken();
+      if (!token) {
+        logger.error('[ConnectionSpace] ❌ 未找到token');
+        setConnecting(false);
+        return;
+      }
+      logger.debug('[ConnectionSpace] ✅ token已获取');
+      
+      // 获取visitorId
+      let visitorId: number | null = currentVisitorId;
+      if (!visitorId) {
+        logger.debug('[ConnectionSpace] currentVisitorId为空，调用getCurrentUser获取用户ID...');
+        const currentUser = await authApi.getCurrentUser(token);
+        logger.debug('[ConnectionSpace] getCurrentUser返回:', currentUser);
+        if (currentUser && currentUser.id) {
+          visitorId = currentUser.id;
+          logger.debug('[ConnectionSpace] ✅ visitorId已获取:', visitorId);
+        } else {
+          logger.error('[ConnectionSpace] ❌ 无法获取用户ID');
+          setConnecting(false);
+          return;
+        }
+      }
+      
+      // 构造shareConfig
+      const shareConfig: ShareConfig = {
+        id: shared.shareConfigId,
+        userId: shared.ownerId,
+        ownerName: shared.ownerName,
+        shareCode: shared.shareCode,
+        shareType: shared.shareType,
+        shareStatus: 'active',
+        accessPermission: shared.accessPermission,
+        description: shared.description,
+        coverImageUrl: shared.coverImageUrl,
+        viewCount: shared.viewCount,
+        requestCount: shared.requestCount,
+        approvedCount: shared.approvedCount,
+        createdAt: 0,
+        updatedAt: 0,
+        worldCount: shared.worldCount,
+        eraCount: shared.eraCount,
+        characterCount: shared.characterCount,
+      };
+      logger.debug('[ConnectionSpace] shareConfig已构造:', shareConfig);
+      
+      // 进入共享模式
+      logger.debug('[ConnectionSpace] 调用enterSharedMode...');
+      enterSharedMode(shareConfig, visitorId);
+      logger.debug('[ConnectionSpace] enterSharedMode调用完成');
+      
+      // 等待一下确保共享模式上下文已设置
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // 导航到共享心域页面
+      logger.debug('[ConnectionSpace] 导航到sharedHeartSphere页面');
+      dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+      logger.debug('[ConnectionSpace] ✅ 导航完成');
+    } catch (err: unknown) {
+      logger.error('[ConnectionSpace] ❌ 连接共享心域失败:', err);
+      setConnecting(false);
+    }
+  }, [selectedStar, enterSharedMode, currentVisitorId, dispatch]);
 
   const handleConnect = () => {
       if (!selectedStar?.character) return;
@@ -326,7 +525,7 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
             </button>
         </div>
 
-        {/* Selected Star Details */}
+        {/* Selected Star Details - Character */}
         {selectedStar && selectedStar.character && (
             <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-none z-20">
                 <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center animate-fade-in pointer-events-auto shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
@@ -366,6 +565,73 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
                            className="w-full bg-white text-black hover:bg-indigo-50 font-bold tracking-widest shadow-lg hover:shadow-white/20 relative z-10 py-3"
                         >
                             请求连接 (CONNECT)
+                        </Button>
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* Selected Star Details - Shared Heart Sphere */}
+        {selectedStar && selectedStar.sharedHeartSphere && (
+            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-none z-20">
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center animate-fade-in pointer-events-auto shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
+                    
+                    {/* Shared Heart Sphere Theme Glow */}
+                    <div className="absolute top-0 left-0 right-0 h-2 rounded-t-3xl" style={{backgroundColor: selectedStar.color}} />
+                    <div className="absolute -inset-full opacity-20 pointer-events-none radial-gradient-center" style={{background: `radial-gradient(circle, ${selectedStar.color} 0%, transparent 70%)`}} />
+
+                    <div className="mb-6 flex flex-col items-center relative z-10">
+                         <div className="relative mb-3">
+                             <div className="absolute inset-0 rounded-xl blur-lg opacity-60" style={{backgroundColor: selectedStar.color}}></div>
+                             <div className="w-24 h-24 rounded-xl border-2 p-1.5 relative bg-black/50 flex items-center justify-center" style={{borderWidth: '3px', borderColor: selectedStar.color}}>
+                                {selectedStar.sharedHeartSphere.coverImageUrl ? (
+                                    <img 
+                                        src={selectedStar.sharedHeartSphere.coverImageUrl} 
+                                        className="w-full h-full rounded-xl object-cover opacity-90" 
+                                        alt={selectedStar.sharedHeartSphere.heartSphereName || '共享心域'}
+                                    />
+                                ) : (
+                                    <span className="text-5xl">🌟</span>
+                                )}
+                             </div>
+                         </div>
+                         <h3 className="text-2xl font-bold text-white tracking-widest uppercase mb-1">
+                             {selectedStar.sharedHeartSphere.heartSphereName || '共享心域'}
+                         </h3>
+                         <div className="flex items-center gap-2 mb-3">
+                             <span className="text-xs font-mono text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded bg-purple-500/10">
+                                 {selectedStar.sharedHeartSphere.ownerName || '未知主人'}
+                             </span>
+                             {selectedStar.sharedHeartSphere.characterCount && selectedStar.sharedHeartSphere.characterCount > 0 && (
+                                 <span className="text-xs font-mono text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded bg-blue-500/10">
+                                     {selectedStar.sharedHeartSphere.characterCount} 个角色
+                                 </span>
+                             )}
+                         </div>
+                         {selectedStar.sharedHeartSphere.description && (
+                             <p className="text-gray-300 text-sm line-clamp-2 px-4">
+                                 {selectedStar.sharedHeartSphere.description}
+                             </p>
+                         )}
+                    </div>
+
+                    {connecting ? (
+                        <div className="flex flex-col items-center gap-3 relative z-10">
+                             <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                                 <div className="h-full animate-[width_1.5s_ease-out_forwards]" style={{width: '0%', backgroundColor: selectedStar.color}} />
+                             </div>
+                             <span className="text-xs font-mono animate-pulse" style={{color: selectedStar.color}}>正在连接共享心域...</span>
+                        </div>
+                    ) : (
+                        <Button 
+                           onClick={handleConnectSharedHeartSphere}
+                           className="w-full font-bold tracking-widest shadow-lg hover:shadow-white/20 relative z-10 py-3"
+                           style={{
+                             background: `linear-gradient(135deg, ${selectedStar.color}, ${selectedStar.baseColor}dd)`,
+                             color: 'white'
+                           }}
+                        >
+                            进入共享心域 (ENTER)
                         </Button>
                     )}
                 </div>

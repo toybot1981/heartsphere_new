@@ -138,19 +138,16 @@ export class DoubaoAdapter extends BaseAdapter {
     request: TextGenerationRequest,
     onChunk: (chunk: TextGenerationChunk) => void
   ): Promise<void> {
-    // 实现类似OpenAI的流式生成
     this.ensureConfigured();
     this.validateRequest(request, ['prompt']);
 
     const model = request.model || AIConfigManager.getDefaultModel('doubao', 'text');
-    const url = `${this.baseUrl}/chat/completions`;
-
-    const messages: Array<{ role: string; content: string }> = [];
-
+    
+    // 构建初始消息历史
+    const messages: Array<any> = [];
     if (request.systemInstruction) {
       messages.push({ role: 'system', content: request.systemInstruction });
     }
-
     if (request.messages && request.messages.length > 0) {
       messages.push(...request.messages.map(msg => ({
         role: msg.role,
@@ -160,13 +157,53 @@ export class DoubaoAdapter extends BaseAdapter {
       messages.push({ role: 'user', content: request.prompt });
     }
 
-    const requestBody = {
+    // 递归处理流式响应，支持多次 function call
+    await this.processStreamWithFunctionCalls(
+      model,
+      messages,
+      request,
+      onChunk,
+      0,
+      10
+    );
+  }
+
+  /**
+   * 处理流式响应，支持 Function Calling 的递归调用
+   */
+  private async processStreamWithFunctionCalls(
+    model: string,
+    messages: Array<any>,
+    request: TextGenerationRequest,
+    onChunk: (chunk: TextGenerationChunk) => void,
+    depth: number,
+    maxDepth: number
+  ): Promise<void> {
+    if (depth >= maxDepth) {
+      console.warn('[DoubaoAdapter] 达到最大递归深度，停止处理 function calls');
+      return;
+    }
+
+    const url = `${this.baseUrl}/chat/completions`;
+    const requestBody: any = {
       model,
       messages,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 2048,
       stream: true,
     };
+
+    // 添加 Function Calling 支持
+    if (request.functionDefinitions && request.functionDefinitions.length > 0) {
+      requestBody.tools = request.functionDefinitions.map(fn => ({
+        type: 'function',
+        function: {
+          name: fn.name,
+          description: fn.description,
+          parameters: fn.parameters,
+        },
+      }));
+    }
 
     try {
       const response = await fetch(url, {
@@ -190,6 +227,8 @@ export class DoubaoAdapter extends BaseAdapter {
       }
 
       let buffer = '';
+      let functionCallBuffer: any = null;
+      let assistantMessage: any = { role: 'assistant', content: '' };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -204,7 +243,31 @@ export class DoubaoAdapter extends BaseAdapter {
           
           const data = line.slice(6);
           if (data === '[DONE]') {
-            onChunk({ content: '', done: true });
+            // 检查是否有 function call 需要处理
+            if (functionCallBuffer && request.onFunctionCall) {
+              messages.push(assistantMessage);
+              try {
+                const functionResult = await request.onFunctionCall(functionCallBuffer);
+                messages.push({
+                  role: 'function',
+                  name: functionCallBuffer.name,
+                  content: JSON.stringify(functionResult),
+                });
+                await this.processStreamWithFunctionCalls(
+                  model,
+                  messages,
+                  request,
+                  onChunk,
+                  depth + 1,
+                  maxDepth
+                );
+                return;
+              } catch (error) {
+                console.error('[DoubaoAdapter] Function call execution failed:', error);
+              }
+            } else {
+              onChunk({ content: '', done: true });
+            }
             return;
           }
 
@@ -212,12 +275,58 @@ export class DoubaoAdapter extends BaseAdapter {
             const json = JSON.parse(data);
             const delta = json.choices?.[0]?.delta;
             const content = delta?.content || '';
+            const functionCall = delta?.function_call;
+
+            // 处理 Function Call
+            if (functionCall) {
+              if (functionCall.name) {
+                functionCallBuffer = {
+                  name: functionCall.name,
+                  arguments: functionCall.arguments || '',
+                };
+                assistantMessage.function_call = {
+                  name: functionCall.name,
+                  arguments: functionCall.arguments || '',
+                };
+              } else if (functionCall.arguments && functionCallBuffer) {
+                functionCallBuffer.arguments += functionCall.arguments;
+                if (assistantMessage.function_call) {
+                  assistantMessage.function_call.arguments += functionCall.arguments;
+                }
+              }
+            }
 
             if (content) {
+              assistantMessage.content += content;
               onChunk({ content, done: false });
             }
 
-            if (json.choices?.[0]?.finish_reason) {
+            const finishReason = json.choices?.[0]?.finish_reason;
+            if (finishReason) {
+              // 如果是 function_call，执行函数并递归
+              if (finishReason === 'function_call' && functionCallBuffer && request.onFunctionCall) {
+                messages.push(assistantMessage);
+                try {
+                  const functionResult = await request.onFunctionCall(functionCallBuffer);
+                  messages.push({
+                    role: 'function',
+                    name: functionCallBuffer.name,
+                    content: JSON.stringify(functionResult),
+                  });
+                  await this.processStreamWithFunctionCalls(
+                    model,
+                    messages,
+                    request,
+                    onChunk,
+                    depth + 1,
+                    maxDepth
+                  );
+                  return;
+                } catch (error) {
+                  console.error('[DoubaoAdapter] Function call execution failed:', error);
+                }
+              }
+
               const usage = json.usage ? {
                 inputTokens: json.usage.prompt_tokens || 0,
                 outputTokens: json.usage.completion_tokens || 0,

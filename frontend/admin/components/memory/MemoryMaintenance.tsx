@@ -14,7 +14,11 @@ import { adminMemoryApi } from '../../../services/api/admin/memory';
 /**
  * 数据维护组件
  */
-const MemoryMaintenance: React.FC = () => {
+interface MemoryMaintenanceProps {
+  adminToken: string | null;
+}
+
+const MemoryMaintenance: React.FC<MemoryMaintenanceProps> = ({ adminToken }) => {
   const [cleanupType, setCleanupType] = useState('');
   const [archiveType, setArchiveType] = useState('');
   const [beforeDate, setBeforeDate] = useState('');
@@ -23,7 +27,7 @@ const MemoryMaintenance: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleCleanup = async () => {
-    if (!cleanupType) {
+    if (!adminToken || !cleanupType) {
       setError('请选择清理类型');
       return;
     }
@@ -31,7 +35,7 @@ const MemoryMaintenance: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const count = await adminMemoryApi.cleanupData(cleanupType, {});
+      const count = await adminMemoryApi.cleanupData(adminToken, cleanupType, {});
       setResult(`清理完成，共清理 ${count} 条记录`);
     } catch (err: any) {
       setError(err.message || '清理失败');
@@ -41,7 +45,7 @@ const MemoryMaintenance: React.FC = () => {
   };
 
   const handleArchive = async () => {
-    if (!archiveType || !beforeDate) {
+    if (!adminToken || !archiveType || !beforeDate) {
       setError('请填写归档类型和日期');
       return;
     }
@@ -49,7 +53,7 @@ const MemoryMaintenance: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const count = await adminMemoryApi.archiveData(archiveType, beforeDate);
+      const count = await adminMemoryApi.archiveData(adminToken, archiveType, beforeDate);
       setResult(`归档完成，共归档 ${count} 条记录`);
     } catch (err: any) {
       setError(err.message || '归档失败');

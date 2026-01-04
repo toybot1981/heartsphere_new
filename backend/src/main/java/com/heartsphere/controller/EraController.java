@@ -32,6 +32,9 @@ public class EraController {
     @Autowired
     private WorldRepository worldRepository;
 
+    @Autowired
+    private com.heartsphere.util.ImageUrlUtils imageUrlUtils;
+
     // 获取指定世界的所有时代（必须在 /{id} 之前）
     @GetMapping("/world/{worldId}")
     public ResponseEntity<List<EraDTO>> getErasByWorldId(@PathVariable Long worldId) {
@@ -119,7 +122,8 @@ public class EraController {
         era.setDescription(eraDTO.getDescription());
         era.setStartYear(eraDTO.getStartYear());
         era.setEndYear(eraDTO.getEndYear());
-        era.setImageUrl(eraDTO.getImageUrl());
+        // 将完整URL转换为相对路径存储
+        era.setImageUrl(imageUrlUtils.toRelativePath(eraDTO.getImageUrl()));
         era.setSystemEraId(eraDTO.getSystemEraId());
         era.setWorld(world);
         era.setUser(user);
@@ -157,7 +161,8 @@ public class EraController {
         era.setDescription(eraDTO.getDescription());
         era.setStartYear(eraDTO.getStartYear());
         era.setEndYear(eraDTO.getEndYear());
-        era.setImageUrl(eraDTO.getImageUrl());
+        // 将完整URL转换为相对路径存储
+        era.setImageUrl(imageUrlUtils.toRelativePath(eraDTO.getImageUrl()));
         era.setSystemEraId(eraDTO.getSystemEraId());
 
         // 如果worldId改变，更新world关联

@@ -151,6 +151,11 @@ export function groupErasByWorldId<T extends { worldId?: number; id: number }>(
   eras: T[]
 ): Map<number, T[]> {
   const erasByWorldId = new Map<number, T[]>();
+  // 添加空值检查，防止传入undefined或null
+  if (!eras || !Array.isArray(eras)) {
+    console.warn('[groupErasByWorldId] eras参数无效:', eras);
+    return erasByWorldId;
+  }
   eras.forEach(era => {
     const worldId = era.worldId || (era as any).world?.id || (era as any).worldId;
     if (worldId) {
@@ -240,9 +245,14 @@ export function convertErasToWorldScenes(
   console.log('[convertErasToWorldScenes] 输入参数: worlds数量=', worlds?.length || 0, ', eras数量=', eras?.length || 0, ', characters数量=', characters?.length || 0);
   console.log('[convertErasToWorldScenes] 共享模式:', isSharedMode);
   
+  // 添加空值检查
+  const safeWorlds = Array.isArray(worlds) ? worlds : [];
+  const safeEras = Array.isArray(eras) ? eras : [];
+  const safeCharacters = Array.isArray(characters) ? characters : [];
+  
   // 分组数据
-  const erasByWorldId = groupErasByWorldId(eras);
-  const charactersByEraId = groupCharactersByEraId(characters);
+  const erasByWorldId = groupErasByWorldId(safeEras);
+  const charactersByEraId = groupCharactersByEraId(safeCharacters);
   const scriptsByEraId = scripts ? groupScriptsByEraId(scripts) : new Map<number, UserScript[]>();
   const mainStoriesByEraId = mainStories ? groupMainStoriesByEraId(mainStories) : new Map<number, UserMainStory>();
 
@@ -252,7 +262,7 @@ export function convertErasToWorldScenes(
   if (isSharedMode) {
     // 共享模式：直接展示所有场景，不按世界分组
     console.log('[convertErasToWorldScenes] 共享模式：直接展示所有场景');
-    eras.forEach(era => {
+    safeEras.forEach(era => {
       const eraCharacters = charactersByEraId.get(era.id) || [];
       const eraScripts = scriptsByEraId.get(era.id) || [];
       const eraMainStory = mainStoriesByEraId.get(era.id);
@@ -276,7 +286,7 @@ export function convertErasToWorldScenes(
   } else {
     // 正常模式：按世界分组
     console.log('[convertErasToWorldScenes] 正常模式：按世界分组');
-    worlds.forEach(world => {
+    safeWorlds.forEach(world => {
       const worldEras = erasByWorldId.get(world.id) || [];
 
       worldEras.forEach(era => {

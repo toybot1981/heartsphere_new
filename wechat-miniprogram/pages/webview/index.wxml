@@ -1,0 +1,28 @@
+<!--pages/webview/index.wxml-->
+<view class="webview-container">
+  <!-- 加载中提示 -->
+  <view class="loading-container" wx:if="{{loading && !error}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">正在加载...</text>
+    </view>
+  </view>
+
+  <!-- 错误提示 -->
+  <view class="error-container" wx:if="{{error}}">
+    <view class="error-content">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">{{errorMessage}}</text>
+      <button class="error-button" bindtap="reloadWebView">重新加载</button>
+    </view>
+  </view>
+
+  <!-- WebView -->
+  <web-view 
+    src="{{url}}" 
+    bindmessage="onWebViewMessage"
+    binderror="onWebViewError"
+    bindload="onWebViewLoad"
+    wx:if="{{!error}}"
+  ></web-view>
+</view>

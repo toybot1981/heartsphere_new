@@ -43,6 +43,9 @@ public class CharacterController {
     @Autowired
     private EraRepository eraRepository;
 
+    @Autowired
+    private com.heartsphere.util.ImageUrlUtils imageUrlUtils;
+
     // 获取当前用户的所有角色
     @GetMapping
     public ResponseEntity<List<CharacterDTO>> getAllCharacters() {
@@ -172,8 +175,9 @@ public class CharacterController {
         character.setGender(characterDTO.getGender());
         character.setRole(characterDTO.getRole());
         character.setBio(characterDTO.getBio());
-        character.setAvatarUrl(characterDTO.getAvatarUrl());
-        character.setBackgroundUrl(characterDTO.getBackgroundUrl());
+        // 将完整URL转换为相对路径存储
+        character.setAvatarUrl(imageUrlUtils.toRelativePath(characterDTO.getAvatarUrl()));
+        character.setBackgroundUrl(imageUrlUtils.toRelativePath(characterDTO.getBackgroundUrl()));
         character.setThemeColor(characterDTO.getThemeColor());
         character.setColorAccent(characterDTO.getColorAccent());
         character.setFirstMessage(characterDTO.getFirstMessage());
@@ -241,8 +245,9 @@ public class CharacterController {
         character.setGender(characterDTO.getGender());
         character.setRole(characterDTO.getRole());
         character.setBio(characterDTO.getBio());
-        character.setAvatarUrl(characterDTO.getAvatarUrl());
-        character.setBackgroundUrl(characterDTO.getBackgroundUrl());
+        // 将完整URL转换为相对路径存储
+        character.setAvatarUrl(imageUrlUtils.toRelativePath(characterDTO.getAvatarUrl()));
+        character.setBackgroundUrl(imageUrlUtils.toRelativePath(characterDTO.getBackgroundUrl()));
         character.setThemeColor(characterDTO.getThemeColor());
         character.setColorAccent(characterDTO.getColorAccent());
         character.setFirstMessage(characterDTO.getFirstMessage());

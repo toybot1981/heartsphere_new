@@ -8,7 +8,9 @@ import com.heartsphere.entity.World;
 import com.heartsphere.repository.CharacterRepository;
 import com.heartsphere.repository.ConversationLogRepository;
 import com.heartsphere.repository.EraRepository;
+import com.heartsphere.repository.JournalEntryRepository;
 import com.heartsphere.repository.ScriptRepository;
+import com.heartsphere.repository.UserMainStoryRepository;
 import com.heartsphere.repository.WorldRepository;
 import com.heartsphere.security.UserDetailsImpl;
 import org.slf4j.Logger;
@@ -32,18 +34,24 @@ public class RecycleBinController {
     private final EraRepository eraRepository;
     private final ScriptRepository scriptRepository;
     private final ConversationLogRepository conversationLogRepository;
+    private final JournalEntryRepository journalEntryRepository;
+    private final UserMainStoryRepository userMainStoryRepository;
 
     public RecycleBinController(
             CharacterRepository characterRepository,
             WorldRepository worldRepository,
             EraRepository eraRepository,
             ScriptRepository scriptRepository,
-            ConversationLogRepository conversationLogRepository) {
+            ConversationLogRepository conversationLogRepository,
+            JournalEntryRepository journalEntryRepository,
+            UserMainStoryRepository userMainStoryRepository) {
         this.characterRepository = characterRepository;
         this.worldRepository = worldRepository;
         this.eraRepository = eraRepository;
         this.scriptRepository = scriptRepository;
         this.conversationLogRepository = conversationLogRepository;
+        this.journalEntryRepository = journalEntryRepository;
+        this.userMainStoryRepository = userMainStoryRepository;
     }
 
     // 获取回收站中的所有数据
@@ -169,6 +177,7 @@ public class RecycleBinController {
 
     // 永久删除世界
     @DeleteMapping("/worlds/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Void> permanentlyDeleteWorld(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -180,6 +189,36 @@ public class RecycleBinController {
             return ResponseEntity.status(403).build();
         }
 
+        // 按依赖顺序删除所有关联数据
+        // 1. 删除所有引用此World的Characters（包括已删除的）
+        characterRepository.findAllByWorld_Id(id).forEach(characterRepository::delete);
+        
+        // 2. 删除所有引用此World的JournalEntries（包括已删除的）
+        journalEntryRepository.findByWorld_Id(id).forEach(journalEntryRepository::delete);
+        
+        // 3. 删除所有引用此World的Scripts（包括已删除的）
+        scriptRepository.findAllByWorld_Id(id).forEach(scriptRepository::delete);
+        
+        // 4. 获取所有引用此World的Eras（包括已删除的）
+        var eras = eraRepository.findAllByWorld_Id(id);
+        
+        // 5. 对于每个Era，先删除引用它的数据
+        for (Era era : eras) {
+            Long eraId = era.getId();
+            // 5.1 删除引用此Era的Characters
+            characterRepository.findAllByEra_Id(eraId).forEach(characterRepository::delete);
+            // 5.2 删除引用此Era的JournalEntries
+            journalEntryRepository.findByEra_Id(eraId).forEach(journalEntryRepository::delete);
+            // 5.3 删除引用此Era的Scripts
+            scriptRepository.findAllByEra_Id(eraId).forEach(scriptRepository::delete);
+            // 5.4 删除引用此Era的UserMainStories
+            userMainStoryRepository.findByEraId(eraId).forEach(userMainStoryRepository::delete);
+        }
+        
+        // 6. 删除所有引用此World的Eras
+        eras.forEach(eraRepository::delete);
+        
+        // 7. 最后删除World本身
         worldRepository.delete(world);
         logger.info(String.format("[RecycleBinController] 永久删除世界: ID=%d", id));
         return ResponseEntity.noContent().build();

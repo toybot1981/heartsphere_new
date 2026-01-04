@@ -117,14 +117,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // 配置图片访问路径
-        // 将 /api/images/files/** 映射到本地文件系统的 uploads/images/ 目录
-        // 注意：使用 /files/** 后缀以避免与 ImageController 的 /api/images/upload 等端点冲突
+        // 将 /images/** 映射到本地文件系统的 uploads/images/ 目录
         String uploadPath = Paths.get(localStoragePath).toAbsolutePath().normalize().toString();
         // 确保路径以 / 结尾
         if (!uploadPath.endsWith("/") && !uploadPath.endsWith("\\")) {
             uploadPath += "/";
         }
-        registry.addResourceHandler("/api/images/files/**")
+        registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:" + uploadPath);
     }
 }

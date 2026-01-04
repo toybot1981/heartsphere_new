@@ -304,6 +304,23 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                       用户消息
                     </span>
                   </button>
+                  
+                  <button
+                    onClick={() => handleCategoryChange(MessageCategory.WARM_MESSAGE)}
+                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
+                      currentCategory === MessageCategory.WARM_MESSAGE
+                        ? 'bg-gradient-to-r from-pink-600/80 to-rose-600/80 text-white shadow-lg shadow-pink-500/20 scale-105'
+                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
+                    }`}
+                  >
+                    {currentCategory === MessageCategory.WARM_MESSAGE && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-rose-500/20 animate-pulse"></div>
+                    )}
+                    <span className="relative z-10 font-medium flex items-center gap-2">
+                      <span className="text-lg">💌</span>
+                      暖心留言
+                    </span>
+                  </button>
                 </div>
               </div>
 

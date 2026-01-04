@@ -139,12 +139,30 @@ public class SystemAdminController {
             validateSuperAdmin(authHeader);
             systemAdminService.deleteAdmin(id);
             return ResponseEntity.ok(Map.of("code", 200, "message", "删除成功", "data", null));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            String errorMessage = "无法删除管理员：存在关联数据。请先清理相关数据后再删除。";
+            logger.error("删除管理员失败（外键约束）: {}", e.getMessage(), e);
+            return ResponseEntity.status(400).body(Map.of("code", 400, "message", errorMessage, "data", null));
         } catch (RuntimeException e) {
-            logger.error("删除管理员失败: {}", e.getMessage());
-            return ResponseEntity.status(400).body(Map.of("code", 400, "message", e.getMessage(), "data", null));
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "删除管理员失败";
+            logger.error("删除管理员失败: {}", errorMessage, e);
+            return ResponseEntity.status(400).body(Map.of("code", 400, "message", errorMessage, "data", null));
         } catch (Exception e) {
-            logger.error("删除管理员异常: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("code", 500, "message", "服务器内部错误", "data", null));
+            String errorMessage = e.getMessage();
+            if (errorMessage == null || errorMessage.trim().isEmpty()) {
+                errorMessage = "服务器内部错误: " + e.getClass().getSimpleName();
+            }
+            // 如果错误消息包含 "null"，尝试获取更详细的信息
+            if (errorMessage.contains("null")) {
+                errorMessage = "删除管理员失败: " + e.getClass().getSimpleName();
+                if (e.getCause() != null && e.getCause().getMessage() != null) {
+                    errorMessage += " - " + e.getCause().getMessage();
+                }
+            }
+            logger.error("删除管理员异常: message={}, exceptionType={}, cause={}", 
+                    errorMessage, e.getClass().getName(), 
+                    e.getCause() != null ? e.getCause().getClass().getName() : "null", e);
+            return ResponseEntity.status(500).body(Map.of("code", 500, "message", errorMessage, "data", null));
         }
     }
 

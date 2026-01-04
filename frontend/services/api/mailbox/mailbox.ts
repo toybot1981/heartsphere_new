@@ -91,7 +91,19 @@ export async function getMessages(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    return parseApiResponse<Page<MailboxMessage>>(data);
+    console.log('[mailboxApi.getMessages] 原始响应数据:', {
+      hasData: 'data' in data,
+      hasContent: 'content' in data,
+      keys: Object.keys(data),
+      contentLength: data.content?.length || 0
+    });
+    const result = parseApiResponse<Page<MailboxMessage>>(data);
+    console.log('[mailboxApi.getMessages] 解析后的结果:', {
+      hasContent: 'content' in result,
+      contentLength: result.content?.length || 0,
+      totalElements: result.totalElements
+    });
+    return result;
   } else {
     const text = await response.text();
     console.error('收到非JSON响应:', text.substring(0, 200));

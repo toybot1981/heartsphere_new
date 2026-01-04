@@ -28,7 +28,11 @@ import {
 /**
  * 长时记忆管理组件
  */
-const LongTermMemoryManagement: React.FC = () => {
+interface LongTermMemoryManagementProps {
+  adminToken: string | null;
+}
+
+const LongTermMemoryManagement: React.FC<LongTermMemoryManagementProps> = ({ adminToken }) => {
   const [memories, setMemories] = useState<UserMemory[]>([]);
   const [stats, setStats] = useState<LongTermMemoryStats | null>(null);
   const [extractionTasks, setExtractionTasks] = useState<ExtractionTask[]>([]);
@@ -39,13 +43,16 @@ const LongTermMemoryManagement: React.FC = () => {
   const [memoryType, setMemoryType] = useState<string>('');
 
   useEffect(() => {
-    loadStats();
-    loadExtractionConfig();
-  }, []);
+    if (adminToken) {
+      loadStats();
+      loadExtractionConfig();
+    }
+  }, [adminToken]);
 
   const loadStats = async () => {
+    if (!adminToken) return;
     try {
-      const data = await adminMemoryApi.getLongTermMemoryStats();
+      const data = await adminMemoryApi.getLongTermMemoryStats(adminToken);
       setStats(data);
     } catch (err: any) {
       console.error('加载统计失败:', err);
@@ -53,9 +60,11 @@ const LongTermMemoryManagement: React.FC = () => {
   };
 
   const loadMemories = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
       const result = await adminMemoryApi.queryLongTermMemories(
+        adminToken,
         userId ? parseInt(userId) : undefined,
         memoryType || undefined,
         undefined,
@@ -74,9 +83,10 @@ const LongTermMemoryManagement: React.FC = () => {
   };
 
   const loadExtractionTasks = async () => {
+    if (!adminToken) return;
     try {
       setLoading(true);
-      const result = await adminMemoryApi.getExtractionTasks(undefined, undefined, 0, 20);
+      const result = await adminMemoryApi.getExtractionTasks(adminToken, undefined, undefined, 0, 20);
       setExtractionTasks(result.content || []);
     } catch (err: any) {
       console.error('加载提取任务失败:', err);
@@ -86,8 +96,9 @@ const LongTermMemoryManagement: React.FC = () => {
   };
 
   const loadExtractionConfig = async () => {
+    if (!adminToken) return;
     try {
-      const config = await adminMemoryApi.getExtractionConfig();
+      const config = await adminMemoryApi.getExtractionConfig(adminToken);
       setExtractionConfig(config);
     } catch (err: any) {
       console.error('加载提取配置失败:', err);

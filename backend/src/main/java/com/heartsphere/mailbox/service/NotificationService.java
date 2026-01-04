@@ -112,6 +112,8 @@ public class NotificationService {
             messageRepository.countByReceiverIdAndMessageCategoryAndIsReadFalse(userId, MessageCategory.SYSTEM));
         categoryUnread.put(MessageCategory.USER_MESSAGE, 
             messageRepository.countByReceiverIdAndMessageCategoryAndIsReadFalse(userId, MessageCategory.USER_MESSAGE));
+        categoryUnread.put(MessageCategory.WARM_MESSAGE, 
+            messageRepository.countByReceiverIdAndMessageCategoryAndIsReadFalse(userId, MessageCategory.WARM_MESSAGE));
         
         return UnreadCountResponse.builder()
             .totalUnread(total)

@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "message": "情绪分析完成",
+  "data": {
+    "patientId": "self",
+    "text": "有点焦虑，工作上的事情很多",
+    "primaryEmotion": "anxiety",
+    "intensity": "medium",
+    "confidence": 62.5,
+    "emotionMix": "pure",
+    "detectedEmotions": [
+      {
+        "emotion": "anxiety",
+        "score": 1.3,
+        "keywords": [
+          {
+            "keyword": "焦虑",
+            "score": "1.30"
+          }
+        ]
+      }
+    ],
+    "emotionScores": {
+      "anxiety": 1.3
+    },
+    "riskLevel": "medium",
+    "textLength": 13,
+    "analyzedAt": "2025-01-04T12:00:00.000Z"
+  }
+}

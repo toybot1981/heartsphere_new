@@ -24,7 +24,7 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                 
                 <button 
                     onClick={onBack}
-                    className="absolute top-[calc(1rem+env(safe-area-inset-top))] left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 z-20 active:scale-95 transition-transform"
+                    className="absolute top-[calc(1rem+env(safe-area-inset-top))] left-4 min-w-[44px] min-h-[44px] p-2 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 z-20 active:scale-90 transition-transform touch-manipulation flex items-center justify-center"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
@@ -36,7 +36,7 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto pb-24 p-4 space-y-8">
+            <div className="flex-1 overflow-y-auto pb-24 p-4 space-y-8 overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 
                 {/* Main Story Section - 主线故事显示在角色上方 */}
                 {scene.mainStory && (
@@ -46,7 +46,14 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                         </div>
                         <div 
                             onClick={() => onSelectCharacter(scene.mainStory!)}
-                            className="bg-gradient-to-r from-gray-800 to-gray-900 border border-pink-500/30 rounded-xl p-4 active:scale-[0.98] transition-transform"
+                            className="bg-gradient-to-r from-gray-800 to-gray-900 border border-pink-500/30 rounded-xl p-4 active:scale-[0.97] transition-transform touch-manipulation cursor-pointer min-h-[80px]"
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    onSelectCharacter(scene.mainStory!);
+                                }
+                            }}
                         >
                             <div className="flex justify-between items-start">
                                 <div className="flex-1">
@@ -66,7 +73,10 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                          <h3 className="text-lg font-bold text-white border-l-4 border-pink-500 pl-3">登场人物</h3>
-                         <button onClick={onAddCharacter} className="text-xs bg-pink-600/20 text-pink-400 px-3 py-1 rounded-full border border-pink-600/30">
+                         <button 
+                            onClick={onAddCharacter} 
+                            className="text-xs bg-pink-600/20 text-pink-400 px-3 py-2 rounded-full border border-pink-600/30 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                        >
                             + 新增角色
                          </button>
                     </div>
@@ -76,7 +86,14 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                             <div 
                                 key={char.id}
                                 onClick={() => onSelectCharacter(char)}
-                                className="relative rounded-xl overflow-hidden aspect-[3/4] border border-white/10 shadow-lg active:scale-95 transition-transform"
+                                className="relative rounded-xl overflow-hidden aspect-[3/4] border border-white/10 shadow-lg active:scale-[0.95] transition-transform touch-manipulation cursor-pointer"
+                                role="button"
+                                tabIndex={0}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        onSelectCharacter(char);
+                                    }
+                                }}
                             >
                                 <img src={char.avatarUrl} className="w-full h-full object-cover" alt={char.name} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
@@ -93,7 +110,10 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                          <h3 className="text-lg font-bold text-white border-l-4 border-indigo-500 pl-3">剧情剧本</h3>
-                         <button onClick={onAddScenario} className="text-xs bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-full border border-indigo-600/30">
+                         <button 
+                            onClick={onAddScenario} 
+                            className="text-xs bg-indigo-600/20 text-indigo-400 px-3 py-2 rounded-full border border-indigo-600/30 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                        >
                             + 创建剧本
                          </button>
                     </div>
@@ -103,7 +123,7 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                              <div 
                                 key={scen.id}
                                 onClick={() => onPlayScenario(scen)}
-                                className={`rounded-xl p-4 active:scale-[0.98] transition-transform ${
+                                className={`rounded-xl p-4 active:scale-[0.97] transition-transform touch-manipulation cursor-pointer min-h-[80px] ${
                                     scen.id.startsWith('system_script_') 
                                         ? 'bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30' 
                                         : 'bg-gray-900 border border-gray-800'

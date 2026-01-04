@@ -1,6 +1,8 @@
 // 管理后台API模块统一导出
 
 export * from './types';
+export * from './graphTypes';
+export * from './graphExecutionTypes';
 
 // 导入各个子模块
 import { adminAuthApi } from './auth';
@@ -21,6 +23,7 @@ import { adminPresetScriptsApi } from './presetScripts';
 import { apiKeysApi } from './apiKeys';
 import { adminHeartSphereConnectionApi } from './heartSphereConnection';
 import { adminMemoryApi } from './memory';
+import { adminGraphApi } from './graph';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -43,6 +46,7 @@ export {
   apiKeysApi,
   adminHeartSphereConnectionApi,
   adminMemoryApi,
+  adminGraphApi,
 };
 
 // 为了向后兼容，创建一个包含所有旧接口的 adminApi 对象
@@ -104,5 +108,8 @@ export const adminApi = {
 
     // 记忆系统管理
     memory: adminMemoryApi,
+
+    // Graph流程编辑器管理
+    graph: adminGraphApi,
 };
 

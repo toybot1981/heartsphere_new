@@ -12,6 +12,10 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface AdminOperationLogRepository extends JpaRepository<AdminOperationLog, Long> {
+    /**
+     * 根据管理员ID删除所有操作日志
+     */
+    int deleteByAdminId(Long adminId);
 }
 
 
