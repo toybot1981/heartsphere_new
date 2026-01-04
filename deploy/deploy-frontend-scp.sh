@@ -170,10 +170,16 @@ if [ "$BUILD_NEEDED" = true ]; then
         echo -e "${YELLOW}请选择 API 访问方式:${NC}"
         echo "  1) 相对路径 /api (推荐，通过 nginx/Vite 代理)"
         echo "  2) 绝对 URL (直接访问后端，需要配置 CORS)"
-        read -p "请选择 [1-2] (默认: 1): " api_choice
+        echo "  3) 快速设置: http://heartsphere.cn:8080 (生产环境直接访问后端)"
+        read -p "请选择 [1-3] (默认: 1): " api_choice
         api_choice="${api_choice:-1}"
         
-        if [ "$api_choice" = "2" ]; then
+        if [ "$api_choice" = "3" ]; then
+            # 快速设置生产地址
+            API_BASE_URL="http://heartsphere.cn:8080"
+            echo -e "${GREEN}将设置 API_BASE_URL=${API_BASE_URL}${NC}"
+            echo -e "${YELLOW}注意: 使用绝对 URL 直接访问后端，需要确保后端配置了 CORS${NC}"
+        elif [ "$api_choice" = "2" ]; then
             read -p "请输入 API Base URL (例如: http://api.example.com): " API_BASE_URL
             API_BASE_URL="${API_BASE_URL%/}"  # 移除末尾斜杠
             
