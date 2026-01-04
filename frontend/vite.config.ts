@@ -8,6 +8,16 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0', // 允许所有网络接口访问
+        proxy: {
+          // 开发环境 API 代理配置
+          // 当 VITE_API_BASE_URL 为空或未设置时，通过此代理转发到后端
+          '/api': {
+            target: 'http://heartsphere.cn:8080',
+            changeOrigin: true,
+            // 如果后端路径不包含 /api 前缀，需要取消注释下面这行
+            // rewrite: (path) => path.replace(/^\/api/, '')
+          }
+        }
       },
       plugins: [
         react({
@@ -27,6 +37,8 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
+          '@emotion/cache',
+          '@emotion/utils',
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
@@ -82,6 +94,7 @@ export default defineConfig(({ mode }) => {
           '@mui/material',
           '@emotion/react',
           '@emotion/styled',
+          '@emotion/cache',
         ],
       },
       build: {
