@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
           // 开发环境 API 代理配置
           // 当 VITE_API_BASE_URL 为空或未设置时，通过此代理转发到后端
           '/api': {
-            target: 'http://heartsphere.cn:8080',
+            target: 'http://localhost:8081',
             changeOrigin: true,
             // 如果后端路径不包含 /api 前缀，需要取消注释下面这行
             // rewrite: (path) => path.replace(/^\/api/, '')
