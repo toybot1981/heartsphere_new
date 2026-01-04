@@ -16,7 +16,37 @@ The request client is not a secure context and the resource is in more-private a
 
 ## 解决方案
 
-### 方案1：使用修复脚本（推荐）
+### 方案1：本地打包后上传（推荐，适用于本地打包场景）
+
+**如果你是在本地打包然后上传到服务器，使用此方案：**
+
+在本地执行：
+
+```bash
+cd /path/to/heartsphere_new/deploy
+./fix-api-url-local.sh
+```
+
+脚本会自动：
+1. 检查并修复 `.env.production` 文件（`VITE_API_BASE_URL` 为空字符串）
+2. 重新构建前端项目
+3. 验证构建产物
+4. 提供上传到服务器的命令提示
+
+然后上传构建产物到服务器：
+
+```bash
+# 方式1: 使用 scp
+scp -r frontend/dist/* user@server:/opt/heartsphere/frontend/
+
+# 方式2: 在服务器上执行
+cd /opt/heartsphere/frontend
+sudo rm -rf *
+sudo cp -r /path/to/local/dist/* .
+sudo chown -R heartsphere:heartsphere /opt/heartsphere/frontend
+```
+
+### 方案2：在服务器上直接修复（适用于服务器上构建的场景）
 
 在生产服务器上执行：
 
@@ -30,16 +60,21 @@ sudo ./fix-production-api-url.sh
 2. 重新构建前端项目
 3. 部署到生产目录
 
-### 方案2：手动修复
+### 方案3：手动修复
 
-#### 步骤1：检查当前配置
+#### 步骤1：在本地创建正确的 .env.production
 
 ```bash
-cd /path/to/heartsphere_new/deploy
-sudo ./check-api-config.sh
+cd /path/to/heartsphere_new/frontend
+
+cat > .env.production <<EOF
+# API 基础URL（使用相对路径，通过 nginx 代理）
+# 空字符串表示使用相对路径 /api
+VITE_API_BASE_URL=
+EOF
 ```
 
-#### 步骤2：创建正确的 .env.production
+#### 步骤2：在本地重新构建
 
 ```bash
 cd /path/to/heartsphere_new/frontend
@@ -179,7 +214,8 @@ sudo ./check-api-config.sh
 
 ## 相关文件
 
-- `deploy/fix-production-api-url.sh` - 自动修复脚本
+- `deploy/fix-api-url-local.sh` - 本地修复脚本（适用于本地打包场景）
+- `deploy/fix-production-api-url.sh` - 服务器端自动修复脚本
 - `deploy/check-api-config.sh` - 配置检查脚本
 - `frontend/services/api/config.ts` - API 配置核心逻辑
 - `deploy/deploy-frontend.sh` - 前端部署脚本
