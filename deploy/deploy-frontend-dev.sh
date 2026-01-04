@@ -119,9 +119,9 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# 构建（使用 development 模式）
-echo -e "${YELLOW}开始构建（development 模式）...${NC}"
-npm run build
+    # 构建（使用 development 模式）
+    echo -e "${YELLOW}开始构建（development 模式）...${NC}"
+    npm run build -- --mode development
 
 if [ ! -d "dist" ]; then
     echo -e "${RED}构建失败，未找到 dist 目录！${NC}"
