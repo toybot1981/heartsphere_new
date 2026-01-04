@@ -67,12 +67,34 @@ else
     echo -e "${GREEN}MySQL 已安装${NC}"
 fi
 
-# 4. 创建数据库
-echo -e "${YELLOW}[4/7] 配置数据库...${NC}"
+# 4. 配置域名和图片URL
+echo -e "${YELLOW}[4/8] 配置域名和图片URL...${NC}"
 if [ -f "${APP_HOME}/.env" ]; then
     source ${APP_HOME}/.env
 fi
 
+# 获取域名配置（用于图片URL）
+if [ -z "${DOMAIN_NAME}" ]; then
+    echo -e "${YELLOW}请输入生产环境域名（例如: heartsphere.cn 或 www.heartsphere.cn）:${NC}"
+    echo -e "${YELLOW}如果使用HTTPS，请输入完整域名（例如: https://heartsphere.cn）${NC}"
+    read -p "域名 [默认: heartsphere.cn]: " DOMAIN_NAME
+    DOMAIN_NAME="${DOMAIN_NAME:-heartsphere.cn}"
+fi
+
+# 处理域名格式
+if [[ ! "$DOMAIN_NAME" =~ ^https?:// ]]; then
+    # 如果没有协议，默认使用 http
+    DOMAIN_NAME="http://${DOMAIN_NAME}"
+fi
+
+# 构建图片基础URL（格式：http://domain.com/images，不需要 /api 前缀）
+IMAGE_BASE_URL="${DOMAIN_NAME%/}/images"
+
+echo -e "${GREEN}图片基础URL已配置: ${IMAGE_BASE_URL}${NC}"
+echo -e "${YELLOW}注意：确保Nginx已配置 /images/ 路径代理或静态文件服务${NC}"
+
+# 5. 创建数据库
+echo -e "${YELLOW}[5/8] 配置数据库...${NC}"
 DB_NAME="${DB_NAME:-heartsphere}"
 DB_USER="${DB_USER:-heartsphere}"
 DB_PASSWORD="${DB_PASSWORD:-HeartSphere@2024}"
@@ -84,8 +106,8 @@ GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-# 5. 构建后端项目
-echo -e "${YELLOW}[5/7] 构建后端项目...${NC}"
+# 6. 构建后端项目
+echo -e "${YELLOW}[6/8] 构建后端项目...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}/backend"
 
@@ -95,8 +117,8 @@ mvn clean
 echo -e "${YELLOW}编译打包...${NC}"
 mvn package -DskipTests
 
-# 6. 部署 JAR 文件
-echo -e "${YELLOW}[6/7] 部署 JAR 文件...${NC}"
+# 7. 部署 JAR 文件
+echo -e "${YELLOW}[7/8] 部署 JAR 文件...${NC}"
 JAR_FILE=$(find target -name "*.jar" ! -name "*sources.jar" | head -1)
 
 if [ -z "$JAR_FILE" ]; then
@@ -108,8 +130,8 @@ mkdir -p ${BACKEND_DIR}
 cp ${JAR_FILE} ${BACKEND_DIR}/app.jar
 chown ${APP_USER}:${APP_USER} ${BACKEND_DIR}/app.jar
 
-# 7. 创建 systemd 服务
-echo -e "${YELLOW}[7/7] 创建 systemd 服务...${NC}"
+# 8. 创建 systemd 服务
+echo -e "${YELLOW}[8/8] 创建 systemd 服务...${NC}"
 cat > /etc/systemd/system/${APP_NAME}-backend.service <<EOF
 [Unit]
 Description=HeartSphere Backend Service
@@ -129,19 +151,21 @@ SyslogIdentifier=${APP_NAME}-backend
 # 环境变量
 Environment="JAVA_HOME=${JAVA_HOME}"
 Environment="SPRING_PROFILES_ACTIVE=prod"
+# 加载 .env 文件中的环境变量（包括 IMAGE_BASE_URL）
+EnvironmentFile=${APP_HOME}/.env
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 创建环境配置文件
+# 创建或更新环境配置文件
 if [ ! -f "${APP_HOME}/.env" ]; then
     cat > ${APP_HOME}/.env <<EOF
 # 数据库配置
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
-DB_HOST=${DB_HOST}
+DB_HOST=${DB_HOST:-localhost}
 DB_PORT=3306
 
 # JWT 配置
@@ -153,8 +177,10 @@ WECHAT_APP_SECRET=
 WECHAT_REDIRECT_URI=
 
 # 图片存储配置
+# 注意：格式为 http://domain.com/images（不需要 /api 前缀）
+# 如果使用HTTPS，改为 https://domain.com/images
 IMAGE_STORAGE_PATH=${APP_HOME}/uploads/images
-IMAGE_BASE_URL=http://localhost:${BACKEND_PORT}/api/images
+IMAGE_BASE_URL=${IMAGE_BASE_URL}
 
 # ==================== 大模型 API Key 配置 ====================
 # Gemini (Google)
@@ -193,8 +219,23 @@ ENABLE_FALLBACK=true
 EOF
     chown ${APP_USER}:${APP_USER} ${APP_HOME}/.env
     chmod 600 ${APP_HOME}/.env
-    echo -e "${YELLOW}环境配置文件已创建: ${APP_HOME}/.env${NC}"
+    echo -e "${GREEN}环境配置文件已创建: ${APP_HOME}/.env${NC}"
     echo -e "${YELLOW}请编辑此文件配置大模型 API Key${NC}"
+else
+    # 如果 .env 文件已存在，更新 IMAGE_BASE_URL（如果未设置或为localhost）
+    if ! grep -q "^IMAGE_BASE_URL=" ${APP_HOME}/.env || grep -q "IMAGE_BASE_URL=.*localhost" ${APP_HOME}/.env; then
+        echo -e "${YELLOW}更新 .env 文件中的 IMAGE_BASE_URL...${NC}"
+        # 如果存在但值为localhost，则更新
+        if grep -q "^IMAGE_BASE_URL=" ${APP_HOME}/.env; then
+            sed -i "s|^IMAGE_BASE_URL=.*|IMAGE_BASE_URL=${IMAGE_BASE_URL}|" ${APP_HOME}/.env
+        else
+            # 如果不存在，则添加
+            echo "" >> ${APP_HOME}/.env
+            echo "# 图片存储配置" >> ${APP_HOME}/.env
+            echo "IMAGE_BASE_URL=${IMAGE_BASE_URL}" >> ${APP_HOME}/.env
+        fi
+        echo -e "${GREEN}已更新 IMAGE_BASE_URL=${IMAGE_BASE_URL}${NC}"
+    fi
 fi
 
 # 创建 application-prod.yml
@@ -233,7 +274,11 @@ app:
       type: local
       local:
         path: \${IMAGE_STORAGE_PATH:${APP_HOME}/uploads/images}
-      base-url: \${IMAGE_BASE_URL:http://localhost:${BACKEND_PORT}/api/images}
+      # 图片基础URL配置
+      # 格式：http://domain.com/images 或 https://domain.com/images（不需要 /api 前缀）
+      # 如果未配置 IMAGE_BASE_URL 环境变量，将自动从请求中获取域名
+      # 生产环境建议在 .env 文件中配置 IMAGE_BASE_URL
+      base-url: \${IMAGE_BASE_URL:}
       max-size: 10485760
 
 logging:
@@ -261,6 +306,20 @@ sleep 5
 if systemctl is-active --quiet ${APP_NAME}-backend; then
     echo -e "${GREEN}后端服务启动成功！${NC}"
     echo -e "${GREEN}服务地址: http://localhost:${BACKEND_PORT}${NC}"
+    echo ""
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}配置信息：${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "域名: ${DOMAIN_NAME}"
+    echo -e "图片基础URL: ${IMAGE_BASE_URL}"
+    echo -e "环境配置文件: ${APP_HOME}/.env"
+    echo ""
+    echo -e "${YELLOW}重要提示：${NC}"
+    echo -e "1. 确保Nginx已配置 /images/ 路径代理或静态文件服务"
+    echo -e "2. 确保Nginx设置了 X-Forwarded-Host 和 X-Forwarded-Proto header"
+    echo -e "3. 如果使用HTTPS，请将 .env 中的 IMAGE_BASE_URL 改为 https://"
+    echo -e "4. 查看配置说明: docs/14-部署运维/图片URL配置修复说明.md"
+    echo -e "${GREEN}========================================${NC}"
 else
     echo -e "${RED}后端服务启动失败，请查看日志:${NC}"
     echo -e "journalctl -u ${APP_NAME}-backend -n 50"

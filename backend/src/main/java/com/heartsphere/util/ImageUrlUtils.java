@@ -41,22 +41,52 @@ public class ImageUrlUtils {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                String scheme = request.getScheme(); // http 或 https
-                String serverName = request.getServerName(); // 域名
-                int serverPort = request.getServerPort(); // 端口
-                String contextPath = request.getContextPath(); // 应用上下文路径
+                
+                // 优先使用 X-Forwarded-Host（nginx代理时设置）
+                String host = request.getHeader("X-Forwarded-Host");
+                if (host == null || host.isEmpty()) {
+                    host = request.getHeader("Host");
+                }
+                if (host == null || host.isEmpty()) {
+                    host = request.getServerName();
+                }
+                
+                // 如果host仍然为空，使用默认值
+                if (host == null || host.isEmpty()) {
+                    host = request.getServerName();
+                }
+                
+                // 优先使用 X-Forwarded-Proto（nginx代理时设置）
+                String scheme = request.getHeader("X-Forwarded-Proto");
+                if (scheme == null || scheme.isEmpty()) {
+                    scheme = request.getScheme(); // http 或 https
+                }
+                
+                // 如果host是localhost，说明可能是开发环境或配置问题，尝试从环境变量获取
+                if (host != null && (host.startsWith("localhost") || host.startsWith("127.0.0.1"))) {
+                    String envBaseUrl = System.getenv("IMAGE_BASE_URL");
+                    if (envBaseUrl != null && !envBaseUrl.trim().isEmpty()) {
+                        return envBaseUrl.trim();
+                    }
+                }
                 
                 // 构建baseUrl
                 StringBuilder baseUrl = new StringBuilder();
-                baseUrl.append(scheme).append("://").append(serverName);
+                baseUrl.append(scheme).append("://").append(host);
                 
-                // 如果是非标准端口（不是80或443），添加端口号
-                if ((scheme.equals("http") && serverPort != 80) || 
-                    (scheme.equals("https") && serverPort != 443)) {
-                    baseUrl.append(":").append(serverPort);
+                // 如果host中没有端口，且不是标准端口，才添加端口号
+                // 注意：X-Forwarded-Host 可能已经包含端口，需要检查
+                if (host != null && !host.contains(":") && request.getServerPort() != 80 && request.getServerPort() != 443) {
+                    // 只有在非标准端口且host中没有端口时才添加
+                    int serverPort = request.getServerPort();
+                    if ((scheme.equals("http") && serverPort != 80) || 
+                        (scheme.equals("https") && serverPort != 443)) {
+                        baseUrl.append(":").append(serverPort);
+                    }
                 }
                 
                 // 添加应用上下文路径和图片路径（改为 /images，不再使用 /api/images）
+                String contextPath = request.getContextPath();
                 baseUrl.append(contextPath).append("/images");
                 
                 return baseUrl.toString();
