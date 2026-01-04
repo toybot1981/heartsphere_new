@@ -99,6 +99,11 @@ export default defineConfig(({ mode }) => {
         ],
       },
       build: {
+        // 确保构建时正确处理外部依赖
+        commonjsOptions: {
+          include: [/node_modules/],
+          transformMixedEsModules: true,
+        },
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
@@ -106,22 +111,36 @@ export default defineConfig(({ mode }) => {
             mobile: path.resolve(__dirname, 'mobile.html'),
           },
           output: {
+            // 确保 chunk 加载顺序正确
+            chunkFileNames: (chunkInfo) => {
+              // vendor-react 应该优先加载
+              if (chunkInfo.name === 'vendor-react') {
+                return 'assets/vendor-react-[hash].js';
+              }
+              return 'assets/[name]-[hash].js';
+            },
             manualChunks: (id) => {
-              // 重要：确保 React 和 React-DOM 始终在同一个 chunk 中
-              // 避免多个 React 实例导致的 ForwardRef 错误
-              if (id.includes('node_modules/react/') || 
-                  id.includes('node_modules/react-dom/') ||
-                  id.includes('node_modules/react/jsx-runtime')) {
+              // 关键修复：优先处理 React 相关包，确保它们始终在同一个 chunk
+              // 必须在所有其他逻辑之前检查，避免被其他规则捕获
+              
+              // 1. 所有 React 核心包 - 最高优先级（使用更宽泛的匹配）
+              if (id.includes('node_modules/react') || 
+                  id.includes('node_modules/react-dom') ||
+                  id.includes('node_modules/react-is') ||
+                  id.includes('node_modules/scheduler')) {
                 return 'vendor-react';
               }
               
-              // 将 @antv/x6-react 相关包与 React 放在一起，确保使用同一个 React 实例
+              // 2. @antv/x6-react 相关包 - 必须与 React 在同一 chunk
               if (id.includes('node_modules/@antv/x6-react')) {
                 return 'vendor-react';
               }
               
+              // 3. 其他可能依赖 React 的库（如果它们可能导致问题）
+              // reactflow 等库应该可以正常使用 vendor-react 中的 React
+              
               // Phase 5优化: 更细粒度的代码分割
-              // 将大组件单独打包
+              // 将大组件单独打包（但不包含 React，React 已在上面处理）
               if (id.includes('/admin/AdminScreen')) {
                 return 'admin';
               }
@@ -146,7 +165,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/services/ai') || id.includes('/services/gemini')) {
                 return 'vendor-ai';
               }
-              // 将其他node_modules打包
+              // 将其他node_modules打包（排除已处理的 React 相关包）
               if (id.includes('node_modules')) {
                 return 'vendor';
               }
@@ -155,6 +174,10 @@ export default defineConfig(({ mode }) => {
         },
         // 增加chunk大小警告限制（因为AdminScreen确实很大）
         chunkSizeWarningLimit: 600,
+        // 确保模块正确解析
+        modulePreload: {
+          polyfill: true,
+        },
       },
     };
 });
