@@ -104,6 +104,14 @@ export default defineConfig(({ mode }) => {
           include: [/node_modules/],
           transformMixedEsModules: true,
         },
+        // 修复初始化顺序问题：使用更保守的代码分割
+        // 减少 chunk 数量，避免循环依赖和初始化顺序问题
+        minify: 'esbuild',
+        // 确保模块正确解析和初始化
+        target: 'esnext',
+        modulePreload: {
+          polyfill: true,
+        },
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
@@ -149,9 +157,40 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/admin/AdminScreen')) {
                 return 'admin';
               }
-              if (id.includes('/mobile/MobileApp')) {
+              
+              // 修复 mobile-core 初始化顺序问题：
+              // 将 MobileApp 及其核心依赖（hooks, contexts, utils, services, components）打包在一起
+              // 避免循环依赖和初始化顺序问题
+              // 策略：将所有 mobile 核心代码和其直接依赖打包到一个 chunk
+              if (id.includes('/mobile.tsx') ||
+                  id.includes('/mobile/MobileApp') ||
+                  id.includes('/mobile/components/MobileBottomNav') ||
+                  id.includes('/mobile/components/MobileErrorBoundary') ||
+                  id.includes('/mobile/components/modals/MobileQuickConnectModal') ||
+                  id.includes('/mobile/utils/renderScreen') ||
+                  id.includes('/mobile/utils/buildScreenProps') ||
+                  id.includes('/mobile/MobileScenarioBuilder') ||
+                  id.includes('/contexts/GameStateContext') ||
+                  id.includes('/hooks/useGameState') ||
+                  id.includes('/hooks/useJournalHandlers') ||
+                  id.includes('/hooks/useSharedMode') ||
+                  id.includes('/utils/sceneMapping') ||
+                  id.includes('/utils/dialog') ||
+                  id.includes('/utils/dataTransformers') ||
+                  id.includes('/services/storage') ||
+                  id.includes('/services/sync/SyncService') ||
+                  id.includes('/services/sync/syncConfig') ||
+                  (id.includes('/services/api') && !id.includes('/services/api/admin')) ||
+                  id.includes('/components/LoginModal') ||
+                  id.includes('/components/SettingsModal') ||
+                  id.includes('/components/MailboxModal') ||
+                  id.includes('/components/EraConstructorModal') ||
+                  id.includes('/components/CharacterConstructorModal')) {
+                // 注意：services/api 包含多个子模块，但排除 admin API
+                // 共享的 components 也被包含，因为它们被 MobileApp 直接使用
                 return 'mobile-core';
               }
+              
               // 将Screen组件按功能分组打包
               if (id.includes('/mobile/screens/MobileChatWindowScreen') || 
                   id.includes('/mobile/screens/MobileSharedChatWindowScreen')) {
@@ -166,10 +205,12 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/mobile/screens/')) {
                 return 'mobile-screens';
               }
+              
               // 将AI服务相关单独打包
               if (id.includes('/services/ai') || id.includes('/services/gemini')) {
                 return 'vendor-ai';
               }
+              
               // 将其他node_modules打包（排除已处理的 React 相关包）
               // 注意：上面的 React 检查已经处理了所有 react 相关包，这里不会再匹配到
               if (id.includes('node_modules')) {
@@ -180,10 +221,6 @@ export default defineConfig(({ mode }) => {
         },
         // 增加chunk大小警告限制（因为AdminScreen确实很大）
         chunkSizeWarningLimit: 600,
-        // 确保模块正确解析
-        modulePreload: {
-          polyfill: true,
-        },
       },
     };
 });
