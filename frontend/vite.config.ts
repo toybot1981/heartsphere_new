@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
           '@antv/x6',
           '@antv/x6-react-shape',
           '@antv/x6-react-components',
+          'antd',
+          'reactflow',
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
@@ -76,6 +78,8 @@ export default defineConfig(({ mode }) => {
           'react/jsx-runtime',
           '@antv/x6-react-shape',
           '@antv/x6-react-components',
+          'antd',
+          'reactflow',
         ],
       },
       build: {
@@ -119,8 +123,18 @@ export default defineConfig(({ mode }) => {
                   return 'vendor-react';
                 }
                 
-                // antd 可能依赖 React，也放到 vendor-react（如果项目使用了 antd）
-                if (id.includes('/antd/') && (id.includes('react') || id.includes('React'))) {
+                // antd 及其所有依赖 - 必须与 React 在同一 chunk（antd 依赖 React）
+                if (id.includes('/antd/') || id.includes('/rc-')) {
+                  return 'vendor-react';
+                }
+                
+                // reactflow - 必须与 React 在同一 chunk
+                if (id.includes('/reactflow') || id.includes('/@xyflow')) {
+                  return 'vendor-react';
+                }
+                
+                // 其他可能依赖 React 的 UI 库
+                if (id.includes('/@emotion/react') || id.includes('/@emotion/styled')) {
                   return 'vendor-react';
                 }
               }
