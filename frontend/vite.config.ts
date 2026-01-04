@@ -23,7 +23,33 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      plugins: [react()],
+      plugins: [
+        react({
+          // 确保 React 17+ 的 JSX 转换
+          jsxRuntime: 'automatic',
+        }),
+      ],
+      optimizeDeps: {
+        // 预构建依赖，确保 React 相关依赖正确解析
+        include: [
+          'react',
+          'react-dom',
+          'react/jsx-runtime',
+          '@antv/x6',
+          '@antv/x6-react-shape',
+          // 确保 @antv/x6-react-components 也使用同一个 React 实例
+          '@antv/x6-react-components',
+        ],
+        // 强制重新构建这些依赖，确保使用正确的 React 版本
+        force: true,
+        // 确保 React 相关依赖使用正确的版本
+        esbuildOptions: {
+          jsx: 'automatic',
+          // 确保所有 React 相关包使用同一个版本
+          jsxFactory: 'React.createElement',
+          jsxFragment: 'React.Fragment',
+        },
+      },
       define: {
         // 兼容旧的环境变量名和新的 VITE_ 前缀
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
@@ -58,7 +84,19 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-        }
+          // 确保所有依赖使用同一个 React 实例，避免多个 React 实例导致的错误
+          'react': path.resolve(__dirname, 'node_modules/react'),
+          'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+        },
+        // 强制去重，确保只有一个 React 实例
+        dedupe: [
+          'react', 
+          'react-dom',
+          'react/jsx-runtime',
+          // 确保 @antv/x6-react 相关包也使用同一个 React
+          '@antv/x6-react-shape',
+          '@antv/x6-react-components',
+        ],
       },
       build: {
         rollupOptions: {
@@ -69,6 +107,19 @@ export default defineConfig(({ mode }) => {
           },
           output: {
             manualChunks: (id) => {
+              // 重要：确保 React 和 React-DOM 始终在同一个 chunk 中
+              // 避免多个 React 实例导致的 ForwardRef 错误
+              if (id.includes('node_modules/react/') || 
+                  id.includes('node_modules/react-dom/') ||
+                  id.includes('node_modules/react/jsx-runtime')) {
+                return 'vendor-react';
+              }
+              
+              // 将 @antv/x6-react 相关包与 React 放在一起，确保使用同一个 React 实例
+              if (id.includes('node_modules/@antv/x6-react')) {
+                return 'vendor-react';
+              }
+              
               // Phase 5优化: 更细粒度的代码分割
               // 将大组件单独打包
               if (id.includes('/admin/AdminScreen')) {
@@ -90,10 +141,6 @@ export default defineConfig(({ mode }) => {
               }
               if (id.includes('/mobile/screens/')) {
                 return 'mobile-screens';
-              }
-              // 将React相关库单独打包
-              if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-                return 'vendor-react';
               }
               // 将AI服务相关单独打包
               if (id.includes('/services/ai') || id.includes('/services/gemini')) {

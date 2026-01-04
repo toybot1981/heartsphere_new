@@ -113,6 +113,25 @@ if [ ! -d "node_modules/react-dom" ]; then
     echo -e "${RED}React-DOM 未正确安装！${NC}"
     exit 1
 fi
+
+# 检查是否有多个 React 实例（这会导致 ForwardRef 错误）
+echo -e "${YELLOW}检查 React 实例...${NC}"
+REACT_INSTANCES=$(find node_modules -name "react" -type d | grep -v ".bin" | wc -l)
+if [ "$REACT_INSTANCES" -gt 1 ]; then
+    echo -e "${YELLOW}警告: 发现多个 React 实例 ($REACT_INSTANCES 个)，这可能导致 ForwardRef 错误${NC}"
+    echo -e "${YELLOW}尝试修复...${NC}"
+    # 查找所有 React 实例
+    find node_modules -name "react" -type d | grep -v ".bin" | while read dir; do
+        if [ "$dir" != "node_modules/react" ]; then
+            echo -e "${YELLOW}发现额外的 React 实例: $dir${NC}"
+            # 创建符号链接指向主 React 实例
+            rm -rf "$dir"
+            ln -s "$(pwd)/node_modules/react" "$dir"
+        fi
+    done
+    echo -e "${GREEN}已尝试修复多个 React 实例问题${NC}"
+fi
+
 echo -e "${GREEN}关键依赖验证通过${NC}"
 
 if [ $? -ne 0 ]; then
@@ -147,6 +166,9 @@ echo -e "${YELLOW}清理 Vite 缓存...${NC}"
 rm -rf node_modules/.vite
 rm -rf .vite
 rm -rf dist
+# 清理所有可能的缓存目录
+rm -rf node_modules/.cache
+rm -rf .cache
 
 # 确保React版本正确
 echo -e "${YELLOW}检查React版本...${NC}"
