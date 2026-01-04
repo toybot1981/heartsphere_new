@@ -5,7 +5,7 @@
 # 功能:
 # - 设置 development 环境变量（API Base URL: http://localhost:8080）
 # - 构建前端项目
-# - 将构建产物拷贝到 /opt/heartsphere/frontend
+# - 将构建产物拷贝到 /opt/heartsphere/frontend/dist/dev
 
 set -e
 
@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 FRONTEND_DIR="${PROJECT_ROOT}/frontend"
 DIST_DIR="${FRONTEND_DIR}/dist"
-DEPLOY_DIR="/opt/heartsphere/frontend"
+DEPLOY_DIR="/opt/heartsphere/frontend/dist/dev"
 
 # Development 环境配置
 DEPLOY_ENV="development"

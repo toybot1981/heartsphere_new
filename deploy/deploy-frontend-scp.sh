@@ -61,7 +61,7 @@ read_input "请输入SSH端口" "${REMOTE_PORT:-22}" REMOTE_PORT
 read_input "请输入SSH用户名" "${REMOTE_USER:-root}" REMOTE_USER
 
 # 4. 远程部署路径
-read_input "请输入远程部署路径" "${REMOTE_PATH:-/opt/heartsphere/frontend}" REMOTE_PATH
+read_input "请输入远程部署路径" "${REMOTE_PATH:-/opt/heartsphere/frontend/dist/prod}" REMOTE_PATH
 
 # 5. SSH密钥路径（可选）
 read_input "请输入SSH私钥路径（留空使用默认）" "${SSH_KEY:-}" SSH_KEY
