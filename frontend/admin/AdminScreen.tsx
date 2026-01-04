@@ -23,6 +23,7 @@ import { BillingManagement } from './components/billing';
 import { HeartSphereConnectionManagement } from './components/heartSphereConnection';
 import { MemoryManagement } from './components/memory';
 import { GraphManagement } from './components/GraphManagement';
+import { SkillsManagement } from './components/SkillsManagement';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -86,6 +87,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'heartsphere-connection': '心域连接管理',
             'memory': '记忆系统管理',
             'graph': 'Graph流程编辑器',
+            'skills': '技能管理',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -328,7 +330,12 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                                 }
                             }}
                         />
-                                                    )}
+                    )}
+                    {activeSection === 'skills' && (
+                        <SkillsManagement
+                            adminToken={adminToken}
+                        />
+                    )}
                                                 </div>
                                         </div>
                                 </div>

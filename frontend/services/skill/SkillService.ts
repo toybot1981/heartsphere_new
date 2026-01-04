@@ -375,6 +375,98 @@ export class SkillService {
       return null;
     }
   }
+
+  /**
+   * 创建技能
+   */
+  async createSkill(skill: SkillDefinition, token?: string): Promise<SkillDefinition> {
+    try {
+      const authToken = token || localStorage.getItem('token');
+      if (!authToken) {
+        throw new Error('未登录');
+      }
+
+      const response = await fetch(`${this.baseUrl}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(skill),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result: ApiResponse<SkillDefinition> = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('[SkillService] 创建技能失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新技能
+   */
+  async updateSkill(skillId: string, skill: Partial<SkillDefinition>, token?: string): Promise<SkillDefinition> {
+    try {
+      const authToken = token || localStorage.getItem('token');
+      if (!authToken) {
+        throw new Error('未登录');
+      }
+
+      const response = await fetch(`${this.baseUrl}/${skillId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(skill),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result: ApiResponse<SkillDefinition> = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('[SkillService] 更新技能失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除技能
+   */
+  async deleteSkill(skillId: string, token?: string): Promise<void> {
+    try {
+      const authToken = token || localStorage.getItem('token');
+      if (!authToken) {
+        throw new Error('未登录');
+      }
+
+      const response = await fetch(`${this.baseUrl}/${skillId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('[SkillService] 删除技能失败:', error);
+      throw error;
+    }
+  }
 }
 
 // 导出单例
