@@ -104,7 +104,7 @@ echo ""
 echo -e "${GREEN}开始部署流程...${NC}"
 
 # 1. 检查前端目录
-echo -e "${YELLOW}[1/5] 检查前端目录...${NC}"
+echo -e "${YELLOW}[1/7] 检查前端目录...${NC}"
 if [ ! -d "$FRONTEND_DIR" ]; then
     echo -e "${RED}错误: 前端目录不存在: ${FRONTEND_DIR}${NC}"
     exit 1
@@ -115,7 +115,7 @@ cd "$FRONTEND_DIR" || {
 }
 
 # 2. 检查是否需要构建
-echo -e "${YELLOW}[2/5] 检查是否需要构建...${NC}"
+echo -e "${YELLOW}[2/7] 检查是否需要构建...${NC}"
 if [ ! -d "$DIST_DIR" ] || [ -z "$(ls -A "$DIST_DIR" 2>/dev/null)" ]; then
     echo -e "${YELLOW}dist 目录不存在或为空，需要构建...${NC}"
     BUILD_NEEDED=true
@@ -266,7 +266,7 @@ fi
 
 # 4. 构建前端项目
 if [ "$BUILD_NEEDED" = true ]; then
-    echo -e "${YELLOW}[4/6] 构建前端项目...${NC}"
+    echo -e "${YELLOW}[4/7] 构建前端项目...${NC}"
     
     # 检查 node_modules
     if [ ! -d "node_modules" ]; then
