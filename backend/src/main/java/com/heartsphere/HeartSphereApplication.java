@@ -18,7 +18,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.heartsphere.payment.repository",
         "com.heartsphere.emotion.repository",
         "com.heartsphere.mailbox.repository",
-        "com.heartsphere.memory.repository",
         "com.heartsphere.memory.repository.jpa",
         "com.heartsphere.skill.repository"
     }

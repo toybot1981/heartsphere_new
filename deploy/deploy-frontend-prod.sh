@@ -170,13 +170,13 @@ if [ "$BUILD_NEEDED" = true ]; then
         echo -e "${YELLOW}请选择 API 访问方式:${NC}"
         echo "  1) 相对路径 /api (推荐，通过 nginx/Vite 代理)"
         echo "  2) 绝对 URL (直接访问后端，需要配置 CORS)"
-        echo "  3) 快速设置: http://heartsphere.cn:8080 (生产环境直接访问后端)"
+        echo "  3) 快速设置: http://heartsphere.cn(生产环境直接访问后端)"
         read -p "请选择 [1-3] (默认: 1): " api_choice
         api_choice="${api_choice:-1}"
         
         if [ "$api_choice" = "3" ]; then
             # 快速设置生产地址
-            API_BASE_URL="http://heartsphere.cn:8080"
+            API_BASE_URL="http://heartsphere.cn"
             echo -e "${GREEN}将设置 API_BASE_URL=${API_BASE_URL}${NC}"
             echo -e "${YELLOW}注意: 使用绝对 URL 直接访问后端，需要确保后端配置了 CORS${NC}"
         elif [ "$api_choice" = "2" ]; then
@@ -292,9 +292,16 @@ fi
 echo -e "${YELLOW}[5/7] 准备上传文件...${NC}"
 
 # 构建 SSH 选项
+# SSH选项用于ssh命令
 SSH_OPTS="-p ${REMOTE_PORT}"
 if [ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ]; then
     SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY}"
+fi
+
+# SCP选项（scp使用-P而不是-p）
+SCP_OPTS="-P ${REMOTE_PORT}"
+if [ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ]; then
+    SCP_OPTS="${SCP_OPTS} -i ${SSH_KEY}"
 fi
 
 # 测试 SSH 连接
@@ -399,7 +406,8 @@ if [ "$USE_SCP" = true ]; then
         echo -e "${RED}上传失败${NC}"
         echo -e "${YELLOW}尝试使用直接 scp 方式...${NC}"
         # 如果 tar 方式失败，尝试直接 scp
-        scp $SSH_OPTS -r "${DIST_DIR}"/* "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/" || {
+        # scp 使用 -P 选项指定端口（而不是 -p）
+        scp ${SCP_OPTS} -r "${DIST_DIR}"/* "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/" || {
             echo -e "${RED}scp 上传也失败${NC}"
             exit 1
         }
@@ -431,7 +439,7 @@ ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p ${REMOTE_DEPLOY_DIR}" ||
 DEPLOY_FILES=(
     "deploy-frontend-prod.sh"
     "deploy-backend-prod.sh"
-    "setup-env.sh"
+    "setup-env-prod.sh"
     "env.template"
     "nginx-heartsphere-production.conf"
     "nginx-heartsphere.conf.example"
@@ -472,7 +480,8 @@ else
         local_file="${SCRIPT_DIR}/${file}"
         if [ -f "$local_file" ]; then
             echo -e "${YELLOW}  拷贝 ${file}...${NC}"
-            scp $SSH_OPTS "$local_file" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DEPLOY_DIR}/" || {
+            # scp 使用 -P 选项指定端口（而不是 -p）
+            scp ${SCP_OPTS} "$local_file" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DEPLOY_DIR}/" || {
                 echo -e "${RED}  拷贝 ${file} 失败${NC}"
             }
         else
@@ -505,5 +514,5 @@ echo ""
 echo -e "${YELLOW}提示:${NC}"
 echo -e "  1. 如果使用 Nginx，可能需要重新加载配置: ${BLUE}sudo systemctl reload nginx${NC}"
 echo -e "  2. 检查部署结果: ${BLUE}ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST} 'ls -la ${REMOTE_PATH}'${NC}"
-echo -e "  3. 在远程服务器上可以使用部署脚本: ${BLUE}ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST} 'cd ${REMOTE_DEPLOY_DIR} && ./setup-env.sh'${NC}"
+echo -e "  3. 在远程服务器上可以使用部署脚本: ${BLUE}ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST} 'cd ${REMOTE_DEPLOY_DIR} && ./setup-env-prod.sh'${NC}"
 echo ""
