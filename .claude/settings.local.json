@@ -44,7 +44,17 @@
       "Bash(while read dir)",
       "Bash(tree:*)",
       "Bash(wc:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm run build)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(npx tsc:*)",
+      "Bash(done:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git clean:*)"
     ]
   }
 }

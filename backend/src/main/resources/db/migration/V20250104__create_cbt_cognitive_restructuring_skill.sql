@@ -18,7 +18,6 @@ INSERT INTO skill_definitions (
     version,
     author,
     is_system_skill,
-    is_active,
     created_at,
     updated_at
 ) VALUES (
@@ -103,7 +102,6 @@ INSERT INTO skill_definitions (
     '1.0.0',
     'HeartSphere CBT Team',
     true,
-    true,
     NOW(),
     NOW()
 ) ON DUPLICATE KEY UPDATE
@@ -119,7 +117,7 @@ INSERT INTO skill_instructions (
     skill_id,
     instruction_level,
     instruction_text,
-    priority,
+    execution_order,
     created_at
 ) VALUES
     (
@@ -170,15 +168,16 @@ INSERT INTO skill_instructions (
     )
 ON DUPLICATE KEY UPDATE
     instruction_text = VALUES(instruction_text),
-    priority = VALUES(priority);
+    execution_order = VALUES(execution_order);
 
 -- 3. 插入技能资源（Level 3）
 INSERT INTO skill_resources (
     skill_id,
     resource_type,
     resource_name,
-    resource_path,
+    resource_url,
     resource_content,
+    resource_order,
     created_at
 ) VALUES
     (
@@ -187,6 +186,7 @@ INSERT INTO skill_resources (
         '思维记录表',
         '/skills/cbt/cognitive-restructuring/thought-record-template.json',
         '{"situation": "", "automaticThought": "", "emotion": "", "intensity": 0, "cognitiveDistortion": "", "evidenceFor": [], "evidenceAgainst": [], "alternativeThought": "", "newEmotion": "", "newIntensity": 0}',
+        1,
         NOW()
     ),
     (
@@ -195,6 +195,7 @@ INSERT INTO skill_resources (
         '认知扭曲示例',
         '/skills/cbt/cognitive-restructuring/distortion-examples.json',
         '{"全或无思维": "如果我不完美，我就是个失败者", "过度概括": "一次失败意味着我永远会失败", "心理过滤": "只关注负面，忽略积极", "贬低积极": "那只是运气好", "读心术": "他们一定觉得我很蠢", "灾难化": "如果这次考试失败，我的人生就完了", "情绪推理": "我感觉很糟糕，所以情况一定很糟糕", "应该陈述": "我应该总是做得最好", "贴标签": "我是个失败者", "个人化": "都是我的错"}',
+        2,
         NOW()
     ),
     (
@@ -203,8 +204,10 @@ INSERT INTO skill_resources (
         '苏格拉底式提问清单',
         '/skills/cbt/cognitive-restructuring/socratic-questions.json',
         '["这个想法的证据是什么？", "有没有其他可能的解释？", "最坏的情况是什么？我能应对吗？", "最好的情况是什么？", "最现实的情况是什么？", "这个想法对我有什么影响？", "如果朋友有同样的想法，我会对他说什么？", "我应该做什么？"]',
+        3,
         NOW()
     )
 ON DUPLICATE KEY UPDATE
     resource_content = VALUES(resource_content),
-    updated_at = NOW();
+    resource_url = VALUES(resource_url),
+    resource_order = VALUES(resource_order);
