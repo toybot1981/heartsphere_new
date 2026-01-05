@@ -130,7 +130,7 @@ fi
 
 # 3. 设置 API Base URL 环境变量（如果需要构建）
 if [ "$BUILD_NEEDED" = true ]; then
-    echo -e "${YELLOW}[3/6] 设置 API Base URL 环境变量...${NC}"
+    echo -e "${YELLOW}[3/7] 设置 API Base URL 环境变量...${NC}"
     
     # 检查是否已有 .env.production 文件
     if [ -f ".env.production" ]; then
