@@ -42,3 +42,15 @@ logs/
 *.db
 *.sqlite
 *.sqlite3backend/uploads/
+
+# 包含敏感信息的配置文件（使用环境变量替代）
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-prod.yml
+backend/src/main/resources/application-*.local.yml
+**/.env
+**/.env.local
+**/.env.*.local
+**/*secret*.yml
+**/*secret*.properties
+**/*password*.yml
+**/*password*.properties
