@@ -285,11 +285,11 @@ if [ "$BUILD_NEEDED" = true ]; then
     
     echo -e "${GREEN}构建完成${NC}"
 else
-    echo -e "${YELLOW}[4/6] 跳过构建，使用现有 dist 目录${NC}"
+    echo -e "${YELLOW}[4/7] 跳过构建，使用现有 dist 目录${NC}"
 fi
 
 # 5. 准备 SCP 命令
-echo -e "${YELLOW}[5/6] 准备上传文件...${NC}"
+echo -e "${YELLOW}[5/7] 准备上传文件...${NC}"
 
 # 构建 SSH 选项
 SSH_OPTS="-p ${REMOTE_PORT}"
@@ -308,7 +308,7 @@ else
 fi
 
 # 6. 上传文件
-echo -e "${YELLOW}[6/6] 上传文件到远程服务器...${NC}"
+echo -e "${YELLOW}[6/7] 上传文件到远程服务器...${NC}"
 
 # 创建远程目录（如果不存在）
 echo -e "${YELLOW}创建远程目录...${NC}"
@@ -414,7 +414,85 @@ ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "
     find '${REMOTE_PATH}' -type d -exec chmod 755 {} \;
 "
 
-# 7. 完成
+# 7. 拷贝 deploy 文件到远程服务器
+echo ""
+echo -e "${YELLOW}[7/7] 拷贝部署脚本到远程服务器...${NC}"
+REMOTE_DEPLOY_DIR="/opt/heartsphere/deploy"
+echo -e "${YELLOW}目标目录: ${REMOTE_DEPLOY_DIR}${NC}"
+
+# 创建远程 deploy 目录
+echo -e "${YELLOW}创建远程 deploy 目录...${NC}"
+ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p ${REMOTE_DEPLOY_DIR}" || {
+    echo -e "${RED}无法创建远程 deploy 目录${NC}"
+    exit 1
+}
+
+# 定义需要拷贝的生产环境相关文件
+DEPLOY_FILES=(
+    "deploy-frontend-prod.sh"
+    "deploy-backend-prod.sh"
+    "setup-env.sh"
+    "env.template"
+    "nginx-heartsphere-production.conf"
+    "nginx-heartsphere.conf.example"
+    "DEPLOYMENT_GUIDE.md"
+    "SERVICE_TROUBLESHOOTING.md"
+    "QUICK_START.md"
+)
+
+# 使用 rsync 或 scp 拷贝文件
+if command -v rsync &> /dev/null && ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "command -v rsync >/dev/null 2>&1" 2>/dev/null; then
+    echo -e "${YELLOW}使用 rsync 拷贝部署脚本...${NC}"
+    
+    # 构建 SSH 命令
+    if [ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ]; then
+        SSH_CMD="ssh -p ${REMOTE_PORT} -i ${SSH_KEY} -o StrictHostKeyChecking=no"
+    else
+        SSH_CMD="ssh -p ${REMOTE_PORT} -o StrictHostKeyChecking=no"
+    fi
+    
+    # 拷贝每个文件
+    for file in "${DEPLOY_FILES[@]}"; do
+        local_file="${SCRIPT_DIR}/${file}"
+        if [ -f "$local_file" ]; then
+            echo -e "${YELLOW}  拷贝 ${file}...${NC}"
+            rsync -avz --progress \
+                -e "${SSH_CMD}" \
+                "$local_file" \
+                "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DEPLOY_DIR}/" 2>&1 | grep -v "^sending\|^sent\|^total" || true
+        else
+            echo -e "${YELLOW}  跳过 ${file} (文件不存在)${NC}"
+        fi
+    done
+else
+    echo -e "${YELLOW}使用 scp 拷贝部署脚本...${NC}"
+    
+    # 拷贝每个文件
+    for file in "${DEPLOY_FILES[@]}"; do
+        local_file="${SCRIPT_DIR}/${file}"
+        if [ -f "$local_file" ]; then
+            echo -e "${YELLOW}  拷贝 ${file}...${NC}"
+            scp $SSH_OPTS "$local_file" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DEPLOY_DIR}/" || {
+                echo -e "${RED}  拷贝 ${file} 失败${NC}"
+            }
+        else
+            echo -e "${YELLOW}  跳过 ${file} (文件不存在)${NC}"
+        fi
+    done
+fi
+
+# 设置文件权限
+echo -e "${YELLOW}设置文件权限...${NC}"
+ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "
+    chown -R ${REMOTE_USER}:${REMOTE_USER} '${REMOTE_DEPLOY_DIR}' 2>/dev/null || true
+    find '${REMOTE_DEPLOY_DIR}' -type f -name '*.sh' -exec chmod 755 {} \;
+    find '${REMOTE_DEPLOY_DIR}' -type f ! -name '*.sh' -exec chmod 644 {} \;
+    find '${REMOTE_DEPLOY_DIR}' -type d -exec chmod 755 {} \;
+"
+
+echo -e "${GREEN}部署脚本已拷贝到 ${REMOTE_DEPLOY_DIR}${NC}"
+
+# 8. 完成
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}部署完成！${NC}"
@@ -422,8 +500,10 @@ echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "远程路径: ${GREEN}${REMOTE_PATH}${NC}"
 echo -e "备份位置: ${GREEN}${BACKUP_DIR}${NC}"
+echo -e "部署脚本目录: ${GREEN}${REMOTE_DEPLOY_DIR}${NC}"
 echo ""
 echo -e "${YELLOW}提示:${NC}"
 echo -e "  1. 如果使用 Nginx，可能需要重新加载配置: ${BLUE}sudo systemctl reload nginx${NC}"
 echo -e "  2. 检查部署结果: ${BLUE}ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST} 'ls -la ${REMOTE_PATH}'${NC}"
+echo -e "  3. 在远程服务器上可以使用部署脚本: ${BLUE}ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST} 'cd ${REMOTE_DEPLOY_DIR} && ./setup-env.sh'${NC}"
 echo ""
