@@ -113,7 +113,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <MUIProvider>
-      <AdminApp />
+    <AdminApp />
     </MUIProvider>
   </React.StrictMode>
 );

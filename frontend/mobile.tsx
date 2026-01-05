@@ -30,7 +30,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <MUIProvider>
-      <MobileAppWrapper />
+    <MobileAppWrapper />
     </MUIProvider>
   </React.StrictMode>
 );
