@@ -52,7 +52,8 @@ public class SkillExecutor {
         ScriptSkillExecutor scriptExecutor,
         ApiSkillExecutor apiExecutor,
         GraphSkillExecutor graphExecutor,
-        DatabaseSkillExecutor databaseExecutor
+        DatabaseSkillExecutor databaseExecutor,
+        com.heartsphere.skill.service.executor.LLMBasedSkillExecutor llmBasedExecutor
     ) {
         this.skillDefinitionRepository = skillDefinitionRepository;
         this.skillInstructionRepository = skillInstructionRepository;
@@ -65,6 +66,8 @@ public class SkillExecutor {
         executionHandlers.put("API", apiExecutor);
         executionHandlers.put("GRAPH", graphExecutor);
         executionHandlers.put("DATABASE", databaseExecutor);
+        // 注册基于大模型的执行器（用于RULE_BASED类型）
+        executionHandlers.put("RULE_BASED", llmBasedExecutor);
     }
     
     /**
@@ -149,26 +152,27 @@ public class SkillExecutor {
             return handler.execute(skill, instructions, resources, parameters, context);
         }
         
-        // 默认：基于规则的执行
-        return executeRuleBased(skill, instructions, parameters, context);
+        // 如果没有找到对应的执行器，使用RULE_BASED作为fallback
+        log.warn("未找到执行器: executionType={}, 使用RULE_BASED作为fallback", executionType);
+        SkillExecutionHandler fallbackHandler = executionHandlers.get("RULE_BASED");
+        if (fallbackHandler != null) {
+            return fallbackHandler.execute(skill, instructions, resources, parameters, context);
+        }
+        
+        // 最后的fallback：返回简单结果
+        return createFallbackResult(skill, parameters);
     }
     
     /**
-     * 基于规则的执行（默认）
+     * 创建fallback结果（当没有执行器时）
      */
-    private Object executeRuleBased(
-        SkillDefinition skill,
-        List<SkillInstruction> instructions,
-        Map<String, Object> parameters,
-        SkillExecutionContext context
-    ) {
-        // 简单的规则执行逻辑
-        // 可以根据 instructions 中的规则进行匹配和执行
+    private Object createFallbackResult(SkillDefinition skill, Map<String, Object> parameters) {
         Map<String, Object> result = new HashMap<>();
         result.put("skillId", skill.getSkillId());
         result.put("skillName", skill.getName());
-        result.put("message", "技能执行成功（基于规则）");
+        result.put("message", "技能执行成功（fallback模式）");
         result.put("parameters", parameters);
+        result.put("warning", "未找到对应的执行器，使用fallback模式");
         return result;
     }
     
