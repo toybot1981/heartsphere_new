@@ -272,13 +272,12 @@ else
     fi
 fi
 
-# 从模板中读取默认值
-declare -A DEFAULT_VALUES
-while IFS='=' read -r key value; do
-    if [[ "$key" =~ ^[A-Z_]+$ ]] && [[ ! "$key" =~ ^#.*$ ]]; then
-        DEFAULT_VALUES["$key"]="$value"
-    fi
-done < <(grep -v '^#' "$TEMPLATE_FILE" | grep -E '^[A-Z_]+=')
+# 从模板中读取默认值（不使用关联数组，兼容 bash 3.x）
+# 直接在使用时从模板文件读取默认值
+get_default_value() {
+    local var_name="$1"
+    grep -v '^#' "$TEMPLATE_FILE" | grep -E "^${var_name}=" | head -1 | cut -d'=' -f2- | sed 's/^["'\'']//;s/["'\'']$//'
+}
 
 # 设置环境变量
 echo -e "${BLUE}========== 数据库配置 ==========${NC}"
