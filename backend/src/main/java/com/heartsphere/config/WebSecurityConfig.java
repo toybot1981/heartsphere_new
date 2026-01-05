@@ -16,12 +16,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -59,40 +56,49 @@ public class WebSecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
+    /**
+     * CORS配置源
+     * 统一配置所有控制器的CORS策略
+     * 注意：当使用 setAllowCredentials(true) 时，不能使用 addAllowedHeader("*")，必须明确列出所有请求头
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        
+        // 允许所有来源（使用模式匹配，支持凭证）
+        config.addAllowedOriginPattern("*");
+        
+        // 允许所有HTTP方法
+        config.addAllowedMethod("*");
+        
+        // 当使用 setAllowCredentials(true) 时，不能使用通配符，必须明确列出所有请求头
+        // 标准请求头
+        config.addAllowedHeader("Origin");
+        config.addAllowedHeader("Content-Type");
+        config.addAllowedHeader("Accept");
+        config.addAllowedHeader("Authorization");
+        config.addAllowedHeader("X-Requested-With");
+        config.addAllowedHeader("Cache-Control");
+        config.addAllowedHeader("Pragma");
+        
+        // 允许携带凭证
+        config.setAllowCredentials(true);
+        
+        // 预检请求的缓存时间（秒）
+        config.setMaxAge(3600L);
+        
+        // 应用到所有路径
+        source.registerCorsConfiguration("/**", config);
+        
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 启用默认的CORS配置，使用application.yml中的配置
-                .cors(cors -> cors.configurationSource(request -> {
-                    // 创建默认的CORS配置
-                    CorsConfiguration config = new CorsConfiguration();
-                    // 允许所有来源（使用模式匹配，支持凭证）
-                    config.addAllowedOriginPattern("*");
-                    // 允许所有HTTP方法
-                    config.addAllowedMethod("*");
-                    // 明确添加所有允许的请求头（当使用credentials时不能使用*）
-                    // 标准请求头
-                    config.addAllowedHeader("Origin");
-                    config.addAllowedHeader("Content-Type");
-                    config.addAllowedHeader("Accept");
-                    config.addAllowedHeader("Authorization");
-                    // 共享模式相关的自定义请求头
-                    config.addAllowedHeader("X-Shared-Mode");
-                    config.addAllowedHeader("X-Share-Config-Id");
-                    config.addAllowedHeader("X-Visitor-Id");
-                    config.addAllowedHeader("x-shared-mode");
-                    config.addAllowedHeader("x-share-config-id");
-                    config.addAllowedHeader("x-visitor-id");
-                    // 暴露响应头（这些是服务器返回的响应头）
-                    config.addExposedHeader("X-Shared-Mode");
-                    config.addExposedHeader("X-Share-Config-Id");
-                    config.addExposedHeader("X-Visitor-Id");
-                    // 允许携带凭证
-                    config.setAllowCredentials(true);
-                    // 预检请求的缓存时间
-                    config.setMaxAge(3600L);
-                    return config;
-                }))
+                // 使用统一的CORS配置源
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 禁用CSRF
                 .csrf(csrf -> csrf.disable())
                 // 设置会话管理为无状态

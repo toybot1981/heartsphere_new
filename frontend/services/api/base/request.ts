@@ -16,11 +16,44 @@ export interface RequestOptions extends RequestInit {
  */
 export const request = async <T>(url: string, options?: RequestOptions): Promise<T> => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  const fullUrl = `${API_BASE_URL}${url}`;
   const method = options?.method?.toUpperCase() || 'GET';
   
   // 检查是否是 subscription-plans 的请求（用于静默处理404）
   const isSubscriptionPlansRequest = url.includes('/subscription-plans');
+  
+  // 2.5. 添加共享模式标识（如果存在且接口需要）
+  // 只在需要共享模式上下文的接口上添加查询参数
+  const needsSharedMode = url.includes('/quick-connect/') || 
+                         url.includes('/heartconnect/shared/') ||
+                         (url.includes('/heartconnect/config/') && !url.includes('/heartconnect/config/by-code/')) ||
+                         url.includes('/heartconnect/connection/');
+  
+  // 明确不需要共享模式的接口
+  const excludesSharedMode = url.includes('/auth/') ||
+                             url.includes('/admin/') ||
+                             url.includes('/favorites/') ||
+                             url.includes('/access-history/') ||
+                             url.includes('/heartconnect/config/by-code/');
+  
+  // 如果URL需要共享模式，添加查询参数
+  let finalUrl = url;
+  if (needsSharedMode && !excludesSharedMode) {
+    try {
+      const sharedModeState = getSharedModeState();
+      if (sharedModeState.shareConfigId) {
+        // 将 shareConfigId 添加到 URL 查询参数中
+        const urlObj = new URL(url, 'http://dummy'); // 使用虚拟base URL来解析相对路径
+        urlObj.searchParams.set('shareConfigId', sharedModeState.shareConfigId.toString());
+        // 获取修改后的路径和查询参数
+        finalUrl = urlObj.pathname + urlObj.search;
+      }
+    } catch (err) {
+      // 静默处理，不影响正常请求
+      logger.error('[request] 检查共享模式时发生错误:', err);
+    }
+  }
+  
+  const fullUrl = `${API_BASE_URL}${finalUrl}`;
   
   try {
     // 1. 确保请求体正确处理
@@ -58,43 +91,14 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       logger.debug('获取认证token失败:', err);
     }
     
-    // 2.5. 添加共享模式标识（如果存在且接口需要）
-    // 只在需要共享模式上下文的接口上添加请求头
-    const needsSharedMode = url.includes('/quick-connect/') || 
-                           url.includes('/heartconnect/shared/') ||
-                           (url.includes('/heartconnect/config/') && !url.includes('/heartconnect/config/by-code/')) ||
-                           url.includes('/heartconnect/connection/');
-    
-    // 明确不需要共享模式的接口
-    const excludesSharedMode = url.includes('/auth/') ||
-                               url.includes('/admin/') ||
-                               url.includes('/favorites/') ||
-                               url.includes('/access-history/') ||
-                               url.includes('/heartconnect/config/by-code/');
-    
-    if (needsSharedMode && !excludesSharedMode) {
-      try {
-        const sharedModeState = getSharedModeState();
-        if (sharedModeState.shareConfigId) {
-          headers.set('X-Shared-Mode', 'true');
-          headers.set('X-Share-Config-Id', sharedModeState.shareConfigId.toString());
-        }
-      } catch (err) {
-        // 静默处理，不影响正常请求
-        logger.error('[request] 检查共享模式时发生错误:', err);
-      }
-    }
-    
-    // 3. 合并自定义headers（保护共享模式请求头不被覆盖）
+    // 3. 合并自定义headers
     if (options?.headers) {
       if (options.headers instanceof Headers) {
         options.headers.forEach((value, key) => {
           const lowerKey = key.toLowerCase();
-          // 保护共享模式请求头和系统请求头
+          // 保护系统请求头
           if (lowerKey !== 'content-type' && 
-              lowerKey !== 'accept' && 
-              lowerKey !== 'x-shared-mode' && 
-              lowerKey !== 'x-share-config-id') {
+              lowerKey !== 'accept') {
             headers.set(key, value);
           }
         });
@@ -102,11 +106,9 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         const customHeaders = options.headers as Record<string, unknown>;
         Object.entries(customHeaders).forEach(([key, value]) => {
           const lowerKey = key.toLowerCase();
-          // 保护共享模式请求头和系统请求头
+          // 保护系统请求头
           if (lowerKey !== 'content-type' && 
               lowerKey !== 'accept' && 
-              lowerKey !== 'x-shared-mode' && 
-              lowerKey !== 'x-share-config-id' && 
               value != null) {
             headers.set(key, String(value));
           }

@@ -60,14 +60,14 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  # CORS 配置
-  web:
-    cors:
-      allowed-origins: '*'
-      allowed-methods: GET, POST, PUT, DELETE, OPTIONS
-      allowed-headers: '*'
-      allow-credentials: true
-      exposed-headers: '*'
+  # CORS 配置（由 WebSecurityConfig 统一管理，此处注释掉避免冲突）
+  # web:
+  #   cors:
+  #     allowed-origins: '*'
+  #     allowed-methods: GET, POST, PUT, DELETE, OPTIONS
+  #     allowed-headers: '*'
+  #     allow-credentials: true
+  #     exposed-headers: '*'
 
 # JWT 配置
 jwt:

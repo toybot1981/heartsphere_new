@@ -32,8 +32,7 @@ public class SharedModeInterceptor implements HandlerInterceptor {
     
     private static final Logger log = LoggerFactory.getLogger(SharedModeInterceptor.class);
     
-    private static final String SHARED_MODE_HEADER = "X-Shared-Mode";
-    private static final String SHARE_CONFIG_ID_HEADER = "X-Share-Config-Id";
+    private static final String SHARE_CONFIG_ID_PARAM = "shareConfigId";
     
     @Autowired
     private HeartSphereShareConfigRepository shareConfigRepository;
@@ -50,18 +49,21 @@ public class SharedModeInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
         try {
-            // 检查请求头中是否有共享模式标识
-            String sharedMode = request.getHeader(SHARED_MODE_HEADER);
-            String shareConfigIdStr = request.getHeader(SHARE_CONFIG_ID_HEADER);
+            // OPTIONS 预检请求直接放行，让 CORS 过滤器处理
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                return true;
+            }
+            
+            // 检查查询参数中是否有共享模式标识
+            String shareConfigIdStr = request.getParameter(SHARE_CONFIG_ID_PARAM);
             
             // 只在DEBUG级别记录详细日志，减少生产环境日志量
             log.debug("========== [SharedModeInterceptor] 处理请求 ==========");
             log.debug("请求路径: {}", request.getRequestURI());
-            log.debug("请求头 X-Shared-Mode: {}", sharedMode);
-            log.debug("请求头 X-Share-Config-Id: {}", shareConfigIdStr);
+            log.debug("查询参数 shareConfigId: {}", shareConfigIdStr);
             
-            if ("true".equals(sharedMode) && shareConfigIdStr != null) {
-                log.debug("检测到共享模式请求头，开始处理: shareConfigId={}", shareConfigIdStr);
+            if (shareConfigIdStr != null && !shareConfigIdStr.trim().isEmpty()) {
+                log.debug("检测到共享模式查询参数，开始处理: shareConfigId={}", shareConfigIdStr);
                 try {
                     Long shareConfigId = Long.parseLong(shareConfigIdStr);
                     

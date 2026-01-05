@@ -23,10 +23,11 @@ public class SharedModeConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     "/api/auth/**",           // 排除认证相关
                     "/api/admin/**",          // 排除管理后台
-                    "/api/wechat/**",         // 排除微信相关
-                    "/swagger-ui/**",         // 排除Swagger
-                    "/v3/api-docs/**"        // 排除API文档
-                );
+                    "/api/wechat/**"          // 排除微信相关
+                    // 注意：不排除 OPTIONS 请求，但在拦截器内部会直接放行
+                    // 这样可以让 CORS 过滤器先处理 OPTIONS 请求
+                )
+                .order(1); // 设置较低的优先级，确保在 CORS 过滤器之后执行
     }
 }
 
