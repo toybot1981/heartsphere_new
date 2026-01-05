@@ -517,7 +517,8 @@ public class DoubaoAdapter implements ModelAdapter {
     @Override
     public AudioResponse textToSpeech(AudioRequest request) {
         try {
-            log.debug("豆包文本转语音请求: text={}, model={}", request.getText(), request.getModel());
+            log.info("[DoubaoAdapter] 豆包文本转语音请求: textLength={}, model={}", 
+                request.getText() != null ? request.getText().length() : 0, request.getModel());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -525,36 +526,44 @@ public class DoubaoAdapter implements ModelAdapter {
                 throw new AIServiceException("豆包 API key 未配置");
             }
             
-            // 火山引擎语音合成API端点
-            // 注意：实际端点需要根据火山引擎API文档调整
-            String url = baseUrl.replace("/api/v3", "") + "/tts/v2"; // 假设语音API在不同路径
+            // 优先使用请求中的 baseUrl（从配置表获取），如果没有则使用配置文件中的默认值
+            String effectiveBaseUrl = baseUrl; // 豆包TTS使用相同的baseUrl
             
-            // 确定模型名称
+            // 火山引擎 CosyVoice TTS API端点（使用OpenAPI兼容格式）
+            // 端点：/tts 或 /audio/speech
+            String url = effectiveBaseUrl.replace("/chat/completions", "").replace("/api/v3", "") + "/tts";
+            
+            // 确定模型名称（CosyVoice是豆包主流的TTS模型）
             String model = request.getModel() != null ? request.getModel() : "CosyVoice";
             
-            // 构建请求体（根据火山引擎API格式）
+            // 构建请求体（火山引擎 CosyVoice API格式）
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", model);
-            requestBody.put("text", request.getText());
+            requestBody.put("input", Map.of("text", request.getText()));
             
-            // 添加语音参数
+            // 构建参数
             Map<String, Object> parameters = new HashMap<>();
+            // 语音参数
             if (request.getVoice() != null) {
                 parameters.put("voice", request.getVoice());
+            } else {
+                parameters.put("voice", "zhitian_emo"); // 默认音色
             }
+            // 语速（0.5-2.0）
             if (request.getSpeed() != null) {
-                parameters.put("speed", request.getSpeed());
+                parameters.put("speed", Math.max(0.5, Math.min(2.0, request.getSpeed())));
+            } else {
+                parameters.put("speed", 1.0);
             }
+            // 音调（-20.0到20.0）
             if (request.getPitch() != null) {
-                parameters.put("pitch", request.getPitch());
+                parameters.put("pitch", Math.max(-20.0, Math.min(20.0, request.getPitch())));
             }
-            // 默认音频格式
+            // 音频格式
             parameters.put("format", "mp3");
             parameters.put("sample_rate", 24000);
             
-            if (!parameters.isEmpty()) {
-                requestBody.put("parameters", parameters);
-            }
+            requestBody.put("parameters", parameters);
             
             // 发送请求
             HttpHeaders headers = new HttpHeaders();
@@ -562,8 +571,8 @@ public class DoubaoAdapter implements ModelAdapter {
             headers.set("Authorization", "Bearer " + apiKey);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
             
-            log.info("[DoubaoAdapter] TTS请求 - URL: {}, Model: {}, TextLength: {}", 
-                url, model, request.getText() != null ? request.getText().length() : 0);
+            log.info("[DoubaoAdapter] TTS请求 - URL: {}, Model: {}, TextLength: {}, Voice: {}", 
+                url, model, request.getText() != null ? request.getText().length() : 0, parameters.get("voice"));
             
             ResponseEntity<JsonNode> response = restTemplate.exchange(
                 url, HttpMethod.POST, entity, JsonNode.class
@@ -579,11 +588,19 @@ public class DoubaoAdapter implements ModelAdapter {
             JsonNode responseBody = response.getBody();
             AudioResponse result = new AudioResponse();
             
-            // 解析音频数据（可能是base64编码或URL）
-            if (responseBody.has("audio")) {
+            // 火山引擎 CosyVoice 响应格式：output.audio (base64编码)
+            if (responseBody.has("output")) {
+                JsonNode output = responseBody.get("output");
+                if (output.has("audio")) {
+                    String audioBase64 = output.get("audio").asText();
+                    result.setAudioBase64(audioBase64);
+                } else if (output.has("audio_url")) {
+                    result.setContent(output.get("audio_url").asText());
+                }
+            } else if (responseBody.has("audio")) {
+                // 兼容其他可能的响应格式
                 String audioData = responseBody.get("audio").asText();
                 if (audioData.startsWith("data:")) {
-                    // 如果是data URI，提取base64部分
                     int commaIndex = audioData.indexOf(',');
                     if (commaIndex > 0) {
                         audioData = audioData.substring(commaIndex + 1);
@@ -592,13 +609,6 @@ public class DoubaoAdapter implements ModelAdapter {
                 result.setAudioBase64(audioData);
             } else if (responseBody.has("audio_url")) {
                 result.setContent(responseBody.get("audio_url").asText());
-            } else if (responseBody.has("output")) {
-                JsonNode output = responseBody.get("output");
-                if (output.has("audio")) {
-                    result.setAudioBase64(output.get("audio").asText());
-                } else if (output.has("audio_url")) {
-                    result.setContent(output.get("audio_url").asText());
-                }
             }
             
             result.setProvider(getProviderType());
@@ -610,7 +620,7 @@ public class DoubaoAdapter implements ModelAdapter {
             return result;
             
         } catch (Exception e) {
-            log.error("豆包文本转语音失败", e);
+            log.error("[DoubaoAdapter] 豆包文本转语音失败", e);
             throw new AIServiceException("豆包文本转语音失败: " + e.getMessage(), e);
         }
     }
@@ -618,7 +628,8 @@ public class DoubaoAdapter implements ModelAdapter {
     @Override
     public AudioResponse speechToText(AudioRequest request) {
         try {
-            log.debug("豆包语音转文本请求: model={}", request.getModel());
+            log.info("[DoubaoAdapter] 豆包语音转文本请求: model={}, hasAudioData={}", 
+                request.getModel(), request.getAudioData() != null && !request.getAudioData().isEmpty());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -640,13 +651,20 @@ public class DoubaoAdapter implements ModelAdapter {
                 }
             }
             
-            byte[] audioBytes = Base64.getDecoder().decode(audioDataStr);
+            byte[] audioBytes;
+            try {
+                audioBytes = Base64.getDecoder().decode(audioDataStr);
+            } catch (IllegalArgumentException e) {
+                log.error("[DoubaoAdapter] Base64解码失败", e);
+                throw new AIServiceException("音频数据Base64解码失败: " + e.getMessage());
+            }
             
-            // 火山引擎语音识别API端点
-            // 注意：实际端点需要根据火山引擎API文档调整
-            String url = baseUrl.replace("/api/v3", "") + "/asr/v2"; // 假设语音识别API在不同路径
+            // 火山引擎 Fun-ASR 或 Paraformer 语音识别API端点
+            // 使用OpenAPI兼容格式，端点：/asr 或 /audio/transcriptions
+            String effectiveBaseUrl = baseUrl;
+            String url = effectiveBaseUrl.replace("/chat/completions", "").replace("/api/v3", "") + "/asr";
             
-            // 确定模型名称
+            // 确定模型名称（Fun-ASR是豆包主流的ASR模型）
             String model = request.getModel() != null ? request.getModel() : "Fun-ASR";
             
             // 构建multipart/form-data请求
@@ -665,18 +683,18 @@ public class DoubaoAdapter implements ModelAdapter {
                 }
             });
             
-            // 添加语言参数
-            if (request.getLanguage() != null) {
-                body.add("language", request.getLanguage());
-            } else {
-                body.add("language", "zh-CN"); // 默认中文
-            }
+            // 添加语言参数（Fun-ASR支持多语言）
+            String language = request.getLanguage() != null ? request.getLanguage() : "zh-CN";
+            body.add("language", language);
+            
+            // 添加其他参数
+            body.add("response_format", "json");
             
             HttpEntity<org.springframework.util.MultiValueMap<String, Object>> entity = 
                 new HttpEntity<>(body, headers);
             
-            log.info("[DoubaoAdapter] ASR请求 - URL: {}, Model: {}, AudioSize: {} bytes", 
-                url, model, audioBytes.length);
+            log.info("[DoubaoAdapter] ASR请求 - URL: {}, Model: {}, AudioSize: {} bytes, Language: {}", 
+                url, model, audioBytes.length, language);
             
             ResponseEntity<JsonNode> response = restTemplate.exchange(
                 url, HttpMethod.POST, entity, JsonNode.class
@@ -692,41 +710,50 @@ public class DoubaoAdapter implements ModelAdapter {
             JsonNode responseBody = response.getBody();
             AudioResponse result = new AudioResponse();
             
-            // 解析识别结果
-            if (responseBody.has("text")) {
-                result.setContent(responseBody.get("text").asText());
-            } else if (responseBody.has("output")) {
+            // 火山引擎 Fun-ASR 响应格式：output.text 或 output.sentence[]
+            if (responseBody.has("output")) {
                 JsonNode output = responseBody.get("output");
                 if (output.has("text")) {
                     result.setContent(output.get("text").asText());
                 } else if (output.has("sentence")) {
                     // 某些API可能返回sentence数组
                     if (output.get("sentence").isArray() && output.get("sentence").size() > 0) {
-                        JsonNode firstSentence = output.get("sentence").get(0);
-                        if (firstSentence.has("text")) {
-                            result.setContent(firstSentence.get("text").asText());
+                        // 合并所有句子的文本
+                        StringBuilder textBuilder = new StringBuilder();
+                        for (JsonNode sentence : output.get("sentence")) {
+                            if (sentence.has("text")) {
+                                if (textBuilder.length() > 0) {
+                                    textBuilder.append(" ");
+                                }
+                                textBuilder.append(sentence.get("text").asText());
+                            }
                         }
+                        result.setContent(textBuilder.toString());
                     }
                 }
-            }
-            
-            // 解析置信度
-            if (responseBody.has("confidence")) {
-                result.setConfidence(responseBody.get("confidence").asDouble());
-            } else if (responseBody.has("output") && responseBody.get("output").has("confidence")) {
-                result.setConfidence(responseBody.get("output").get("confidence").asDouble());
+                
+                // 解析置信度
+                if (output.has("confidence")) {
+                    result.setConfidence(output.get("confidence").asDouble());
+                }
+            } else if (responseBody.has("text")) {
+                // 兼容其他可能的响应格式
+                result.setContent(responseBody.get("text").asText());
+                if (responseBody.has("confidence")) {
+                    result.setConfidence(responseBody.get("confidence").asDouble());
+                }
             }
             
             result.setProvider(getProviderType());
             result.setModel(model);
             
-            log.info("[DoubaoAdapter] ASR响应解析完成 - Model: {}, Text: {}", 
-                model, result.getContent() != null ? result.getContent().substring(0, Math.min(50, result.getContent().length())) : "null");
+            log.info("[DoubaoAdapter] ASR响应解析完成 - Model: {}, TextLength: {}, HasConfidence: {}", 
+                model, result.getContent() != null ? result.getContent().length() : 0, result.getConfidence() != null);
             
             return result;
             
         } catch (Exception e) {
-            log.error("豆包语音转文本失败", e);
+            log.error("[DoubaoAdapter] 豆包语音转文本失败", e);
             throw new AIServiceException("豆包语音转文本失败: " + e.getMessage(), e);
         }
     }

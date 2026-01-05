@@ -58,23 +58,33 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
   const [agreementModalType, setAgreementModalType] = useState<'terms' | 'privacy' | null>(null);
 
   // 检查是否需要邀请码和邮箱验证
+  const checkRequirements = async () => {
+    try {
+      const [inviteCodeResponse, emailVerificationResponse] = await Promise.all([
+        authApi.isInviteCodeRequired(),
+        authApi.isEmailVerificationRequired()
+      ]);
+      console.log('[LoginModal] 检查注册要求结果:', { inviteCodeRequired: inviteCodeResponse.inviteCodeRequired, emailVerificationRequired: emailVerificationResponse.emailVerificationRequired });
+      setInviteCodeRequired(inviteCodeResponse.inviteCodeRequired);
+      setEmailVerificationRequired(emailVerificationResponse.emailVerificationRequired);
+    } catch (err) {
+      console.error('检查注册要求失败:', err);
+      setInviteCodeRequired(false); // 默认不需要
+      setEmailVerificationRequired(true); // 默认需要邮箱验证
+    }
+  };
+
+  // 组件挂载时检查
   useEffect(() => {
-    const checkRequirements = async () => {
-      try {
-        const [inviteCodeResponse, emailVerificationResponse] = await Promise.all([
-          authApi.isInviteCodeRequired(),
-          authApi.isEmailVerificationRequired()
-        ]);
-        setInviteCodeRequired(inviteCodeResponse.inviteCodeRequired);
-        setEmailVerificationRequired(emailVerificationResponse.emailVerificationRequired);
-      } catch (err) {
-        console.error('检查注册要求失败:', err);
-        setInviteCodeRequired(false); // 默认不需要
-        setEmailVerificationRequired(true); // 默认需要邮箱验证
-      }
-    };
     checkRequirements();
   }, []);
+
+  // 切换到注册标签时重新检查（确保获取最新配置）
+  useEffect(() => {
+    if (activeTab === 'register') {
+      checkRequirements();
+    }
+  }, [activeTab]);
 
   // 加载微信二维码
   useEffect(() => {

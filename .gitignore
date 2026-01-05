@@ -54,3 +54,5 @@ backend/src/main/resources/application-*.local.yml
 **/*secret*.properties
 **/*password*.yml
 **/*password*.properties
+heartsphere-service-*.jar
+*.jar

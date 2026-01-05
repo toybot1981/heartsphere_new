@@ -53,7 +53,7 @@ const initialGameState: GameState = {
     debugMode: false,
     autoGenerateAvatars: false,
     enableFallback: true,
-    autoGenerateJournalImages: false
+    autoGenerateJournalImages: true
   },
   worldStyle: 'anime',
   lastLoginTime: Date.now()

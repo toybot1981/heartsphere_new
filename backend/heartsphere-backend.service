@@ -1,0 +1,23 @@
+[Unit]
+Description=HeartSphere Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/Users/admin/Workspace/heartsphere_new/backend
+ExecStart=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -jar /Users/admin/Workspace/heartsphere_new/backend/heartsphere-service-0.0.1-SNAPSHOT.jar --server.port=8081 --spring.profiles.active=production
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=heartsphere-backend
+
+# 加载环境变量文件
+EnvironmentFile=/Users/admin/Workspace/heartsphere_new/backend/.env
+
+# Java选项（可选，根据需要调整内存）
+#Environment="JAVA_OPTS=-Xms512m -Xmx1024m"
+
+[Install]
+WantedBy=multi-user.target

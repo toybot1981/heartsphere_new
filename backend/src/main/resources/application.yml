@@ -108,6 +108,15 @@ app:
         path: ${IMAGE_STORAGE_PATH:./uploads/images}
       base-url: ${IMAGE_BASE_URL:}  # 图片服务基础URL，如果未配置则自动使用当前请求的域名。格式：http://domain.com/api/images
       max-size: ${IMAGE_MAX_SIZE:10485760} # 10MB (单位：字节)
+    processing:
+      thumbnail:
+        default-width: ${IMAGE_THUMBNAIL_DEFAULT_WIDTH:200} # 默认缩略图宽度
+        default-height: ${IMAGE_THUMBNAIL_DEFAULT_HEIGHT:200} # 默认缩略图高度
+        default-quality: ${IMAGE_THUMBNAIL_DEFAULT_QUALITY:0.85} # 默认压缩质量 (0.0-1.0)
+        keep-aspect-ratio: ${IMAGE_THUMBNAIL_KEEP_ASPECT_RATIO:true} # 默认保持宽高比
+      crop:
+        max-width: ${IMAGE_CROP_MAX_WIDTH:5000} # 最大裁剪宽度
+        max-height: ${IMAGE_CROP_MAX_HEIGHT:5000} # 最大裁剪高度
 
 # 记忆系统配置
 heartsphere:

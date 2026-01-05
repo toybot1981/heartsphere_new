@@ -24,6 +24,7 @@ import { apiKeysApi } from './apiKeys';
 import { adminHeartSphereConnectionApi } from './heartSphereConnection';
 import { adminMemoryApi } from './memory';
 import { adminGraphApi } from './graph';
+import { adminChronosLettersApi } from './chronosLetters';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -47,6 +48,7 @@ export {
   adminHeartSphereConnectionApi,
   adminMemoryApi,
   adminGraphApi,
+  adminChronosLettersApi,
 };
 
 // 为了向后兼容，创建一个包含所有旧接口的 adminApi 对象
@@ -111,5 +113,8 @@ export const adminApi = {
 
     // Graph流程编辑器管理
     graph: adminGraphApi,
+
+    // 超时空信箱管理
+    chronosLetters: adminChronosLettersApi,
 };
 

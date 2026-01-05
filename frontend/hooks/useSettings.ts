@@ -31,7 +31,7 @@ export const useSettings = () => {
     const defaultSettings: AppSettings = {
       autoGenerateAvatars: false,
       autoGenerateStoryScenes: false,
-      autoGenerateJournalImages: false,
+      autoGenerateJournalImages: true,
       debugMode: false,
       showNoteSync: false,
       dialogueStyle: 'mobile-chat',

@@ -89,20 +89,43 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/assets/main-JPVo9MoM.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/admin-DNJdKUEu.js">
-  <link rel="modulepreload" crossorigin href="/assets/client-D_v5MQUk.js">
-  <link rel="modulepreload" crossorigin href="/assets/mobile-core-9fKApp4D.js">
-  <link rel="modulepreload" crossorigin href="/assets/generateAIResponse-DWcC8l0k.js">
-  <link rel="modulepreload" crossorigin href="/assets/useSystemIntegration-BBlFJZuy.js">
-  <link rel="modulepreload" crossorigin href="/assets/BrowserNotificationService-axJOgZr8.js">
-  <link rel="modulepreload" crossorigin href="/assets/journalTemplates-ezMF4AO2.js">
-  <link rel="modulepreload" crossorigin href="/assets/dataTransformers-CYW8Ct-U.js">
-  <link rel="modulepreload" crossorigin href="/assets/imageCache-CUfaga6I.js">
-  <link rel="modulepreload" crossorigin href="/assets/ShareConfigModal-D7Uwsl0c.js">
-  <link rel="stylesheet" crossorigin href="/assets/main-BH1nFJYT.css">
-</head>
+    <script type="module" crossorigin src="/assets/main-SweLKY-3.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/admin-By7h0LPm.js">
+    <link rel="modulepreload" crossorigin href="/assets/client-YBBpIp97.js">
+    <link rel="modulepreload" crossorigin href="/assets/mobile-core-DjVz8sn-.js">
+    <link rel="modulepreload" crossorigin href="/assets/generateAIResponse-C3rLvItx.js">
+    <link rel="modulepreload" crossorigin href="/assets/useSystemIntegration-DPrHfVdf.js">
+    <link rel="modulepreload" crossorigin href="/assets/BrowserNotificationService-CmpZ8u36.js">
+    <link rel="modulepreload" crossorigin href="/assets/journalTemplates-ezMF4AO2.js">
+    <link rel="modulepreload" crossorigin href="/assets/dataTransformers-CYW8Ct-U.js">
+    <link rel="modulepreload" crossorigin href="/assets/imageCache-BkJdJ9nM.js">
+    <link rel="modulepreload" crossorigin href="/assets/ShareConfigModal-Bw8unRuG.js">
+    <link rel="stylesheet" crossorigin href="/assets/main-BH1nFJYT.css">
+  </head>
   <body>
     <div id="root"></div>
+    <script>
+      // 移动端自动跳转检测
+      (function() {
+        // 如果已经在 mobile.html，不执行跳转
+        const currentPath = window.location.pathname;
+        if (currentPath === '/mobile.html' || currentPath.startsWith('/mobile.html')) {
+          return;
+        }
+        
+        // 检测是否为移动设备
+        const userAgent = navigator.userAgent || '';
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|Tablet|tablet/i.test(userAgent);
+        const isSmallScreen = window.innerWidth < 768;
+        
+        // 如果是移动设备或小屏幕，则跳转到 mobile.html
+        if (isMobileDevice || isSmallScreen) {
+          // 保留查询参数和哈希
+          const query = window.location.search;
+          const hash = window.location.hash;
+          window.location.replace('/mobile.html' + query + hash);
+        }
+      })();
+    </script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 package com.heartsphere.controller;
 
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.ImageProcessingService;
 import com.heartsphere.service.ImageStorageService;
 import com.heartsphere.util.ImageUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class ImageController {
 
     @Autowired
     private WebClient webClient;
+
+    @Autowired
+    private ImageProcessingService imageProcessingService;
 
     /**
      * 获取当前用户ID（用于用户资源路径）
@@ -267,6 +271,150 @@ public class ImageController {
             response.put("success", false);
             response.put("error", "URL处理失败: " + e.getMessage());
             return Mono.just(ResponseEntity.badRequest().body(response));
+        }
+    }
+
+    /**
+     * 生成缩略图
+     * @param request 包含图片URL和处理参数的请求体
+     * @return 处理结果
+     */
+    @PostMapping("/thumbnail")
+    public ResponseEntity<Map<String, Object>> generateThumbnail(@RequestBody Map<String, Object> request) {
+        logger.info("========== 收到缩略图生成请求 ==========");
+        try {
+            String imageUrl = (String) request.get("url");
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "图片URL不能为空");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            Integer width = request.get("width") != null ? ((Number) request.get("width")).intValue() : null;
+            Integer height = request.get("height") != null ? ((Number) request.get("height")).intValue() : null;
+            Boolean keepAspectRatio = request.get("keepAspectRatio") != null ? 
+                    Boolean.parseBoolean(request.get("keepAspectRatio").toString()) : null;
+            Double quality = request.get("quality") != null ? 
+                    ((Number) request.get("quality")).doubleValue() : null;
+
+            logger.info("图片URL: " + imageUrl);
+            logger.info("目标尺寸: " + width + "x" + height);
+            logger.info("保持宽高比: " + keepAspectRatio);
+            logger.info("压缩质量: " + quality);
+
+            // 获取原始图片信息
+            ImageProcessingService.ImageInfo originalInfo = imageProcessingService.getImageInfo(imageUrl);
+
+            // 生成并保存缩略图
+            String processedPath = imageProcessingService.generateAndSaveThumbnail(
+                    imageUrl, width, height, keepAspectRatio, quality);
+
+            // 获取处理后的图片信息
+            ImageProcessingService.ImageInfo processedInfo = imageProcessingService.getImageInfo(processedPath);
+
+            // 转换为完整URL
+            String fullUrl = imageUrlUtils.toFullUrl(processedPath);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("url", fullUrl);
+            response.put("relativePath", processedPath);
+            response.put("originalSize", originalInfo.getFileSize());
+            response.put("processedSize", processedInfo.getFileSize());
+            response.put("width", processedInfo.getWidth());
+            response.put("height", processedInfo.getHeight());
+            response.put("message", "缩略图生成成功");
+
+            logger.info("缩略图生成成功: " + fullUrl);
+            logger.info("========== 缩略图生成请求处理完成 ==========");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            logger.warning("参数错误: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            logger.severe("生成缩略图失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "生成缩略图失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 裁剪图片
+     * @param request 包含图片URL和裁剪参数的请求体
+     * @return 处理结果
+     */
+    @PostMapping("/crop")
+    public ResponseEntity<Map<String, Object>> cropImage(@RequestBody Map<String, Object> request) {
+        logger.info("========== 收到图片裁剪请求 ==========");
+        try {
+            String imageUrl = (String) request.get("url");
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "图片URL不能为空");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            Integer x = request.get("x") != null ? ((Number) request.get("x")).intValue() : null;
+            Integer y = request.get("y") != null ? ((Number) request.get("y")).intValue() : null;
+            Integer width = request.get("width") != null ? ((Number) request.get("width")).intValue() : null;
+            Integer height = request.get("height") != null ? ((Number) request.get("height")).intValue() : null;
+
+            if (x == null || y == null || width == null || height == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "裁剪参数不完整: x, y, width, height 都是必需的");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            logger.info("图片URL: " + imageUrl);
+            logger.info("裁剪区域: x=" + x + ", y=" + y + ", width=" + width + ", height=" + height);
+
+            // 获取原始图片信息
+            ImageProcessingService.ImageInfo originalInfo = imageProcessingService.getImageInfo(imageUrl);
+
+            // 裁剪并保存图片
+            String processedPath = imageProcessingService.cropAndSaveImage(imageUrl, x, y, width, height);
+
+            // 获取处理后的图片信息
+            ImageProcessingService.ImageInfo processedInfo = imageProcessingService.getImageInfo(processedPath);
+
+            // 转换为完整URL
+            String fullUrl = imageUrlUtils.toFullUrl(processedPath);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("url", fullUrl);
+            response.put("relativePath", processedPath);
+            response.put("originalSize", originalInfo.getFileSize());
+            response.put("processedSize", processedInfo.getFileSize());
+            response.put("width", processedInfo.getWidth());
+            response.put("height", processedInfo.getHeight());
+            response.put("message", "图片裁剪成功");
+
+            logger.info("图片裁剪成功: " + fullUrl);
+            logger.info("========== 图片裁剪请求处理完成 ==========");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            logger.warning("参数错误: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            logger.severe("裁剪图片失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "裁剪图片失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }

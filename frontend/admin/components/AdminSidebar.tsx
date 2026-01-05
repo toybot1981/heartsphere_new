@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph' | 'skills';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph' | 'skills' | 'chronos-letters';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -78,6 +78,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             icon: '👥',
             items: [
                 { section: 'users', label: '用户管理', icon: '👤' },
+                { section: 'chronos-letters', label: '超时空信箱', icon: '✉️' },
                 ...(adminRole === 'SUPER_ADMIN' ? [{ section: 'admins' as SectionType, label: '管理员管理', icon: '🔐', adminOnly: true }] : [])
             ]
         },

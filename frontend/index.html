@@ -88,9 +88,32 @@
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+    <script>
+      // 移动端自动跳转检测
+      (function() {
+        // 如果已经在 mobile.html，不执行跳转
+        const currentPath = window.location.pathname;
+        if (currentPath === '/mobile.html' || currentPath.startsWith('/mobile.html')) {
+          return;
+        }
+        
+        // 检测是否为移动设备
+        const userAgent = navigator.userAgent || '';
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|Tablet|tablet/i.test(userAgent);
+        const isSmallScreen = window.innerWidth < 768;
+        
+        // 如果是移动设备或小屏幕，则跳转到 mobile.html
+        if (isMobileDevice || isSmallScreen) {
+          // 保留查询参数和哈希
+          const query = window.location.search;
+          const hash = window.location.hash;
+          window.location.replace('/mobile.html' + query + hash);
+        }
+      })();
+    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

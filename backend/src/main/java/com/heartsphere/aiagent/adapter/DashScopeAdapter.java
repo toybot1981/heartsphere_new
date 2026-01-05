@@ -852,26 +852,97 @@ public class DashScopeAdapter implements ModelAdapter {
     @Override
     public AudioResponse textToSpeech(AudioRequest request) {
         try {
-            log.debug("DashScope文本转语音请求: text={}", request.getText());
+            log.info("[DashScopeAdapter] DashScope文本转语音请求: textLength={}, model={}", 
+                request.getText() != null ? request.getText().length() : 0, request.getModel());
             
-            Map<String, Object> options = new HashMap<>();
-            if (request.getModel() != null) {
-                options.put("model", request.getModel());
+            // 获取 API key
+            String apiKey = getApiKeyForAudio();
+            if (apiKey == null || apiKey.isEmpty()) {
+                throw new AIServiceException("DashScope API key 未配置");
             }
+            
+            // 优先使用请求中的 baseUrl（从配置表获取），如果没有则使用配置文件中的默认值
+            String effectiveBaseUrl = baseUrl.replace("/compatible-mode/v1", "/api/v1");
+            
+            // DashScope TTS API端点
+            String url = effectiveBaseUrl + "/services/audio/tts/generation";
+            
+            // 确定模型名称（sambert-zhichu-v1 是DashScope主流的TTS模型）
+            String model = request.getModel() != null ? request.getModel() : "sambert-zhichu-v1";
+            
+            // 构建请求体
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", model);
+            requestBody.put("input", Map.of("text", request.getText()));
+            
+            // 构建参数
+            Map<String, Object> parameters = new HashMap<>();
+            // 音色（sambert系列支持多种音色）
             if (request.getVoice() != null) {
-                options.put("voice", request.getVoice());
+                parameters.put("voice", request.getVoice());
+            } else {
+                parameters.put("voice", "zhitian_emo"); // 默认音色
+            }
+            // 音频格式
+            parameters.put("format", "wav");
+            parameters.put("sample_rate", 16000);
+            
+            requestBody.put("parameters", parameters);
+            
+            // 发送请求
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + apiKey);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            
+            log.info("[DashScopeAdapter] TTS请求 - URL: {}, Model: {}, TextLength: {}, Voice: {}", 
+                url, model, request.getText() != null ? request.getText().length() : 0, parameters.get("voice"));
+            
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, JsonNode.class
+            );
+            
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                String errorBody = response.getBody() != null ? response.getBody().toString() : "无响应体";
+                log.error("[DashScopeAdapter] TTS API调用失败 - Status: {}, Body: {}", response.getStatusCode(), errorBody);
+                throw new AIServiceException("DashScope TTS API 调用失败: " + response.getStatusCode() + " - " + errorBody);
             }
             
-            byte[] audioData = multimodalService.textToSpeech(request.getText(), options);
+            // 解析响应
+            JsonNode responseBody = response.getBody();
+            AudioResponse result = new AudioResponse();
             
-            AudioResponse response = new AudioResponse();
-            response.setAudioBase64(Base64.getEncoder().encodeToString(audioData));
-            response.setProvider(getProviderType());
-            response.setModel(request.getModel() != null ? request.getModel() : "sambert-zhichu-v1");
+            // DashScope TTS 响应格式：output.audio (base64编码)
+            if (responseBody.has("output")) {
+                JsonNode output = responseBody.get("output");
+                if (output.has("audio")) {
+                    String audioBase64 = output.get("audio").asText();
+                    result.setAudioBase64(audioBase64);
+                } else if (output.has("audio_url")) {
+                    result.setContent(output.get("audio_url").asText());
+                }
+            } else if (responseBody.has("audio")) {
+                // 兼容其他可能的响应格式
+                String audioData = responseBody.get("audio").asText();
+                if (audioData.startsWith("data:")) {
+                    int commaIndex = audioData.indexOf(',');
+                    if (commaIndex > 0) {
+                        audioData = audioData.substring(commaIndex + 1);
+                    }
+                }
+                result.setAudioBase64(audioData);
+            }
             
-            return response;
+            result.setProvider(getProviderType());
+            result.setModel(model);
+            
+            log.info("[DashScopeAdapter] TTS响应解析完成 - Model: {}, HasAudio: {}", 
+                model, result.getAudioBase64() != null || result.getContent() != null);
+            
+            return result;
+            
         } catch (Exception e) {
-            log.error("DashScope文本转语音失败", e);
+            log.error("[DashScopeAdapter] DashScope文本转语音失败", e);
             throw new AIServiceException("DashScope文本转语音失败: " + e.getMessage(), e);
         }
     }
@@ -879,28 +950,125 @@ public class DashScopeAdapter implements ModelAdapter {
     @Override
     public AudioResponse speechToText(AudioRequest request) {
         try {
-            log.debug("DashScope语音转文本请求");
+            log.info("[DashScopeAdapter] DashScope语音转文本请求: model={}, hasAudioData={}", 
+                request.getModel(), request.getAudioData() != null && !request.getAudioData().isEmpty());
             
-            byte[] audioData = Base64.getDecoder().decode(request.getAudioData());
-            
-            Map<String, Object> options = new HashMap<>();
-            if (request.getModel() != null) {
-                options.put("model", request.getModel());
-            }
-            if (request.getLanguage() != null) {
-                options.put("language", request.getLanguage());
+            // 获取 API key
+            String apiKey = getApiKeyForAudio();
+            if (apiKey == null || apiKey.isEmpty()) {
+                throw new AIServiceException("DashScope API key 未配置");
             }
             
-            String text = multimodalService.speechToText(audioData, options);
+            // 解析音频数据
+            if (request.getAudioData() == null || request.getAudioData().isEmpty()) {
+                throw new AIServiceException("音频数据为空");
+            }
             
-            AudioResponse response = new AudioResponse();
-            response.setContent(text);
-            response.setProvider(getProviderType());
-            response.setModel(request.getModel() != null ? request.getModel() : "paraformer-v2");
+            String audioDataStr = request.getAudioData();
+            // 如果是data URI，提取base64部分
+            if (audioDataStr.startsWith("data:")) {
+                int commaIndex = audioDataStr.indexOf(',');
+                if (commaIndex > 0) {
+                    audioDataStr = audioDataStr.substring(commaIndex + 1);
+                }
+            }
             
-            return response;
+            byte[] audioBytes;
+            try {
+                audioBytes = Base64.getDecoder().decode(audioDataStr);
+            } catch (IllegalArgumentException e) {
+                log.error("[DashScopeAdapter] Base64解码失败", e);
+                throw new AIServiceException("音频数据Base64解码失败: " + e.getMessage());
+            }
+            
+            // 优先使用请求中的 baseUrl（从配置表获取），如果没有则使用配置文件中的默认值
+            String effectiveBaseUrl = baseUrl.replace("/compatible-mode/v1", "/api/v1");
+            
+            // DashScope ASR API端点
+            String url = effectiveBaseUrl + "/services/audio/asr/recognition";
+            
+            // 确定模型名称（paraformer-v2 是DashScope主流的ASR模型）
+            String model = request.getModel() != null ? request.getModel() : "paraformer-v2";
+            
+            // 构建multipart/form-data请求
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.set("Authorization", "Bearer " + apiKey);
+            
+            org.springframework.util.LinkedMultiValueMap<String, Object> body = 
+                new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("model", model);
+            body.add("audio", new org.springframework.core.io.ByteArrayResource(audioBytes) {
+                @Override
+                public String getFilename() {
+                    return "audio.wav";
+                }
+            });
+            
+            // 添加语言参数
+            String language = request.getLanguage() != null ? request.getLanguage() : "zh";
+            body.add("language", language);
+            
+            HttpEntity<org.springframework.util.MultiValueMap<String, Object>> entity = 
+                new HttpEntity<>(body, headers);
+            
+            log.info("[DashScopeAdapter] ASR请求 - URL: {}, Model: {}, AudioSize: {} bytes, Language: {}", 
+                url, model, audioBytes.length, language);
+            
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, JsonNode.class
+            );
+            
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                String errorBody = response.getBody() != null ? response.getBody().toString() : "无响应体";
+                log.error("[DashScopeAdapter] ASR API调用失败 - Status: {}, Body: {}", response.getStatusCode(), errorBody);
+                throw new AIServiceException("DashScope ASR API 调用失败: " + response.getStatusCode() + " - " + errorBody);
+            }
+            
+            // 解析响应
+            JsonNode responseBody = response.getBody();
+            AudioResponse result = new AudioResponse();
+            
+            // DashScope ASR 响应格式：output.sentence[] 或 output.text
+            if (responseBody.has("output")) {
+                JsonNode output = responseBody.get("output");
+                if (output.has("sentence")) {
+                    // 合并所有句子的文本
+                    if (output.get("sentence").isArray()) {
+                        StringBuilder textBuilder = new StringBuilder();
+                        for (JsonNode sentence : output.get("sentence")) {
+                            if (sentence.has("text")) {
+                                if (textBuilder.length() > 0) {
+                                    textBuilder.append(" ");
+                                }
+                                textBuilder.append(sentence.get("text").asText());
+                            }
+                        }
+                        result.setContent(textBuilder.toString());
+                    }
+                } else if (output.has("text")) {
+                    result.setContent(output.get("text").asText());
+                }
+                
+                // 解析置信度
+                if (output.has("confidence")) {
+                    result.setConfidence(output.get("confidence").asDouble());
+                }
+            } else if (responseBody.has("text")) {
+                // 兼容其他可能的响应格式
+                result.setContent(responseBody.get("text").asText());
+            }
+            
+            result.setProvider(getProviderType());
+            result.setModel(model);
+            
+            log.info("[DashScopeAdapter] ASR响应解析完成 - Model: {}, TextLength: {}, HasConfidence: {}", 
+                model, result.getContent() != null ? result.getContent().length() : 0, result.getConfidence() != null);
+            
+            return result;
+            
         } catch (Exception e) {
-            log.error("DashScope语音转文本失败", e);
+            log.error("[DashScopeAdapter] DashScope语音转文本失败", e);
             throw new AIServiceException("DashScope语音转文本失败: " + e.getMessage(), e);
         }
     }
@@ -977,6 +1145,28 @@ public class DashScopeAdapter implements ModelAdapter {
         }
         // 否则使用配置文件中的默认 API key
         return defaultApiKey;
+    }
+    
+    /**
+     * 获取音频API的 API key（用于TTS和STT）
+     * 注意：AudioRequest 没有 apiKey 字段，所以直接从配置文件或环境变量获取
+     */
+    private String getApiKeyForAudio() {
+        // 使用配置文件中的默认 API key
+        if (defaultApiKey != null && !defaultApiKey.trim().isEmpty()) {
+            log.debug("[DashScopeAdapter] 使用配置文件中的 API key (audio)");
+            return defaultApiKey;
+        }
+        
+        // 尝试从环境变量获取
+        String envApiKey = System.getenv("DASHSCOPE_API_KEY");
+        if (envApiKey != null && !envApiKey.trim().isEmpty()) {
+            log.debug("[DashScopeAdapter] 使用环境变量中的 API key (audio)");
+            return envApiKey;
+        }
+        
+        log.warn("[DashScopeAdapter] 未找到 API key 配置 (audio)，请检查配置文件或环境变量");
+        return null;
     }
     
     /**

@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -105,11 +106,71 @@ public class MultimodalService {
      */
     public String speechToText(byte[] audioData, Map<String, Object> options) {
         try {
-            // TODO: 实现文件上传和语音识别
-            log.warn("语音转文本功能需要实现文件上传");
+            String model = options != null && options.containsKey("model") 
+                ? options.get("model").toString() 
+                : "paraformer-v2";
+            
+            String language = options != null && options.containsKey("language")
+                ? options.get("language").toString()
+                : "zh";
+            
+            // DashScope 语音识别API端点
+            String url = DASHSCOPE_BASE_URL + "/services/audio/asr/recognition";
+            
+            // 构建multipart/form-data请求
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.set("Authorization", "Bearer " + apiKey);
+            
+            org.springframework.util.LinkedMultiValueMap<String, Object> body = 
+                new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("model", model);
+            body.add("audio", new org.springframework.core.io.ByteArrayResource(audioData) {
+                @Override
+                public String getFilename() {
+                    return "audio.wav";
+                }
+            });
+            body.add("language", language);
+            
+            HttpEntity<org.springframework.util.MultiValueMap<String, Object>> request = 
+                new HttpEntity<>(body, headers);
+            
+            log.info("[MultimodalService] DashScope ASR请求 - Model: {}, AudioSize: {} bytes, Language: {}", 
+                model, audioData.length, language);
+            
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            
+            if (response.getBody() != null) {
+                Map<String, Object> bodyMap = response.getBody();
+                if (bodyMap.containsKey("output")) {
+                    Map<String, Object> output = (Map<String, Object>) bodyMap.get("output");
+                    if (output.containsKey("sentence")) {
+                        Object sentenceObj = output.get("sentence");
+                        if (sentenceObj instanceof List) {
+                            // 合并所有句子的文本
+                            List<Map<String, Object>> sentences = (List<Map<String, Object>>) sentenceObj;
+                            StringBuilder textBuilder = new StringBuilder();
+                            for (Map<String, Object> sentence : sentences) {
+                                if (sentence.containsKey("text")) {
+                                    if (textBuilder.length() > 0) {
+                                        textBuilder.append(" ");
+                                    }
+                                    textBuilder.append(sentence.get("text").toString());
+                                }
+                            }
+                            return textBuilder.toString();
+                        }
+                    } else if (output.containsKey("text")) {
+                        return output.get("text").toString();
+                    }
+                }
+            }
+            
+            log.warn("[MultimodalService] DashScope ASR响应格式异常，返回空数据");
             return "";
         } catch (Exception e) {
-            log.error("语音转文本失败", e);
+            log.error("[MultimodalService] 语音转文本失败", e);
             throw new RuntimeException("语音转文本失败: " + e.getMessage(), e);
         }
     }

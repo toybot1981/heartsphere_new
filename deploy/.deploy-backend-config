@@ -1,0 +1,7 @@
+# 远程服务器部署配置
+REMOTE_HOST="8.137.36.167"
+REMOTE_PORT="22"
+REMOTE_USER="root"
+REMOTE_PATH="/opt/heartsphere/backend"
+SSH_KEY=""
+BACKEND_PORT="8081"

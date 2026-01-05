@@ -24,6 +24,7 @@ import { HeartSphereConnectionManagement } from './components/heartSphereConnect
 import { MemoryManagement } from './components/memory';
 import { GraphManagement } from './components/GraphManagement';
 import { SkillsManagement } from './components/SkillsManagement';
+import { ChronosLettersManagement } from './components/ChronosLettersManagement';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -88,6 +89,7 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'memory': '记忆系统管理',
             'graph': 'Graph流程编辑器',
             'skills': '技能管理',
+            'chronos-letters': '超时空信箱管理',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -334,6 +336,16 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                     {activeSection === 'skills' && (
                         <SkillsManagement
                             adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'chronos-letters' && (
+                        <ChronosLettersManagement
+                            adminToken={adminToken}
+                            onRefresh={() => {
+                                if (adminToken) {
+                                    loadSystemData(adminToken);
+                                }
+                            }}
                         />
                     )}
                                                 </div>

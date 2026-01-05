@@ -94,7 +94,7 @@ export const MainStoriesManagement: React.FC<MainStoriesManagementProps> = ({
                 const defaultSettings: AppSettings = {
                     autoGenerateAvatars: false,
                     autoGenerateStoryScenes: false,
-                    autoGenerateJournalImages: false,
+                    autoGenerateJournalImages: true,
                     debugMode: false,
                     textProvider: 'gemini',
                     imageProvider: 'gemini',

@@ -57,7 +57,7 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
                 const defaultSettings: AppSettings = {
                     autoGenerateAvatars: false,
                     autoGenerateStoryScenes: false,
-                    autoGenerateJournalImages: false,
+                    autoGenerateJournalImages: true,
                     debugMode: false,
                     textProvider: 'gemini',
                     imageProvider: 'gemini',
