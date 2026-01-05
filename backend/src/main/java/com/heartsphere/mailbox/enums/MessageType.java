@@ -24,11 +24,13 @@ public enum MessageType {
     SYSTEM_NOTIFICATION("system_notification", "系统通知"),
     SYSTEM_FEEDBACK("system_feedback", "系统反馈"),
     SYSTEM_DIALOGUE("system_dialogue", "系统对话"),
+    ADMIN_REPLY("admin_reply", "管理员回复"),
     
     // 用户消息类型
     USER_PRIVATE_MESSAGE("user_private_message", "私信消息"),
     USER_REPLY("user_reply", "回复消息"),
     USER_INTERACTION("user_interaction", "互动消息"),
+    USER_FEEDBACK("user_feedback", "用户反馈"),
     
     // 暖心留言类型
     WARM_MESSAGE("warm_message", "暖心留言");

@@ -1,5 +1,6 @@
 package com.heartsphere.mailbox.service;
 
+import com.heartsphere.entity.ChronosLetter;
 import com.heartsphere.entity.User;
 import com.heartsphere.exception.ResourceNotFoundException;
 import com.heartsphere.mailbox.dto.CreateMessageRequest;
@@ -7,8 +8,11 @@ import com.heartsphere.mailbox.dto.MessageQueryRequest;
 import com.heartsphere.mailbox.dto.UnreadCountResponse;
 import com.heartsphere.mailbox.entity.MailboxMessage;
 import com.heartsphere.mailbox.enums.MessageCategory;
+import com.heartsphere.mailbox.enums.MessageType;
+import com.heartsphere.mailbox.enums.SenderType;
 import com.heartsphere.mailbox.repository.MailboxMessageRepository;
 import com.heartsphere.repository.UserRepository;
+import com.heartsphere.service.ChronosLetterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,6 +22,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +44,7 @@ public class MailboxMessageService {
     
     private final MailboxMessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final ChronosLetterService chronosLetterService;
     
     /**
      * 获取消息列表
@@ -113,6 +123,102 @@ public class MailboxMessageService {
                 msg.setReceiver(null);
             }
         });
+        
+        // 整合 chronos_letters 表的数据（用户反馈和管理员回复）
+        List<MailboxMessage> chronosMessages = convertChronosLettersToMailboxMessages(userId, request);
+        
+        // 合并两个列表并按时间排序
+        List<MailboxMessage> allMessages = new ArrayList<>(result.getContent());
+        allMessages.addAll(chronosMessages);
+        
+        // 按创建时间倒序排序
+        allMessages.sort(Comparator.comparing((MailboxMessage msg) -> 
+            msg.getCreatedAt() != null ? msg.getCreatedAt() : LocalDateTime.MIN).reversed());
+        
+        // 应用分页
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), allMessages.size());
+        List<MailboxMessage> pagedMessages = allMessages.subList(start, end);
+        
+        return new PageImpl<>(pagedMessages, pageable, allMessages.size());
+    }
+    
+    /**
+     * 将 ChronosLetter 转换为 MailboxMessage
+     */
+    private List<MailboxMessage> convertChronosLettersToMailboxMessages(Long userId, MessageQueryRequest request) {
+        List<ChronosLetter> chronosLetters = chronosLetterService.getUserLetters(userId);
+        List<MailboxMessage> result = new ArrayList<>();
+        
+        for (ChronosLetter letter : chronosLetters) {
+            // 根据分类筛选
+            if (request.getCategory() != null) {
+                // 用户反馈 -> USER_MESSAGE
+                // 管理员回复 -> SYSTEM
+                if (letter.getType().equals("user_feedback") && 
+                    request.getCategory() != MessageCategory.USER_MESSAGE) {
+                    continue;
+                }
+                if (letter.getType().equals("admin_reply") && 
+                    request.getCategory() != MessageCategory.SYSTEM) {
+                    continue;
+                }
+            }
+            
+            // 根据已读状态筛选
+            if (request.getIsRead() != null && 
+                letter.getIsRead().equals(request.getIsRead()) == false) {
+                continue;
+            }
+            
+            MailboxMessage message = new MailboxMessage();
+            // 使用负数ID来区分（避免与mailbox_messages表的ID冲突）
+            // 前端可以通过ID的正负来判断消息来源
+            // 注意：这里使用简单的哈希来生成负数ID，确保唯一性
+            long hashId = letter.getId().hashCode();
+            message.setId(hashId < 0 ? hashId : -hashId);
+            message.setReceiverId(userId);
+            
+            // 设置发送者信息
+            if (letter.getType().equals("user_feedback")) {
+                message.setSenderType(SenderType.USER);
+                message.setSenderId(userId);
+                message.setMessageCategory(MessageCategory.USER_MESSAGE);
+                message.setMessageType(MessageType.USER_FEEDBACK);
+            } else if (letter.getType().equals("admin_reply")) {
+                message.setSenderType(SenderType.SYSTEM);
+                message.setSenderId(null);
+                message.setMessageCategory(MessageCategory.SYSTEM);
+                message.setMessageType(MessageType.ADMIN_REPLY);
+            }
+            
+            message.setSenderName(letter.getSenderName());
+            message.setSenderAvatar(letter.getSenderAvatarUrl());
+            message.setTitle(letter.getSubject());
+            message.setContent(letter.getContent());
+            message.setIsRead(letter.getIsRead());
+            message.setIsImportant(false);
+            message.setIsStarred(false);
+            
+            // 转换时间戳为LocalDateTime
+            if (letter.getTimestamp() != null) {
+                LocalDateTime createdAt = LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(letter.getTimestamp()),
+                    ZoneId.systemDefault()
+                );
+                message.setCreatedAt(createdAt);
+            } else if (letter.getCreatedAt() != null) {
+                message.setCreatedAt(letter.getCreatedAt());
+            }
+            
+            // 设置关联信息
+            if (letter.getParentLetterId() != null) {
+                long parentHashId = letter.getParentLetterId().hashCode();
+                message.setReplyToId(parentHashId < 0 ? parentHashId : -parentHashId);
+            }
+            
+            result.add(message);
+        }
         
         return result;
     }
