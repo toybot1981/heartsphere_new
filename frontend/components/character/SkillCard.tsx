@@ -9,10 +9,11 @@ interface SkillCardProps {
   onUnequip?: (skillId: string) => void;
   onToggle?: (skillId: string) => void;
   onViewDetails?: (skill: SkillDefinition) => void;
+  viewMode?: 'grid' | 'list';
 }
 
 /**
- * 技能卡片组件
+ * 技能卡片组件 - 优化版
  */
 export const SkillCard: React.FC<SkillCardProps> = ({
   skill,
@@ -22,8 +23,10 @@ export const SkillCard: React.FC<SkillCardProps> = ({
   onUnequip,
   onToggle,
   onViewDetails,
+  viewMode = 'grid',
 }) => {
-  const handleEquip = () => {
+  const handleEquip = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isEquipped && onUnequip) {
       onUnequip(skill.skillId);
     } else if (!isEquipped && onEquip) {
@@ -31,90 +34,228 @@ export const SkillCard: React.FC<SkillCardProps> = ({
     }
   };
 
-  const handleToggle = () => {
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onToggle && binding) {
       onToggle(skill.skillId);
     }
   };
 
-  return (
-    <div className={`skill-card ${isEquipped ? 'equipped' : ''} ${binding && !binding.isEnabled ? 'disabled' : ''}`}>
-      <div className="skill-card-header">
-        <h3 className="skill-name">{skill.name}</h3>
-        {isEquipped && (
-          <span className="skill-badge equipped-badge">已装备</span>
-        )}
-        {skill.isSystemSkill && (
-          <span className="skill-badge system-badge">系统</span>
-        )}
-      </div>
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onViewDetails) {
+      onViewDetails(skill);
+    }
+  };
 
-      <p className="skill-description">{skill.description}</p>
-
-      {skill.category && (
-        <div className="skill-meta">
-          <span className="skill-category">{skill.category}</span>
-          {skill.version && (
-            <span className="skill-version">v{skill.version}</span>
-          )}
-        </div>
-      )}
-
-      {binding && (
-        <div className="skill-stats">
-          <div className="stat-item">
-            <span className="stat-label">使用次数:</span>
-            <span className="stat-value">{binding.usageCount}</span>
-          </div>
-          {binding.lastUsedAt && (
-            <div className="stat-item">
-              <span className="stat-label">最后使用:</span>
-              <span className="stat-value">
-                {new Date(binding.lastUsedAt).toLocaleDateString()}
-              </span>
+  if (viewMode === 'list') {
+    return (
+      <div 
+        className={`bg-slate-800/50 rounded-lg border transition-all hover:border-indigo-500/50 cursor-pointer ${
+          isEquipped ? 'border-green-500/50' : 'border-slate-700'
+        } ${binding && !binding.isEnabled ? 'opacity-60' : ''}`}
+        onClick={handleViewDetails}
+      >
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex-1 flex items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-white font-semibold">{skill.name}</h3>
+                {isEquipped && (
+                  <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                    已装备
+                  </span>
+                )}
+                {skill.isSystemSkill && (
+                  <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                    系统
+                  </span>
+                )}
+                {binding && !binding.isEnabled && (
+                  <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded border border-red-500/30">
+                    已禁用
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-400 line-clamp-1">{skill.description || '暂无描述'}</p>
             </div>
+            <div className="flex items-center gap-4 text-sm">
+              {skill.category && (
+                <span className="text-slate-500">{skill.category}</span>
+              )}
+              {binding && (
+                <span className="text-slate-500">使用 {binding.usageCount || 0} 次</span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 ml-4">
+            {onViewDetails && (
+              <button
+                onClick={handleViewDetails}
+                className="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+              >
+                详情
+              </button>
+            )}
+            {isEquipped ? (
+              <>
+                {onToggle && binding && (
+                  <button
+                    onClick={handleToggle}
+                    className={`px-3 py-1.5 text-sm rounded transition-colors ${
+                      binding.isEnabled
+                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  >
+                    {binding.isEnabled ? '禁用' : '启用'}
+                  </button>
+                )}
+                {onUnequip && (
+                  <button
+                    onClick={handleEquip}
+                    className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                  >
+                    卸载
+                  </button>
+                )}
+              </>
+            ) : (
+              onEquip && (
+                <button
+                  onClick={handleEquip}
+                  className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                >
+                  装备
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 网格视图
+  return (
+    <div 
+      className={`bg-slate-800/50 rounded-lg border transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 cursor-pointer ${
+        isEquipped ? 'border-green-500/50' : 'border-slate-700'
+      } ${binding && !binding.isEnabled ? 'opacity-60' : ''}`}
+      onClick={handleViewDetails}
+    >
+      <div className="p-4 space-y-3">
+        {/* 头部 */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-white font-semibold mb-1 line-clamp-1">{skill.name}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              {isEquipped && (
+                <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                  已装备
+                </span>
+              )}
+              {skill.isSystemSkill && (
+                <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                  系统
+                </span>
+              )}
+              {binding && !binding.isEnabled && (
+                <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded border border-red-500/30">
+                  已禁用
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 描述 */}
+        <p className="text-sm text-slate-400 line-clamp-2 min-h-[2.5rem]">
+          {skill.description || '暂无描述'}
+        </p>
+
+        {/* 元数据 */}
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center gap-3">
+            {skill.category && (
+              <span className="flex items-center gap-1">
+                <span>📁</span>
+                <span>{skill.category}</span>
+              </span>
+            )}
+            {skill.version && (
+              <span>v{skill.version}</span>
+            )}
+          </div>
+          {binding && (
+            <span className="text-indigo-400">
+              {binding.usageCount || 0} 次使用
+            </span>
           )}
         </div>
-      )}
 
-      <div className="skill-actions">
-        {onViewDetails && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => onViewDetails(skill)}
-          >
-            详情
-          </button>
+        {/* 统计信息 */}
+        {binding && (
+          <div className="pt-2 border-t border-slate-700">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-slate-500">优先级:</span>
+                <span className="text-white ml-1">{binding.priority}</span>
+              </div>
+              <div>
+                <span className="text-slate-500">自动触发:</span>
+                <span className={`ml-1 ${binding.autoTrigger ? 'text-yellow-400' : 'text-slate-500'}`}>
+                  {binding.autoTrigger ? '是' : '否'}
+                </span>
+              </div>
+            </div>
+          </div>
         )}
-        {isEquipped ? (
-          <>
-            {onToggle && binding && (
-              <button
-                className={`btn btn-sm ${binding.isEnabled ? 'btn-warning' : 'btn-success'}`}
-                onClick={handleToggle}
-              >
-                {binding.isEnabled ? '禁用' : '启用'}
-              </button>
-            )}
-            {onUnequip && (
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={handleEquip}
-              >
-                卸载
-              </button>
-            )}
-          </>
-        ) : (
-          onEquip && (
+
+        {/* 操作按钮 */}
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-700" onClick={(e) => e.stopPropagation()}>
+          {onViewDetails && (
             <button
-              className="btn btn-primary btn-sm"
-              onClick={handleEquip}
+              onClick={handleViewDetails}
+              className="flex-1 px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
             >
-              装备
+              详情
             </button>
-          )
-        )}
+          )}
+          {isEquipped ? (
+            <>
+              {onToggle && binding && (
+                <button
+                  onClick={handleToggle}
+                  className={`px-3 py-1.5 text-xs rounded transition-colors ${
+                    binding.isEnabled
+                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  {binding.isEnabled ? '禁用' : '启用'}
+                </button>
+              )}
+              {onUnequip && (
+                <button
+                  onClick={handleEquip}
+                  className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                >
+                  卸载
+                </button>
+              )}
+            </>
+          ) : (
+            onEquip && (
+              <button
+                onClick={handleEquip}
+                className="flex-1 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              >
+                装备
+              </button>
+            )
+          )}
+        </div>
       </div>
     </div>
   );
