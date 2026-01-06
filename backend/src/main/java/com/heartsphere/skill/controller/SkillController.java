@@ -10,7 +10,7 @@ import com.heartsphere.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -131,7 +131,7 @@ public class SkillController {
     public ResponseEntity<ApiResponse<List<SkillDefinitionDTO>>> checkAutoTriggerSkills(
             @PathVariable Long characterId,
             @RequestBody Map<String, String> request,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            Authentication authentication) {
         
         String userInput = request.get("input");
         if (userInput == null || userInput.isEmpty()) {
@@ -152,7 +152,7 @@ public class SkillController {
     @PostMapping
     public ResponseEntity<ApiResponse<SkillDefinitionDTO>> createSkill(
             @RequestBody SkillDefinitionDTO dto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            Authentication authentication) {
         
         // 检查技能ID是否已存在
         if (skillDefinitionRepository.findBySkillId(dto.getSkillId()).isPresent()) {
@@ -176,7 +176,7 @@ public class SkillController {
     public ResponseEntity<ApiResponse<SkillDefinitionDTO>> updateSkill(
             @PathVariable String skillId,
             @RequestBody SkillDefinitionDTO dto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            Authentication authentication) {
         
         SkillDefinition existingSkill = skillDefinitionRepository.findBySkillId(skillId)
             .orElseThrow(() -> new RuntimeException("技能不存在: " + skillId));
@@ -203,7 +203,7 @@ public class SkillController {
     @DeleteMapping("/{skillId}")
     public ResponseEntity<ApiResponse<Void>> deleteSkill(
             @PathVariable String skillId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            Authentication authentication) {
         
         SkillDefinition skill = skillDefinitionRepository.findBySkillId(skillId)
             .orElseThrow(() -> new RuntimeException("技能不存在: " + skillId));
