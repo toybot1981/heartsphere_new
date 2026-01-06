@@ -21,6 +21,11 @@ UPDATE graph_definitions SET
     description = '这是一个完整的剧本编辑示例，展示了三幕剧的结构'
 WHERE id = 12 AND name LIKE '%è%';
 
+UPDATE graph_definitions SET
+    name = '角色技能编辑系统',
+    description = '这是一个完整的角色技能编辑示例，展示了如何编辑角色技能'
+WHERE id = 13 AND name LIKE '%è%';
+
 -- 2. 修复graph_nodes表中的node_config JSON数据中的中文内容
 -- 注意：由于node_config是JSON格式，需要重新插入正确的JSON数据
 
