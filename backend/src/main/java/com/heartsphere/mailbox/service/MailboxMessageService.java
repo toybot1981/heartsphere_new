@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -45,6 +46,7 @@ public class MailboxMessageService {
     private final MailboxMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChronosLetterService chronosLetterService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
      * 获取消息列表
@@ -126,6 +128,8 @@ public class MailboxMessageService {
         
         // 整合 chronos_letters 表的数据（用户反馈和管理员回复）
         List<MailboxMessage> chronosMessages = convertChronosLettersToMailboxMessages(userId, request);
+        log.info("[MailboxMessageService] 整合chronos_letters数据 - userId={}, chronosCount={}, mailboxCount={}", 
+            userId, chronosMessages.size(), result.getContent().size());
         
         // 合并两个列表并按时间排序
         List<MailboxMessage> allMessages = new ArrayList<>(result.getContent());
@@ -148,6 +152,7 @@ public class MailboxMessageService {
      */
     private List<MailboxMessage> convertChronosLettersToMailboxMessages(Long userId, MessageQueryRequest request) {
         List<ChronosLetter> chronosLetters = chronosLetterService.getUserLetters(userId);
+        log.info("[MailboxMessageService] 获取chronos_letters - userId={}, count={}", userId, chronosLetters.size());
         List<MailboxMessage> result = new ArrayList<>();
         
         for (ChronosLetter letter : chronosLetters) {
@@ -217,6 +222,16 @@ public class MailboxMessageService {
                 message.setReplyToId(parentHashId < 0 ? parentHashId : -parentHashId);
             }
             
+            // 在contentData中存储原始ChronosLetter ID，用于后续操作
+            try {
+                Map<String, String> contentData = new HashMap<>();
+                contentData.put("chronosLetterId", letter.getId());
+                contentData.put("source", "chronos_letters");
+                message.setContentData(objectMapper.writeValueAsString(contentData));
+            } catch (Exception e) {
+                log.warn("设置contentData失败 - letterId={}", letter.getId(), e);
+            }
+            
             result.add(message);
         }
         
@@ -227,8 +242,101 @@ public class MailboxMessageService {
      * 根据ID获取消息详情
      */
     public MailboxMessage getMessageById(Long messageId, Long userId) {
+        // 如果是负数ID，说明是chronos_letters的消息
+        if (messageId < 0) {
+            return getChronosLetterAsMailboxMessage(messageId, userId);
+        }
+        
         return messageRepository.findByIdAndReceiverId(messageId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("消息不存在: " + messageId));
+    }
+    
+    /**
+     * 从chronos_letters获取消息并转换为MailboxMessage
+     */
+    private MailboxMessage getChronosLetterAsMailboxMessage(Long messageId, Long userId) {
+        List<ChronosLetter> letters = chronosLetterService.getUserLetters(userId);
+        
+        // 找到对应的ChronosLetter
+        ChronosLetter targetLetter = null;
+        for (ChronosLetter letter : letters) {
+            long hashId = letter.getId().hashCode();
+            long expectedId = hashId < 0 ? hashId : -hashId;
+            
+            if (expectedId == messageId) {
+                targetLetter = letter;
+                break;
+            }
+        }
+        
+        if (targetLetter == null) {
+            throw new ResourceNotFoundException("消息不存在: " + messageId);
+        }
+        
+        // 转换为MailboxMessage
+        return convertChronosLetterToMailboxMessage(targetLetter, userId);
+    }
+    
+    /**
+     * 将单个ChronosLetter转换为MailboxMessage
+     */
+    private MailboxMessage convertChronosLetterToMailboxMessage(ChronosLetter letter, Long userId) {
+        MailboxMessage message = new MailboxMessage();
+        
+        // 使用负数ID
+        long hashId = letter.getId().hashCode();
+        message.setId(hashId < 0 ? hashId : -hashId);
+        message.setReceiverId(userId);
+        
+        // 设置发送者信息
+        if (letter.getType().equals("user_feedback")) {
+            message.setSenderType(SenderType.USER);
+            message.setSenderId(userId);
+            message.setMessageCategory(MessageCategory.USER_MESSAGE);
+            message.setMessageType(MessageType.USER_FEEDBACK);
+        } else if (letter.getType().equals("admin_reply")) {
+            message.setSenderType(SenderType.SYSTEM);
+            message.setSenderId(null);
+            message.setMessageCategory(MessageCategory.SYSTEM);
+            message.setMessageType(MessageType.ADMIN_REPLY);
+        }
+        
+        message.setSenderName(letter.getSenderName());
+        message.setSenderAvatar(letter.getSenderAvatarUrl());
+        message.setTitle(letter.getSubject());
+        message.setContent(letter.getContent());
+        message.setIsRead(letter.getIsRead());
+        message.setIsImportant(false);
+        message.setIsStarred(false);
+        
+        // 转换时间戳为LocalDateTime
+        if (letter.getTimestamp() != null) {
+            LocalDateTime createdAt = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(letter.getTimestamp()),
+                ZoneId.systemDefault()
+            );
+            message.setCreatedAt(createdAt);
+        } else if (letter.getCreatedAt() != null) {
+            message.setCreatedAt(letter.getCreatedAt());
+        }
+        
+        // 设置关联信息
+        if (letter.getParentLetterId() != null) {
+            long parentHashId = letter.getParentLetterId().hashCode();
+            message.setReplyToId(parentHashId < 0 ? parentHashId : -parentHashId);
+        }
+        
+        // 在contentData中存储原始ChronosLetter ID
+        try {
+            Map<String, String> contentData = new HashMap<>();
+            contentData.put("chronosLetterId", letter.getId());
+            contentData.put("source", "chronos_letters");
+            message.setContentData(objectMapper.writeValueAsString(contentData));
+        } catch (Exception e) {
+            log.warn("设置contentData失败 - letterId={}", letter.getId(), e);
+        }
+        
+        return message;
     }
     
     /**
@@ -296,11 +404,50 @@ public class MailboxMessageService {
      */
     @Transactional
     public MailboxMessage markAsRead(Long messageId, Long userId) {
+        // 如果是负数ID，说明是chronos_letters的消息
+        if (messageId < 0) {
+            return markChronosLetterAsRead(messageId, userId);
+        }
+        
         MailboxMessage message = getMessageById(messageId, userId);
         message.markAsRead();
         MailboxMessage saved = messageRepository.save(message);
         log.info("标记消息为已读 - userId={}, messageId={}", userId, messageId);
         return saved;
+    }
+    
+    /**
+     * 标记chronos_letters消息为已读
+     */
+    private MailboxMessage markChronosLetterAsRead(Long messageId, Long userId) {
+        // 找到对应的ChronosLetter ID
+        String chronosLetterId = findChronosLetterIdByMessageId(messageId, userId);
+        
+        // 标记为已读
+        chronosLetterService.markAsRead(chronosLetterId, userId);
+        log.info("标记chronos_letters消息为已读 - userId={}, messageId={}, letterId={}", 
+            userId, messageId, chronosLetterId);
+        
+        // 返回转换后的MailboxMessage
+        return getChronosLetterAsMailboxMessage(messageId, userId);
+    }
+    
+    /**
+     * 根据messageId查找对应的ChronosLetter ID
+     */
+    private String findChronosLetterIdByMessageId(Long messageId, Long userId) {
+        List<ChronosLetter> letters = chronosLetterService.getUserLetters(userId);
+        
+        for (ChronosLetter letter : letters) {
+            long hashId = letter.getId().hashCode();
+            long expectedId = hashId < 0 ? hashId : -hashId;
+            
+            if (expectedId == messageId) {
+                return letter.getId();
+            }
+        }
+        
+        throw new ResourceNotFoundException("消息不存在: " + messageId);
     }
     
     /**
@@ -332,10 +479,29 @@ public class MailboxMessageService {
      */
     @Transactional
     public void deleteMessage(Long messageId, Long userId) {
+        // 如果是负数ID，说明是chronos_letters的消息
+        if (messageId < 0) {
+            deleteChronosLetter(messageId, userId);
+            return;
+        }
+        
         MailboxMessage message = getMessageById(messageId, userId);
         message.softDelete();
         messageRepository.save(message);
         log.info("删除消息 - userId={}, messageId={}", userId, messageId);
+    }
+    
+    /**
+     * 删除chronos_letters消息
+     */
+    private void deleteChronosLetter(Long messageId, Long userId) {
+        // 找到对应的ChronosLetter ID
+        String chronosLetterId = findChronosLetterIdByMessageId(messageId, userId);
+        
+        // 删除信件
+        chronosLetterService.deleteLetter(chronosLetterId, userId);
+        log.info("删除chronos_letters消息 - userId={}, messageId={}, letterId={}", 
+            userId, messageId, chronosLetterId);
     }
     
     /**
