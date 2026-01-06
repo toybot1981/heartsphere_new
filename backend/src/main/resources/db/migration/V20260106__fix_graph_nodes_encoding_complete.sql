@@ -329,3 +329,74 @@ UPDATE graph_nodes SET node_config = REPLACE(node_config, 'è®¾ç½®', '设�
 UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å‰§æœ¬', '剧本') WHERE node_config LIKE '%å‰§æœ¬%';
 UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ç¼–è¾''', '编辑') WHERE node_config LIKE '%ç¼–è¾''%';
 UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ä¸‰å¹•å‰§', '三幕剧') WHERE node_config LIKE '%ä¸‰å¹•å‰§%';
+
+-- ============================================
+-- Graph ID = 6: 所有节点类型示例（已使用JSON_OBJECT，应该正确）
+-- Graph ID = 10: 角色对话示例 - 冒险者任务（已在前面修复）
+-- Graph ID = 14: 所有节点类型示例（重复，已使用JSON_OBJECT，应该正确）
+-- ============================================
+
+-- 修复graph_id=10的剩余节点（如果还有乱码）
+UPDATE graph_nodes SET
+    node_config = '{"name": "开始任务", "description": "冒险者任务开始"}'
+WHERE graph_id = 10 AND node_id = 'start_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "你好，冒险者！有一个危险的任务需要你去完成。", "speaker": "NPC-村长", "description": "NPC向玩家介绍任务"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"prompt": "你选择如何回应？", "options": [{"id": "accept", "text": "接受任务", "effects": {"reputation": 10}}, {"id": "decline", "text": "拒绝任务", "effects": {"reputation": -5}}, {"id": "ask_more", "text": "询问更多信息", "effects": {}}], "description": "玩家选择是否接受任务"}'
+WHERE graph_id = 10 AND node_id = 'choice_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"condition": "userChoice == \"accept\"", "description": "判断玩家是否接受任务"}'
+WHERE graph_id = 10 AND node_id = 'condition_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "太好了！这个任务需要你进入森林深处，找到神秘的宝藏。", "speaker": "NPC-村长", "description": "任务详情"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_2' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"skill": "exploration", "difficulty": 15, "successEffects": {"experience": 50}, "failureEffects": {"health": -10}, "description": "探索技能检查"}'
+WHERE graph_id = 10 AND node_id = 'skill_check_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"changes": {"items": [{"id": "map", "name": "藏宝图", "count": 1}], "variables": {"inForest": true}}, "description": "获得藏宝图"}'
+WHERE graph_id = 10 AND node_id = 'state_change_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"waitType": "USER_INPUT", "waitCondition": "playerReady", "timeout": 30000, "description": "等待玩家准备"}'
+WHERE graph_id = 10 AND node_id = 'wait_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "好吧，如果你改变主意，随时可以来找我。", "speaker": "NPC-村长", "description": "玩家拒绝任务"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_3' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "任务很危险，但奖励丰厚。你需要探索森林，打败怪物，找到宝藏。", "speaker": "NPC-村长", "description": "提供更多信息"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_4' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"condition": "skillCheckResult == true", "description": "判断技能检查是否成功"}'
+WHERE graph_id = 10 AND node_id = 'condition_2' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "你成功找到了宝藏的位置！", "speaker": "系统", "description": "探索成功"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_5' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"content": "你在森林中迷路了，还受到了伤害...", "speaker": "系统", "description": "探索失败"}'
+WHERE graph_id = 10 AND node_id = 'dialogue_6' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"result": "任务完成", "description": "成功完成任务的结局"}'
+WHERE graph_id = 10 AND node_id = 'end_1' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"result": "任务失败", "description": "任务失败的结局"}'
+WHERE graph_id = 10 AND node_id = 'end_2' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
+
+UPDATE graph_nodes SET
+    node_config = '{"result": "任务已拒绝", "description": "拒绝任务的结局"}'
+WHERE graph_id = 10 AND node_id = 'end_3' AND (node_config LIKE '%è%' OR node_config LIKE '%å%');
