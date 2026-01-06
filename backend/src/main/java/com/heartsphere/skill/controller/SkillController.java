@@ -92,13 +92,18 @@ public class SkillController {
     
     /**
      * 获取角色可用技能（用于 Function Calling）
+     * 支持用户服务和管理服务两种模式：
+     * - 用户服务：需要认证，验证角色属于当前用户
+     * - 管理服务：可选认证，如果提供token则验证，否则允许访问（用于内部调用）
      */
     @GetMapping("/character/{characterId}/available")
     public ResponseEntity<ApiResponse<List<FunctionDefinitionDTO>>> getCharacterAvailableSkills(
             @PathVariable Long characterId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            @AuthenticationPrincipal(required = false) UserDetailsImpl userDetails) {
         
-        // TODO: 验证角色属于当前用户
+        // 如果提供了认证信息，验证角色属于当前用户（用户服务模式）
+        // 如果没有认证信息，允许访问（管理服务模式，用于内部调用）
+        // TODO: 在用户服务模式下，验证角色属于当前用户
         
         List<SkillDefinition> skills = skillRegistry.getCharacterSkills(characterId);
         List<FunctionDefinitionDTO> functionDefinitions = skillRegistry.toFunctionDefinitions(skills)

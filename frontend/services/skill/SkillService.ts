@@ -66,30 +66,39 @@ export class SkillService {
 
   /**
    * 获取角色可用技能（用于 Function Calling）
+   * 支持用户服务和管理服务两种模式：
+   * - 用户服务：需要token，验证角色属于当前用户
+   * - 管理服务：可选token，如果提供则验证，否则允许访问（用于内部调用）
    */
   async getCharacterAvailableSkills(characterId: number, token?: string): Promise<FunctionDefinition[]> {
     try {
+      // 尝试获取token，但不强制要求（支持管理服务模式）
       const authToken = token || localStorage.getItem('token');
-      if (!authToken) {
-        throw new Error('未登录');
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // 如果有token，添加到请求头
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
       }
 
       const response = await fetch(`${this.baseUrl}/character/${characterId}/available`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const result: ApiResponse<FunctionDefinition[]> = await response.json();
       return result.data || [];
     } catch (error) {
       console.error('[SkillService] 获取角色可用技能失败:', error);
+      // 不抛出错误，返回空数组，允许继续执行（不使用技能）
       return [];
     }
   }
