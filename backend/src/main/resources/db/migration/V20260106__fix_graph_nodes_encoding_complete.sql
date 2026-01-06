@@ -297,40 +297,35 @@ UPDATE graph_nodes SET
     node_config = '{"prompt": "确认重置所有技能为初始值（20）？", "options": [{"id": "confirm", "text": "确认重置", "nextNodeId": "state_change_reset"}, {"id": "cancel", "text": "取消", "nextNodeId": "choice_skill_1"}], "description": "确认重置"}'
 WHERE graph_id = 13 AND node_id = 'choice_reset';
 
--- 通用修复：使用REPLACE函数修复剩余的乱码
-UPDATE graph_nodes SET
-    node_config = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
-        REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
-        node_config,
-        'å¼€å§‹', '开始'),
-        'ä»»åŠ¡', '任务'),
-        'å†''é™©è€…', '冒险者'),
-        'ä½ å¥½', '你好'),
-        'æœ‰ä¸€ä¸ª', '有一个'),
-        'å±é™©', '危险'),
-        'éœ€è¦''', '需要'),
-        'åŽ»å®Œæˆ', '去完成'),
-        'æ''é•¿', '村长'),
-        'çŽ©å®¶', '玩家'),
-        'ä»‹ç»''', '介绍'),
-        'å¥½äº†', '太好了'),
-        'è¿›å…¥', '进入'),
-        'æ£·æž—', '森林'),
-        'æ·±å¤„', '深处'),
-        'æ‰¾åˆ°', '找到'),
-        'ç¥žç§˜', '神秘'),
-        'å®æ¯Œ', '宝藏'),
-        'æŽ¢ç´¢', '探索'),
-        'æŠ€èƒ½', '技能'),
-        'æ£€æŸ¥', '检查'),
-        'æˆ''åŠŸ', '成功'),
-        'å¤±è´¥', '失败'),
-        'è§''è‰²', '角色'),
-        'åˆ›å»º', '创建'),
-        'ç³»ç»Ÿ', '系统'),
-        'æ¬¢è¿Ž', '欢迎'),
-        'è®¾ç½®', '设置'),
-        'å‰§æœ¬', '剧本'),
-        'ç¼–è¾''', '编辑'),
-        'ä¸‰å¹•å‰§', '三幕剧')
-WHERE node_config LIKE '%å%' OR node_config LIKE '%è%';
+-- 通用修复：使用REPLACE函数修复剩余的乱码（分步执行避免嵌套过深）
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å¼€å§‹', '开始') WHERE node_config LIKE '%å¼€å§‹%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ä»»åŠ¡', '任务') WHERE node_config LIKE '%ä»»åŠ¡%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å†''é™©è€…', '冒险者') WHERE node_config LIKE '%å†''é™©è€…%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ä½ å¥½', '你好') WHERE node_config LIKE '%ä½ å¥½%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æœ‰ä¸€ä¸ª', '有一个') WHERE node_config LIKE '%æœ‰ä¸€ä¸ª%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å±é™©', '危险') WHERE node_config LIKE '%å±é™©%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'éœ€è¦''', '需要') WHERE node_config LIKE '%éœ€è¦''%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'åŽ»å®Œæˆ', '去完成') WHERE node_config LIKE '%åŽ»å®Œæˆ%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ''é•¿', '村长') WHERE node_config LIKE '%æ''é•¿%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'çŽ©å®¶', '玩家') WHERE node_config LIKE '%çŽ©å®¶%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ä»‹ç»''', '介绍') WHERE node_config LIKE '%ä»‹ç»''%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å¥½äº†', '太好了') WHERE node_config LIKE '%å¥½äº†%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'è¿›å…¥', '进入') WHERE node_config LIKE '%è¿›å…¥%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ£·æž—', '森林') WHERE node_config LIKE '%æ£·æž—%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ·±å¤„', '深处') WHERE node_config LIKE '%æ·±å¤„%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ‰¾åˆ°', '找到') WHERE node_config LIKE '%æ‰¾åˆ°%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ç¥žç§˜', '神秘') WHERE node_config LIKE '%ç¥žç§˜%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å®æ¯Œ', '宝藏') WHERE node_config LIKE '%å®æ¯Œ%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æŽ¢ç´¢', '探索') WHERE node_config LIKE '%æŽ¢ç´¢%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æŠ€èƒ½', '技能') WHERE node_config LIKE '%æŠ€èƒ½%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ£€æŸ¥', '检查') WHERE node_config LIKE '%æ£€æŸ¥%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æˆ''åŠŸ', '成功') WHERE node_config LIKE '%æˆ''åŠŸ%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å¤±è´¥', '失败') WHERE node_config LIKE '%å¤±è´¥%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'è§''è‰²', '角色') WHERE node_config LIKE '%è§''è‰²%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'åˆ›å»º', '创建') WHERE node_config LIKE '%åˆ›å»º%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ç³»ç»Ÿ', '系统') WHERE node_config LIKE '%ç³»ç»Ÿ%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'æ¬¢è¿Ž', '欢迎') WHERE node_config LIKE '%æ¬¢è¿Ž%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'è®¾ç½®', '设置') WHERE node_config LIKE '%è®¾ç½®%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'å‰§æœ¬', '剧本') WHERE node_config LIKE '%å‰§æœ¬%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ç¼–è¾''', '编辑') WHERE node_config LIKE '%ç¼–è¾''%';
+UPDATE graph_nodes SET node_config = REPLACE(node_config, 'ä¸‰å¹•å‰§', '三幕剧') WHERE node_config LIKE '%ä¸‰å¹•å‰§%';
