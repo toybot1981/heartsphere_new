@@ -99,11 +99,17 @@ public class SkillController {
     @GetMapping("/character/{characterId}/available")
     public ResponseEntity<ApiResponse<List<FunctionDefinitionDTO>>> getCharacterAvailableSkills(
             @PathVariable Long characterId,
-            @AuthenticationPrincipal(required = false) UserDetailsImpl userDetails) {
+            Authentication authentication) {
         
         // 如果提供了认证信息，验证角色属于当前用户（用户服务模式）
         // 如果没有认证信息，允许访问（管理服务模式，用于内部调用）
-        // TODO: 在用户服务模式下，验证角色属于当前用户
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            // TODO: 在用户服务模式下，验证角色属于当前用户
+            log.debug("用户服务模式 - userId={}, characterId={}", userDetails.getId(), characterId);
+        } else {
+            log.debug("管理服务模式 - characterId={}", characterId);
+        }
         
         List<SkillDefinition> skills = skillRegistry.getCharacterSkills(characterId);
         List<FunctionDefinitionDTO> functionDefinitions = skillRegistry.toFunctionDefinitions(skills)
