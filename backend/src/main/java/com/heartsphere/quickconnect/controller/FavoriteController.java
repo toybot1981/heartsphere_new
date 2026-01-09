@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 /**
  * 收藏管理控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/favorites")
 public class FavoriteController {

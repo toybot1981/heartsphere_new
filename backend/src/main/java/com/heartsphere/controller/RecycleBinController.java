@@ -25,7 +25,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/recycle-bin")
-@CrossOrigin(origins = "*")
 public class RecycleBinController {
     private static final Logger logger = LoggerFactory.getLogger(RecycleBinController.class);
 

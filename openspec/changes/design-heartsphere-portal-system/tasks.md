@@ -1,0 +1,283 @@
+# 心域传送门系统实施任务
+
+## 1. 模块化基础设施准备
+- [x] 1.1 创建独立的包结构（作为heartconnect的子模块）
+  - [x] 创建 `backend/src/main/java/com/heartsphere/heartconnect/portal/` 目录结构
+  - [x] 创建子包：entity, repository, service, controller, dto, util
+  - [x] 创建 `frontend/components/portal/` 目录结构
+  - [x] 创建 `frontend/services/api/portal/` 目录结构
+- [x] 1.2 扩展工具类（复用现有模式）
+  - [x] 创建 `PortalCodeGenerator` 工具类（参考ShareCodeGenerator模式）
+  - [x] 格式：PT-XXXXXX（6位字母数字组合）
+  - [x] 实现生成和验证方法
+- [x] 1.3 数据库迁移（独立表，无外键依赖）
+  - [x] 设计传送门配置表（portal_config）
+    - [x] 字段：id, user_id, scene_id, portal_name, portal_type, target_heartsphere_id, target_share_code, position_x, position_y, position_z, size, permission_type, description, is_active, created_at, updated_at
+    - [x] 注意：不创建外键约束，通过应用层逻辑关联
+  - [x] 设计传送门权限表（portal_permission）
+    - [x] 字段：id, portal_id, user_id, permission_type, invited_by, invited_at
+  - [x] 设计传送门使用记录表（portal_teleportation_log）
+    - [x] 字段：id, portal_id, visitor_id, source_heartsphere_id, source_scene_id, target_heartsphere_id, target_scene_id, teleported_at, duration_ms, status, error_message
+  - [x] 创建数据库迁移脚本（V20260107__create_portal_tables.sql）
+- [x] 1.4 功能开关配置
+  - [x] 在application.yml中添加portal功能开关
+  - [x] 默认值设为false（关闭状态）
+  - [ ] 前端添加功能开关配置
+
+## 2. 后端核心模块开发（独立包，复用模式）
+- [x] 2.1 创建传送门实体类（独立包）
+  - [x] PortalConfig（参考HeartSphereShareConfig的设计模式）
+  - [x] PortalPermission（参考权限实体的设计）
+  - [x] PortalTeleportationLog（日志实体）
+- [x] 2.2 创建Repository层（独立包）
+  - [x] PortalConfigRepository（遵循JPA Repository模式）
+  - [x] PortalPermissionRepository
+  - [x] PortalTeleportationLogRepository
+- [x] 2.3 创建DTO类（复用DTO模式）
+  - [x] PortalConfigDTO（参考ShareConfigDTO结构）
+  - [x] CreatePortalRequest（参考CreateShareConfigRequest）
+  - [x] UpdatePortalRequest
+  - [x] PortalPreviewDTO
+  - [x] TeleportationRequest
+- [x] 2.4 创建接口隔离层（避免直接依赖）
+  - [x] 定义ShareConfigQueryService接口（查询现有共享配置）
+  - [x] 实现ShareConfigQueryServiceImpl适配器类（调用现有Service）
+- [x] 2.5 实现PortalService（独立包，参考ShareConfigService架构）
+  - [x] createPortal()（参考createShareConfig模式）
+  - [x] updatePortal()
+  - [x] deletePortal()
+  - [x] getPortalsByScene()
+  - [x] getPortalById()
+  - [x] validateTeleportationPermission()（参考权限验证模式）
+  - [x] executeTeleportation()
+  - [x] getPortalPreview()
+  - [x] 通过接口注入访问现有功能（ShareConfigQueryService）
+  - [x] 添加功能开关检查（PortalProperties）
+- [x] 2.6 实现PortalPermissionService（参考权限验证模式）
+  - [x] canUserTeleport()（检查传送门权限和目标心域权限）
+  - [x] grantPermission()（授予权限）
+  - [x] revokePermission()（撤销权限）
+  - [x] hasPortalPermission()（检查传送门权限）
+- [x] 2.7 实现PortalController（独立Controller，独立API路径）
+  - [x] 路径：`/api/portal/...`（与现有`/api/heartconnect/shared/...`分离）
+  - [x] POST /api/portal - 创建传送门
+  - [x] PUT /api/portal/{id} - 更新传送门
+  - [x] DELETE /api/portal/{id} - 删除传送门
+  - [x] GET /api/portal/scene/{sceneId} - 获取场景传送门列表
+  - [x] GET /api/portal/{id} - 获取传送门详情
+  - [x] GET /api/portal/{id}/preview - 获取目标心域预览
+  - [x] POST /api/portal/{id}/teleport - 执行传送
+  - [x] POST /api/portal/{id}/request - 请求传送权限（占位）
+  - [x] POST /api/portal/{id}/invite - 发送传送门邀请（占位）
+  - [x] 功能开关检查通过PortalService实现（如果未启用，抛出异常）
+- [ ] 2.8 编写单元测试（独立测试套件）
+  - [ ] PortalService测试
+  - [ ] PortalPermissionService测试
+- [ ] 2.9 编写集成测试（独立测试，不影响现有测试）
+  - [ ] 端到端API测试
+  - [ ] 权限验证测试
+
+## 3. 前端3D视觉效果系统（独立渲染模块）
+- [x] 3.1 选择3D渲染库和依赖管理
+  - [x] 使用Three.js（通过动态导入，按需加载）
+  - [x] 创建独立的渲染上下文（PortalRenderer类）
+  - [ ] 安装Three.js依赖（需要在package.json中添加）
+- [x] 3.2 创建PortalRenderer核心类（独立模块）
+  - [x] 初始化独立的WebGL渲染器
+  - [x] 创建独立的Three.js Scene（透明背景，不干扰现有渲染）
+  - [x] 创建相机、光照系统
+  - [x] 实现渲染生命周期管理（init, render, dispose）
+  - [x] 传送门实例管理（Map存储）
+  - [x] 渲染循环管理
+- [x] 3.3 实现星门传送门渲染
+  - [x] 创建圆形框架几何体（RingGeometry）
+  - [x] 实现能量环旋转动画
+  - [x] 实现基础视觉效果（蓝紫色光晕）
+  - [x] 实现粒子系统（从中心向外发射，简化版）
+  - [x] 实现状态驱动的动画速度变化
+  - [ ] 实现中心漩涡效果（使用着色器，后续优化）
+  - [ ] 实现边缘光效（脉冲效果，后续优化）
+- [x] 3.4 实现虫洞传送门渲染
+  - [x] 实现空间扭曲效果（基础着色器扭曲）
+  - [x] 创建椭圆形几何体
+  - [x] 实现动态扭曲动画
+  - [ ] 创建黑洞中心效果（后续优化）
+  - [ ] 实现多层能量环（后续优化）
+  - [ ] 实现粒子轨迹效果（后续优化）
+- [x] 3.5 实现量子传送门渲染
+  - [x] 创建几何框架（六边形）
+  - [x] 实现全息效果（半透明材质）
+  - [x] 实现闪烁动画
+  - [ ] 实现量子粒子闪烁（后续优化）
+  - [ ] 实现能量网格（后续优化）
+  - [ ] 实现扫描线动画（后续优化）
+- [x] 3.6 实现动画状态系统
+  - [x] 待机状态动画（基础实现）
+  - [x] 激活状态动画（速度/强度变化）
+  - [x] 传送中状态动画（增强效果）
+  - [x] 状态切换机制
+- [x] 3.7 性能优化（基础实现）
+  - [x] 质量设置系统（low/medium/high）
+  - [x] 粒子数量控制（根据质量设置）
+  - [x] 透明背景（不干扰现有渲染）
+  - [x] 像素比限制
+  - [ ] 实现LOD系统（后续优化）
+  - [ ] 帧率控制（后续优化）
+  - [ ] 低质量模式2D fallback（后续优化）
+
+## 4. 传送门交互组件（独立组件模块）
+- [x] 4.1 创建PortalComponent（独立React组件）
+  - [x] 接收传送门配置props（Props驱动，不依赖全局状态）
+  - [x] 渲染3D传送门视觉效果（调用PortalRenderer）
+  - [x] 处理初始化、更新、清理生命周期
+  - [ ] 处理鼠标悬停事件（通过回调函数，待实现射线检测）
+  - [ ] 处理点击事件（通过事件回调，待实现射线检测）
+- [x] 4.2 实现悬停预览卡片（独立组件）
+  - [x] 显示目标心域信息（通过Props传入）
+  - [x] 显示心域封面图
+  - [x] 显示心域描述
+  - [x] 显示权限状态和访问限制提示
+  - [x] 操作按钮（传送/取消）
+  - [ ] 位置跟随鼠标（后续优化）
+- [x] 4.3 实现传送确认对话框（独立模态框组件）
+  - [x] 显示目标心域详细信息
+  - [x] 确认/取消按钮
+  - [x] 复用现有ConfirmDialog组件
+  - [x] 通过事件回调处理确认
+- [x] 4.4 创建PortalLayer组件（独立的渲染层）
+  - [x] 作为场景中的独立图层
+  - [x] 通过PortalLayer管理所有传送门
+  - [x] 条件渲染：基于功能开关
+  - [x] 处理多个传送门的渲染和管理
+  - [x] 不干扰现有的场景渲染（独立图层，透明背景）
+
+## 5. 传送动画系统
+- [x] 5.1 实现场景淡出动画
+  - [x] 当前场景逐渐变暗（透明度变化）
+  - [x] 传送门效果增强（通过状态驱动）
+- [x] 5.2 实现传送中效果
+  - [x] 传送遮罩层（径向渐变）
+  - [x] "穿越空间"视觉效果（旋转光效、模糊效果）
+  - [x] CSS动画系统
+- [x] 5.3 实现场景淡入动画
+  - [x] 目标场景逐渐显示（透明度恢复）
+  - [x] 动画阶段管理（fadeOut -> teleporting -> fadeIn）
+- [x] 5.4 实现动画跳过功能
+  - [x] skipAnimation参数支持
+  - [x] 快速完成动画路径
+- [x] 5.5 音效系统
+  - [x] PortalAudioService（Web Audio API）
+  - [x] 激活音效（上升音调）
+  - [x] 传送音效（低频嗡鸣 + 高频脉冲）
+  - [x] 到达音效（下降音调）
+  - [x] 音量控制和启用/禁用
+- [x] 5.6 TeleportationManager组件
+  - [x] 完整的传送流程管理
+  - [x] 预览 -> 确认 -> 动画 -> 场景切换
+  - [x] 事件处理和状态管理
+  - [ ] 音效音量控制
+
+## 6. 传送门管理界面
+- [x] 6.1 创建PortalManagement组件
+  - [x] 传送门列表视图（增强版）
+  - [x] 创建/编辑表单（完整实现）
+  - [x] 删除确认对话框
+- [x] 6.2 实现传送门列表
+  - [x] 显示所有传送门
+  - [x] 显示传送门信息（类型、目标、状态、位置等）
+  - [x] 编辑/删除操作按钮
+  - [x] 状态标签和类型标签
+- [x] 6.3 实现传送门创建/编辑表单
+  - [x] 表单字段（名称、类型、目标、位置、权限等）
+  - [x] 目标心域设置（ID或共享码）
+  - [x] 位置输入（X/Y/Z坐标）
+  - [x] 表单验证（必填、数值范围）
+- [ ] 6.4 集成到场景编辑器（可选，后续扩展）
+  - [ ] 在场景编辑器中添加"传送门"标签页
+  - [ ] 支持可视化放置传送门
+- [ ] 6.5 实现权限管理界面（可选，后续扩展）
+  - [ ] 邀请用户功能
+  - [ ] 审批请求列表
+  - [ ] 权限设置界面
+
+## 7. API集成和状态管理（独立模块，事件通信）
+- [x] 7.1 创建Portal API服务（独立目录）
+  - [x] 创建 `frontend/services/api/portal/` 目录
+  - [x] 创建 `portalApi.ts`（参考现有API服务模式）
+  - [x] 实现方法：
+    - [x] createPortal()
+    - [x] updatePortal()
+    - [x] deletePortal()
+    - [x] getPortalsByScene()
+    - [x] getPortalPreview()
+    - [x] requestTeleportation()
+    - [x] executeTeleportation()
+    - [x] inviteUser()
+- [x] 7.2 创建Portal类型定义（独立类型文件）
+  - [x] `portalTypes.ts`（定义所有传送门相关的TypeScript类型）
+  - [x] 参考现有的类型定义模式
+- [x] 7.3 创建独立的Portal状态管理（不修改现有状态）
+  - [x] 创建 `usePortal` Hook（独立Hook）
+  - [x] 管理传送门列表状态（本地状态）
+  - [x] 管理当前激活传送门状态
+  - [x] 管理传送中状态
+  - [x] 通过事件与现有系统通信（不直接修改全局状态）
+- [x] 7.4 错误处理（统一的错误处理模式）
+  - [x] API错误处理（复用现有错误处理模式，通过request函数统一处理）
+  - [x] 功能开关配置（portal/config.ts）
+  - [x] 功能未启用时的优雅降级（通过功能开关检查）
+
+## 8. 测试
+- [ ] 8.1 单元测试
+  - [ ] PortalService测试
+  - [ ] 权限验证测试
+  - [ ] Portal组件测试
+- [ ] 8.2 集成测试
+  - [ ] 端到端传送流程测试
+  - [ ] 权限系统测试
+  - [ ] 多传送门场景测试
+- [ ] 8.3 视觉测试
+  - [ ] 不同传送门类型视觉效果验证
+  - [ ] 动画流畅度测试
+  - [ ] 性能测试（帧率、内存）
+- [ ] 8.4 跨浏览器测试
+  - [ ] Chrome/Edge
+  - [ ] Firefox
+  - [ ] Safari
+  - [ ] 移动端浏览器
+
+## 9. 文档和用户体验优化
+- [ ] 9.1 用户文档
+  - [ ] 传送门创建指南
+  - [ ] 传送门类型说明
+  - [ ] 权限设置说明
+- [ ] 9.2 开发者文档
+  - [ ] API文档
+  - [ ] 组件使用文档
+  - [ ] 视觉效果定制指南
+- [ ] 9.3 用户体验优化
+  - [ ] 加载状态提示
+  - [ ] 错误提示优化
+  - [ ] 动画时长可配置
+  - [ ] 视觉质量设置
+
+## 10. 部署和监控（功能开关，独立监控）
+- [ ] 10.1 功能开关配置（确保可完全禁用）
+  - [ ] 后端：heartconnect.portal.enabled配置项
+  - [ ] 前端：功能开关配置和条件渲染
+  - [ ] 不同传送门类型开关（细粒度控制）
+  - [ ] 验证功能开关可以完全禁用传送门（不影响现有功能）
+- [ ] 10.2 监控和日志（独立监控指标）
+  - [ ] 传送门使用统计（独立统计，不影响现有统计）
+  - [ ] 性能监控（独立监控指标）
+  - [ ] 错误日志收集（独立日志标签）
+- [ ] 10.3 灰度发布（独立功能发布）
+  - [ ] 选择部分用户测试（通过功能开关控制）
+  - [ ] 收集反馈
+  - [ ] 逐步开放
+  - [ ] 验证可以随时回滚（通过功能开关）
+- [ ] 10.4 独立性验证
+  - [ ] 验证禁用传送门后，现有功能完全不受影响
+  - [ ] 验证传送门代码修改不影响现有代码
+  - [ ] 验证数据库查询不影响现有表的性能
+  - [ ] 验证前端渲染不干扰现有Canvas渲染

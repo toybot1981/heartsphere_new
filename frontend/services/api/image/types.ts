@@ -29,3 +29,17 @@ export interface ImageDeleteResponse {
   error?: string;
 }
 
+/**
+ * 图片处理响应
+ */
+export interface ImageProcessingResponse {
+  success: boolean;
+  url?: string;
+  relativePath?: string;
+  originalSize?: number;
+  processedSize?: number;
+  width?: number;
+  height?: number;
+  message?: string;
+  error?: string;
+}

@@ -15,7 +15,6 @@ import java.util.List;
  * 资源控制器 - 供普通用户使用
  * 提供资源的只读访问，不需要管理员权限
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/resources")
 public class ResourceController {
@@ -27,7 +26,7 @@ public class ResourceController {
      * 获取所有资源（按分类筛选）
      * 需要用户登录，但不需要管理员权限
      */
-    @GetMapping
+    @GetMapping(produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<SystemResourceDTO>> getAllResources(
             @RequestParam(required = false) String category) {
         // 验证用户是否已登录
@@ -42,17 +41,22 @@ public class ResourceController {
         }
         
         // 根据分类获取资源
+        List<SystemResourceDTO> resources;
         if (category != null && !category.isEmpty()) {
-            return ResponseEntity.ok(systemResourceService.getResourcesByCategory(category));
+            resources = systemResourceService.getResourcesByCategory(category);
+        } else {
+            resources = systemResourceService.getAllResources();
         }
-        return ResponseEntity.ok(systemResourceService.getAllResources());
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(resources);
     }
 
     /**
      * 根据ID获取资源详情
      * 需要用户登录，但不需要管理员权限
      */
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = "application/json;charset=UTF-8")
     public ResponseEntity<SystemResourceDTO> getResourceById(@PathVariable Long id) {
         // 验证用户是否已登录
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -65,7 +69,9 @@ public class ResourceController {
             return ResponseEntity.status(401).build();
         }
         
-        return ResponseEntity.ok(systemResourceService.getResourceById(id));
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(systemResourceService.getResourceById(id));
     }
 }
 

@@ -25,7 +25,6 @@ import java.util.Optional;
 /**
  * 用户主线剧情控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/user-main-stories")
 public class UserMainStoryController {

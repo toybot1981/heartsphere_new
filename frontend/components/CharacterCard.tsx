@@ -109,15 +109,31 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 w-full p-6 translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
-        <div 
-          className="mb-2 inline-block rounded-full px-3 py-1 text-xs font-bold backdrop-blur-md border"
-          style={{ 
-            backgroundColor: `${character.colorAccent}33`, // 20% opacity
-            color: character.colorAccent,
-            borderColor: `${character.colorAccent}4D` // 30% opacity
-          }}
-        >
-          {character.role}
+        <div className="flex flex-wrap gap-2 mb-2">
+          {/* 生活助手徽章 */}
+          {character.tags && character.tags.includes('生活助手') && (
+            <div 
+              className="inline-block rounded-full px-3 py-1 text-xs font-bold backdrop-blur-md border"
+              style={{ 
+                backgroundColor: '#3b82f633', // 蓝色背景，20% opacity
+                color: '#60a5fa',
+                borderColor: '#3b82f64D' // 30% opacity
+              }}
+            >
+              生活助手
+            </div>
+          )}
+          {/* 角色定位 */}
+          <div 
+            className="inline-block rounded-full px-3 py-1 text-xs font-bold backdrop-blur-md border"
+            style={{ 
+              backgroundColor: `${character.colorAccent}33`, // 20% opacity
+              color: character.colorAccent,
+              borderColor: `${character.colorAccent}4D` // 30% opacity
+            }}
+          >
+            {character.role}
+          </div>
         </div>
         <h3 className="mb-1 text-2xl font-bold text-white transition-colors"
             style={{ textShadow: `0 0 20px ${character.colorAccent}40` }}>

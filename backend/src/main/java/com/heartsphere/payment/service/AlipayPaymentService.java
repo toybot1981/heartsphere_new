@@ -13,6 +13,8 @@ import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;
 import com.heartsphere.payment.entity.PaymentConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,7 +24,9 @@ import java.math.RoundingMode;
  * 支付宝支付服务
  */
 @Slf4j
+@Lazy
 @Service
+@ConditionalOnProperty(prefix = "payment", name = "enabled", havingValue = "true")
 public class AlipayPaymentService {
 
     /**

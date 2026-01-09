@@ -15,6 +15,8 @@ import { ItemsManagement } from './components/ItemsManagement';
 import { InviteCodesManagement } from './components/InviteCodesManagement';
 import { ApiKeysManagement } from './components/ApiKeysManagement';
 import { ResourcesManagement } from './components/ResourcesManagement';
+import { ImageManagement } from './components/ImageManagement';
+import { VideoManagement } from './components/VideoManagement';
 import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
 import { EmailConfigManagement } from './components/EmailConfigManagement';
 import { SettingsManagement } from './components/SettingsManagement';
@@ -25,6 +27,9 @@ import { MemoryManagement } from './components/memory';
 import { GraphManagement } from './components/GraphManagement';
 import { SkillsManagement } from './components/SkillsManagement';
 import { ChronosLettersManagement } from './components/ChronosLettersManagement';
+import { PluginManagement } from './components/PluginManagement';
+import { PromptManagement } from './components/PromptManagement';
+import { MentisExperience } from './components/MentisExperience';
 import { useAdminData } from './hooks';
 import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
@@ -79,6 +84,8 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'main-stories': '主线剧情管理',
             'invite-codes': '邀请码管理',
             'resources': '资源管理',
+            'images': '图片管理',
+            'videos': '视频管理',
             'subscription-plans': '会员配置管理',
             'email-config': '邮箱配置',
             'users': '用户管理',
@@ -90,6 +97,9 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
             'graph': 'Graph流程编辑器',
             'skills': '技能管理',
             'chronos-letters': '超时空信箱管理',
+            'plugins': '插件管理',
+            'prompts': '提示词管理',
+            'mentis': 'Mentis 超级智能体',
         };
         return titles[activeSection] || '管理后台';
     };
@@ -264,6 +274,16 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                             }}
                         />
                     )}
+                    {activeSection === 'images' && (
+                        <ImageManagement
+                            adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'videos' && (
+                        <VideoManagement
+                            adminToken={adminToken}
+                        />
+                    )}
                     {activeSection === 'subscription-plans' && (
                         <SubscriptionPlansManagement
                             adminToken={adminToken}
@@ -346,6 +366,31 @@ const AdminScreenContent: React.FC<AdminScreenProps> = ({ gameState, onResetWorl
                                     loadSystemData(adminToken);
                                 }
                             }}
+                        />
+                    )}
+                    {activeSection === 'plugins' && (
+                        <PluginManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'prompts' && (
+                        <PromptManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'mentis' && (
+                        <MentisExperience
+                            adminToken={adminToken}
                         />
                     )}
                                                 </div>

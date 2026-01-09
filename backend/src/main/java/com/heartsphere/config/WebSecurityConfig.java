@@ -19,6 +19,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -30,6 +32,21 @@ public class WebSecurityConfig {
     
     @Autowired
     ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+    
+    /**
+     * CORS允许的来源（生产环境）
+     * 从环境变量或application.yml读取，格式：逗号分隔的URL列表
+     * 例如：https://yourdomain.com,https://www.yourdomain.com
+     * 如果未配置，开发环境默认允许所有来源
+     */
+    @Value("${app.cors.allowed-origins:}")
+    private String allowedOrigins;
+    
+    /**
+     * 当前环境（dev/test/staging/prod）
+     */
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -59,6 +76,12 @@ public class WebSecurityConfig {
     /**
      * CORS配置源
      * 统一配置所有控制器的CORS策略
+     * 
+     * 规范要求：
+     * 1. 所有CORS配置统一在此处管理
+     * 2. Controller层禁止使用@CrossOrigin注解
+     * 3. 开发环境允许所有来源，生产环境明确指定允许的来源
+     * 
      * 注意：当使用 setAllowCredentials(true) 时，不能使用 addAllowedHeader("*")，必须明确列出所有请求头
      */
     @Bean
@@ -66,8 +89,22 @@ public class WebSecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // 允许所有来源（使用模式匹配，支持凭证）
-        config.addAllowedOriginPattern("*");
+        // 环境配置：开发环境允许所有来源，生产环境明确指定
+        boolean isDevelopment = "dev".equals(activeProfile) || "test".equals(activeProfile);
+        
+        if (isDevelopment || !StringUtils.hasText(allowedOrigins)) {
+            // 开发环境：允许所有来源（使用模式匹配，支持凭证）
+            config.addAllowedOriginPattern("*");
+        } else {
+            // 生产环境：明确指定允许的来源
+            String[] origins = allowedOrigins.split(",");
+            for (String origin : origins) {
+                String trimmedOrigin = origin.trim();
+                if (StringUtils.hasText(trimmedOrigin)) {
+                    config.addAllowedOrigin(trimmedOrigin);
+                }
+            }
+        }
         
         // 允许所有HTTP方法
         config.addAllowedMethod("*");
@@ -82,11 +119,20 @@ public class WebSecurityConfig {
         config.addAllowedHeader("Cache-Control");
         config.addAllowedHeader("Pragma");
         
-        // 允许携带凭证
+        // 自定义请求头（根据项目需要添加）
+        // 例如：心域连接功能可能使用的自定义请求头
+        // config.addAllowedHeader("X-Share-Config-Id");
+        // config.addAllowedHeader("X-Shared-Mode");
+        
+        // 允许携带凭证（Cookie、Authorization等）
         config.setAllowCredentials(true);
         
         // 预检请求的缓存时间（秒）
         config.setMaxAge(3600L);
+        
+        // 暴露的响应头（如果前端需要访问自定义响应头，在此添加）
+        // config.addExposedHeader("X-Custom-Header");
+        // config.addExposedHeader("X-Total-Count");
         
         // 应用到所有路径
         source.registerCorsConfiguration("/**", config);
@@ -110,6 +156,7 @@ public class WebSecurityConfig {
                                 "/api/notes/evernote/callback", 
                                 "/api/notes/notion/callback",  // Notion OAuth 回调端点
                                 "/api/notes/sync-button-enabled",  // 笔记同步按钮显示状态（公开）
+                                "/api/company/contact",  // 公司官网联系表单（公开）
                                 "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // 允许所有OPTIONS请求
                         .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()

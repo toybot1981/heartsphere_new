@@ -133,9 +133,17 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
       
       {/* 内容区域 */}
       <div className="px-2 pb-2">
-        <h3 className="text-sm font-semibold text-white mb-0.5 truncate">
-          <HighlightText text={character.characterName} highlight={searchQuery} />
-        </h3>
+        <div className="flex items-center gap-1 mb-0.5">
+          <h3 className="text-sm font-semibold text-white truncate flex-1">
+            <HighlightText text={character.characterName} highlight={searchQuery} />
+          </h3>
+          {/* 生活助手徽章 */}
+          {character.tags && (character.tags.includes('生活助手') || character.tags.split(',').some(tag => tag.trim() === '生活助手')) && (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex-shrink-0">
+              助手
+            </span>
+          )}
+        </div>
         <p className="text-xs text-gray-400 mb-1 truncate">
           <HighlightText text={character.sceneName} highlight={searchQuery} />
         </p>

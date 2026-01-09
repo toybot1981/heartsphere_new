@@ -21,10 +21,10 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {
@@ -94,10 +94,37 @@ public class ImageController {
             String fullUrl = imageUrlUtils.toFullUrl(relativePath);
             logger.info("图片完整URL: " + fullUrl);
             
+            // 获取所有分辨率版本的URL（如果已生成）
+            Map<String, String> variants = new HashMap<>();
+            try {
+                if (imageProcessingService != null) {
+                    // 尝试获取所有分辨率版本
+                    String thumbnailPath = getVariantPath(relativePath, 200, 200);
+                    String mediumPath = getVariantPath(relativePath, 800, 600);
+                    String highQualityPath = getVariantPath(relativePath, 1920, 1080);
+                    
+                    if (thumbnailPath != null) {
+                        variants.put("thumbnail", imageUrlUtils.toFullUrl(thumbnailPath));
+                    }
+                    if (mediumPath != null) {
+                        variants.put("medium", imageUrlUtils.toFullUrl(mediumPath));
+                    }
+                    if (highQualityPath != null) {
+                        variants.put("highQuality", imageUrlUtils.toFullUrl(highQualityPath));
+                    }
+                }
+            } catch (Exception e) {
+                logger.warning("获取多分辨率版本URL失败: " + e.getMessage());
+            }
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("url", fullUrl);  // 返回完整URL给前端
+            response.put("url", fullUrl);  // 返回完整URL给前端（原图）
             response.put("relativePath", relativePath);  // 可选：同时返回相对路径
+            if (!variants.isEmpty()) {
+                variants.put("original", fullUrl);  // 添加原图URL到variants
+                response.put("variants", variants);  // 返回所有分辨率版本的URL
+            }
             response.put("message", "图片上传成功");
             logger.info("========== 图片上传请求处理完成 ==========");
             return ResponseEntity.ok(response);
@@ -145,10 +172,37 @@ public class ImageController {
             // 转换为完整URL返回给前端
             String fullUrl = imageUrlUtils.toFullUrl(relativePath);
             
+            // 获取所有分辨率版本的URL（如果已生成）
+            Map<String, String> variants = new HashMap<>();
+            try {
+                if (imageProcessingService != null) {
+                    // 尝试获取所有分辨率版本
+                    String thumbnailPath = getVariantPath(relativePath, 200, 200);
+                    String mediumPath = getVariantPath(relativePath, 800, 600);
+                    String highQualityPath = getVariantPath(relativePath, 1920, 1080);
+                    
+                    if (thumbnailPath != null) {
+                        variants.put("thumbnail", imageUrlUtils.toFullUrl(thumbnailPath));
+                    }
+                    if (mediumPath != null) {
+                        variants.put("medium", imageUrlUtils.toFullUrl(mediumPath));
+                    }
+                    if (highQualityPath != null) {
+                        variants.put("highQuality", imageUrlUtils.toFullUrl(highQualityPath));
+                    }
+                }
+            } catch (Exception e) {
+                logger.warning("获取多分辨率版本URL失败（Base64）: " + e.getMessage());
+            }
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("url", fullUrl);  // 返回完整URL给前端
+            response.put("url", fullUrl);  // 返回完整URL给前端（原图）
             response.put("relativePath", relativePath);  // 可选：同时返回相对路径
+            if (!variants.isEmpty()) {
+                variants.put("original", fullUrl);  // 添加原图URL到variants
+                response.put("variants", variants);  // 返回所有分辨率版本的URL
+            }
             response.put("message", "图片上传成功");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -346,6 +400,49 @@ public class ImageController {
     }
 
     /**
+     * 获取图片列表（仅系统预置资源）
+     * @param category 图片分类（可选，默认为"all"）
+     * @param isSystemResource 是否只获取系统资源（可选，默认为true）
+     * @return 图片列表
+     */
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> listImages(
+            @RequestParam(value = "category", defaultValue = "all") String category,
+            @RequestParam(value = "isSystemResource", defaultValue = "true") Boolean isSystemResource) {
+        try {
+            // 图片管理模块主要处理系统预置资源，所以默认只返回系统资源
+            String userId = (isSystemResource != null && isSystemResource) ? null : getCurrentUserId();
+            List<ImageStorageService.ImageInfo> images = imageStorageService.listImages(category, userId);
+            
+            // 转换为完整URL
+            List<Map<String, Object>> imageList = images.stream().map(img -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("url", imageUrlUtils.toFullUrl(img.getRelativePath()));
+                item.put("relativePath", img.getRelativePath());
+                item.put("name", img.getName());
+                item.put("category", img.getCategory());
+                item.put("size", img.getSize());
+                item.put("width", img.getWidth());
+                item.put("height", img.getHeight());
+                item.put("createdAt", img.getCreatedAt());
+                return item;
+            }).collect(java.util.stream.Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("images", imageList);
+            response.put("total", imageList.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("获取图片列表失败: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "获取图片列表失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * 裁剪图片
      * @param request 包含图片URL和裁剪参数的请求体
      * @return 处理结果
@@ -417,5 +514,45 @@ public class ImageController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-}
 
+    /**
+     * 获取多分辨率版本的路径（如果存在）
+     * @param originalPath 原图相对路径
+     * @param width 目标宽度
+     * @param height 目标高度
+     * @return 多分辨率版本的相对路径，如果不存在则返回null
+     */
+    private String getVariantPath(String originalPath, int width, int height) {
+        if (originalPath == null || originalPath.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // 构建多分辨率版本的文件名：原图名称_宽度*高度.扩展名
+            int lastDotIndex = originalPath.lastIndexOf('.');
+            if (lastDotIndex <= 0) {
+                return null;
+            }
+            
+            String nameWithoutExt = originalPath.substring(0, lastDotIndex);
+            String extension = originalPath.substring(lastDotIndex);
+            String variantPath = nameWithoutExt + "_" + width + "*" + height + extension;
+            
+            // 检查文件是否存在（使用ImageProcessingService的localStoragePath）
+            if (imageProcessingService != null) {
+                try {
+                    // 尝试读取文件，如果存在则返回路径
+                    imageProcessingService.readImage(variantPath);
+                    return variantPath;
+                } catch (Exception e) {
+                    // 文件不存在，返回null
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            // 忽略错误，返回null
+        }
+        
+        return null;
+    }
+}

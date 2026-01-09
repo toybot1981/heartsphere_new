@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/admin/entities")
-@CrossOrigin(origins = "*")
 public class AdminEntityController extends BaseAdminController {
     
     @Autowired

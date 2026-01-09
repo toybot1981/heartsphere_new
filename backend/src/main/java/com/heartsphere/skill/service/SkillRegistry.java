@@ -32,7 +32,7 @@ public class SkillRegistry {
     
     private final SkillDefinitionRepository skillDefinitionRepository;
     private final CharacterSkillBindingRepository characterSkillBindingRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     
     // 技能缓存：skillId -> SkillDefinition
     private final Map<String, SkillDefinition> skillCache = new ConcurrentHashMap<>();
@@ -41,14 +41,21 @@ public class SkillRegistry {
     private final Map<Long, Set<String>> characterSkillCache = new ConcurrentHashMap<>();
     
     /**
-     * 初始化：加载所有技能到缓存
+     * 初始化：异步加载所有技能到缓存
+     * 改为异步加载，避免阻塞应用启动
      */
     @PostConstruct
-    @Transactional(readOnly = true)
     public void init() {
-        log.info("初始化技能注册表...");
-        loadAllSkills();
-        log.info("技能注册表初始化完成，共加载 {} 个技能", skillCache.size());
+        log.info("开始异步初始化技能注册表...");
+        // 异步加载，不阻塞启动
+        new Thread(() -> {
+            try {
+                loadAllSkills();
+                log.info("技能注册表初始化完成，共加载 {} 个技能", skillCache.size());
+            } catch (Exception e) {
+                log.error("技能注册表初始化失败", e);
+            }
+        }, "skill-registry-init").start();
     }
     
     /**

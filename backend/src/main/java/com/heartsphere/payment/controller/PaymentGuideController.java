@@ -1,5 +1,6 @@
 package com.heartsphere.payment.controller;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/payment/guide")
-@CrossOrigin(origins = "*")
+@ConditionalOnProperty(prefix = "payment", name = "enabled", havingValue = "true")
 public class PaymentGuideController {
 
     /**

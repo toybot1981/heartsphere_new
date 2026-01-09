@@ -53,10 +53,29 @@ cd heartsphere_new
 
 ### 3. 部署后端服务
 
+#### 开发环境部署
 ```bash
 cd deploy
-sudo ./deploy-backend.sh
+./deploy-backend-dev.sh
 ```
+- 使用 `dev` profile
+- 所有依赖都在主 dependencies 中（包含 Docker、Selenium、支付SDK）
+- 使用 `application-dev.yml` 配置（懒加载启用，Swagger 启用）
+
+#### 生产环境部署
+```bash
+cd deploy
+./deploy-backend-prod.sh
+```
+- 使用 `prod` profile 构建
+- 所有依赖都在主 dependencies 中（包含 Docker、Selenium、支付SDK）
+- 上传到服务器后，使用 `./start-backend-prod.sh` 启动服务
+- 使用 `application-prod.yml` 配置（懒加载关闭，Swagger 关闭）
+
+**重要说明：**
+- Maven Profile (`dev`/`prod`) 仅用于配置 Spring Profile，不影响依赖加载
+- 所有依赖（Docker、Selenium、支付SDK）都在主 dependencies 中
+- 开发环境可以测试所有功能（Mentis、支付等）
 
 **配置提示：**
 

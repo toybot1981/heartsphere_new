@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/characters/{characterId}/skills")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class CharacterSkillController {
     
     private final CharacterSkillService characterSkillService;

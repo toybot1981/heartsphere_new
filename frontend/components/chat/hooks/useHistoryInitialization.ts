@@ -66,16 +66,6 @@ export const useHistoryInitialization = ({
     // 如果history已经有内容（用户已经交互过），就不再初始化
     const shouldInitialize = !hasInitializedRef.current && safeHistory.length === 0;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[useHistoryInitialization] 检查是否需要初始化history:', {
-        shouldInitialize,
-        hasInitialized: hasInitializedRef.current,
-        historyLength: safeHistory.length,
-        characterId: character.id,
-        customScenarioId: customScenario?.id,
-      });
-    }
-
     if (shouldInitialize) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[useHistoryInitialization] ========== 开始初始化history ==========');

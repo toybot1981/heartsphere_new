@@ -40,6 +40,9 @@ export interface Message {
   text: string;
   image?: string;
   timestamp: number;
+  // 技能信息（当角色触发技能时显示）
+  skillId?: string;      // 技能ID
+  skillName?: string;    // 技能名称
 }
 
 export interface StoryOptionEffect {

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { imageApi } from '../../services/api';
+import { imageApi, type ImageUploadResponse, type ImageVariants } from '../../services/api';
 import { showAlert } from '../../utils/dialog';
 
 export const useImageUpload = (adminToken: string | null) => {
@@ -11,9 +11,9 @@ export const useImageUpload = (adminToken: string | null) => {
     const uploadImage = useCallback(async (
         file: File,
         category: string = 'general',
-        onSuccess?: (url: string) => void,
+        onSuccess?: (url: string, variants?: ImageVariants) => void,
         isSystemResource: boolean = false
-    ) => {
+    ): Promise<{ url: string; variants?: ImageVariants } | undefined> => {
         if (!adminToken) {
             showAlert('请先登录', '错误', 'error');
             return;
@@ -26,9 +26,9 @@ export const useImageUpload = (adminToken: string | null) => {
             const response = await imageApi.uploadImage(file, category, adminToken, isSystemResource);
             if (response.success && response.url) {
                 if (onSuccess) {
-                    onSuccess(response.url);
+                    onSuccess(response.url, response.variants);
                 }
-                return response.url;
+                return { url: response.url, variants: response.variants };
             } else {
                 throw new Error(response.error || '上传失败');
             }
@@ -44,12 +44,12 @@ export const useImageUpload = (adminToken: string | null) => {
 
     const uploadAvatar = useCallback(async (
         file: File,
-        onSuccess?: (url: string) => void
+        onSuccess?: (url: string, variants?: ImageVariants) => void
     ) => {
         setIsUploadingAvatar(true);
         try {
-            const url = await uploadImage(file, 'avatar', onSuccess);
-            return url;
+            const result = await uploadImage(file, 'avatar', onSuccess);
+            return result;
         } finally {
             setIsUploadingAvatar(false);
         }
@@ -57,12 +57,12 @@ export const useImageUpload = (adminToken: string | null) => {
 
     const uploadBackground = useCallback(async (
         file: File,
-        onSuccess?: (url: string) => void
+        onSuccess?: (url: string, variants?: ImageVariants) => void
     ) => {
         setIsUploadingBackground(true);
         try {
-            const url = await uploadImage(file, 'background', onSuccess);
-            return url;
+            const result = await uploadImage(file, 'background', onSuccess);
+            return result;
         } finally {
             setIsUploadingBackground(false);
         }

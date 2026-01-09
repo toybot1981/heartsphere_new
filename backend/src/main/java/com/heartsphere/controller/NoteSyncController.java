@@ -18,7 +18,6 @@ import java.util.Map;
 /**
  * 笔记同步控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/notes")
 public class NoteSyncController {

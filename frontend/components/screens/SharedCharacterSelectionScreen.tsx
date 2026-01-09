@@ -11,6 +11,7 @@ import { CharacterCard } from '../CharacterCard';
 import { useSharedMode } from '../../hooks/useSharedMode';
 import { sharedApi } from '../../services/api/heartconnect';
 import { getToken } from '../../services/api/base/tokenStorage';
+import { convertBackendCharacterToFrontend } from '../../utils/dataTransformers';
 
 interface SharedCharacterSelectionScreenProps {
   currentScene: WorldScene;
@@ -62,17 +63,15 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
         
         console.log('[SharedCharacterSelectionScreen] 加载成功，角色数量:', characterDTOs.length);
         
-        // 转换为前端 Character 格式
-        const convertedCharacters: Character[] = characterDTOs.map((dto: any) => ({
-          id: `character_${dto.id}`,
-          name: dto.name || '未命名角色',
-          description: dto.description || '',
-          avatarUrl: dto.avatarUrl || '',
-          personality: dto.personality || '',
-          background: dto.background || '',
-          eraId: eraId.toString(),
-          worldId: currentScene.worldId || '',
-        }));
+        // 转换为前端 Character 格式（使用完整的角色数据转换函数，确保包含systemInstruction等所有字段）
+        const convertedCharacters: Character[] = characterDTOs.map((dto: any) => {
+          // 使用标准转换函数，确保包含所有字段（特别是systemInstruction）
+          const character = convertBackendCharacterToFrontend(dto);
+          // 确保eraId和worldId正确设置
+          character.eraId = eraId.toString();
+          character.worldId = currentScene.worldId || '';
+          return character;
+        });
         
         setCharacters(convertedCharacters);
       } catch (err: any) {

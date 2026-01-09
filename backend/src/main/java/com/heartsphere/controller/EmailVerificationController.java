@@ -15,7 +15,6 @@ import java.util.Map;
  * 邮箱验证码控制器
  */
 @Slf4j
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth/email")
 public class EmailVerificationController {

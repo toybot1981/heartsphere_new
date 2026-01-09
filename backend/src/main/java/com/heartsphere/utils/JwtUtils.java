@@ -19,6 +19,18 @@ public class JwtUtils {
     @Value("${jwt.expiration}")
     private int jwtExpirationMs;
 
+    // 静态初始化块，确保 JWT 实现类被加载
+    static {
+        try {
+            // 显式加载 JWT 实现类，确保 ServiceLoader 可以找到
+            Class.forName("io.jsonwebtoken.impl.DefaultJwtParserBuilder");
+            Class.forName("io.jsonwebtoken.impl.DefaultJwtBuilder");
+        } catch (ClassNotFoundException e) {
+            // 如果类不存在，记录警告但不抛出异常
+            System.err.println("Warning: JWT implementation classes not found: " + e.getMessage());
+        }
+    }
+
     private SecretKey key() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }

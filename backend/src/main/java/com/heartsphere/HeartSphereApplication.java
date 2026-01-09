@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.heartsphere")
 @EnableScheduling
 @EnableJpaRepositories(
     basePackages = {
@@ -13,13 +13,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.heartsphere.billing.repository",
         "com.heartsphere.aiagent.repository",
         "com.heartsphere.heartconnect.repository",
+        "com.heartsphere.heartconnect.portal.repository",
         "com.heartsphere.quickconnect.repository",
         "com.heartsphere.admin.repository",
         "com.heartsphere.payment.repository",
         "com.heartsphere.emotion.repository",
         "com.heartsphere.mailbox.repository",
         "com.heartsphere.memory.repository.jpa",
-        "com.heartsphere.skill.repository"
+        "com.heartsphere.skill.repository",
+        "com.heartsphere.plugin.repository",
+        "com.heartsphere.plugin.plugins.photoalbum.repository",
+        "com.heartsphere.mentis.repository"
     }
 )
 public class HeartSphereApplication {

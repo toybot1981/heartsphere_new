@@ -23,7 +23,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/heartsphere-connection")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminHeartSphereConnectionController extends BaseAdminController {

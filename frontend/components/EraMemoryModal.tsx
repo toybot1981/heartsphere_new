@@ -1,8 +1,9 @@
 
 import React, { useState, useRef } from 'react';
 import { WorldScene, EraMemory } from '../types';
-import { imageApi } from '../services/api';
+import { imageApi, type ImageVariants } from '../services/api';
 import { Button } from './Button';
+import { LazyImage } from './LazyImage';
 
 interface EraMemoryModalProps {
   scene: WorldScene;
@@ -15,6 +16,7 @@ interface EraMemoryModalProps {
 export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories, onAddMemory, onDeleteMemory, onClose }) => {
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageVariants, setImageVariants] = useState<import('../../utils/imageResolution').ImageVariants | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +43,11 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
       if (result.success && result.url) {
         // 使用服务器返回的URL替换base64预览
         setImageUrl(result.url);
-        console.log('图片上传成功:', result.url);
+        // 保存多分辨率版本信息
+        if (result.variants) {
+          setImageVariants(result.variants);
+        }
+        console.log('图片上传成功:', result.url, 'variants:', result.variants);
       } else {
         throw new Error(result.error || '上传失败');
       }
@@ -94,13 +100,20 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
                 </div>
               ) : imageUrl ? (
                 <div className="relative w-full h-full">
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <LazyImage 
+                    src={imageUrl} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                    variants={imageVariants}
+                    purpose="detail"
+                  />
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       setImageUrl(null);
+                      setImageVariants(undefined);
                     }}
-                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
                   >
                     ×
                   </button>
@@ -144,8 +157,13 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
                 <div key={memory.id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group hover:border-pink-500/30 transition-all">
                   {memory.imageUrl && (
                     <div className="h-48 w-full overflow-hidden relative">
-                      <img src={memory.imageUrl} alt="Memory" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
+                      <LazyImage 
+                        src={memory.imageUrl} 
+                        alt="Memory" 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        purpose="detail"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60 pointer-events-none" />
                     </div>
                   )}
                   <div className="p-4 relative">

@@ -23,7 +23,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chronos-letters")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ChronosLetterController {
     
     private final ChronosLetterService chronosLetterService;

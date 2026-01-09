@@ -24,16 +24,21 @@ public class AdminResourceController extends BaseAdminController {
     @Autowired
     private SystemResourceService systemResourceService;
 
-    @GetMapping
+    @GetMapping(produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<SystemResourceDTO>> getAllResources(
             @RequestParam(required = false) String category,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             validateAdmin(authHeader);
+            List<SystemResourceDTO> resources;
             if (category != null && !category.isEmpty()) {
-                return ResponseEntity.ok(systemResourceService.getResourcesByCategory(category));
+                resources = systemResourceService.getResourcesByCategory(category);
+            } else {
+                resources = systemResourceService.getAllResources();
             }
-            return ResponseEntity.ok(systemResourceService.getAllResources());
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/json;charset=UTF-8")
+                    .body(resources);
         } catch (Exception e) {
             logger.severe("获取资源失败: " + e.getMessage());
             e.printStackTrace();
@@ -41,15 +46,17 @@ public class AdminResourceController extends BaseAdminController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = "application/json;charset=UTF-8")
     public ResponseEntity<SystemResourceDTO> getResourceById(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
-        return ResponseEntity.ok(systemResourceService.getResourceById(id));
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(systemResourceService.getResourceById(id));
     }
 
-    @PostMapping
+    @PostMapping(produces = "application/json;charset=UTF-8")
     public ResponseEntity<SystemResourceDTO> createResource(
             @RequestParam("file") MultipartFile file,
             @RequestParam("category") String category,
@@ -59,23 +66,27 @@ public class AdminResourceController extends BaseAdminController {
             @RequestParam(value = "tags", required = false) String tags,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         SystemAdmin admin = validateAdmin(authHeader);
-        return ResponseEntity.ok(systemResourceService.createResource(file, category, name, description, prompt, tags, admin.getId()));
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(systemResourceService.createResource(file, category, name, description, prompt, tags, admin.getId()));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", produces = "application/json;charset=UTF-8")
     public ResponseEntity<SystemResourceDTO> updateResource(
             @PathVariable Long id,
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         validateAdmin(authHeader);
-        return ResponseEntity.ok(systemResourceService.updateResource(
-                id,
-                request.get("name"),
-                request.get("description"),
-                request.get("prompt"),
-                request.get("tags"),
-                request.get("url")
-        ));
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(systemResourceService.updateResource(
+                        id,
+                        request.get("name"),
+                        request.get("description"),
+                        request.get("prompt"),
+                        request.get("tags"),
+                        request.get("url")
+                ));
     }
 
     @DeleteMapping("/{id}")

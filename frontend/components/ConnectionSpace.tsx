@@ -9,6 +9,8 @@ import { getToken } from '../services/api/base/tokenStorage';
 import { authApi } from '../services/api';
 import { useGameState } from '../contexts/GameStateContext';
 import { logger } from '../utils/logger';
+import { TeleportationManager, PortalLayer } from './portal';
+import { usePortal } from '../hooks/usePortal';
 
 interface ConnectionSpaceProps {
   characters: Character[];
@@ -55,35 +57,30 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
   const shootingStarsRef = useRef<ShootingStar[]>([]);
   const animationFrameRef = useRef<number>(0);
   const mouseRef = useRef<{x: number, y: number}>({ x: 0, y: 0 });
-  const { enterSharedMode, visitorId: currentVisitorId } = useSharedMode();
+  const { enterSharedMode, visitorId: currentVisitorId, shareConfig, isActive: isSharedModeActive } = useSharedMode();
   const { dispatch } = useGameState();
+
+  // 传送门系统：在共享模式下，可以选择性地显示传送门
+  // 注意：ConnectionSpace 没有具体的场景ID，所以这里主要用于初始化传送门系统
+  // 实际的传送门显示会在具体的场景页面中（如 SharedChatWindow）
 
   // 加载共享心域列表
   useEffect(() => {
-    logger.debug('[ConnectionSpace] ========== 加载共享心域列表 ==========');
     setLoadingSharedSpheres(true);
     
     const loadSharedHeartSpheres = async () => {
       try {
-        logger.debug('[ConnectionSpace] 调用heartConnectApi.getPublicSharedHeartSpheres()...');
         const data = await heartConnectApi.getPublicSharedHeartSpheres();
-        logger.debug('[ConnectionSpace] getPublicSharedHeartSpheres返回:', data);
-        logger.debug('[ConnectionSpace] 返回数据数量:', data?.length || 0);
-        
         if (data && data.length > 0) {
-          logger.debug('[ConnectionSpace] 有共享心域数据，开始处理...');
           setSharedHeartSpheres(data);
-          logger.debug('[ConnectionSpace] sharedHeartSpheres状态已更新，数量:', data.length);
         } else {
-          logger.debug('[ConnectionSpace] 没有共享心域数据');
           setSharedHeartSpheres([]);
         }
       } catch (err: unknown) {
-        logger.error('[ConnectionSpace] ❌ 加载共享心域失败:', err);
+        logger.error('[ConnectionSpace] 加载共享心域失败:', err);
         setSharedHeartSpheres([]);
       } finally {
         setLoadingSharedSpheres(false);
-        logger.debug('[ConnectionSpace] ========== 共享心域列表加载完成 ==========');
       }
     };
     
@@ -403,51 +400,31 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
 
   // 连接共享心域
   const handleConnectSharedHeartSphere = useCallback(async () => {
-    logger.debug('[ConnectionSpace] ========== 连接共享心域 ==========');
-    logger.debug('[ConnectionSpace] selectedStar:', selectedStar);
-    logger.debug('[ConnectionSpace] selectedStar?.sharedHeartSphere:', selectedStar?.sharedHeartSphere);
-    
     if (!selectedStar?.sharedHeartSphere) {
-      logger.warn('[ConnectionSpace] ❌ 没有选中的共享心域');
       return;
     }
     
     const shared = selectedStar.sharedHeartSphere;
-    logger.debug('[ConnectionSpace] ✅ 开始连接共享心域流程');
-    logger.debug('[ConnectionSpace] 共享心域信息:', shared);
-    logger.debug('[ConnectionSpace] shareCode:', shared.shareCode);
-    logger.debug('[ConnectionSpace] shareConfigId:', shared.shareConfigId);
-    
     setConnecting(true);
-    logger.debug('[ConnectionSpace] connecting状态已设置为true');
     
     try {
-      // 获取token
       const token = getToken();
       if (!token) {
-        logger.error('[ConnectionSpace] ❌ 未找到token');
         setConnecting(false);
         return;
       }
-      logger.debug('[ConnectionSpace] ✅ token已获取');
       
-      // 获取visitorId
       let visitorId: number | null = currentVisitorId;
       if (!visitorId) {
-        logger.debug('[ConnectionSpace] currentVisitorId为空，调用getCurrentUser获取用户ID...');
         const currentUser = await authApi.getCurrentUser(token);
-        logger.debug('[ConnectionSpace] getCurrentUser返回:', currentUser);
         if (currentUser && currentUser.id) {
           visitorId = currentUser.id;
-          logger.debug('[ConnectionSpace] ✅ visitorId已获取:', visitorId);
         } else {
-          logger.error('[ConnectionSpace] ❌ 无法获取用户ID');
           setConnecting(false);
           return;
         }
       }
       
-      // 构造shareConfig
       const shareConfig: ShareConfig = {
         id: shared.shareConfigId,
         userId: shared.ownerId,
@@ -467,22 +444,12 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
         eraCount: shared.eraCount,
         characterCount: shared.characterCount,
       };
-      logger.debug('[ConnectionSpace] shareConfig已构造:', shareConfig);
       
-      // 进入共享模式
-      logger.debug('[ConnectionSpace] 调用enterSharedMode...');
       enterSharedMode(shareConfig, visitorId);
-      logger.debug('[ConnectionSpace] enterSharedMode调用完成');
-      
-      // 等待一下确保共享模式上下文已设置
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // 导航到共享心域页面
-      logger.debug('[ConnectionSpace] 导航到sharedHeartSphere页面');
       dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
-      logger.debug('[ConnectionSpace] ✅ 导航完成');
     } catch (err: unknown) {
-      logger.error('[ConnectionSpace] ❌ 连接共享心域失败:', err);
+      logger.error('[ConnectionSpace] 连接共享心域失败:', err);
       setConnecting(false);
     }
   }, [selectedStar, enterSharedMode, currentVisitorId, dispatch]);
@@ -495,8 +462,21 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
       }, 1500); // Animation delay
   };
 
+  // 处理传送完成（在连接空间中，传送会导航到新的共享心域）
+  const handleTeleportationComplete = useCallback((targetHeartsphereId: number, targetShareCode?: string) => {
+    logger.debug('[ConnectionSpace] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
+    if (targetShareCode) {
+      // 通过共享码传送到另一个心域
+      window.location.href = `/share/${targetShareCode}`;
+    }
+  }, []);
+
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden font-sans">
+    <TeleportationManager
+      sceneId={null} // ConnectionSpace 没有具体场景，但保留传送管理器以支持全局传送
+      onTeleportationComplete={handleTeleportationComplete}
+    >
+      <div className="relative h-full w-full bg-black overflow-hidden font-sans">
         <canvas 
             ref={canvasRef} 
             onClick={handleCanvasClick}
@@ -643,6 +623,18 @@ export const ConnectionSpace: React.FC<ConnectionSpaceProps> = ({ characters, us
                 <p className="text-white/40 text-xs tracking-[0.5em] animate-pulse">点击星辰以捕获信号</p>
             </div>
         )}
-    </div>
+
+        {/* 传送门系统初始化提示（开发环境，共享模式下） */}
+        {process.env.NODE_ENV === 'development' && isSharedModeActive && shareConfig && (
+          <div className="absolute top-20 right-4 bg-slate-900/80 p-3 rounded-lg text-xs text-white z-50 max-w-xs">
+            <div className="font-bold mb-1">🔮 传送门系统</div>
+            <div>共享模式: 已激活</div>
+            <div className="text-xs text-gray-400 mt-2">
+              传送门将在场景页面中显示
+            </div>
+          </div>
+        )}
+      </div>
+    </TeleportationManager>
   );
 };

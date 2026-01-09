@@ -1,0 +1,12 @@
+# MySQL 客户端配置文件示例
+# 将此文件复制到用户主目录 ~/.my.cnf 或系统配置目录 /etc/my.cnf
+# 可以设置默认字符集为 UTF-8
+
+[client]
+default-character-set=utf8mb4
+
+[mysql]
+default-character-set=utf8mb4
+
+[mysqldump]
+default-character-set=utf8mb4

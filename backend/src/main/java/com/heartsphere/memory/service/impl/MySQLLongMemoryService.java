@@ -467,6 +467,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
     /**
      * 根据ID获取记忆
      */
+    @Transactional
     public UserMemory getMemoryById(String memoryId) {
         try {
             Optional<UserMemoryEntity> entityOpt = userMemoryRepository.findById(memoryId);

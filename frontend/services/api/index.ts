@@ -22,8 +22,35 @@ export * from './api/quickconnect';
 // 心域共享模块
 export * from './api/heartconnect';
 
+// 传送门模块
+export * from './api/portal';
+
 // 对话日志模块
 export * from './api/conversationLog';
+
+// 图片API模块
+export { imageApi } from './api/image';
+export type {
+  ProxyDownloadResponse,
+  ImageUploadResponse,
+  ImageDeleteResponse,
+  ImageProcessingResponse,
+  ImageListItem,
+  ImageListResponse,
+  ImageVariants,
+} from './api/image/types';
+
+// 视频API模块
+export { videoApi } from './api/video';
+export type {
+  VideoUploadResponse,
+  VideoToAnimationRequest,
+  VideoToAnimationResponse,
+  VideoInfo,
+  VideoInfoResponse,
+  VideoListItem,
+  VideoListResponse,
+} from './api/video/types';
 
 // 注意：其他模块（auth, world, journal, membership等）仍在 api.ts 中
 // 后续会逐步迁移到模块化结构

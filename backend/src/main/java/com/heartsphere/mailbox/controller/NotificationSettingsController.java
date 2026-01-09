@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/mailbox/notification-settings")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class NotificationSettingsController {
     
     private final NotificationService notificationService;

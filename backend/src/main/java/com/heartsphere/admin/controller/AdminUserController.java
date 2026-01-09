@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 /**
  * 管理员用户管理控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController extends BaseAdminController {

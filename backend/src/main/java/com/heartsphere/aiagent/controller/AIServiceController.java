@@ -38,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "AI服务", description = "统一AI服务API，支持文本生成、图片生成、音频处理、视频生成")
 public class AIServiceController {
 

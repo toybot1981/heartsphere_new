@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/skills/execute")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SkillExecutionController {
     
     private final SkillExecutor skillExecutor;

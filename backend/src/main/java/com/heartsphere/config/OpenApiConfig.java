@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,10 +15,14 @@ import java.util.List;
  * OpenAPI配置类
  * 配置Swagger/OpenAPI文档的基本信息
  * 
+ * 注意：生产环境可以通过配置 springdoc.swagger-ui.enabled=false 禁用
+ * 生产环境打包时会通过 Maven profile 排除 Swagger 依赖（减少 ~3.8M）
+ * 
  * @author HeartSphere
  * @version 1.0
  */
 @Configuration
+@ConditionalOnProperty(name = "springdoc.swagger-ui.enabled", havingValue = "true", matchIfMissing = true)
 public class OpenApiConfig {
 
     @Bean

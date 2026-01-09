@@ -31,7 +31,6 @@ import com.heartsphere.dto.ApiResponse;
 import java.util.Map;
 import java.util.HashMap;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

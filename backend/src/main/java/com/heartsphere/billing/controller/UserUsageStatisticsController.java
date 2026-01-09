@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/billing/statistics")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class UserUsageStatisticsController {
 
     private final UserUsageStatisticsService statisticsService;

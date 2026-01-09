@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/admin/graph")
-@CrossOrigin(origins = "*")
 public class GraphExecutionController extends BaseAdminController {
     
     @Autowired

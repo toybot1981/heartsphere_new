@@ -70,6 +70,7 @@ import type { ShareConfig } from './services/api/heartconnect/types';
 // 代码分割：使用动态导入优化大组件
 const AdminScreen = lazy(() => import('./admin/AdminScreen').then(module => ({ default: module.AdminScreen })));
 const MobileApp = lazy(() => import('./mobile/MobileApp').then(module => ({ default: module.MobileApp })));
+const CompanyRoutes = lazy(() => import('./routes/company').then(module => ({ default: module.CompanyRoutes })));
 
 // 加载中组件
 const LoadingScreen: React.FC = () => (
@@ -82,6 +83,7 @@ const LoadingScreen: React.FC = () => (
 );
 
 // 内部App组件，使用新的状态管理系统
+// 注意：此组件必须在 GameStateProvider 内部使用
 const AppContent: React.FC = () => {
   
   // --- Device Adaptation & Mode Switching ---
@@ -92,7 +94,7 @@ const AppContent: React.FC = () => {
       id: 'example_scenario_01',
       sceneId: 'university_era',
       title: '示例剧本：深夜网咖的邂逅',
-      description: '在这座城市的霓虹灯下，你走进了一家名为“Binary Beans”的网咖...',
+      description: '在这座城市的霓虹灯下，你走进了一家名为"Binary Beans"的网咖...',
       author: 'System', startNodeId: 'start',
       nodes: {
           'start': { id: 'start', title: '初入网咖', prompt: 'User enters a cyberpunk internet cafe at rainy night. Introduce a mysterious hacker girl (Yuki style) sitting in the corner, looking nervous. The barista asks for the user\'s order.', options: [ { id: 'opt_1', text: '走向那个黑客少女', nextNodeId: 'node_hacker' }, { id: 'opt_2', text: '点一杯咖啡，坐在吧台', nextNodeId: 'node_coffee' } ] },
@@ -103,6 +105,7 @@ const AppContent: React.FC = () => {
   };
 
   // 使用新的状态管理系统
+  // 注意：此组件必须在 GameStateProvider 内部使用，否则会抛出错误
   const { state: gameState, dispatch } = useGameState();
   const [isLoaded, setIsLoaded] = useState(false);
   
@@ -1379,6 +1382,15 @@ const App: React.FC = () => {
     }
   }
 
+  // 检查是否是公司官网路径 /company
+  if (pathname.startsWith('/company')) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <CompanyRoutes />
+      </Suspense>
+    );
+  }
+
   // 检查是否是分享页面路径 /share/:shareCode
   const shareMatch = pathname.match(/^\/share\/(.+)$/);
   if (shareMatch) {
@@ -1388,12 +1400,9 @@ const App: React.FC = () => {
   }
   
   // 测试路由：用于测试状态管理系统
+  // StateManagementTest 内部已经有自己的 GameStateProvider，不需要重复包裹
   if (new URLSearchParams(window.location.search).get('test') === 'state') {
-    return (
-      <GameStateProvider>
-        <StateManagementTest />
-      </GameStateProvider>
-    );
+    return <StateManagementTest />;
   }
 
   return (

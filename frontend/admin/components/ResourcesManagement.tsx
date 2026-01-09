@@ -3,6 +3,94 @@ import { adminApi, imageApi } from '../../services/api';
 import { InputGroup, TextInput } from './AdminUIComponents';
 import { useAdminState } from '../contexts/AdminStateContext';
 import { showAlert } from '../../utils/dialog';
+import { LazyImage } from '../../components/LazyImage';
+import { getApiBaseUrl } from '../../services/api/config';
+import { logger } from '../../utils/logger';
+
+// 将相对路径转换为完整URL
+const getFullImageUrl = (url: string | null | undefined, resourceName?: string): string => {
+  if (!url) {
+    logger.debug('[ResourcesManagement] getFullImageUrl: URL为空，使用占位符', { resourceName });
+    return 'https://via.placeholder.com/300';
+  }
+  
+  // 处理以 :8081 开头的错误URL格式
+  if (url.startsWith(':8081') || url.startsWith('://:8081')) {
+    console.warn('[ResourcesManagement] 检测到错误的URL格式（缺少协议）', { resourceName, originalUrl: url });
+    url = url.replace(/^:?\/?\/?:8081/, ''); // 移除错误的 :8081 前缀
+  }
+  
+  // 如果已经是完整URL（包含 http:// 或 https://），直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    logger.debug('[ResourcesManagement] getFullImageUrl: 完整URL', { 
+      resourceName, 
+      originalUrl: url,
+      finalUrl: url 
+    });
+    return url;
+  }
+  
+  // 如果是相对路径，拼接基础URL
+  let baseUrl = getApiBaseUrl();
+  console.log('[ResourcesManagement] getFullImageUrl: getApiBaseUrl() 返回', { baseUrl, resourceName });
+  
+  if (!baseUrl && typeof window !== 'undefined') {
+    // 从当前页面URL推断API基础URL
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    console.log('[ResourcesManagement] getFullImageUrl: 从 window.location 推断', { 
+      protocol, 
+      hostname, 
+      port, 
+      location: window.location.href 
+    });
+    
+    // 如果端口是3000（前端开发端口），API通常在8081
+    if (port === '3000' || !port) {
+      baseUrl = `${protocol}//${hostname}:8081`;
+    } else {
+      baseUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    }
+  }
+  
+  // 确保 baseUrl 有协议
+  if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    console.warn('[ResourcesManagement] getFullImageUrl: baseUrl 缺少协议，添加 http://', { baseUrl, resourceName });
+    baseUrl = `http://${baseUrl}`;
+  }
+  
+  if (!baseUrl) {
+    baseUrl = 'http://localhost:8081';
+  }
+  
+  // 确保路径以 / 开头
+  const path = url.startsWith('/') ? url : `/${url}`;
+  const finalUrl = `${baseUrl}${path}`;
+  
+  // 验证最终URL格式
+  if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+    console.error('[ResourcesManagement] getFullImageUrl: 最终URL缺少协议！', { 
+      resourceName,
+      originalUrl: url,
+      baseUrl,
+      path,
+      finalUrl 
+    });
+    // 修复：添加协议
+    return `http://${finalUrl}`;
+  }
+  
+  logger.debug('[ResourcesManagement] getFullImageUrl: 相对路径转换', { 
+    resourceName,
+    originalUrl: url,
+    baseUrl,
+    path,
+    finalUrl 
+  });
+  
+  return finalUrl;
+};
 
 interface ResourcesManagementProps {
     adminToken: string | null;
@@ -54,6 +142,16 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
     };
 
     const handleEdit = (resource: any) => {
+        // 打印资源卡片的图片地址信息
+        const cardImageUrl = getFullImageUrl(resource.url, resource.name);
+        console.log('========== 点击编辑资源 ==========');
+        console.log('资源名称:', resource.name);
+        console.log('资源ID:', resource.id);
+        console.log('卡片原始URL (resource.url):', resource.url);
+        console.log('卡片转换后URL (用于显示):', cardImageUrl);
+        console.log('编辑框中设置的URL (editResourceUrl):', resource.url || '');
+        console.log('====================================');
+        
         setEditingResource(resource);
         setEditResourceName(resource.name || '');
         setEditResourceDescription(resource.description || '');
@@ -206,6 +304,8 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
         { value: 'era', label: '场景' },
         { value: 'scenario', label: '剧本' },
         { value: 'journal', label: '日记' },
+        { value: 'item', label: '物品' },
+        { value: 'event', label: '事件' },
         { value: 'general', label: '通用' },
     ];
 
@@ -318,7 +418,13 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                                                     if (!file || !adminToken) return;
                                                     try {
                                                         // 系统资源上传，不包含userId
-                                                        const url = await imageApi.uploadImage(file, 'general', adminToken, true);
+                                                        // 优先使用资源的实际 category，如果不存在则使用当前选择的 category（排除 'all'），最后使用 'general'
+                                                        // 注意：system_resources 的图片存储直接使用 category，不使用 resource_ 前缀
+                                                        const category = editingResource?.category || 
+                                                                         (resourceCategory && resourceCategory !== 'all' ? resourceCategory : null) || 
+                                                                         'general';
+                                                        console.log('[ResourcesManagement] 上传图片，使用的 category:', category, 'baseCategory:', baseCategory, 'editingResource:', editingResource);
+                                                        const url = await imageApi.uploadImage(file, category, adminToken, true);
                                                         if (url && url.success && url.url) {
                                                             setEditResourceUrl(url.url);
                                                             // 上传成功后，图片会在预览框中显示，无需提示框
@@ -452,10 +558,29 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                                         className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 hover:border-indigo-500 transition-colors"
                                     >
                                         <div className="aspect-square relative">
-                                            <img
-                                                src={resource.url || 'https://via.placeholder.com/300'}
+                                            <LazyImage
+                                                src={getFullImageUrl(resource.url, resource.name)}
                                                 alt={resource.name}
                                                 className="w-full h-full object-cover"
+                                                purpose="thumbnail"
+                                                onError={(e) => {
+                                                    const imgUrl = getFullImageUrl(resource.url, resource.name);
+                                                    console.error('[ResourcesManagement] 图片加载失败', {
+                                                        resourceName: resource.name,
+                                                        resourceId: resource.id,
+                                                        originalUrl: resource.url,
+                                                        finalUrl: imgUrl,
+                                                        error: e
+                                                    });
+                                                }}
+                                                onLoad={() => {
+                                                    const imgUrl = getFullImageUrl(resource.url, resource.name);
+                                                    console.log('[ResourcesManagement] 图片加载成功', {
+                                                        resourceName: resource.name,
+                                                        resourceId: resource.id,
+                                                        finalUrl: imgUrl
+                                                    });
+                                                }}
                                             />
                                         </div>
                                         <div className="p-3">

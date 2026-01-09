@@ -8,6 +8,8 @@ import com.heartsphere.aiagent.service.AIService;
 import com.heartsphere.memory.model.*;
 import com.heartsphere.memory.model.character.CharacterInteractionMemory;
 import com.heartsphere.memory.model.character.CharacterSceneMemory;
+import com.heartsphere.admin.dto.PromptRenderResponse;
+import com.heartsphere.admin.service.PromptTemplateIntegrationService;
 import com.heartsphere.memory.service.MemoryExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class LLMMemoryExtractor implements MemoryExtractor {
     
     private final AIService aiService;
     private final ObjectMapper objectMapper;
+    private final PromptTemplateIntegrationService templateService;
     
     @Value("${heartsphere.memory.extraction.enable-llm-extraction:true}")
     private boolean enableLlmExtraction;
@@ -48,13 +51,25 @@ public class LLMMemoryExtractor implements MemoryExtractor {
         }
         
         try {
-            // 构建提取提示词
-            String prompt = buildFactExtractionPrompt(messages);
+            // 构建提取提示词（使用模板）
+            String defaultPrompt = buildFactExtractionPrompt(messages);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("messages", messages.stream()
+                .filter(m -> m.getRole() == MessageRole.USER)
+                .map(m -> "用户: " + m.getContent())
+                .collect(Collectors.toList()));
+            
+            PromptRenderResponse prompts = templateService.getPrompts(
+                "memory",
+                variables,
+                "你是一个专业的记忆提取专家，擅长从对话中提取用户的事实信息。请以JSON格式返回结果。",
+                defaultPrompt
+            );
             
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
-            request.setPrompt(prompt);
-            request.setSystemInstruction("你是一个专业的记忆提取专家，擅长从对话中提取用户的事实信息。请以JSON格式返回结果。");
+            request.setPrompt(prompts.getUserPrompt());
+            request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3); // 较低温度以获得更一致的结果
             request.setMaxTokens(2000);
             
@@ -213,13 +228,25 @@ public class LLMMemoryExtractor implements MemoryExtractor {
         }
         
         try {
-            // 构建提取提示词
-            String prompt = buildPreferenceExtractionPrompt(messages);
+            // 构建提取提示词（使用模板）
+            String defaultPrompt = buildPreferenceExtractionPrompt(messages);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("messages", messages.stream()
+                .filter(m -> m.getRole() == MessageRole.USER)
+                .map(m -> "用户: " + m.getContent())
+                .collect(Collectors.toList()));
+            
+            PromptRenderResponse prompts = templateService.getPrompts(
+                "memory",
+                variables,
+                "你是一个专业的偏好提取专家，擅长从对话中提取用户的偏好信息。请以JSON格式返回结果。",
+                defaultPrompt
+            );
             
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
-            request.setPrompt(prompt);
-            request.setSystemInstruction("你是一个专业的偏好提取专家，擅长从对话中提取用户的偏好信息。请以JSON格式返回结果。");
+            request.setPrompt(prompts.getUserPrompt());
+            request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(1500);
             
@@ -367,13 +394,24 @@ public class LLMMemoryExtractor implements MemoryExtractor {
         }
         
         try {
-            // 构建提取提示词
-            String prompt = buildMemoryExtractionPrompt(messages);
+            // 构建提取提示词（使用模板）
+            String defaultPrompt = buildMemoryExtractionPrompt(messages);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("messages", messages.stream()
+                .map(m -> m.getRole().name() + ": " + m.getContent())
+                .collect(Collectors.toList()));
+            
+            PromptRenderResponse prompts = templateService.getPrompts(
+                "memory",
+                variables,
+                "你是一个专业的记忆提取专家，擅长从对话中提取重要的用户记忆。请以JSON格式返回结果。",
+                defaultPrompt
+            );
             
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
-            request.setPrompt(prompt);
-            request.setSystemInstruction("你是一个专业的记忆提取专家，擅长从对话中提取重要的用户记忆。请以JSON格式返回结果。");
+            request.setPrompt(prompts.getUserPrompt());
+            request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(2000);
             

@@ -54,6 +54,20 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
   requireAuth,
   dispatch,
 }) => {
+  // 筛选状态
+  const [characterTypeFilter, setCharacterTypeFilter] = React.useState<string>('all');
+
+  // 筛选后的角色列表
+  const filteredCharacters = React.useMemo(() => {
+    if (characterTypeFilter === 'all') {
+      return sceneCharacters;
+    }
+    if (characterTypeFilter === '生活助手') {
+      return sceneCharacters.filter(char => char.tags && char.tags.includes('生活助手'));
+    }
+    return sceneCharacters;
+  }, [sceneCharacters, characterTypeFilter]);
+
   return (
     <div className="h-full flex flex-col p-8 bg-gray-900">
       {/* 头部 */}
@@ -71,6 +85,38 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
             + 新增角色
           </Button>
         </div>
+      </div>
+
+      {/* 筛选栏 */}
+      <div className="flex items-center gap-3 mb-6">
+        <span className="text-sm text-gray-400">角色类型：</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCharacterTypeFilter('all')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              characterTypeFilter === 'all'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+            }`}
+          >
+            全部
+          </button>
+          <button
+            onClick={() => setCharacterTypeFilter('生活助手')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              characterTypeFilter === '生活助手'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+            }`}
+          >
+            生活助手
+          </button>
+        </div>
+        {characterTypeFilter !== 'all' && (
+          <span className="text-sm text-gray-400">
+            （共 {filteredCharacters.length} 个角色）
+          </span>
+        )}
       </div>
 
       {/* 滚动容器 */}
@@ -180,7 +226,7 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
         {/* 角色列表部分 */}
         <h3 className="text-xl font-bold text-gray-400 mb-4">登场人物</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sceneCharacters.map(char => {
+          {filteredCharacters.map(char => {
             // 判断是否是用户拥有的角色
             const customCharsForScene = gameState.customCharacters[currentScene.id] || [];
             const isNumericId = /^\d+$/.test(char.id);

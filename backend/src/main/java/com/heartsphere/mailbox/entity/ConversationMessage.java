@@ -86,6 +86,18 @@ public class ConversationMessage {
     private Boolean isDeleted = false;
     
     /**
+     * 技能ID（当角色触发技能时记录）
+     */
+    @Column(name = "skill_id", length = 100)
+    private String skillId;
+    
+    /**
+     * 技能名称（当角色触发技能时记录）
+     */
+    @Column(name = "skill_name", length = 200)
+    private String skillName;
+    
+    /**
      * 创建时间
      */
     @Column(name = "created_at", nullable = false, updatable = false)

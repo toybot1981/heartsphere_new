@@ -12,6 +12,7 @@ import {
   optimizeMobileImageSize,
   getDevicePixelRatio,
 } from '../utils/responsiveImage';
+import { selectImageResolution, type ImageDisplayPurpose, type ImageVariants } from '../../utils/imageResolution';
 
 interface MobileLazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -23,9 +24,11 @@ interface MobileLazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement>
   onError?: () => void;
   enableWebP?: boolean; // 是否启用WebP支持（默认true）
   enableResponsive?: boolean; // 是否启用响应式图片（默认true）
-  purpose?: 'thumbnail' | 'small' | 'medium' | 'large' | 'xlarge'; // 图片用途
+  purpose?: 'thumbnail' | 'small' | 'medium' | 'large' | 'xlarge'; // 图片用途（兼容旧接口）
   displayWidth?: number; // 显示宽度（逻辑像素，用于优化）
   displayHeight?: number; // 显示高度（逻辑像素，用于优化）
+  variants?: ImageVariants;  // 多分辨率版本URL（可选）
+  displayPurpose?: ImageDisplayPurpose;  // 展示场景（可选，用于多分辨率选择）
 }
 
 /**
@@ -47,6 +50,8 @@ export const MobileLazyImage: React.FC<MobileLazyImageProps> = memo(({
   purpose = 'medium',
   displayWidth,
   displayHeight,
+  variants,
+  displayPurpose,
   ...props
 }) => {
   const [imageSrc, setImageSrc] = useState<string>(placeholder);
@@ -58,22 +63,30 @@ export const MobileLazyImage: React.FC<MobileLazyImageProps> = memo(({
   const imgRef = useRef<HTMLImageElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // 优先使用多分辨率选择（如果提供了variants和displayPurpose）
+  const baseSrc = variants && displayPurpose 
+    ? selectImageResolution(src, variants, displayPurpose, true)
+    : src;
+
   // Phase 5: 响应式图片配置
   useEffect(() => {
-    if (enableResponsive && src && !src.includes('data:') && !src.includes('.svg')) {
+    if (enableResponsive && baseSrc && !baseSrc.includes('data:') && !baseSrc.includes('.svg')) {
       // 如果指定了显示尺寸，使用优化函数
       if (displayWidth) {
-        const optimizedUrl = optimizeMobileImageSize(src, displayWidth, displayHeight, purpose);
+        const optimizedUrl = optimizeMobileImageSize(baseSrc, displayWidth, displayHeight, purpose);
         setImageSrc(optimizedUrl);
       } else {
         // 否则使用响应式配置
-        const config = generateResponsiveImageConfig(src, purpose);
+        const config = generateResponsiveImageConfig(baseSrc, purpose);
         setImageSrc(config.src);
         setSrcSet(config.srcSet);
         setSizes(config.sizes);
       }
+    } else if (!enableResponsive) {
+      // 如果不启用响应式，直接使用baseSrc
+      setImageSrc(baseSrc);
     }
-  }, [src, enableResponsive, purpose, displayWidth, displayHeight]);
+  }, [baseSrc, enableResponsive, purpose, displayWidth, displayHeight]);
 
   // Phase 5: WebP格式支持（在响应式配置之后）
   useEffect(() => {
@@ -103,7 +116,7 @@ export const MobileLazyImage: React.FC<MobileLazyImageProps> = memo(({
             if (entry.isIntersecting) {
               // 图片进入视口，开始加载
               // 优先使用WebP格式（如果可用），否则使用响应式配置的src
-              const finalSrc = webPUrl || imageSrc || src;
+              const finalSrc = webPUrl || imageSrc || baseSrc;
               if (finalSrc !== placeholder) {
                 setImageSrc(finalSrc);
               }
@@ -119,7 +132,7 @@ export const MobileLazyImage: React.FC<MobileLazyImageProps> = memo(({
       observerRef.current.observe(img);
     } else {
       // 不支持Intersection Observer，直接加载
-      const finalSrc = webPUrl || imageSrc || src;
+      const finalSrc = webPUrl || imageSrc || baseSrc;
       if (finalSrc !== placeholder) {
         setImageSrc(finalSrc);
       }
@@ -130,7 +143,7 @@ export const MobileLazyImage: React.FC<MobileLazyImageProps> = memo(({
         observerRef.current.disconnect();
       }
     };
-  }, [src, imageSrc, webPUrl, placeholder]);
+  }, [baseSrc, imageSrc, webPUrl, placeholder]);
 
   const handleLoad = () => {
     setIsLoaded(true);

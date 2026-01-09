@@ -98,11 +98,35 @@ public class SubscriptionPlan {
     @Column(name = "permanent_token_quota")
     private Long permanentTokenQuota; // 永久Token配额
 
+    @Column(name = "storage_quota_mb")
+    private Integer storageQuotaMb; // 存储配额（MB）
+
+    // 超量付费价格
+    @Column(name = "overage_token_price", precision = 10, scale = 4)
+    private BigDecimal overageTokenPrice; // 超量Token价格（元/1K tokens）
+
+    @Column(name = "overage_image_price", precision = 10, scale = 2)
+    private BigDecimal overageImagePrice; // 超量图片价格（元/张）
+
+    @Column(name = "overage_video_price", precision = 10, scale = 2)
+    private BigDecimal overageVideoPrice; // 超量视频价格（元/秒）
+
+    // 团队协作功能权限
+    @Column(name = "allow_team_collaboration", nullable = false)
+    private Boolean allowTeamCollaboration = false; // 是否允许团队协作
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
+
+    // 营销字段
+    @Column(name = "recommended", nullable = false)
+    private Boolean recommended = false; // 是否推荐
+
+    @Column(name = "badge_text", length = 50)
+    private String badgeText; // 徽章文字（如：最划算、热门）
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp

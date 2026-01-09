@@ -34,7 +34,8 @@ public class GraphDefinitionService {
     @Autowired
     private GraphEdgeRepository graphEdgeRepository;
     
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
     
     /**
      * 获取所有Graph定义

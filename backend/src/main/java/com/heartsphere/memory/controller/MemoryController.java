@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/memory/v1")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "记忆系统", description = "记忆系统API")

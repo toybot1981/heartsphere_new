@@ -41,6 +41,25 @@ app:
         max-width: 5000
         max-height: 5000
 
+  # 视频存储配置
+  video:
+    storage:
+      type: local
+      local:
+        path: ./target/test-uploads/videos
+      base-url: http://localhost:8081/videos
+      max-size: 104857600 # 100MB
+      supported-formats: mp4,mov,avi,webm
+    processing:
+      animation:
+        default-fps: 10
+        max-fps: 30
+        default-width: 640
+        default-height: 480
+        max-duration: 30
+        default-quality: medium
+        supported-formats: gif,lottie,pag
+
 # 日志配置
 logging:
   level:

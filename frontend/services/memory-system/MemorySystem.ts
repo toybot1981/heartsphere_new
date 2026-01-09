@@ -115,11 +115,23 @@ export class MemorySystem {
       memories.push(...recentMemories);
     }
     
-    // 更新使用次数
+    // 更新使用次数（静默处理错误，特别是记忆不存在的情况）
     memories.forEach(memory => {
       memory.usageCount++;
       memory.lastUsedAt = Date.now();
-      this.storage.update(memory).catch(console.error);
+      this.storage.update(memory).catch((error: any) => {
+        // 如果记忆不存在（404），静默处理，不记录错误
+        // 这通常发生在记忆已被删除或从未同步到服务器的情况
+        if (error?.response?.status === 404 || error?.message?.includes('记忆不存在')) {
+          // 静默处理，不记录错误日志
+          return;
+        }
+        // 其他错误才记录
+        console.warn('[MemorySystem] 更新记忆使用次数失败:', {
+          memoryId: memory.id,
+          error: error?.message || error,
+        });
+      });
     });
     
     return memories;

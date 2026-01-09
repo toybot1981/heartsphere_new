@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
 
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph' | 'skills' | 'chronos-letters';
+type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'images' | 'videos' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph' | 'skills' | 'chronos-letters' | 'plugins' | 'prompts' | 'mentis';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -88,12 +88,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             icon: '⚙️',
             items: [
                 { section: 'resources', label: '资源管理', icon: '🖼️' },
+                { section: 'images', label: '图片管理', icon: '🖼️' },
+                { section: 'videos', label: '视频管理', icon: '🎬' },
                 { section: 'invite-codes', label: '邀请码管理', icon: '🎫' },
                 { section: 'api-keys', label: 'API Key管理', icon: '🔑' },
                 { section: 'subscription-plans', label: '会员配置', icon: '💎' },
                 { section: 'email-config', label: '邮箱配置', icon: '📧' },
                 { section: 'settings', label: '全局配置', icon: '⚙️' },
-                { section: 'billing', label: '计费管理', icon: '💳' }
+                { section: 'billing', label: '计费管理', icon: '💳' },
+                { section: 'plugins', label: '插件管理', icon: '🔌' },
+                { section: 'prompts', label: '提示词管理', icon: '💬' }
             ]
         },
         {
@@ -103,6 +107,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             items: [
                 { section: 'heartsphere-connection', label: '心域连接', icon: '🔗' },
                 { section: 'memory', label: '记忆系统', icon: '🧠' }
+            ]
+        },
+        {
+            id: 'ai',
+            label: 'AI 智能体',
+            icon: '🤖',
+            items: [
+                { section: 'mentis', label: 'Mentis 体验', icon: '🚀' }
             ]
         }
     ], [adminRole]);

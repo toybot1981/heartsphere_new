@@ -19,6 +19,8 @@ import { useUIState } from '../chat/hooks/useUIState';
 import { showAlert } from '../../utils/dialog';
 import { AIConfigManager } from '../../services/ai/config';
 import { logger } from '../../utils/logger';
+import { TeleportationManager, PortalLayer } from '../portal';
+import { usePortal } from '../../hooks/usePortal';
 
 interface SharedChatWindowProps {
   character: Character;
@@ -47,6 +49,22 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   // 会话ID：基于角色ID和共享配置ID
   const sessionId = `shared_${shareConfig?.id || 'unknown'}_${character.id}`;
 
+  // 提取场景ID（eraId）用于传送门
+  const sceneId = character.eraId ? parseInt(character.eraId) : null;
+  
+  // 传送门系统：加载传送门列表用于显示
+  const { portals, loadPortals, loading: portalsLoading } = usePortal(sceneId || undefined);
+
+  // 加载传送门列表
+  useEffect(() => {
+    if (sceneId) {
+      logger.debug(`[SharedChatWindow] 🔮 加载传送门列表: sceneId=${sceneId}`);
+      loadPortals(sceneId);
+    } else {
+      logger.warn('[SharedChatWindow] ⚠️ 场景ID为空，无法加载传送门');
+    }
+  }, [sceneId, loadPortals]);
+
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,14 +75,10 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   }, [safeHistory.length, scrollToBottom]);
 
   // 加载消息历史（独立的权限控制和数据加载）
-  // 使用 useRef 避免重复加载
   const historyLoadedRef = useRef<string | null>(null);
   
-  // 当共享模式退出时，自动返回
   useEffect(() => {
     if (!isActive || !shareConfig) {
-      // 共享模式已退出，自动返回
-      logger.debug('[SharedChatWindow] 共享模式已退出，自动返回');
       onBack();
     }
   }, [isActive, shareConfig, onBack]);
@@ -76,24 +90,19 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         return;
       }
 
-      // 如果已经加载过相同的sessionId，不再重复加载
       if (historyLoadedRef.current === sessionId) {
-        logger.debug('[SharedChatWindow] 消息历史已加载，跳过重复加载');
         return;
       }
 
       try {
         const token = getToken();
         if (!token) {
-          logger.warn('[SharedChatWindow] 未登录，无法加载消息历史');
           return;
         }
 
-        logger.debug('[SharedChatWindow] 加载消息历史，sessionId:', sessionId);
         const result = await sharedApi.getChatMessages(sessionId, token, 100);
 
         if (result && result.messages) {
-          // 转换为前端 Message 格式
           const messages: Message[] = result.messages.map((msg: any) => ({
             id: msg.id || `msg_${Date.now()}_${Math.random()}`,
             role: msg.role === 'USER' ? 'user' : 'model',
@@ -101,9 +110,8 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
             timestamp: msg.timestamp || Date.now(),
           }));
 
-          logger.debug('[SharedChatWindow] 加载到消息数量:', messages.length);
           onUpdateHistory(messages);
-          historyLoadedRef.current = sessionId; // 标记已加载
+          historyLoadedRef.current = sessionId;
         }
       } catch (err) {
         logger.error('[SharedChatWindow] 加载消息历史失败:', err);
@@ -111,7 +119,6 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
     };
 
     loadHistory();
-    // 移除 onUpdateHistory 依赖，避免函数变化导致重复调用
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, shareConfig, sessionId]);
 
@@ -150,46 +157,10 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         0.5
       );
 
-      // 检查当前配置模式（参照ChatWindow的方式）
       const config = await AIConfigManager.getUserConfig();
-      
-      logger.debug('[SharedChatWindow] 大模型连接模式检测:', {
-        mode: config.mode,
-        textProvider: config.textProvider,
-        textModel: config.textModel,
-        hasApiKeys: {
-          gemini: !!AIConfigManager.getLocalApiKeys().gemini,
-          openai: !!AIConfigManager.getLocalApiKeys().openai,
-          qwen: !!AIConfigManager.getLocalApiKeys().qwen,
-          doubao: !!AIConfigManager.getLocalApiKeys().doubao,
-        }
-      });
-
-      // 使用统一的AI响应生成函数（与ChatWindow保持一致）
-      // 根据配置模式自动选择统一模式或本地模式
       const tempBotId = `shared_${Date.now()}`;
       const historyWithUserMsg = [...safeHistory, userMessage];
       
-      // 统一模式和本地模式都使用相同的AI响应生成逻辑
-      // 统一模式：获取相关记忆用于上下文（共享模式不使用）
-      let relevantMemories: any[] = [];
-      if (config.mode === 'unified') {
-        logger.debug('[SharedChatWindow] 使用统一接入模式调用大模型');
-        // 共享模式不使用记忆系统，所以不获取相关记忆
-      } else {
-        logger.debug('[SharedChatWindow] 使用本地配置模式调用大模型', {
-          provider: config.textProvider || 'gemini',
-          model: config.textModel,
-          hasProviderConfig: {
-            gemini: !!AIConfigManager.getLocalApiKeys().gemini,
-            openai: !!AIConfigManager.getLocalApiKeys().openai,
-            qwen: !!AIConfigManager.getLocalApiKeys().qwen,
-            doubao: !!AIConfigManager.getLocalApiKeys().doubao,
-          }
-        });
-      }
-      
-      // 使用generateAIResponse函数，根据配置自动选择模式
       await generateAIResponse({
         userText,
         userMsg: userMessage,
@@ -200,12 +171,11 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         tempBotId,
         onUpdateHistory,
         setIsLoading,
-        engine: undefined, // 共享模式不使用温度感引擎
+        engine: undefined,
         engineReady: false,
-        memorySystem: undefined, // 共享模式不使用记忆系统
-        relevantMemories: [], // 共享模式不获取记忆
+        memorySystem: undefined,
+        relevantMemories: [],
         onComplete: async (fullText, requestId) => {
-          // 保存助手消息到后端（共享模式专用）
           try {
             await sharedApi.saveChatMessage(
               sessionId,
@@ -215,10 +185,8 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               undefined,
               0.5
             );
-            logger.debug('[SharedChatWindow] 助手消息已保存到后端');
           } catch (saveError) {
             logger.error('[SharedChatWindow] 保存助手消息失败:', saveError);
-            // 不抛出错误，不影响用户体验
           }
         },
       });
@@ -273,16 +241,29 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
     );
   }
 
+  // 处理传送完成
+  const handleTeleportationComplete = useCallback((targetHeartsphereId: number, targetShareCode?: string) => {
+    logger.debug('[SharedChatWindow] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
+    if (targetShareCode) {
+      // 通过共享码传送到另一个心域
+      window.location.href = `/share/${targetShareCode}`;
+    }
+  }, []);
+
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
-      {/* 背景图片 - 与ChatWindow样式一致 */}
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-        style={{
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-          filter: 'blur(4px) opacity(0.6)',
-        }}
-      />
+    <TeleportationManager
+      sceneId={sceneId || undefined}
+      onTeleportationComplete={handleTeleportationComplete}
+    >
+      <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
+        {/* 背景图片 - 与ChatWindow样式一致 */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+          style={{
+            backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+            filter: 'blur(4px) opacity(0.6)',
+          }}
+        />
 
       {/* 角色头像背景 - 与ChatWindow样式一致 */}
       {!uiState.isCinematic && (
@@ -412,6 +393,42 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
           )}
         </div>
       </div>
-    </div>
+
+        {/* 传送门渲染层 - TeleportationManager会处理点击事件 */}
+        {sceneId && (
+          <PortalLayer
+            portals={portals || []}
+            sceneId={sceneId}
+          onPortalClick={(portalId) => {
+            // 通过自定义事件触发传送，TeleportationManager会监听
+            logger.debug(`[SharedChatWindow] 🔮 点击传送门: portalId=${portalId}`);
+            window.dispatchEvent(new CustomEvent('portal-click', { 
+              detail: { portalId, sceneId } 
+            }));
+          }}
+          className="z-30"
+        />
+      )}
+
+      {/* 传送门调试信息（开发环境） */}
+      {process.env.NODE_ENV === 'development' && sceneId && (
+        <div className="absolute top-20 right-4 bg-slate-900/80 p-3 rounded-lg text-xs text-white z-50 max-w-xs">
+          <div className="font-bold mb-1">🔮 传送门调试</div>
+          <div>场景ID: {sceneId}</div>
+          <div>传送门数: {(portals || []).length}</div>
+          <div>加载中: {portalsLoading ? '是' : '否'}</div>
+          {(portals || []).length > 0 && (
+            <div className="mt-2">
+              {portals.map(p => (
+                <div key={p.id} className="text-xs">
+                  • {p.portalName} ({p.portalType})
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+    </TeleportationManager>
   );
 };

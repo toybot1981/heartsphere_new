@@ -14,7 +14,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/graph")
-@CrossOrigin(origins = "*")
 public class GraphExecutionQueryController extends BaseAdminController {
     
     @Autowired

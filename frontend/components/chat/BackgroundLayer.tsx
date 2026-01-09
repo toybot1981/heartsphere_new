@@ -6,12 +6,15 @@
 import React, { memo } from 'react';
 import { Character } from '../../types';
 import { useImagePreload } from './hooks/useImagePreload';
+import { selectImageResolution, isMobileDevice } from '../../utils/imageResolution';
+import type { ImageVariants } from '../../utils/imageResolution';
 
 interface BackgroundLayerProps {
   backgroundImage: string | null;
   character: Character;
   isStoryMode: boolean;
   isCinematic: boolean;
+  backgroundVariants?: ImageVariants; // 可选的背景多分辨率版本
 }
 
 /**
@@ -23,8 +26,20 @@ export const BackgroundLayer = memo<BackgroundLayerProps>(({
   character,
   isStoryMode,
   isCinematic,
+  backgroundVariants,
 }) => {
-  const { loaded: bgLoaded, error: bgError } = useImagePreload(backgroundImage);
+  // 根据设备类型和场景选择合适的分辨率
+  const isMobile = isMobileDevice();
+  const selectedImageUrl = backgroundImage 
+    ? selectImageResolution(
+        backgroundImage,
+        backgroundVariants,
+        'chatBackground',
+        isMobile
+      )
+    : null;
+  
+  const { loaded: bgLoaded, error: bgError } = useImagePreload(selectedImageUrl);
 
   const filterStyle = isCinematic
     ? 'brightness(0.9)'
@@ -36,12 +51,12 @@ export const BackgroundLayer = memo<BackgroundLayerProps>(({
     <div
       className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000"
       style={{
-        backgroundImage: bgLoaded && backgroundImage ? `url(${backgroundImage})` : 'none',
+        backgroundImage: bgLoaded && selectedImageUrl ? `url(${selectedImageUrl})` : 'none',
         filter: filterStyle,
         zIndex: 0,
       }}
     >
-      {!bgLoaded && !bgError && backgroundImage && (
+      {!bgLoaded && !bgError && selectedImageUrl && (
         <div className="absolute inset-0 bg-gray-900 animate-pulse" />
       )}
     </div>

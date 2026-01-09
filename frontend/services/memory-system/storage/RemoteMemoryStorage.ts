@@ -156,7 +156,26 @@ export class RemoteMemoryStorage implements IMemoryStorage {
         memoryId: memory.id,
         userId: this.userId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      // 如果记忆不存在（404），这是正常情况，不应该抛出错误
+      // 这通常发生在记忆已被删除或从未同步到服务器的情况
+      const errorMessage = error?.message || error?.toString() || '';
+      const isNotFound = error?.response?.status === 404 || 
+                        error?.status === 404 ||
+                        errorMessage.includes('记忆不存在') ||
+                        errorMessage.includes('Not Found') ||
+                        errorMessage.includes('404');
+      
+      if (isNotFound) {
+        // 静默处理，不记录错误日志（这是正常情况）
+        logger.debug('[RemoteMemoryStorage] 记忆不存在，跳过更新', {
+          memoryId: memory.id,
+          userId: this.userId,
+        });
+        return; // 静默返回，不抛出错误
+      }
+      
+      // 其他错误才记录并抛出
       logger.error('[RemoteMemoryStorage] 更新记忆失败', {
         memoryId: memory.id,
         userId: this.userId,

@@ -19,5 +19,8 @@ export { EventsManagement } from './EventsManagement';
 export { ItemsManagement } from './ItemsManagement';
 export { HeartSphereConnectionManagement } from './heartSphereConnection';
 export { MemoryManagement } from './memory';
+export { ImageManagement } from './ImageManagement';
+export { VideoManagement } from './VideoManagement';
+export { PromptManagement } from './PromptManagement';
 
 

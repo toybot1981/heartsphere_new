@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -56,6 +57,36 @@ public class Membership {
 
     @Column(name = "total_points_used", nullable = false)
     private Integer totalPointsUsed = 0;
+
+    // 配额使用记录
+    @Column(name = "text_token_used", nullable = false)
+    private Long textTokenUsed = 0L; // 已使用文本Token
+
+    @Column(name = "image_generation_used", nullable = false)
+    private Integer imageGenerationUsed = 0; // 已使用图片生成次数
+
+    @Column(name = "video_generation_used", nullable = false)
+    private Integer videoGenerationUsed = 0; // 已使用视频生成时长（秒）
+
+    @Column(name = "api_calls_used_today", nullable = false)
+    private Integer apiCallsUsedToday = 0; // 今日API调用次数
+
+    @Column(name = "api_calls_reset_date")
+    private LocalDate apiCallsResetDate; // API调用重置日期
+
+    // 配额重置日期
+    @Column(name = "quota_reset_date")
+    private LocalDate quotaResetDate; // 配额重置日期
+
+    @Column(name = "last_quota_reset_date")
+    private LocalDate lastQuotaResetDate; // 上次配额重置日期
+
+    // 升级信息
+    @Column(name = "upgrade_discount", precision = 5, scale = 2)
+    private java.math.BigDecimal upgradeDiscount; // 升级折扣（百分比）
+
+    @Column(name = "upgrade_from_plan_id")
+    private Long upgradeFromPlanId; // 升级前计划ID
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp

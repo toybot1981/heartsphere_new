@@ -80,15 +80,28 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       headers.set('Content-Type', contentType);
     }
     
-    // 2.3. 添加认证token（如果存在）
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+    // 2.3. 检查自定义headers中是否已有Authorization
+    let hasCustomAuthorization = false;
+    if (options?.headers) {
+      if (options.headers instanceof Headers) {
+        hasCustomAuthorization = options.headers.has('Authorization');
+      } else if (typeof options.headers === 'object' && options.headers !== null) {
+        const customHeaders = options.headers as Record<string, unknown>;
+        hasCustomAuthorization = 'Authorization' in customHeaders || 'authorization' in customHeaders;
       }
-    } catch (err) {
-      // 静默处理，不影响正常请求
-      logger.debug('获取认证token失败:', err);
+    }
+    
+    // 2.4. 添加认证token（如果自定义headers中没有Authorization，才从localStorage读取）
+    if (!hasCustomAuthorization) {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+      } catch (err) {
+        // 静默处理，不影响正常请求
+        logger.debug('获取认证token失败:', err);
+      }
     }
     
     // 3. 合并自定义headers
@@ -166,7 +179,8 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
           url.includes('/heartconnect/config/my') || 
           url.includes('/heartconnect/config/by-code')
         );
-        if (!isSubscriptionPlans404 && !isShareConfigNotFound) {
+        const isMemoryNotFound = response.status === 404 && url.includes('/memory/v1/users/');
+        if (!isSubscriptionPlans404 && !isShareConfigNotFound && !isMemoryNotFound) {
           logger.error(`[${requestId}] 错误响应文本:`, errorText);
         }
         
@@ -179,7 +193,11 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
           errorMessage = errorText;
         }
       } catch (e) {
-        if (!(response.status === 404 && url.includes('/subscription-plans'))) {
+        const isSilent404 = response.status === 404 && (
+          url.includes('/subscription-plans') ||
+          url.includes('/memory/v1/users/')
+        );
+        if (!isSilent404) {
           logger.error(`[${requestId}] 解析错误响应失败:`, e);
         }
       }
@@ -197,6 +215,12 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         errorMessage.includes('共享配置不存在') ||
         errorMessage.includes('共享码不存在')
       ));
+      
+      // 对于记忆不存在的404，静默处理（不抛出错误）
+      const isMemoryNotFound = response.status === 404 && url.includes('/memory/v1/users/');
+      if (isMemoryNotFound) {
+        throw new Error('Not Found');
+      }
       
       // 根据状态码提供更友好的错误信息
       if (response.status === 403) {
@@ -281,12 +305,13 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       errorMessage.includes("共享配置不存在") ||
       errorMessage.includes("共享码不存在")
     );
+    const isMemoryNotFound = (errorMessage === 'Not Found' || errorMessage.includes('记忆不存在')) && url.includes('/memory/v1/users/');
+    const isSubscriptionNotFound = (errorMessage === 'Not Found') && url.includes('/subscription-plans');
     
-    if (!isSubscriptionPlansRequest && !isShareConfigNotFound) {
+    if (!isSubscriptionPlansRequest && !isShareConfigNotFound && !isMemoryNotFound && !isSubscriptionNotFound) {
       logger.error(`[${requestId}] 请求异常:`, error);
-    } else if (isShareConfigNotFound) {
-      logger.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
     }
+    // 静默处理特定404错误，不记录日志
     throw error;
   }
 };

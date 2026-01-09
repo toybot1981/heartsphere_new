@@ -1,0 +1,33 @@
+# 开发环境配置
+spring:
+  main:
+    lazy-initialization: true  # 开发环境启用懒加载，加速启动
+  
+  jpa:
+    show-sql: true  # 开发环境显示SQL
+    properties:
+      hibernate:
+        format_sql: true
+
+# SpringDoc OpenAPI 配置（开发环境启用）
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# 日志配置（开发环境详细日志）
+logging:
+  level:
+    root: INFO
+    com.heartsphere: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Mentis 配置（开发环境默认启用）
+mentis:
+  enabled: true
+
+# 支付配置（开发环境默认关闭）
+payment:
+  enabled: false

@@ -15,6 +15,9 @@ interface CreateStreamHandlerOptions {
   userMsg: Message;
   onUpdateHistory: (updater: (prev: Message[]) => Message[]) => void;
   onLoadingChange?: (loading: boolean) => void;
+  skillId?: string;      // 技能ID（当角色触发技能时）
+  skillName?: string;    // 技能名称（当角色触发技能时）
+  getSkillInfo?: () => { skillId?: string; skillName?: string }; // 动态获取技能信息的函数
   onComplete?: (fullText: string, requestId: string) => void;
 }
 
@@ -29,13 +32,25 @@ export const createStreamHandler = ({
   userMsg,
   onUpdateHistory,
   onLoadingChange,
+  skillId: initialSkillId,
+  skillName: initialSkillName,
+  getSkillInfo,
   onComplete,
 }: CreateStreamHandlerOptions) => {
   let requestFullResponseText = '';
   let hasAddedBotMessage = false;
+  let currentSkillId = initialSkillId;
+  let currentSkillName = initialSkillName;
 
   return (chunk: StreamChunk) => {
     try {
+      // 如果有 getSkillInfo 函数，动态获取最新的技能信息
+      if (getSkillInfo) {
+        const skillInfo = getSkillInfo();
+        if (skillInfo.skillId) currentSkillId = skillInfo.skillId;
+        if (skillInfo.skillName) currentSkillName = skillInfo.skillName;
+      }
+
       if (!chunk.done && chunk.content) {
         requestFullResponseText += chunk.content;
         const msg: Message = {
@@ -43,6 +58,8 @@ export const createStreamHandler = ({
           role: 'model',
           text: requestFullResponseText,
           timestamp: Date.now(),
+          // 如果触发了技能，添加技能信息
+          ...(currentSkillId && currentSkillName ? { skillId: currentSkillId, skillName: currentSkillName } : {}),
         };
 
         // 使用函数式更新，确保获取最新的history状态，避免闭包问题
@@ -61,10 +78,6 @@ export const createStreamHandler = ({
             // 检查用户消息是否存在（确保用户消息没有被丢失）
             const userMsgExists = prevHistory.some(m => m.id === userMsg.id && m.role === 'user');
             if (!userMsgExists) {
-              console.warn('[createStreamHandler] ⚠️ 用户消息不在history中，重新添加:', {
-                userMsgId: userMsg.id,
-                prevHistoryLength: prevHistory.length,
-              });
               // 如果用户消息不在history中，先添加用户消息，然后再添加机器人消息
               prevHistory = [...prevHistory, userMsg];
             }
@@ -94,6 +107,31 @@ export const createStreamHandler = ({
         });
       } else if (chunk.done) {
         // 完成 - 确保完成信号能够正常处理
+        // 最后一次更新，确保技能信息被正确设置
+        if (getSkillInfo) {
+          const skillInfo = getSkillInfo();
+          if (skillInfo.skillId) currentSkillId = skillInfo.skillId;
+          if (skillInfo.skillName) currentSkillName = skillInfo.skillName;
+        }
+
+        // 如果有技能信息，更新最后一条消息以包含技能信息
+        if (currentSkillId && currentSkillName && requestFullResponseText) {
+          onUpdateHistory(prevHistory => {
+            if (typeof prevHistory === 'function' || !Array.isArray(prevHistory)) {
+              return prevHistory;
+            }
+            const lastMsg = prevHistory.length > 0 ? prevHistory[prevHistory.length - 1] : null;
+            if (lastMsg && lastMsg.id === requestId && lastMsg.role === 'model') {
+              return [...prevHistory.slice(0, -1), {
+                ...lastMsg,
+                skillId: currentSkillId,
+                skillName: currentSkillName,
+              }];
+            }
+            return prevHistory;
+          });
+        }
+
         if (onLoadingChange) {
           onLoadingChange(false);
         }

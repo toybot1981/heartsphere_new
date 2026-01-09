@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 /**
  * 快速连接控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/quick-connect")
 public class QuickConnectController {

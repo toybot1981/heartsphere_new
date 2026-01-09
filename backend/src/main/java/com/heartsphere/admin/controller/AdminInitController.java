@@ -14,7 +14,6 @@ import java.util.Map;
  * 管理员初始化控制器
  * 用于重置管理员密码（仅用于开发/紧急情况）
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/init")
 public class AdminInitController {

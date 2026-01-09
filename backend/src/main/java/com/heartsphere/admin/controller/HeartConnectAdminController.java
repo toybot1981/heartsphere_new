@@ -25,7 +25,6 @@ import java.util.Map;
  * @deprecated 使用 AdminHeartSphereConnectionController 代替
  */
 @Deprecated
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/heartconnect-legacy")
 public class HeartConnectAdminController extends BaseAdminController {

@@ -74,8 +74,8 @@ public class SystemResourceService {
         logger.info("创建系统资源: category=" + category + ", name=" + name);
         
         try {
-            // 上传图片
-            String imageUrl = imageStorageService.saveImage(file, "resource_" + category);
+            // 上传图片（直接使用 category，不使用 resource_ 前缀）
+            String imageUrl = imageStorageService.saveImage(file, category);
             
             // 创建资源记录
             SystemResource resource = new SystemResource();
@@ -149,8 +149,17 @@ public class SystemResourceService {
         dto.setName(resource.getName());
         // 转换图片URL（相对路径 -> 完整URL）
         String url = resource.getUrl();
-        if (url != null && imageUrlUtils != null) {
-            url = imageUrlUtils.toFullUrl(url);
+        if (url != null) {
+            if (imageUrlUtils != null) {
+                url = imageUrlUtils.toFullUrl(url);
+            } else if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("placeholder://")) {
+                // 如果imageUrlUtils为null，使用默认值构造完整URL
+                java.util.logging.Logger.getLogger(SystemResourceService.class.getName())
+                    .warning("ImageUrlUtils未初始化，使用默认baseUrl转换图片URL: " + url);
+                String defaultBaseUrl = "http://localhost:8081/images";
+                String normalizedPath = url.startsWith("/") ? url : "/" + url;
+                url = defaultBaseUrl + normalizedPath;
+            }
         }
         dto.setUrl(url);
         dto.setCategory(resource.getCategory());

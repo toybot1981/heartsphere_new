@@ -14,7 +14,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/graph/recommendations")
-@CrossOrigin(origins = "*")
 public class AdminGraphRecommendationController extends BaseAdminController {
     
     @Autowired

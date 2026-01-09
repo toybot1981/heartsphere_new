@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/payment/config")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdminPaymentConfigController extends BaseAdminController {
 
     private final PaymentConfigService paymentConfigService;

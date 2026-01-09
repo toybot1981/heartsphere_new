@@ -19,12 +19,17 @@ public class BillingDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        try {
-            billingInitializationService.initializeBillingData();
-        } catch (Exception e) {
-            log.error("计费数据初始化失败", e);
-            // 不抛出异常，避免影响应用启动
-        }
+        // 异步初始化，避免阻塞应用启动
+        new Thread(() -> {
+            try {
+                log.info("开始异步初始化计费数据...");
+                billingInitializationService.initializeBillingData();
+                log.info("计费数据初始化完成");
+            } catch (Exception e) {
+                log.error("计费数据初始化失败", e);
+                // 不抛出异常，避免影响应用启动
+            }
+        }, "billing-init").start();
     }
 }
 

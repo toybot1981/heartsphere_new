@@ -31,7 +31,8 @@ public class ExecutionLogService {
     @Autowired
     private ExecutionLogRepository logRepository;
     
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
     
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ExecutionLogService.class);
     

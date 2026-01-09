@@ -12,7 +12,6 @@ import java.util.List;
  * 客户端预置主线剧情接口（公开接口，不需要认证）
  * 用于初始化向导等客户端功能
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/preset-main-stories")
 public class PresetMainStoryController {

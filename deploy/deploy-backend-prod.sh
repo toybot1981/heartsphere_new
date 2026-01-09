@@ -179,14 +179,16 @@ cd "$BACKEND_DIR" || {
 if [ -f "${TARGET_DIR}/${JAR_NAME}" ]; then
     read -p "JAR 文件已存在，是否重新构建? [y/N]: " rebuild
     if [[ "$rebuild" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}开始构建...${NC}"
-        mvn clean package -DskipTests
+        echo -e "${YELLOW}开始构建（使用 prod profile）...${NC}"
+        # 注意：所有依赖都在主 dependencies 中，prod profile 仅用于配置 Spring Profile
+        mvn clean package -DskipTests -Pprod
     else
         echo -e "${YELLOW}跳过构建，使用现有 JAR 文件${NC}"
     fi
 else
-    echo -e "${YELLOW}开始构建...${NC}"
-    mvn clean package -DskipTests
+    echo -e "${YELLOW}开始构建（使用 prod profile）...${NC}"
+    # 注意：所有依赖都在主 dependencies 中，prod profile 仅用于配置 Spring Profile
+    mvn clean package -DskipTests -Pprod
 fi
 
 if [ ! -f "${TARGET_DIR}/${JAR_NAME}" ]; then

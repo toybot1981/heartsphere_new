@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
  * 剧本资源控制器
  * 提供根据剧本ID获取对应时代的系统预置物品、事件和角色的接口
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/scripts/{scriptId}/resources")
 public class ScriptResourceController {

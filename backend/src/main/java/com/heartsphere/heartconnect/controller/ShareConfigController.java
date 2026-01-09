@@ -15,7 +15,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/heartconnect")
-@CrossOrigin(origins = "*")
 public class ShareConfigController {
     
     @Autowired

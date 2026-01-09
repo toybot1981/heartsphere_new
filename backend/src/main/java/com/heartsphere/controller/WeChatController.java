@@ -18,7 +18,6 @@ import com.heartsphere.utils.DTOMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/wechat")
 public class WeChatController {

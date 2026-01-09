@@ -13,6 +13,7 @@ import com.heartsphere.mailbox.enums.SenderType;
 import com.heartsphere.mailbox.repository.MailboxMessageRepository;
 import com.heartsphere.repository.UserRepository;
 import com.heartsphere.service.ChronosLetterService;
+import com.heartsphere.admin.repository.SystemAdminRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,7 @@ public class MailboxMessageService {
     private final MailboxMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChronosLetterService chronosLetterService;
+    private final SystemAdminRepository adminRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
@@ -53,6 +55,14 @@ public class MailboxMessageService {
      */
     @Transactional(readOnly = true)
     public Page<MailboxMessage> getMessages(Long userId, MessageQueryRequest request) {
+        // 检查当前用户是否是管理员
+        // 如果是管理员，则查询所有发送给管理员（receiverId=1）的消息
+        boolean isAdmin = adminRepository.findById(userId).isPresent();
+        Long actualReceiverId = isAdmin ? 1L : userId;
+        
+        log.info("[MailboxMessageService] 查询消息 - userId={}, isAdmin={}, actualReceiverId={}", 
+            userId, isAdmin, actualReceiverId);
+        
         // 构建分页参数
         Pageable pageable = PageRequest.of(
             request.getPage() != null ? request.getPage() : 0,
@@ -61,7 +71,7 @@ public class MailboxMessageService {
         
         // 如果有搜索关键词，使用搜索方法
         if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
-            return searchMessages(userId, request.getKeyword(), request);
+            return searchMessages(actualReceiverId, request.getKeyword(), request);
         }
         
         // 根据查询条件筛选
@@ -70,7 +80,7 @@ public class MailboxMessageService {
         if (request.getCategory() != null && request.getIsRead() != null) {
             // 分类 + 已读状态：先按分类查询，然后在内存中过滤已读状态
             Page<MailboxMessage> categoryMessages = messageRepository.findByReceiverIdAndMessageCategoryOrderByCreatedAtDesc(
-                userId, request.getCategory(), pageable
+                actualReceiverId, request.getCategory(), pageable
             );
             // 过滤已读状态（注意：这种方法在大量数据时性能不好，后续需要在Repository中优化）
             List<MailboxMessage> filtered = categoryMessages.getContent().stream()
@@ -84,16 +94,16 @@ public class MailboxMessageService {
         } else if (request.getCategory() != null) {
             // 仅分类
             result = messageRepository.findByReceiverIdAndMessageCategoryOrderByCreatedAtDesc(
-                userId, request.getCategory(), pageable
+                actualReceiverId, request.getCategory(), pageable
             );
         } else if (request.getIsRead() != null) {
             // 仅已读状态
             result = messageRepository.findByReceiverIdAndIsReadOrderByCreatedAtDesc(
-                userId, request.getIsRead(), pageable
+                actualReceiverId, request.getIsRead(), pageable
             );
         } else if (request.getIsImportant() != null && request.getIsImportant()) {
             // 重要消息（暂时使用查询筛选，后续可以优化）
-            Page<MailboxMessage> allMessages = messageRepository.findNotDeletedByReceiverId(userId, pageable);
+            Page<MailboxMessage> allMessages = messageRepository.findNotDeletedByReceiverId(actualReceiverId, pageable);
             // 过滤重要消息
             List<MailboxMessage> filtered = allMessages.getContent().stream()
                 .filter(msg -> Boolean.TRUE.equals(msg.getIsImportant()))
@@ -105,15 +115,15 @@ public class MailboxMessageService {
             );
         } else if (request.getIsStarred() != null && request.getIsStarred()) {
             // 收藏消息
-            result = messageRepository.findByReceiverIdAndIsStarredTrueOrderByCreatedAtDesc(userId, pageable);
+            result = messageRepository.findByReceiverIdAndIsStarredTrueOrderByCreatedAtDesc(actualReceiverId, pageable);
         } else if (request.getStartDate() != null && request.getEndDate() != null) {
             // 时间范围
             result = messageRepository.findByReceiverIdAndDateRange(
-                userId, request.getStartDate(), request.getEndDate(), pageable
+                actualReceiverId, request.getStartDate(), request.getEndDate(), pageable
             );
         } else {
             // 默认：所有未删除的消息
-            result = messageRepository.findNotDeletedByReceiverId(userId, pageable);
+            result = messageRepository.findNotDeletedByReceiverId(actualReceiverId, pageable);
         }
         
         // 确保所有消息的receiver字段不会触发懒加载
@@ -127,7 +137,8 @@ public class MailboxMessageService {
         });
         
         // 整合 chronos_letters 表的数据（用户反馈和管理员回复）
-        List<MailboxMessage> chronosMessages = convertChronosLettersToMailboxMessages(userId, request);
+        // 如果是管理员，查询所有发送给管理员的消息；否则查询当前用户的消息
+        List<MailboxMessage> chronosMessages = convertChronosLettersToMailboxMessages(actualReceiverId, request);
         log.info("[MailboxMessageService] 整合chronos_letters数据 - userId={}, chronosCount={}, mailboxCount={}", 
             userId, chronosMessages.size(), result.getContent().size());
         
@@ -151,8 +162,21 @@ public class MailboxMessageService {
      * 将 ChronosLetter 转换为 MailboxMessage
      */
     private List<MailboxMessage> convertChronosLettersToMailboxMessages(Long userId, MessageQueryRequest request) {
-        List<ChronosLetter> chronosLetters = chronosLetterService.getUserLetters(userId);
-        log.info("[MailboxMessageService] 获取chronos_letters - userId={}, count={}", userId, chronosLetters.size());
+        // 检查当前用户是否是管理员
+        boolean isAdmin = adminRepository.findById(userId).isPresent();
+        
+        // 如果是管理员，获取所有用户反馈；否则获取当前用户的消息
+        List<ChronosLetter> chronosLetters;
+        if (isAdmin) {
+            // 管理员查看所有用户反馈
+            chronosLetters = chronosLetterService.getAllUserFeedbacks();
+            log.info("[MailboxMessageService] 管理员获取所有用户反馈 - userId={}, count={}", userId, chronosLetters.size());
+        } else {
+            // 普通用户查看自己的消息
+            chronosLetters = chronosLetterService.getUserLetters(userId);
+            log.info("[MailboxMessageService] 获取chronos_letters - userId={}, count={}", userId, chronosLetters.size());
+        }
+        
         List<MailboxMessage> result = new ArrayList<>();
         
         for (ChronosLetter letter : chronosLetters) {
@@ -182,12 +206,17 @@ public class MailboxMessageService {
             // 注意：这里使用简单的哈希来生成负数ID，确保唯一性
             long hashId = letter.getId().hashCode();
             message.setId(hashId < 0 ? hashId : -hashId);
-            message.setReceiverId(userId);
+            
+            // 如果是管理员，所有用户反馈的receiverId都设置为1（管理员）
+            // 否则使用原用户的ID
+            Long actualReceiverId = isAdmin ? 1L : userId;
+            message.setReceiverId(actualReceiverId);
             
             // 设置发送者信息
             if (letter.getType().equals("user_feedback")) {
                 message.setSenderType(SenderType.USER);
-                message.setSenderId(userId);
+                // 发送者ID是原用户的ID（letter.getUser().getId()）
+                message.setSenderId(letter.getUser() != null ? letter.getUser().getId() : null);
                 message.setMessageCategory(MessageCategory.USER_MESSAGE);
                 message.setMessageType(MessageType.USER_FEEDBACK);
             } else if (letter.getType().equals("admin_reply")) {
@@ -369,13 +398,41 @@ public class MailboxMessageService {
         if (receiverId == null) {
             throw new IllegalArgumentException("接收者ID不能为空");
         }
-        User receiver = userRepository.findById(receiverId)
-            .orElseThrow(() -> new ResourceNotFoundException("用户不存在: " + receiverId));
+        
+        // 对于E-SOUL消息，如果contentData中包含characterId，
+        // 说明这是用户写给E-SOUL角色的消息，应该发送给用户自己
+        boolean isEsoULMessage = request.getMessageCategory() == MessageCategory.ESOUL_LETTER;
+        if (isEsoULMessage && request.getContentData() != null) {
+            try {
+                Map<String, Object> contentDataMap = objectMapper.readValue(
+                    request.getContentData(), 
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+                );
+                if (contentDataMap.containsKey("characterId")) {
+                    // 这是用户写给E-SOUL角色的消息
+                    // receiverId应该是当前用户（从senderId获取），角色ID存储在relatedId
+                    Long characterId = Long.valueOf(contentDataMap.get("characterId").toString());
+                    if (request.getSenderId() != null) {
+                        receiverId = request.getSenderId(); // 发送给自己
+                        request.setRelatedId(characterId);
+                        request.setRelatedType("character");
+                        log.info("E-SOUL消息：用户写给角色 - senderId={}, characterId={}", 
+                            request.getSenderId(), characterId);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("解析contentData失败，使用原始receiverId", e);
+            }
+        }
+        
+        final Long finalReceiverId = receiverId;
+        User receiver = userRepository.findById(finalReceiverId)
+            .orElseThrow(() -> new ResourceNotFoundException("用户不存在: " + finalReceiverId));
         
         // 创建消息实体
         MailboxMessage message = new MailboxMessage();
         message.setReceiver(receiver);
-        message.setReceiverId(receiver.getId());
+        message.setReceiverId(finalReceiverId);
         message.setSenderType(request.getSenderType());
         message.setSenderId(request.getSenderId());
         message.setSenderName(request.getSenderName());
@@ -525,12 +582,16 @@ public class MailboxMessageService {
      * 搜索消息
      */
     public Page<MailboxMessage> searchMessages(Long userId, String keyword, MessageQueryRequest request) {
+        // 检查当前用户是否是管理员
+        boolean isAdmin = adminRepository.findById(userId).isPresent();
+        Long actualReceiverId = isAdmin ? 1L : userId;
+        
         Pageable pageable = PageRequest.of(
             request.getPage() != null ? request.getPage() : 0,
             request.getSize() != null ? request.getSize() : 20
         );
         
-        return messageRepository.searchMessages(userId, keyword, pageable);
+        return messageRepository.searchMessages(actualReceiverId, keyword, pageable);
     }
 }
 

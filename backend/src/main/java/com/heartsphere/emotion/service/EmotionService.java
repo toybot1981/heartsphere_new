@@ -1,5 +1,7 @@
 package com.heartsphere.emotion.service;
 
+import com.heartsphere.admin.dto.PromptRenderResponse;
+import com.heartsphere.admin.service.PromptTemplateIntegrationService;
 import com.heartsphere.emotion.dto.EmotionAnalysisRequest;
 import com.heartsphere.emotion.dto.EmotionAnalysisResponse;
 import com.heartsphere.emotion.entity.EmotionRecord;
@@ -14,6 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +38,9 @@ public class EmotionService {
 
     @Autowired
     private AIService aiService;
+    
+    @Autowired
+    private PromptTemplateIntegrationService templateService;
 
     private final ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     
@@ -64,12 +72,42 @@ public class EmotionService {
         }
         
         try {
-            // 使用AI进行情绪分析
-            String prompt = buildEmotionAnalysisPrompt(request);
+            // 使用AI进行情绪分析（使用模板）
+            String defaultPrompt = buildEmotionAnalysisPrompt(request);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("text", request.getText());
+            
+            // 检查是否有上下文信息
+            boolean hasContext = (request.getConversationHistory() != null && !request.getConversationHistory().isEmpty()) ||
+                               request.getTimeOfDay() != null || request.getDayOfWeek() != null ||
+                               (request.getContext() != null && !request.getContext().isEmpty());
+            variables.put("hasContext", hasContext);
+            
+            if (hasContext) {
+                if (request.getConversationHistory() != null && !request.getConversationHistory().isEmpty()) {
+                    variables.put("conversationHistory", String.join(" | ", 
+                        request.getConversationHistory().stream()
+                            .limit(3)
+                            .collect(Collectors.toList())));
+                }
+                if (request.getTimeOfDay() != null) {
+                    variables.put("timeOfDay", request.getTimeOfDay());
+                }
+                if (request.getDayOfWeek() != null) {
+                    variables.put("dayOfWeek", request.getDayOfWeek());
+                }
+            }
+            
+            PromptRenderResponse prompts = templateService.getPrompts(
+                "emotion",
+                variables,
+                "你是一个专业的情绪分析专家，擅长深入理解文本中的情绪和情感。",
+                defaultPrompt
+            );
             
             TextGenerationRequest aiRequest = new TextGenerationRequest();
-            aiRequest.setPrompt(prompt);
-            aiRequest.setSystemInstruction("你是一个专业的情绪分析专家，擅长深入理解文本中的情绪和情感。");
+            aiRequest.setPrompt(prompts.getUserPrompt());
+            aiRequest.setSystemInstruction(prompts.getSystemPrompt());
             aiRequest.setTemperature(0.3); // 较低温度以获得更一致的分析
             aiRequest.setMaxTokens(500);
             

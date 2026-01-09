@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect, MouseEvent, ChangeEvent, KeyboardEv
 import { JournalEntry } from '../types';
 import { Button } from './Button';
 import { aiService } from '../services/ai';
-import { imageApi, tokenStorage } from '../services/api';
+import { imageApi, tokenStorage, type ImageVariants } from '../services/api';
+import { LazyImage } from './LazyImage';
 import { getAllTemplates, JournalTemplate, getTemplateById } from '../utils/journalTemplates';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { NoteSyncModal } from './NoteSyncModal';
@@ -13,6 +14,11 @@ import { JournalMemoryModal } from './memory/JournalMemoryModal';
 import { useGameState } from '../contexts/GameStateContext';
 import { authApi } from '../services/api';
 import { JournalPreviewModal } from './JournalPreviewModal';
+import { PluginToolbar, PluginSelectorModal, ScenePluginContainer, PluginConfigModal } from './plugin';
+import { PhotoAlbumModal } from './PhotoAlbumModal';
+import { scenePluginApi, userPluginApi } from '../services/api/plugin';
+import type { ScenePluginDTO } from '../services/api/plugin/scenePlugin';
+import type { Plugin } from '../services/api/admin/pluginTypes';
 
 interface RealWorldScreenProps {
   entries: JournalEntry[];
@@ -49,6 +55,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const [newTags, setNewTags] = useState<string[]>([]); // 标签数组
   const [tagInput, setTagInput] = useState(''); // 标签输入框
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
+  const [uploadedImageVariants, setUploadedImageVariants] = useState<ImageVariants | undefined>(undefined);
   const [mirrorInsight, setMirrorInsight] = useState<string | null>(null);
   const [isConsultingMirror, setIsConsultingMirror] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -70,11 +77,267 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const [showNoteSyncModal, setShowNoteSyncModal] = useState(false);
   const [syncButtonEnabled, setSyncButtonEnabled] = useState(showNoteSync); // 从props读取初始值
   
+  // Plugin State
+  const [scenePlugins, setScenePlugins] = useState<ScenePluginDTO[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showPluginSelector, setShowPluginSelector] = useState(false);
+  const [showPluginConfig, setShowPluginConfig] = useState(false);
+  const [configPlugin, setConfigPlugin] = useState<ScenePluginDTO | null>(null);
+  const [loadingPlugins, setLoadingPlugins] = useState(false);
+  const [showPhotoAlbum, setShowPhotoAlbum] = useState(false);
+  const SCENE_ID = 'real-world'; // 现实世界场景ID
+  
   // 当 showNoteSync prop 变化时，更新按钮显示状态
   useEffect(() => {
     setSyncButtonEnabled(showNoteSync);
     logger.debug(`[RealWorldScreen] 笔记同步按钮显示状态: ${showNoteSync}`);
   }, [showNoteSync]);
+
+  // 加载场景插件列表（只在组件挂载时加载一次）
+  useEffect(() => {
+    // 尝试从后端加载，如果失败则保留空列表（前端模拟数据会在用户添加时更新）
+    loadScenePlugins().catch(() => {
+      // 静默失败，不影响前端模拟数据
+    });
+  }, []);
+  
+  // 调试：监听 scenePlugins 变化（包括调用栈）
+  useEffect(() => {
+    const stack = new Error().stack;
+    console.log('[RealWorldScreen] scenePlugins 状态变化', { 
+      count: scenePlugins.length, 
+      plugins: scenePlugins.map(p => ({ id: p.pluginInstanceId, name: p.pluginName, visible: p.visible })),
+      callStack: stack?.split('\n').slice(2, 6).join('\n') // 显示调用栈
+    });
+  }, [scenePlugins]);
+
+  const loadScenePlugins = async () => {
+    if (isGuest) return; // 访客模式不加载插件
+    
+    setLoadingPlugins(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const plugins = await scenePluginApi.getScenePlugins(SCENE_ID, token || undefined);
+      setScenePlugins(plugins || []);
+      logger.debug(`[RealWorldScreen] 加载场景插件: ${plugins.length}个`);
+    } catch (error) {
+      // 如果API不存在（404），静默失败（后端可能还未实现）
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        logger.debug('[RealWorldScreen] 后端API未实现（404），保留本地模拟数据', errorMessage);
+        // 404错误时不重置插件列表，保留本地模拟数据
+        // setScenePlugins((prev) => prev); // 保持不变
+      } else {
+        logger.debug('[RealWorldScreen] 加载场景插件失败', error);
+        // 其他错误才重置为空
+        setScenePlugins([]);
+      }
+    } finally {
+      setLoadingPlugins(false);
+    }
+  };
+
+  const handleAddPlugin = () => {
+    setShowPluginSelector(true);
+  };
+
+  const handlePluginSelect = async (plugin: Plugin) => {
+    console.log('[RealWorldScreen] handlePluginSelect 被调用', { 
+      pluginId: plugin.pluginId, 
+      pluginName: plugin.name,
+      currentPluginCount: scenePlugins.length
+    });
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // 使用函数式更新获取当前插件数量，避免闭包问题
+      const currentCount = scenePlugins.length;
+      const defaultPosition = {
+        positionX: 100 + currentCount * 50,
+        positionY: 100 + currentCount * 50,
+        width: 200,
+        height: 150,
+        zIndex: currentCount,
+        config: {},
+      };
+      
+      console.log('[RealWorldScreen] 开始添加插件到场景', { 
+        pluginId: plugin.pluginId, 
+        sceneId: SCENE_ID,
+        defaultPosition,
+        currentCount
+      });
+      logger.debug('[RealWorldScreen] 开始添加插件到场景', { pluginId: plugin.pluginId, sceneId: SCENE_ID });
+      
+      try {
+        const addedPlugin = await scenePluginApi.addPluginToScene(SCENE_ID, plugin.pluginId, defaultPosition, token || undefined);
+        console.log('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
+        logger.debug('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
+        // 重新加载插件列表
+        await loadScenePlugins();
+        showAlert('插件已添加到现实世界', '成功', 'success');
+      } catch (apiError) {
+        // 如果后端API还没有实现，使用前端模拟数据
+        const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
+        console.warn('[RealWorldScreen] 后端API可能未实现，使用前端模拟数据', errorMessage, apiError);
+        logger.warn('[RealWorldScreen] 后端API可能未实现，使用前端模拟数据', errorMessage);
+        
+        // 使用函数式更新，避免闭包问题，并且不调用 loadScenePlugins（避免被清空）
+        setScenePlugins((prevPlugins) => {
+          console.log('[RealWorldScreen] setScenePlugins 函数式更新开始', { 
+            previousCount: prevPlugins.length,
+            previousPlugins: prevPlugins,
+            newPluginId: plugin.pluginId,
+            newPluginName: plugin.name
+          });
+          
+          // 检查是否已存在相同的插件
+          const existingIndex = prevPlugins.findIndex(p => p.pluginId === plugin.pluginId);
+          if (existingIndex >= 0) {
+            console.log('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId, existingIndex });
+            logger.debug('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId });
+            return prevPlugins;
+          }
+          
+          const newPlugin: ScenePluginDTO = {
+            id: Date.now(),
+            pluginInstanceId: Date.now(),
+            pluginId: plugin.pluginId,
+            pluginName: plugin.name,
+            sceneId: SCENE_ID,
+            positionX: 100 + prevPlugins.length * 50,
+            positionY: 100 + prevPlugins.length * 50,
+            width: 400,
+            height: 300,
+            zIndex: prevPlugins.length,
+            visible: true,
+            config: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          
+          const updatedPlugins = [...prevPlugins, newPlugin];
+          console.log('[RealWorldScreen] ✅ 插件已添加到本地状态', { 
+            pluginId: plugin.pluginId, 
+            pluginName: plugin.name,
+            previousCount: prevPlugins.length,
+            newCount: updatedPlugins.length,
+            newPlugin: newPlugin,
+            allPlugins: updatedPlugins
+          });
+          logger.debug('[RealWorldScreen] 插件已添加到本地状态', { 
+            pluginId: plugin.pluginId, 
+            pluginName: plugin.name,
+            previousCount: prevPlugins.length,
+            newCount: updatedPlugins.length,
+            newPlugin: newPlugin,
+            allPlugins: updatedPlugins
+          });
+          
+          // 立即验证状态更新
+          setTimeout(() => {
+            console.log('[RealWorldScreen] ⏰ 状态更新后验证', { 
+              expectedCount: updatedPlugins.length,
+              note: '如果这个数量与页面显示不一致，说明状态更新有问题'
+            });
+          }, 50);
+          
+          return updatedPlugins;
+        });
+        showAlert(`插件"${plugin.name}"已添加到现实世界（前端模拟模式）`, '提示', 'info');
+      }
+    } catch (error) {
+      logger.error('[RealWorldScreen] 添加插件失败', error);
+      showAlert('添加插件失败: ' + (error instanceof Error ? error.message : '未知错误'), '错误', 'error');
+    }
+  };
+
+  const handleDeletePlugin = async (pluginInstanceId: number) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      try {
+        await scenePluginApi.removePluginFromScene(SCENE_ID, pluginInstanceId, token || undefined);
+        await loadScenePlugins();
+        showAlert('插件已删除', '成功', 'success');
+      } catch (apiError) {
+        // 如果后端API还没有实现，使用前端模拟删除
+        logger.warn('[RealWorldScreen] 后端API可能未实现，使用前端模拟删除');
+        setScenePlugins(scenePlugins.filter(p => p.pluginInstanceId !== pluginInstanceId));
+        showAlert('插件已删除（前端模拟模式）', '提示', 'info');
+      }
+    } catch (error) {
+      logger.error('[RealWorldScreen] 删除插件失败', error);
+      showAlert('删除插件失败: ' + (error instanceof Error ? error.message : '未知错误'), '错误', 'error');
+    }
+  };
+
+  const handleUpdatePluginPosition = async (
+    pluginInstanceId: number,
+    position: { x: number; y: number; width?: number; height?: number }
+  ) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // 先更新本地状态，提供即时反馈
+      setScenePlugins(prevPlugins =>
+        prevPlugins.map(p =>
+          p.pluginInstanceId === pluginInstanceId
+            ? {
+                ...p,
+                positionX: position.x,
+                positionY: position.y,
+                width: position.width || p.width,
+                height: position.height || p.height,
+                updatedAt: new Date().toISOString(),
+              }
+            : p
+        )
+      );
+      
+      try {
+        await scenePluginApi.updatePluginPosition(
+          SCENE_ID,
+          pluginInstanceId,
+          {
+            positionX: position.x,
+            positionY: position.y,
+            width: position.width,
+            height: position.height,
+          },
+          token || undefined
+        );
+        // 成功后重新加载以确保同步
+        await loadScenePlugins();
+      } catch (apiError) {
+        // 如果后端API还没有实现，使用前端模拟（已经更新了本地状态）
+        logger.debug('[RealWorldScreen] 后端API可能未实现，使用前端模拟更新位置');
+      }
+    } catch (error) {
+      logger.error('[RealWorldScreen] 更新插件位置失败', error);
+    }
+  };
+
+  const handlePluginConfig = (pluginInstanceId: number) => {
+    const plugin = scenePlugins.find(p => p.pluginInstanceId === pluginInstanceId);
+    if (plugin) {
+      setConfigPlugin(plugin);
+      setShowPluginConfig(true);
+    } else {
+      showAlert('未找到插件', '错误', 'error');
+    }
+  };
+
+  const handleConfigUpdated = (pluginInstanceId: number, config: Record<string, any>) => {
+    // 更新本地状态中的插件配置
+    setScenePlugins((prevPlugins) =>
+      prevPlugins.map((p) =>
+        p.pluginInstanceId === pluginInstanceId ? { ...p, config } : p
+      )
+    );
+    // 如果后端API可用，会通过 PluginConfigModal 自动保存
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +352,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     setNewTags([]);
     setTagInput('');
     setUploadedImageUrl(undefined);
+    setUploadedImageVariants(undefined);
     setMirrorInsight(null);
     setIsEditing(false);
     setIsCreating(true);
@@ -105,6 +369,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     setNewTags(entry.tags ? entry.tags.split(',').map(t => t.trim()).filter(Boolean) : []);
     setTagInput('');
     setUploadedImageUrl(entry.imageUrl);
+    setUploadedImageVariants(undefined); // 编辑时重置variants，因为旧数据可能没有variants
     setMirrorInsight(entry.insight || null);
     setIsEditing(true);
     setIsCreating(true);
@@ -310,6 +575,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           setNewTags([]);
           setTagInput('');
           setUploadedImageUrl(undefined);
+          setUploadedImageVariants(undefined);
           setIsEditing(false);
           setSelectedEntry(null);
         } catch (error) {
@@ -342,7 +608,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       if (result.success && result.url) {
         // 使用服务器返回的URL替换base64预览
         setUploadedImageUrl(result.url);
-        logger.debug('图片上传成功');
+        // 保存多分辨率版本信息
+        if (result.variants) {
+          setUploadedImageVariants(result.variants);
+        }
+        logger.debug('图片上传成功，variants:', result.variants);
       } else {
         throw new Error(result.error || '上传失败');
       }
@@ -426,6 +696,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           setSelectedEntry(null);
           setNewTitle('');
           setUploadedImageUrl(undefined);
+          setUploadedImageVariants(undefined);
           setMirrorInsight(null);
       }
   };
@@ -547,7 +818,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               {/* Note Sync Button - 根据配置显示/隐藏 */}
               {syncButtonEnabled && (
               <Button 
-                  onClick={() => {
+                  onClick={async () => {
                       if (isGuest) {
                           logger.warn('[RealWorldScreen] 访客模式，无法打开同步笔记');
                           showAlert('请先登录', '提示', 'warning');
@@ -562,7 +833,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       if (!token) {
                           logger.debug('[RealWorldScreen] 未在存储中找到 token，尝试从 tokenStorage 获取');
                           try {
-                              token = tokenStorage.getToken();
+                              token = await tokenStorage.getToken();
                           } catch (e) {
                               logger.error('[RealWorldScreen] 无法从 tokenStorage 获取 token', e);
                           }
@@ -657,23 +928,57 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       </div>
       
       {/* Tag Filter Pills - Below Header */}
-      {getAllTags().length > 0 && (
-          <div className="flex gap-2 flex-wrap mb-4">
-              {getAllTags().map(tag => (
-                  <button
-                      key={tag}
-                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                      className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                          selectedTag === tag
-                              ? 'bg-cyan-500 text-white'
-                              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-cyan-300'
-                      }`}
-                  >
-                      {tag}
-                  </button>
-              ))}
-          </div>
-      )}
+      <div className="flex items-center justify-between mb-4">
+          {getAllTags().length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                  {getAllTags().map(tag => (
+                      <button
+                          key={tag}
+                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                              selectedTag === tag
+                                  ? 'bg-cyan-500 text-white'
+                                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-cyan-300'
+                          }`}
+                      >
+                          {tag}
+                      </button>
+                  ))}
+              </div>
+          )}
+          
+          {/* 插件管理入口 - 与日志功能融合 */}
+          {!isGuest && (
+            <div className="flex items-center gap-2">
+              {scenePlugins.length > 0 && (
+                <button
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`px-3 py-1 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
+                    isEditMode
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  title={isEditMode ? '退出编辑模式' : '编辑插件位置'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  {isEditMode ? '退出编辑' : '编辑插件'}
+                </button>
+              )}
+              <button
+                onClick={handleAddPlugin}
+                className="px-3 py-1 text-xs rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition-colors flex items-center gap-1.5"
+                title="添加插件到现实世界"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                添加插件
+              </button>
+            </div>
+          )}
+      </div>
 
       {/* Hero Section: DAILY RESONANCE */}
       {dailyGreeting && (
@@ -712,7 +1017,60 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       )}
 
       {/* Main Layout */}
-      <div className="flex-1 flex gap-8 overflow-hidden">
+      <div className="flex-1 flex gap-8 overflow-hidden relative" style={{ position: 'relative', minHeight: '600px' }}>
+          {/* Plugin Containers */}
+          {scenePlugins.length > 0 && (
+            <>
+              {scenePlugins.map((plugin) => (
+                <ScenePluginContainer
+                  sceneId={SCENE_ID}
+                  key={plugin.pluginInstanceId}
+                  plugin={plugin}
+                  isEditMode={isEditMode}
+                  onDelete={handleDeletePlugin}
+                  onUpdatePosition={handleUpdatePluginPosition}
+                  onConfig={handlePluginConfig}
+                  onOpenJournal={() => {
+                    // 打开日志编辑器（新记录）
+                    handleCreateClick({ preventDefault: () => {}, stopPropagation: () => {} } as any);
+                  }}
+                  onOpenAlbum={() => {
+                    // 打开相册模态框
+                    setShowPhotoAlbum(true);
+                  }}
+                />
+              ))}
+            </>
+          )}
+          
+          {/* Debug: 显示插件数量（已隐藏） */}
+          {false && process.env.NODE_ENV === 'development' && (
+            <div className={`absolute top-4 left-4 rounded-lg p-3 text-xs z-[9999] border-2 ${
+              scenePlugins.length > 0 
+                ? 'bg-green-500/30 border-green-500/70 text-green-300' 
+                : 'bg-yellow-500/30 border-yellow-500/70 text-yellow-300'
+            }`}>
+              <p className="font-bold mb-1">
+                {scenePlugins.length > 0 ? '✅' : '⚠️'} 插件状态
+              </p>
+              <p>插件数量: {scenePlugins.length}</p>
+              {scenePlugins.length > 0 && (
+                <>
+                  {scenePlugins.map((p, idx) => (
+                    <div key={p.pluginInstanceId} className="text-[10px] mt-1 border-t border-current/20 pt-1">
+                      <p>{idx + 1}. {p.pluginName}</p>
+                      <p className="text-[9px] opacity-75">
+                        ID: {p.pluginInstanceId} | 位置: ({p.positionX}, {p.positionY}) | 大小: {p.width}x{p.height} | 可见: {p.visible ? '是' : '否'}
+                      </p>
+                    </div>
+                  ))}
+                </>
+              )}
+              {scenePlugins.length === 0 && (
+                <p className="text-[10px] mt-1">请点击"添加插件"按钮添加插件</p>
+              )}
+            </div>
+          )}
           
           {/* Left: Entries Grid */}
           <div className={`flex-1 overflow-y-auto pr-2 custom-scrollbar transition-all duration-300 ${isCreating ? 'w-1/2 hidden md:block' : 'w-full'}`}>
@@ -830,6 +1188,22 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                               </svg>
                                           </button>
+                                          {/* 插件入口 - 与日志融合 */}
+                                          {!isGuest && scenePlugins.length > 0 && (
+                                            <button 
+                                              onClick={(e: MouseEvent<HTMLButtonElement>) => { 
+                                                e.stopPropagation(); 
+                                                // 可以传递日志内容给插件使用
+                                                showAlert(`可以使用插件处理这篇日志: ${entry.title}`, '提示', 'info');
+                                              }} 
+                                              className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full hover:from-indigo-400 hover:to-purple-400 text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
+                                              title="使用插件处理此日志"
+                                            >
+                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                              </svg>
+                                            </button>
+                                          )}
                                           <button 
                                             onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
                                             className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all"
@@ -901,6 +1275,18 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
                           </button>
+                          {/* 插件图标 - 添加插件到场景 */}
+                          {!isGuest && (
+                            <button 
+                                onClick={handleAddPlugin}
+                                className="p-1.5 text-indigo-400 hover:text-indigo-300 transition-colors"
+                                title="添加插件到现实世界"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                </svg>
+                            </button>
+                          )}
                       </div>
                   </div>
 
@@ -960,11 +1346,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       )}
 
                       {/* Tools Bar */}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                           <button 
                             onClick={handleConsultMirrorClick}
                             disabled={isConsultingMirror || !newContent.trim()}
-                            className="flex-1 bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-700 text-cyan-300 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-700 text-cyan-300 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 min-w-[120px]"
                           >
                               {isConsultingMirror ? (
                                   <span className="animate-pulse">Analyzing...</span>
@@ -973,7 +1359,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               )}
                           </button>
                           
-                          <div className="relative flex-1">
+                          <div className="relative flex-1 min-w-[120px]">
                               <button 
                                 onClick={() => !isUploadingImage && fileInputRef.current?.click()}
                                 disabled={isUploadingImage}
@@ -992,14 +1378,52 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               </button>
                               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" disabled={isUploadingImage} />
                           </div>
+                          
+                          {/* 插件快捷入口 - 与日志功能融合 */}
+                          {!isGuest && scenePlugins.length > 0 && (
+                            <div className="flex gap-1 items-center">
+                              <span className="text-xs text-slate-500">插件:</span>
+                              {scenePlugins.slice(0, 3).map((plugin) => (
+                                <button
+                                  key={plugin.pluginInstanceId}
+                                  onClick={() => {
+                                    // TODO: 可以传递当前日志内容给插件
+                                    showAlert(`打开插件: ${plugin.pluginName}`, '提示', 'info');
+                                  }}
+                                  className="px-2 py-1 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-700 text-indigo-300 text-xs rounded transition-colors"
+                                  title={plugin.pluginName}
+                                >
+                                  {plugin.pluginName.length > 6 ? plugin.pluginName.substring(0, 6) + '...' : plugin.pluginName}
+                                </button>
+                              ))}
+                              {scenePlugins.length > 3 && (
+                                <button
+                                  onClick={handleAddPlugin}
+                                  className="px-2 py-1 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 text-xs rounded transition-colors"
+                                  title="查看更多插件"
+                                >
+                                  +{scenePlugins.length - 3}
+                                </button>
+                              )}
+                            </div>
+                          )}
                       </div>
 
                       {uploadedImageUrl && (
                           <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-600">
-                              <img src={uploadedImageUrl} className="w-full h-full object-cover" alt="Preview" />
+                              <LazyImage 
+                                  src={uploadedImageUrl} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                  variants={uploadedImageVariants}
+                                  purpose="detail"
+                              />
                               <button 
-                                  onClick={() => setUploadedImageUrl(undefined)} 
-                                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                                  onClick={() => {
+                                      setUploadedImageUrl(undefined);
+                                      setUploadedImageVariants(undefined);
+                                  }} 
+                                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
                               >
                                   ×
                               </button>
@@ -1086,6 +1510,40 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               isOpen={showMemoryModal}
               onClose={() => setShowMemoryModal(false)}
           />
+      )}
+
+      {/* 插件选择器模态框 */}
+      {showPluginSelector && !isGuest && (
+        <PluginSelectorModal
+          isOpen={showPluginSelector}
+          onClose={() => setShowPluginSelector(false)}
+          onSelect={handlePluginSelect}
+          token={localStorage.getItem('auth_token') || undefined}
+        />
+      )}
+
+      {/* 插件配置弹窗 */}
+      {showPluginConfig && !isGuest && configPlugin && (
+        <PluginConfigModal
+          isOpen={showPluginConfig}
+          onClose={() => {
+            setShowPluginConfig(false);
+            setConfigPlugin(null);
+          }}
+          plugin={configPlugin}
+          sceneId={SCENE_ID}
+          token={localStorage.getItem('auth_token') || undefined}
+          onConfigUpdated={handleConfigUpdated}
+        />
+      )}
+
+      {/* 相册模态框 */}
+      {showPhotoAlbum && !isGuest && (
+        <PhotoAlbumModal
+          isOpen={showPhotoAlbum}
+          onClose={() => setShowPhotoAlbum(false)}
+          token={localStorage.getItem('auth_token') || undefined}
+        />
       )}
 
       {/* 日志预览模态框 */}

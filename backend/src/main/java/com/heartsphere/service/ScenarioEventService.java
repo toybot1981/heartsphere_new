@@ -6,6 +6,8 @@ import com.heartsphere.entity.Era;
 import com.heartsphere.entity.User;
 import com.heartsphere.repository.ScenarioEventRepository;
 import com.heartsphere.repository.EraRepository;
+import com.heartsphere.admin.repository.SystemEraEventRepository;
+import com.heartsphere.admin.entity.SystemEraEvent;
 import com.heartsphere.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ public class ScenarioEventService {
     @Autowired
     private EraRepository eraRepository;
 
+    @Autowired
+    private SystemEraEventRepository systemEraEventRepository;
+
     /**
      * 获取场景的所有事件（包括系统事件和用户自定义事件）
      */
@@ -33,18 +38,27 @@ public class ScenarioEventService {
 
     /**
      * 获取所有系统预设事件
+     * 从system_era_events表查询数据
      */
     public List<ScenarioEventDTO> getSystemEvents() {
-        List<ScenarioEvent> events = eventRepository.findByIsSystemTrueAndIsDeletedFalseAndIsActiveTrue();
-        return events.stream().map(this::convertToDTO).collect(Collectors.toList());
+        // 从system_era_events表查询所有系统事件
+        List<SystemEraEvent> systemEvents = systemEraEventRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+        return systemEvents.stream().map(this::convertSystemEventToDTO).collect(Collectors.toList());
     }
 
     /**
      * 获取用户的所有自定义事件
+     * 从scenario_events表查询user_id不为空且is_system=false的记录
      */
     public List<ScenarioEventDTO> getUserEvents(Long userId) {
+        // 查询用户自定义事件（user_id不为空，is_system=false）
         List<ScenarioEvent> events = eventRepository.findByUser_IdAndIsDeletedFalse(userId);
-        return events.stream().map(this::convertToDTO).collect(Collectors.toList());
+        // 过滤掉系统事件
+        return events.stream()
+                .filter(event -> event.getUser() != null && event.getUser().getId().equals(userId))
+                .filter(event -> !Boolean.TRUE.equals(event.getIsSystem()))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -168,6 +182,27 @@ public class ScenarioEventService {
             dto.setUserId(event.getUser().getId());
         }
         dto.setIsSystem(event.getIsSystem());
+        dto.setIconUrl(event.getIconUrl());
+        dto.setTags(event.getTags());
+        dto.setSortOrder(event.getSortOrder());
+        dto.setIsActive(event.getIsActive());
+        dto.setCreatedAt(event.getCreatedAt());
+        dto.setUpdatedAt(event.getUpdatedAt());
+        return dto;
+    }
+
+    /**
+     * 将SystemEraEvent转换为ScenarioEventDTO
+     */
+    private ScenarioEventDTO convertSystemEventToDTO(SystemEraEvent event) {
+        ScenarioEventDTO dto = new ScenarioEventDTO();
+        dto.setId(event.getId());
+        dto.setName(event.getName());
+        dto.setEventId(event.getEventId());
+        dto.setDescription(event.getDescription());
+        // system_era_events表中的system_era_id对应system_eras表，不是user eras
+        // 如果需要，可以在这里查询system_era名称
+        dto.setIsSystem(true);
         dto.setIconUrl(event.getIconUrl());
         dto.setTags(event.getTags());
         dto.setSortOrder(event.getSortOrder());

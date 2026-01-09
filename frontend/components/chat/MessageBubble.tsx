@@ -75,7 +75,11 @@ export const MessageBubble = memo<MessageBubbleProps>(({
           </div>
         ) : (
           <div className={`px-5 py-3 flex flex-col ${isCinematic ? 'items-center' : 'items-start'}`}>
-            <RichTextRenderer text={message.text} colorAccent={colorAccent} />
+            <RichTextRenderer 
+              text={message.text} 
+              colorAccent={colorAccent}
+              skillName={message.skillName}
+            />
             {message.role === 'model' && !isCinematic && showAudioButton && onPlayAudio && (
               <div className="mt-2 w-full flex justify-end">
                 <button
@@ -110,6 +114,8 @@ export const MessageBubble = memo<MessageBubbleProps>(({
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.text === nextProps.message.text &&
     prevProps.message.image === nextProps.message.image &&
+    prevProps.message.skillId === nextProps.message.skillId &&
+    prevProps.message.skillName === nextProps.message.skillName &&
     prevProps.isCinematic === nextProps.isCinematic &&
     prevProps.audioLoadingId === nextProps.audioLoadingId &&
     prevProps.playingMessageId === nextProps.playingMessageId

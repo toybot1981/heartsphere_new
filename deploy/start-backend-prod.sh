@@ -193,7 +193,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=${BACKEND_DIR}
-ExecStart=${JAVA_PATH} -jar ${JAR_PATH} --server.port=${SERVER_PORT} --spring.profiles.active=production
+ExecStart=${JAVA_PATH} -jar ${JAR_PATH} --server.port=${SERVER_PORT} --spring.profiles.active=prod
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -317,7 +317,7 @@ else
         set +a
     fi
     
-    START_CMD="${JAVA_PATH} ${JAVA_OPTS} -jar ${JAR_PATH} --server.port=${SERVER_PORT} --spring.profiles.active=production"
+    START_CMD="${JAVA_PATH} ${JAVA_OPTS} -jar ${JAR_PATH} --server.port=${SERVER_PORT} --spring.profiles.active=prod"
     
     echo ""
     echo -e "${BLUE}========== 启动信息 ==========${NC}"

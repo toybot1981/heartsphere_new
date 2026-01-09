@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/skills")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SkillController {
     
     private final SkillDefinitionRepository skillDefinitionRepository;

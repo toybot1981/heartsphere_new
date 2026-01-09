@@ -22,7 +22,6 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/conversation-logs")
-@CrossOrigin(origins = "*")
 public class ConversationLogController {
     
     private static final Logger logger = LoggerFactory.getLogger(ConversationLogController.class);

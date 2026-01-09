@@ -71,6 +71,15 @@ export type {
   GraphDefinitionCreateRequest,
 } from './api/admin/types';
 
+// 插件模块（已迁移）
+export { userPluginApi, scenePluginApi } from './api/plugin';
+export type {
+  ScenePluginDTO,
+  AddPluginRequest,
+  PositionUpdateRequest,
+  VisibilityUpdateRequest,
+} from './api/plugin/scenePlugin';
+
 // 微信模块（已迁移）
 export { wechatApi } from './api/wechat';
 export type {
@@ -109,9 +118,23 @@ export type { World } from './api/world/types';
 export { imageApi } from './api/image';
 export type {
   ProxyDownloadResponse,
+  ImageProcessingResponse,
   ImageUploadResponse,
   ImageDeleteResponse,
+  ImageListItem,
+  ImageListResponse,
+  ImageVariants,
 } from './api/image/types';
+
+// 视频模块（已迁移）
+export { videoApi } from './api/video';
+export type {
+  VideoUploadResponse,
+  VideoToAnimationRequest,
+  VideoToAnimationResponse,
+  VideoInfo,
+  VideoInfoResponse,
+} from './api/video/types';
 
 // 回收站模块（已迁移）
 export { recycleBinApi } from './api/recycleBin';

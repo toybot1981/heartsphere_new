@@ -28,7 +28,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/mailbox/messages")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MailboxMessageController {
     
     private final MailboxMessageService messageService;

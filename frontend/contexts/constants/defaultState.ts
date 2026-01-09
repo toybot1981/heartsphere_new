@@ -26,7 +26,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   settings: {
     autoGenerateAvatars: false,
     autoGenerateStoryScenes: false,
-    autoGenerateJournalImages: true,
+    autoGenerateJournalImages: false, // 本地默认关闭生成日志图片
     debugMode: false,
     showNoteSync: false,
     dialogueStyle: 'mobile-chat',

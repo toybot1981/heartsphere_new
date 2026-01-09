@@ -21,7 +21,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/chronos-letters")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdminChronosLetterController extends BaseAdminController {
     
     private final ChronosLetterService chronosLetterService;

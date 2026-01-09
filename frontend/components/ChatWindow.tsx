@@ -25,6 +25,8 @@ import { ScenarioChoices } from './chat/ScenarioChoices';
 import { HeaderBar } from './chat/HeaderBar';
 import { BackgroundLayer } from './chat/BackgroundLayer';
 import { CharacterAvatar } from './chat/CharacterAvatar';
+import { SkillPromptButtons } from './chat/SkillPromptButtons';
+import { isDailyLifeAssistant } from '../constants/skillPrompts';
 import { useImagePreload } from './chat/hooks/useImagePreload';
 import { decodeBase64ToBytes, decodeAudioData } from '../utils/audio';
 import { useUIState } from './chat/hooks/useUIState';
@@ -592,8 +594,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       handleScenarioTransition(nextNode, option.text || optionId);
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading || isScenarioMode) return;
+  // 使用指定文本发送消息（用于预设话术）
+  const handleSendWithText = async (text?: string) => {
+    const textToSend = text || input.trim();
+    if (!textToSend || isLoading || isScenarioMode) return;
     
     // 防止并发请求：如果已有请求在进行，忽略新的请求
     if (isLoading) {
@@ -601,8 +605,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       return;
     }
     
-    const userText = input.trim();
-    setInput('');
+    const userText = textToSend.trim();
+    if (!text) {
+      setInput('');
+    }
     setIsLoading(true);
     
     // 先创建用户消息对象（需要在系统集成之前创建，因为记忆系统需要userMsg.id）
@@ -610,7 +616,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const tempBotId = `bot_${Date.now()}`;
     
     // 系统集成：分析用户输入并集成各个系统（使用统一的Hook）
-    await systemIntegration.analyzeAndIntegrate(userText, userMsg.id);
+    try {
+      await systemIntegration.analyzeAndIntegrate(userText, userMsg.id);
+      console.log('[ChatWindow] 系统集成分析完成');
+    } catch (error) {
+      console.warn('[ChatWindow] 系统集成分析失败，继续执行:', error);
+      // 系统集成失败不影响主流程，继续执行
+    }
     
     // 使用函数式更新，确保获取最新的history状态
     // 注意：用户消息需要立即添加到history，这样后续的响应才能正确追加
@@ -661,10 +673,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         console.log('[ChatWindow] 使用统一接入模式调用大模型');
         
         // 温度感引擎：计算温度感（使用系统集成Hook）
-        const currentTemperature = await systemIntegration.calculateTemperature(userText);
+        try {
+          const currentTemperature = await systemIntegration.calculateTemperature(userText);
+          console.log('[ChatWindow] 温度感计算完成:', currentTemperature);
+        } catch (error) {
+          console.warn('[ChatWindow] 温度感计算失败，继续执行:', error);
+          // 温度感计算失败不影响主流程，继续执行
+        }
         
         // 获取相关记忆用于上下文（使用系统集成Hook）
-        relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
+        try {
+          relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
+          console.log('[ChatWindow] 相关记忆获取完成，数量:', relevantMemories.length);
+        } catch (error) {
+          console.warn('[ChatWindow] 获取相关记忆失败，继续执行（不使用记忆）:', error);
+          relevantMemories = []; // 失败时使用空数组
+          // 记忆获取失败不影响主流程，继续执行
+        }
       } else {
         console.log('[ChatWindow] 使用本地配置模式调用大模型', {
           provider: config.textProvider || 'gemini',
@@ -695,13 +720,74 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         relevantMemories,
       });
     } catch (error) { 
-        logger.error('[ChatWindow] AI服务调用失败:', error);
-        const errorMsg = createErrorMessage(error as Error, tempBotId);
+        // 提取详细的错误信息用于日志记录
+        let errorInfo: any = {};
+        
+        if (error instanceof Error) {
+          errorInfo = {
+            message: error.message,
+            name: error.name,
+            stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+            cause: (error as any).cause,
+          };
+          
+          // 如果是 AIServiceException，提取额外属性
+          if ((error as any).provider) {
+            errorInfo.provider = (error as any).provider;
+          }
+          if ((error as any).model) {
+            errorInfo.model = (error as any).model;
+          }
+          if ((error as any).errorCode) {
+            errorInfo.errorCode = (error as any).errorCode;
+          }
+        } else if (error && typeof error === 'object') {
+          // 尝试提取对象的所有属性
+          try {
+            errorInfo = {
+              type: typeof error,
+              constructor: error?.constructor?.name,
+              keys: Object.keys(error),
+              ...Object.fromEntries(
+                Object.entries(error).map(([key, value]) => [
+                  key,
+                  typeof value === 'string' ? value : typeof value === 'object' ? JSON.stringify(value) : String(value)
+                ])
+              ),
+            };
+          } catch (e) {
+            errorInfo = {
+              type: typeof error,
+              stringified: String(error),
+            };
+          }
+        } else {
+          errorInfo = {
+            type: typeof error,
+            value: String(error),
+          };
+        }
+        
+        logger.error('[ChatWindow] AI服务调用失败:', errorInfo);
+        console.error('[ChatWindow] 原始错误对象:', error);
+        console.error('[ChatWindow] 错误类型:', typeof error);
+        console.error('[ChatWindow] 错误详细信息:', {
+          error,
+          errorString: String(error),
+          errorJSON: JSON.stringify(error, null, 2),
+        });
+        
+        const errorMsg = createErrorMessage(error instanceof Error ? error : new Error(String(error || '未知错误')), tempBotId);
         onUpdateHistory(prevHistory => [...prevHistory, errorMsg]);
-        showAlert(getErrorMessage(error as Error), "错误", "error");
+        showAlert(getErrorMessage(error instanceof Error ? error : new Error(String(error || '未知错误'))), "错误", "error");
     } finally { 
         setIsLoading(false); 
     }
+  };
+
+  // 原始 handleSend 函数（保持向后兼容）
+  const handleSend = async () => {
+    await handleSendWithText();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1178,6 +1264,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             
             {!isScenarioMode && !uiState.isCinematic && (
                 <>
+                  {/* 技能预设话术按钮（仅限生活助手角色） */}
+                  {isDailyLifeAssistant(character.name) && !voiceInput.isVoiceMode && (
+                    <SkillPromptButtons
+                      character={character}
+                      onSelectPrompt={(text) => {
+                        // 直接使用指定文本发送消息（不填充输入框）
+                        handleSendWithText(text);
+                      }}
+                      disabled={isLoading}
+                    />
+                  )}
+                  
                   {/* 语音模式UI */}
                   {voiceInput.isVoiceMode ? (
                     <VoiceModeUI
@@ -1235,7 +1333,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                          )}
                        </button>
                        
-                       <Button onClick={handleSend} disabled={isLoading || !input.trim()} className="ml-2 !rounded-xl !px-6 !py-2 shadow-lg" style={{ backgroundColor: character.colorAccent }}>发送</Button>
+                       <Button onClick={() => handleSendWithText()} disabled={isLoading || !input.trim()} className="ml-2 !rounded-xl !px-6 !py-2 shadow-lg" style={{ backgroundColor: character.colorAccent }}>发送</Button>
                     </div>
                   )}
                 </>

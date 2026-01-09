@@ -8,13 +8,31 @@ import com.heartsphere.entity.Script;
 import com.heartsphere.entity.User;
 import com.heartsphere.entity.World;
 import com.heartsphere.util.ImageUrlUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DTOMapper {
+public class DTOMapper implements ApplicationContextAware {
     
     private static ImageUrlUtils imageUrlUtils;
+    private static ApplicationContext applicationContext;
+    
+    @Override
+    public void setApplicationContext(@org.springframework.lang.NonNull ApplicationContext applicationContext) throws BeansException {
+        DTOMapper.applicationContext = applicationContext;
+        // 确保 imageUrlUtils 被注入
+        if (imageUrlUtils == null && applicationContext != null) {
+            try {
+                imageUrlUtils = applicationContext.getBean(ImageUrlUtils.class);
+            } catch (Exception e) {
+                java.util.logging.Logger.getLogger(DTOMapper.class.getName())
+                    .warning("无法从ApplicationContext获取ImageUrlUtils: " + e.getMessage());
+            }
+        }
+    }
     
     @Autowired
     public void setImageUrlUtils(ImageUrlUtils imageUrlUtils) {
@@ -198,12 +216,28 @@ public class DTOMapper {
         // 系统预置图片格式：category/year/month/filename
         // 用户图片格式：userId/category/year/month/filename
         // ImageUrlUtils.toFullUrl() 会自动处理相对路径的拼接
+        
+        // 如果imageUrlUtils为null，尝试从ApplicationContext获取
+        if (imageUrlUtils == null && applicationContext != null) {
+            try {
+                imageUrlUtils = applicationContext.getBean(ImageUrlUtils.class);
+            } catch (Exception e) {
+                java.util.logging.Logger.getLogger(DTOMapper.class.getName())
+                    .warning("无法从ApplicationContext获取ImageUrlUtils: " + e.getMessage());
+            }
+        }
+        
         if (imageUrlUtils != null) {
             return imageUrlUtils.toFullUrl(imageUrl);
         }
         
-        // 如果没有imageUrlUtils，返回原始URL
-        return imageUrl;
+        // 如果仍然无法获取imageUrlUtils，使用默认值构造完整URL
+        java.util.logging.Logger.getLogger(DTOMapper.class.getName())
+            .warning("ImageUrlUtils未初始化，使用默认baseUrl转换图片URL: " + imageUrl);
+        // 使用默认值构造完整URL（开发环境）
+        String defaultBaseUrl = "http://localhost:8081/images";
+        String normalizedPath = imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl;
+        return defaultBaseUrl + normalizedPath;
     }
 }
 

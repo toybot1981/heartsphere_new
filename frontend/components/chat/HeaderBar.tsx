@@ -64,6 +64,14 @@ export const HeaderBar = memo<HeaderBarProps>(({
           <h2 className="text-xl font-bold tracking-wider">
             {customScenario ? customScenario.title : character.name}
           </h2>
+          {/* 生活助手标识 */}
+          {character.tags && character.tags.includes('生活助手') && (
+            <span
+              className="px-2 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30"
+            >
+              生活助手
+            </span>
+          )}
           <span
             className="text-xs uppercase tracking-widest opacity-80"
             style={{ color: character.colorAccent }}

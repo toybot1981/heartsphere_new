@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -196,6 +197,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(404, "请求的端点未找到: " + requestURL));
+    }
+
+    /**
+     * 处理静态资源未找到异常
+     * 当请求被误判为静态资源时，尝试将其作为 API 端点处理
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoResourceFoundException(NoResourceFoundException e) {
+        String resourcePath = e.getResourcePath();
+        // 如果请求的是 API 路径，说明控制器可能未注册或路径不匹配
+        if (resourcePath != null && resourcePath.startsWith("api/")) {
+            log.warn("API 端点被误判为静态资源: {}，可能是控制器未注册或路径配置错误", resourcePath);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "API 端点未找到: /" + resourcePath + "（请检查控制器是否正确注册）"));
+        }
+        // 真正的静态资源未找到
+        log.debug("静态资源未找到: {}", resourcePath);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(404, "资源未找到: " + resourcePath));
     }
 
     /**

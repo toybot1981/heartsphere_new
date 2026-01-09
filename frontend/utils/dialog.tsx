@@ -73,23 +73,39 @@ export const showAlert = (
   message: string,
   title?: string,
   type: 'info' | 'success' | 'warning' | 'error' = 'info',
-  confirmText?: string
+  confirmText?: string,
+  autoClose?: number // 自动关闭时间（毫秒），如果提供则会在指定时间后自动关闭
 ): Promise<void> => {
   return new Promise((resolve) => {
     if (alertDialogSetter) {
+      let timeoutId: NodeJS.Timeout | null = null;
+      
+      const closeDialog = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (alertDialogSetter) {
+          alertDialogSetter(prev => ({ ...prev, open: false }));
+        }
+        resolve();
+      };
+      
       alertDialogSetter({
         open: true,
         message,
         title,
         type,
         confirmText,
-        onClose: () => {
-          if (alertDialogSetter) {
-            alertDialogSetter(prev => ({ ...prev, open: false }));
-          }
-          resolve();
-        }
+        onClose: closeDialog
       });
+      
+      // 如果设置了自动关闭时间，则在指定时间后自动关闭
+      if (autoClose && autoClose > 0) {
+        timeoutId = setTimeout(() => {
+          closeDialog();
+        }, autoClose);
+      }
     } else {
       // 降级到原生 alert
       alert(message);

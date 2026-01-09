@@ -132,13 +132,47 @@ public class ImageUrlUtils {
         // 如果是相对路径，拼接baseUrl
         String baseUrl = getBaseUrl();
         
-        // 如果baseUrl为空，说明无法获取，记录警告并返回相对路径（让前端处理）
+        // 如果baseUrl为空，尝试使用默认值或从请求中获取
         if (baseUrl == null || baseUrl.isEmpty()) {
-            java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
-                .warning("无法获取baseUrl，返回相对路径: " + path);
-            // 返回相对路径，前端可以通过相对路径访问
-            String normalizedPath = path.startsWith("/") ? path : "/" + path;
-            return normalizedPath;
+            // 尝试从当前HTTP请求中获取域名
+            try {
+                ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                if (attributes != null) {
+                    HttpServletRequest request = attributes.getRequest();
+                    String scheme = request.getScheme(); // http 或 https
+                    String host = request.getHeader("X-Forwarded-Host");
+                    if (host == null || host.isEmpty()) {
+                        host = request.getHeader("Host");
+                    }
+                    if (host == null || host.isEmpty()) {
+                        host = request.getServerName();
+                        int port = request.getServerPort();
+                        if ((scheme.equals("http") && port != 80) || (scheme.equals("https") && port != 443)) {
+                            host = host + ":" + port;
+                        }
+                    }
+                    
+                    if (host != null && !host.isEmpty()) {
+                        baseUrl = scheme + "://" + host + request.getContextPath() + "/images";
+                    }
+                }
+            } catch (Exception e) {
+                java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
+                    .warning("无法从请求上下文获取baseUrl: " + e.getMessage());
+            }
+        }
+        
+        // 如果仍然无法获取baseUrl，使用默认值（开发环境）
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            String envBaseUrl = System.getenv("IMAGE_BASE_URL");
+            if (envBaseUrl != null && !envBaseUrl.trim().isEmpty()) {
+                baseUrl = envBaseUrl.trim();
+            } else {
+                // 使用默认值（开发环境）
+                baseUrl = "http://localhost:8081/images";
+                java.util.logging.Logger.getLogger(ImageUrlUtils.class.getName())
+                    .warning("无法获取baseUrl，使用默认值: " + baseUrl);
+            }
         }
         
         String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
@@ -181,8 +215,16 @@ public class ImageUrlUtils {
             
             // 如果是同域名，提取路径部分（去除 /images/ 前缀，兼容旧格式）
             String path = urlUri.getPath();
-            if (path.startsWith("/images/")) {
+            if (path.startsWith("/api/images/")) {
+                // 新格式：/api/images/category/year/month/filename
+                path = path.substring("/api/images/".length());
+            } else if (path.startsWith("/images/")) {
                 path = path.substring("/images/".length());
+            } else if (path.startsWith("/item/")) {
+                // 兼容旧路径格式：/item/** -> 转换为 item/...（作为相对路径）
+                // 这样访问时可以使用 /images/item/... 或 /item/...
+                path = path.substring("/item/".length());
+                path = "item/" + path; // 保持 item/ 前缀，这样文件路径正确
             } else if (path.startsWith("/api/images/files/")) {
                 // 兼容旧格式
                 path = path.substring("/api/images/files/".length());

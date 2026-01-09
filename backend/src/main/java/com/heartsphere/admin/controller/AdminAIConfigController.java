@@ -16,7 +16,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/admin/system/ai-config")
-@CrossOrigin(origins = "*")
 public class AdminAIConfigController extends BaseAdminController {
     
     @Autowired

@@ -42,7 +42,8 @@ public class GraphExecutionService {
     @Autowired
     private NodeFactory nodeFactory;
     
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
     
     /**
      * 执行Graph

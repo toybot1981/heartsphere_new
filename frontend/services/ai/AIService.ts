@@ -826,26 +826,8 @@ export class AIService {
     }
 
     const requestBody = { ...request, stream: true };
-    console.log('[AIService] 统一接入模式 - 开始流式文本生成请求', {
-      url: `${API_BASE_URL}/ai/text/generate/stream`,
-      provider: request.provider,
-      model: request.model,
-      hasPrompt: !!request.prompt,
-      hasMessages: !!request.messages,
-      messagesCount: request.messages?.length || 0,
-      hasSystemInstruction: !!request.systemInstruction,
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-      stream: true,
-    });
 
     try {
-      console.log('[AIService] 统一接入模式 - 准备发送fetch请求', {
-        url: `${API_BASE_URL}/ai/text/generate/stream`,
-        method: 'POST',
-        hasToken: !!token,
-        requestBodyKeys: Object.keys(requestBody),
-      });
       
       const response = await fetch(`${API_BASE_URL}/ai/text/generate/stream`, {
         method: 'POST',
@@ -854,14 +836,6 @@ export class AIService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-      });
-
-      console.log('[AIService] 统一接入模式 - 收到响应', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        contentType: response.headers.get('content-type'),
-        headers: Object.fromEntries(response.headers.entries()),
       });
 
       if (!response.ok) {
@@ -883,11 +857,6 @@ export class AIService {
       }
 
       // 使用EventSource或ReadableStream处理SSE
-      console.log('[AIService] 统一接入模式 - 检查响应body', {
-        hasBody: !!response.body,
-        bodyType: response.body?.constructor?.name,
-      });
-      
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
 
@@ -895,10 +864,6 @@ export class AIService {
         console.error('[AIService] 统一接入模式 - 无法获取响应body reader');
         throw new AIServiceException('无法读取流式响应');
       }
-
-      console.log('[AIService] 统一接入模式 - 开始读取流式响应', {
-        readerType: reader.constructor?.name,
-      });
       let buffer = '';
       let finalUsage: import('./types').TokenUsage | undefined;
       let chunkCount = 0;
@@ -909,20 +874,10 @@ export class AIService {
         const { done, value } = await reader.read();
         
         if (done) {
-          console.log('[AIService] 流式响应读取完成 - 总读取次数:', readCount, '总chunks:', chunkCount, '剩余buffer长度:', buffer.length);
-          if (buffer.trim()) {
-            console.warn('[AIService] 流式响应结束时仍有未处理的数据:', buffer.substring(0, 200));
-          }
           break;
         }
 
         const decoded = decoder.decode(value, { stream: true });
-        if (readCount <= 3 || readCount % 10 === 0) {
-          console.log(`[AIService] 读取原始数据 #${readCount}`, {
-            length: decoded.length,
-            preview: decoded.substring(0, 100).replace(/\n/g, '\\n'),
-          });
-        }
         
         buffer += decoded;
         const lines = buffer.split('\n');
@@ -946,32 +901,7 @@ export class AIService {
                 jsonStr = jsonStr.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
               }
               
-              // 统一接入模式详细日志
-              if (chunkCount < 5 || chunkCount % 10 === 0) {
-                console.log('[AIService] 统一接入模式 - 解析SSE行', {
-                  chunkIndex: chunkCount + 1,
-                  originalLineLength: trimmedLine.length,
-                  originalLinePreview: trimmedLine.substring(0, 150),
-                  jsonStrLength: jsonStr.length,
-                  jsonStrPreview: jsonStr.substring(0, 150),
-                });
-              }
-              
               const data = JSON.parse(jsonStr);
-              
-              // 统一接入模式详细日志
-              if (chunkCount < 5 || chunkCount % 10 === 0) {
-                console.log(`[AIService] 统一接入模式 - 解析SSE数据 #${chunkCount + 1}`, {
-                  hasChoices: !!(data.choices && Array.isArray(data.choices)),
-                  choicesLength: data.choices?.length || 0,
-                  hasContent: !!data.content,
-                  hasDone: !!data.done,
-                  hasFinishReason: !!(data.choices?.[0]?.finish_reason),
-                  finishReason: data.choices?.[0]?.finish_reason,
-                  hasUsage: !!data.usage,
-                  rawDataPreview: JSON.stringify(data).substring(0, 200),
-                });
-              }
               
               if (data.error) {
                 console.error('[AIService] 收到错误响应:', data.error);
@@ -989,18 +919,9 @@ export class AIService {
                 const choice = data.choices[0];
                 if (choice.delta && choice.delta.content) {
                   content = choice.delta.content;
-                  if (chunkCount < 5 || chunkCount % 10 === 0) {
-                    console.log(`[AIService] 统一接入模式 - 从choices[0].delta.content提取内容`, {
-                      contentLength: content.length,
-                      contentPreview: content.substring(0, 50),
-                    });
-                  }
                 }
                 if (choice.finish_reason && choice.finish_reason !== null && choice.finish_reason !== 'null') {
                   isDone = true;
-                  console.log('[AIService] 统一接入模式 - 检测到完成信号', {
-                    finishReason: choice.finish_reason,
-                  });
                 }
                 if (data.usage) {
                   usage = data.usage;
@@ -1012,64 +933,41 @@ export class AIService {
                 if (data.usage) {
                   usage = data.usage;
                 }
-                if (chunkCount < 5 || chunkCount % 10 === 0) {
-                  console.log(`[AIService] 统一接入模式 - 从content字段提取内容`, {
-                    contentLength: content.length,
-                    contentPreview: content.substring(0, 50),
-                    isDone: isDone,
-                  });
-                }
               } else if (data.done === true) {
                 // 完成信号
                 isDone = true;
                 if (data.usage) {
                   usage = data.usage;
                 }
-                console.log('[AIService] 统一接入模式 - 收到done=true完成信号');
               }
 
               if (isDone) {
-                console.log('[AIService] 统一接入模式 - 收到完成信号', {
-                  hasUsage: !!usage,
-                  totalChunks: chunkCount,
-                  usage: usage,
-                });
                 if (usage) {
                   finalUsage = {
                     inputTokens: usage.prompt_tokens || usage.inputTokens || 0,
                     outputTokens: usage.completion_tokens || usage.outputTokens || 0,
                     totalTokens: usage.total_tokens || usage.totalTokens || 0,
                   };
-                  console.log('[AIService] 统一接入模式 - Token使用量', finalUsage);
                 }
                 onChunk({
                   content: '',
                   done: true,
                   usage: finalUsage,
                 });
-                console.log('[AIService] 统一接入模式 - 流式响应处理完成');
                 return;
               } else if (content) {
                 chunkCount++;
-                if (chunkCount <= 5 || chunkCount % 10 === 0) {
-                  console.log(`[AIService] 统一接入模式 - 收到chunk #${chunkCount}`, {
-                    contentLength: content.length,
-                    contentPreview: content.substring(0, 50),
-                    totalChunks: chunkCount,
-                  });
-                }
                 onChunk({
                   content: content,
                   done: false,
                 });
               } else {
                 // 没有内容但也不是完成信号，可能是空chunk
-                if (chunkCount < 5) {
-                  console.log(`[AIService] 统一接入模式 - 收到空chunk`, {
-                    dataKeys: Object.keys(data),
-                    rawData: JSON.stringify(data).substring(0, 200),
-                  });
-                }
+                // 发送空内容，保持流继续
+                onChunk({
+                  content: '',
+                  done: false,
+                });
               }
             } catch (e) {
               console.warn('[AIService] 解析SSE数据失败:', e, '原始行:', trimmedLine.substring(0, 100));
@@ -1079,7 +977,7 @@ export class AIService {
             // OpenAI格式的结束信号，可以忽略，因为已经有done=true的处理
           } else {
             // 记录非data行（可能是其他SSE事件）
-            console.log('[AIService] 收到非data SSE行:', trimmedLine.substring(0, 100));
+            // 跳过非data SSE行
           }
         }
       }

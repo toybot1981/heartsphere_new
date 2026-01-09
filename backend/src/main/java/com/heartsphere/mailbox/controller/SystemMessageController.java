@@ -22,7 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/mailbox/system-messages")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SystemMessageController {
     
     private final SystemMessageService systemMessageService;

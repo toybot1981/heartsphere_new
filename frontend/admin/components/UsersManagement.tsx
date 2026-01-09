@@ -312,7 +312,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
                 {/* 统计信息和批量操作 */}
                 <div className="mb-4 flex items-center justify-between">
                     <div className="text-sm text-slate-400">
-                        共 {totalElements} 个用户, 第 {currentPage + 1}/{totalPages || 1} 页
+                    共 {totalElements} 个用户, 第 {currentPage + 1}/{totalPages || 1} 页
                         {selectedUserIds.size > 0 && (
                             <span className="ml-3 text-indigo-400">
                                 已选择 {selectedUserIds.size} 个用户

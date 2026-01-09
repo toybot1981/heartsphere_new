@@ -49,6 +49,25 @@ public class ImageProcessingService {
     @Value("${app.image.processing.crop.max-height:5000}")
     private int maxCropHeight;
 
+    // 多分辨率配置
+    @Value("${app.image.processing.variants.medium.width:800}")
+    private int mediumWidth;
+
+    @Value("${app.image.processing.variants.medium.height:600}")
+    private int mediumHeight;
+
+    @Value("${app.image.processing.variants.medium.quality:0.85}")
+    private double mediumQuality;
+
+    @Value("${app.image.processing.variants.high-quality.width:1920}")
+    private int highQualityWidth;
+
+    @Value("${app.image.processing.variants.high-quality.height:1080}")
+    private int highQualityHeight;
+
+    @Value("${app.image.processing.variants.high-quality.quality:0.9}")
+    private double highQualityQuality;
+
     /**
      * 从相对路径或URL读取图片
      * @param imagePath 图片相对路径或URL
@@ -324,7 +343,8 @@ public class ImageProcessingService {
         
         int targetWidth = (width != null && width > 0) ? width : defaultThumbnailWidth;
         int targetHeight = (height != null && height > 0) ? height : defaultThumbnailHeight;
-        String suffix = "_thumb_" + targetWidth + "x" + targetHeight;
+        // 使用新格式：原图名称_宽度*高度
+        String suffix = "_" + targetWidth + "*" + targetHeight;
         
         return saveProcessedImage(thumbnail, imagePath, suffix);
     }
@@ -343,7 +363,61 @@ public class ImageProcessingService {
         BufferedImage sourceImage = readImage(imagePath);
         BufferedImage croppedImage = cropImage(sourceImage, x, y, width, height);
         
-        String suffix = "_crop_" + x + "_" + y + "_" + width + "_" + height;
+        // 裁剪后的图片也使用宽度*高度格式
+        String suffix = "_" + width + "*" + height;
         return saveProcessedImage(croppedImage, imagePath, suffix);
+    }
+
+    /**
+     * 生成中等质量图并保存
+     * @param imagePath 原始图片路径或URL
+     * @return 处理后的图片相对路径
+     * @throws IOException 如果处理失败
+     */
+    public String generateAndSaveMediumQuality(String imagePath) throws IOException {
+        BufferedImage sourceImage = readImage(imagePath);
+        BufferedImage mediumImage = generateThumbnail(sourceImage, mediumWidth, mediumHeight, true, mediumQuality);
+        String suffix = "_" + mediumWidth + "*" + mediumHeight;
+        return saveProcessedImage(mediumImage, imagePath, suffix);
+    }
+
+    /**
+     * 生成高质量背景图并保存
+     * @param imagePath 原始图片路径或URL
+     * @return 处理后的图片相对路径
+     * @throws IOException 如果处理失败
+     */
+    public String generateAndSaveHighQualityBackground(String imagePath) throws IOException {
+        BufferedImage sourceImage = readImage(imagePath);
+        BufferedImage hqImage = generateThumbnail(sourceImage, highQualityWidth, highQualityHeight, true, highQualityQuality);
+        String suffix = "_" + highQualityWidth + "*" + highQualityHeight;
+        return saveProcessedImage(hqImage, imagePath, suffix);
+    }
+
+    /**
+     * 生成所有分辨率版本（缩略图、中等质量图、高质量背景图）
+     * @param imagePath 原始图片路径或URL
+     * @param includeHighQuality 是否包含高质量背景图（PC ChatWindow专用）
+     * @return 包含所有分辨率版本路径的Map
+     * @throws IOException 如果处理失败
+     */
+    public java.util.Map<String, String> generateAllVariants(String imagePath, boolean includeHighQuality) throws IOException {
+        java.util.Map<String, String> variants = new java.util.HashMap<>();
+        
+        // 生成缩略图
+        String thumbnailPath = generateAndSaveThumbnail(imagePath, defaultThumbnailWidth, defaultThumbnailHeight, true, defaultThumbnailQuality);
+        variants.put("thumbnail", thumbnailPath);
+        
+        // 生成中等质量图
+        String mediumPath = generateAndSaveMediumQuality(imagePath);
+        variants.put("medium", mediumPath);
+        
+        // 如果需要，生成高质量背景图
+        if (includeHighQuality) {
+            String highQualityPath = generateAndSaveHighQualityBackground(imagePath);
+            variants.put("highQuality", highQualityPath);
+        }
+        
+        return variants;
     }
 }

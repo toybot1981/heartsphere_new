@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 /**
  * 访问历史控制器
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/access-history")
 public class AccessHistoryController {

@@ -19,7 +19,6 @@ import java.util.Map;
  * 系统管理员管理控制器
  * 只有超级管理员可以访问
  */
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/admin/system/admins")
 public class SystemAdminController {

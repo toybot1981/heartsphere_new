@@ -266,6 +266,14 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 export const useGameState = (): GameStateContextType => {
   const context = useContext(GameStateContext);
   if (context === undefined) {
+    // 在开发环境中提供更详细的错误信息
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        'useGameState must be used within a GameStateProvider.\n' +
+        'This error may occur during hot reload. If you see this in development, ' +
+        'try refreshing the page.'
+      );
+    }
     throw new Error('useGameState must be used within a GameStateProvider');
   }
   return context;

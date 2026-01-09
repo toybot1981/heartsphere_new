@@ -15,7 +15,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/system/scripts")
-@CrossOrigin(origins = "*")
 public class AdminScriptController extends BaseAdminController {
 
     @Autowired

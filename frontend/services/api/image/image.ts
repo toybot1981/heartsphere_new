@@ -4,6 +4,7 @@ import type {
   ProxyDownloadResponse,
   ImageUploadResponse,
   ImageDeleteResponse,
+  ImageProcessingResponse,
 } from './types';
 
 /**
@@ -110,6 +111,105 @@ export const imageApi = {
       `/images/delete?url=${encodeURIComponent(imageUrl)}`,
       {
         method: 'DELETE',
+        headers: headers,
+      }
+    );
+  },
+
+  /**
+   * 生成缩略图
+   * @param imageUrl - 图片URL或相对路径
+   * @param width - 可选，目标宽度
+   * @param height - 可选，目标高度
+   * @param keepAspectRatio - 可选，是否保持宽高比，默认true
+   * @param quality - 可选，压缩质量(0.0-1.0)，默认0.85
+   * @param token - 可选，用户token
+   */
+  generateThumbnail: (
+    imageUrl: string,
+    width?: number,
+    height?: number,
+    keepAspectRatio?: boolean,
+    quality?: number,
+    token?: string
+  ): Promise<ImageProcessingResponse> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const body: any = { url: imageUrl };
+    if (width !== undefined) body.width = width;
+    if (height !== undefined) body.height = height;
+    if (keepAspectRatio !== undefined) body.keepAspectRatio = keepAspectRatio;
+    if (quality !== undefined) body.quality = quality;
+
+    return request<ImageProcessingResponse>('/images/thumbnail', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: headers,
+    });
+  },
+
+  /**
+   * 裁剪图片
+   * @param imageUrl - 图片URL或相对路径
+   * @param x - 裁剪起始X坐标
+   * @param y - 裁剪起始Y坐标
+   * @param width - 裁剪宽度
+   * @param height - 裁剪高度
+   * @param token - 可选，用户token
+   */
+  cropImage: (
+    imageUrl: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    token?: string
+  ): Promise<ImageProcessingResponse> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return request<ImageProcessingResponse>('/images/crop', {
+      method: 'POST',
+      body: JSON.stringify({
+        url: imageUrl,
+        x,
+        y,
+        width,
+        height,
+      }),
+      headers: headers,
+    });
+  },
+
+  /**
+   * 获取图片列表（主要用于系统预置资源）
+   * @param category - 图片分类，默认为 'all'
+   * @param isSystemResource - 是否只获取系统资源，默认为 true
+   * @param token - 可选，用户token
+   */
+  listImages: (
+    category: string = 'all',
+    isSystemResource: boolean = true,
+    token?: string
+  ): Promise<ImageListResponse> => {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return request<ImageListResponse>(
+      `/images/list?category=${encodeURIComponent(category)}&isSystemResource=${isSystemResource}`,
+      {
+        method: 'GET',
         headers: headers,
       }
     );

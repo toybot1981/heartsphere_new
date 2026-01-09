@@ -57,14 +57,16 @@ cd "$BACKEND_DIR" || {
 if [ -f "${TARGET_DIR}/${JAR_NAME}" ]; then
     read -p "JAR 文件已存在，是否重新构建? [y/N]: " rebuild
     if [[ "$rebuild" =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}开始构建...${NC}"
-        mvn clean package -DskipTests
+        echo -e "${YELLOW}开始构建（使用 dev profile）...${NC}"
+        # 注意：所有依赖都在主 dependencies 中，dev profile 仅用于配置 Spring Profile
+        mvn clean package -DskipTests -Pdev
     else
         echo -e "${YELLOW}跳过构建，使用现有 JAR 文件${NC}"
     fi
 else
-    echo -e "${YELLOW}开始构建...${NC}"
-    mvn clean package -DskipTests
+    echo -e "${YELLOW}开始构建（使用 dev profile）...${NC}"
+    # 注意：所有依赖都在主 dependencies 中，dev profile 仅用于配置 Spring Profile
+    mvn clean package -DskipTests -Pdev
 fi
 
 if [ ! -f "${TARGET_DIR}/${JAR_NAME}" ]; then
@@ -197,8 +199,9 @@ fi
 # 启动命令
 echo ""
 echo -e "${BLUE}启动命令:${NC}"
-echo -e "${BLUE}SPRING_APPLICATION_JSON='{\"server\":{\"port\":${BACKEND_PORT}}}' java -jar ${TARGET_DIR}/${JAR_NAME} --server.port=${BACKEND_PORT} --spring.profiles.active=development${NC}"
+echo -e "${BLUE}SPRING_APPLICATION_JSON='{\"server\":{\"port\":${BACKEND_PORT}}}' java -jar ${TARGET_DIR}/${JAR_NAME} --server.port=${BACKEND_PORT} --spring.profiles.active=dev${NC}"
 echo -e "${YELLOW}注意: 命令行参数 --server.port=${BACKEND_PORT} 会覆盖配置文件中的端口设置${NC}"
+echo -e "${YELLOW}注意: 所有依赖都在主 dependencies 中，dev profile 仅用于配置 Spring Profile${NC}"
 echo ""
 
 # 在后台启动
@@ -207,7 +210,7 @@ echo ""
 SPRING_APPLICATION_JSON="{\"server\":{\"port\":${BACKEND_PORT}}}" \
 nohup java -jar "${TARGET_DIR}/${JAR_NAME}" \
     --server.port="${BACKEND_PORT}" \
-    --spring.profiles.active=development \
+    --spring.profiles.active=dev \
     > "${BACKEND_DIR}/backend.log" 2>&1 &
 
 PID=$!

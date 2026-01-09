@@ -6,6 +6,8 @@ import com.heartsphere.entity.Era;
 import com.heartsphere.entity.User;
 import com.heartsphere.repository.ScenarioItemRepository;
 import com.heartsphere.repository.EraRepository;
+import com.heartsphere.admin.repository.SystemEraItemRepository;
+import com.heartsphere.admin.entity.SystemEraItem;
 import com.heartsphere.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,9 @@ public class ScenarioItemService {
 
     @Autowired
     private EraRepository eraRepository;
+
+    @Autowired
+    private SystemEraItemRepository systemEraItemRepository;
 
     /**
      * 获取场景的所有物品（包括系统物品和用户自定义物品）
@@ -41,18 +46,27 @@ public class ScenarioItemService {
 
     /**
      * 获取所有系统预设物品
+     * 从system_era_items表查询数据
      */
     public List<ScenarioItemDTO> getSystemItems() {
-        List<ScenarioItem> items = itemRepository.findByIsSystemTrueAndIsDeletedFalseAndIsActiveTrue();
-        return items.stream().map(this::convertToDTO).collect(Collectors.toList());
+        // 从system_era_items表查询所有系统物品
+        List<SystemEraItem> systemItems = systemEraItemRepository.findByIsDeletedFalseAndIsActiveTrueOrderBySortOrderAsc();
+        return systemItems.stream().map(this::convertSystemItemToDTO).collect(Collectors.toList());
     }
 
     /**
      * 获取用户的所有自定义物品
+     * 从scenario_items表查询user_id不为空且is_system=false的记录
      */
     public List<ScenarioItemDTO> getUserItems(Long userId) {
+        // 查询用户自定义物品（user_id不为空，is_system=false）
         List<ScenarioItem> items = itemRepository.findByUser_IdAndIsDeletedFalse(userId);
-        return items.stream().map(this::convertToDTO).collect(Collectors.toList());
+        // 过滤掉系统物品
+        return items.stream()
+                .filter(item -> item.getUser() != null && item.getUser().getId().equals(userId))
+                .filter(item -> !Boolean.TRUE.equals(item.getIsSystem()))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -178,6 +192,28 @@ public class ScenarioItemService {
             dto.setUserId(item.getUser().getId());
         }
         dto.setIsSystem(item.getIsSystem());
+        dto.setIconUrl(item.getIconUrl());
+        dto.setItemType(item.getItemType());
+        dto.setTags(item.getTags());
+        dto.setSortOrder(item.getSortOrder());
+        dto.setIsActive(item.getIsActive());
+        dto.setCreatedAt(item.getCreatedAt());
+        dto.setUpdatedAt(item.getUpdatedAt());
+        return dto;
+    }
+
+    /**
+     * 将SystemEraItem转换为ScenarioItemDTO
+     */
+    private ScenarioItemDTO convertSystemItemToDTO(SystemEraItem item) {
+        ScenarioItemDTO dto = new ScenarioItemDTO();
+        dto.setId(item.getId());
+        dto.setName(item.getName());
+        dto.setItemId(item.getItemId());
+        dto.setDescription(item.getDescription());
+        // system_era_items表中的system_era_id对应system_eras表，不是user eras
+        // 如果需要，可以在这里查询system_era名称
+        dto.setIsSystem(true);
         dto.setIconUrl(item.getIconUrl());
         dto.setItemType(item.getItemType());
         dto.setTags(item.getTags());

@@ -22,7 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/mailbox/resonance-messages")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ResonanceMessageController {
     
     private final ResonanceMessageService resonanceMessageService;

@@ -12,6 +12,7 @@ import { MobileSharedModeBanner } from '../components/modals';
 import { MobileLoadingSpinner } from '../components/MobileLoadingSpinner';
 import { MobileEmptyState } from '../components/MobileEmptyState';
 import { MobileLazyImage } from '../components/MobileLazyImage';
+import { convertBackendCharacterToFrontend } from '../../utils/dataTransformers';
 
 interface MobileSharedCharacterSelectionScreenProps {
   currentScene: WorldScene;
@@ -67,17 +68,15 @@ export const MobileSharedCharacterSelectionScreen: React.FC<MobileSharedCharacte
         
         console.log('[MobileSharedCharacterSelectionScreen] 加载成功，角色数量:', characterDTOs.length);
         
-        // 转换为前端 Character 格式
-        const convertedCharacters: Character[] = characterDTOs.map((dto: any) => ({
-          id: `character_${dto.id}`,
-          name: dto.name || '未命名角色',
-          description: dto.description || '',
-          avatarUrl: dto.avatarUrl || '',
-          personality: dto.personality || '',
-          background: dto.background || '',
-          eraId: eraId.toString(),
-          worldId: currentScene.worldId || '',
-        }));
+        // 转换为前端 Character 格式（使用完整的角色数据转换函数，确保包含systemInstruction等所有字段）
+        const convertedCharacters: Character[] = characterDTOs.map((dto: any) => {
+          // 使用标准转换函数，确保包含所有字段（特别是systemInstruction）
+          const character = convertBackendCharacterToFrontend(dto);
+          // 确保eraId和worldId正确设置
+          character.eraId = eraId.toString();
+          character.worldId = currentScene.worldId || '';
+          return character;
+        });
         
         setCharacters(convertedCharacters);
       } catch (err: any) {

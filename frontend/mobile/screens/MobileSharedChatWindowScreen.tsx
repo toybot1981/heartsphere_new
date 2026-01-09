@@ -23,6 +23,9 @@ import { MessageBubble } from '../../components/chat/MessageBubble';
 import { BackgroundLayer } from '../../components/chat/BackgroundLayer';
 import { CharacterAvatar } from '../../components/chat/CharacterAvatar';
 import { EmojiPicker } from '../../components/emoji/EmojiPicker';
+import { TeleportationManager, PortalLayer } from '../../components/portal';
+import { usePortal } from '../../hooks/usePortal';
+import { logger } from '../../utils/logger';
 
 interface MobileSharedChatWindowScreenProps {
   character: Character;
@@ -55,6 +58,22 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
 
   // 会话ID：基于角色ID和共享配置ID
   const sessionId = `shared_${shareConfig?.id || 'unknown'}_${character.id}`;
+
+  // 提取场景ID（eraId）用于传送门
+  const sceneId = character.eraId ? parseInt(character.eraId) : null;
+  
+  // 传送门系统：加载传送门列表用于显示
+  const { portals, loadPortals, loading: portalsLoading } = usePortal(sceneId || undefined);
+
+  // 加载传送门列表
+  useEffect(() => {
+    if (sceneId) {
+      logger.debug(`[MobileSharedChatWindow] 🔮 加载传送门列表: sceneId=${sceneId}`);
+      loadPortals(sceneId);
+    } else {
+      logger.warn('[MobileSharedChatWindow] ⚠️ 场景ID为空，无法加载传送门');
+    }
+  }, [sceneId, loadPortals]);
 
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
@@ -160,7 +179,6 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
         memorySystem: undefined, // 共享模式不使用记忆系统
         relevantMemories: [], // 共享模式不获取记忆
         onComplete: async (fullText) => {
-          // 保存助手消息到后端（共享模式专用）
           try {
             await sharedApi.saveChatMessage(
               sessionId,
@@ -170,9 +188,8 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
               undefined,
               0.5
             );
-            console.log('[MobileSharedChatWindow] 助手消息已保存到后端');
           } catch (saveError) {
-            console.error('[MobileSharedChatWindow] 保存助手消息失败:', saveError);
+            logger.error('[MobileSharedChatWindow] 保存助手消息失败:', saveError);
           }
         },
       });
@@ -217,6 +234,15 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
     }
   };
 
+  // 处理传送完成
+  const handleTeleportationComplete = useCallback((targetHeartsphereId: number, targetShareCode?: string) => {
+    logger.debug('[MobileSharedChatWindow] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
+    if (targetShareCode) {
+      // 通过共享码传送到另一个心域
+      window.location.href = `/share/${targetShareCode}`;
+    }
+  }, []);
+
   // 如果未激活共享模式
   if (!isActive || !shareConfig) {
     return (
@@ -237,9 +263,13 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
   }
 
   return (
-    <MobileSafeAreaView className="h-full w-full bg-black relative overflow-hidden">
-      {/* 背景层 */}
-      <BackgroundLayer
+    <TeleportationManager
+      sceneId={sceneId || undefined}
+      onTeleportationComplete={handleTeleportationComplete}
+    >
+      <MobileSafeAreaView className="h-full w-full bg-black relative overflow-hidden">
+        {/* 背景层 */}
+        <BackgroundLayer
         backgroundImage={character.backgroundUrl || null}
         character={character}
         isStoryMode={false}
@@ -455,18 +485,45 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
         </div>
     </div>
 
-      {/* 表情选择器 */}
-      {uiState.showEmojiPicker && (
-        <EmojiPicker
-          userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
-          onSelect={(emoji) => {
-            setInput((prev) => prev + emoji.code);
-            uiState.setShowEmojiPicker(false);
-          }}
-          onClose={() => uiState.setShowEmojiPicker(false)}
-        />
-      )}
-    </MobileSafeAreaView>
+        {/* 传送门渲染层 - TeleportationManager会处理点击事件 */}
+        {sceneId && (
+          <PortalLayer
+            portals={portals || []}
+            sceneId={sceneId}
+            onPortalClick={(portalId) => {
+              // 通过自定义事件触发传送，TeleportationManager会监听
+              logger.debug(`[MobileSharedChatWindow] 🔮 点击传送门: portalId=${portalId}`);
+              window.dispatchEvent(new CustomEvent('portal-click', { 
+                detail: { portalId, sceneId } 
+              }));
+            }}
+            className="z-30"
+          />
+        )}
+
+        {/* 传送门调试信息（开发环境） */}
+        {process.env.NODE_ENV === 'development' && sceneId && (
+          <div className="absolute top-20 right-2 bg-slate-900/90 p-2 rounded-lg text-xs text-white z-50 max-w-[120px]">
+            <div className="font-bold mb-1 text-[10px]">🔮 传送门</div>
+            <div className="text-[10px]">场景: {sceneId}</div>
+            <div className="text-[10px]">数量: {(portals || []).length}</div>
+            <div className="text-[10px]">{portalsLoading ? '加载中' : '已就绪'}</div>
+          </div>
+        )}
+
+        {/* 表情选择器 */}
+        {uiState.showEmojiPicker && (
+          <EmojiPicker
+            userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
+            onSelect={(emoji) => {
+              setInput((prev) => prev + emoji.code);
+              uiState.setShowEmojiPicker(false);
+            }}
+            onClose={() => uiState.setShowEmojiPicker(false)}
+          />
+        )}
+      </MobileSafeAreaView>
+    </TeleportationManager>
   );
 });
 

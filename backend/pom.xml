@@ -25,12 +25,25 @@
     
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
             <url>https://repo.spring.io/milestone</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </repository>
+        <!-- JitPack repository for jave-all-deps -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -70,7 +83,7 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
             <version>0.12.3</version>
-            <scope>runtime</scope>
+            <!-- 移除 runtime scope，确保 ServiceLoader 可以找到实现 -->
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -83,6 +96,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AgentScope Java - 用于原型验证和研究 -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope</artifactId>
+            <version>1.0.5</version>
             <scope>test</scope>
         </dependency>
 
@@ -100,7 +121,8 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- SpringDoc OpenAPI -->
+        <!-- SpringDoc OpenAPI (Swagger) -->
+        <!-- 注意：生产环境使用 provided scope 排除，开发环境包含完整依赖 -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -126,17 +148,7 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
-        <!-- OAuth 1.0 for Evernote -->
-        <dependency>
-            <groupId>oauth.signpost</groupId>
-            <artifactId>signpost-core</artifactId>
-            <version>2.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>oauth.signpost</groupId>
-            <artifactId>signpost-commonshttp4</artifactId>
-            <version>2.1.1</version>
-        </dependency>
+        <!-- OAuth 1.0 for Evernote - 已移除（未使用） -->
 
         <!-- HTTP Client for API calls -->
         <dependency>
@@ -157,6 +169,70 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- Caffeine Cache -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- Thumbnailator - 图片处理库 -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
+
+        <!-- JAVE (Java Audio Video Encoder) - FFmpeg Java wrapper for video processing -->
+        <!-- Note: jave-all-deps 包含所有平台的 FFmpeg 二进制文件，自动处理跨平台兼容性 -->
+        <!-- 使用 jave-all-deps 3.5.0 版本（推荐版本） -->
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-all-deps</artifactId>
+            <version>3.5.0</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Docker Java Client for Mentis VM Management -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-core</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+
+        <!-- Selenium for GUI Automation - 精简版（只保留需要的驱动） -->
+        <!-- 注意：selenium-java 包含所有浏览器驱动，体积过大 -->
+        <!-- 我们只引入需要的浏览器驱动 -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-api</artifactId>
+            <version>4.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-chrome-driver</artifactId>
+            <version>4.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-firefox-driver</artifactId>
+            <version>4.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-support</artifactId>
+            <version>4.15.0</version>
+        </dependency>
+
         <!-- 支付宝SDK -->
         <dependency>
             <groupId>com.alipay.sdk</groupId>
@@ -170,27 +246,71 @@
             <artifactId>wechatpay-java</artifactId>
             <version>0.2.12</version>
         </dependency>
-
-        <!-- HTTP Client for 微信支付 -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-        </dependency>
-
-
-        <!-- Caffeine Cache -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
-
-        <!-- Thumbnailator - 图片处理库 -->
-        <dependency>
-            <groupId>net.coobird</groupId>
-            <artifactId>thumbnailator</artifactId>
-            <version>0.4.20</version>
-        </dependency>
     </dependencies>
+
+    <!-- Maven Profiles - 用于配置 Spring Profile，不用于依赖管理 -->
+    <profiles>
+        <!-- 开发环境（默认） -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>dev</spring.profiles.active>
+            </properties>
+        </profile>
+
+        <!-- 生产环境 -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
+            </properties>
+            <dependencies>
+                <!-- 在生产环境排除 Swagger，减少 JAR 包大小 (~3.8M) -->
+                <dependency>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                    <version>${springdoc.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                </exclude>
+                                <!-- 生产环境排除 Swagger UI 和相关依赖 -->
+                                <exclude>
+                                    <groupId>org.springdoc</groupId>
+                                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                                </exclude>
+                                <exclude>
+                                    <groupId>org.webjars</groupId>
+                                    <artifactId>swagger-ui</artifactId>
+                                </exclude>
+                                <exclude>
+                                    <groupId>org.springdoc</groupId>
+                                    <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                                </exclude>
+                                <exclude>
+                                    <groupId>org.springdoc</groupId>
+                                    <artifactId>springdoc-openapi-starter-common</artifactId>
+                                </exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>

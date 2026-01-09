@@ -1,0 +1,304 @@
+# Project Context
+
+## Purpose
+
+心域（HeartSphere）是一个数字生命体交互系统，提供AI对话、场景管理、角色扮演、剧本系统等核心功能。系统采用前后端分离架构，支持Web、移动端（Capacitor）等多平台。
+
+**核心功能**：
+- AI对话：与数字生命体进行自然语言对话
+- 场景管理：创建和管理不同的场景（如"我的大学"、"赛博都市"等）
+- 角色扮演：与场景中的角色进行交互
+- 剧本系统：创建和管理剧本，支持事件和物品管理
+- 插件系统：可扩展的插件机制，支持功能扩展
+- 心域连接：心域共享和快速连接功能
+- 跨时空信箱：跨时空消息传递功能
+
+## Tech Stack
+
+### 后端技术栈
+- **框架**: Spring Boot 3.2.0
+- **语言**: Java 17
+- **ORM**: Spring Data JPA
+- **数据库**: MySQL 8.0+
+- **安全**: Spring Security + JWT
+- **数据库迁移**: Flyway
+- **构建工具**: Maven 3.9+
+- **API文档**: SpringDoc OpenAPI (Swagger)
+
+### 前端技术栈
+- **框架**: React 18+ + TypeScript
+- **构建工具**: Vite
+- **UI库**: Tailwind CSS
+- **状态管理**: React Hooks / Context API
+- **路由**: React Router
+- **HTTP客户端**: Fetch API / Axios
+- **移动端**: Capacitor 8.0+
+
+### AI服务
+- **大模型**: Gemini、OpenAI、Qwen、豆包等
+- **AI服务**: 自研AI服务 + AipexBase集成
+- **代码生成**: AI代码生成服务
+
+## Project Conventions
+
+### Code Style
+
+#### 后端代码风格
+- **类名**: PascalCase（如：`UserProfileService`）
+- **方法名**: camelCase（如：`getUserProfile`）
+- **常量**: UPPER_SNAKE_CASE（如：`MAX_RETRY_COUNT`）
+- **包名**: 小写字母+点分隔（如：`com.heartsphere.user`）
+- **格式化工具**: Google Java Format
+
+#### 前端代码风格
+- **组件名**: PascalCase（如：`UserProfile.tsx`）
+- **函数/变量名**: camelCase（如：`getUserProfile`）
+- **常量**: UPPER_SNAKE_CASE（如：`MAX_RETRY_COUNT`）
+- **格式化工具**: Prettier + ESLint
+
+#### 命名规范
+- **数据库表名**: 小写字母+下划线，复数形式（如：`user_profiles`）
+- **数据库字段名**: 小写字母+下划线（如：`created_at`）
+- **API URL**: 小写字母+连字符（如：`/api/user-profiles`）
+- **路由路径**: kebab-case（如：`/user-profile`）
+
+**详细规范**: 参考 `docs/12-开发指南/开发规范/心域开发指南.md`
+
+### Architecture Patterns
+
+#### 设计原则
+1. **前后端分离**: 标准RESTful API，前后端独立开发部署
+2. **模块化设计**: 功能模块化，低耦合高内聚
+3. **可扩展性**: 支持功能扩展和性能扩展
+4. **安全性**: 数据安全、接口安全、权限控制
+5. **可维护性**: 代码清晰、文档完善、易于理解
+
+#### 后端架构
+```
+Controller Layer (REST API)
+    ↓
+Service Layer (Business Logic)
+    ↓
+Repository Layer (Data Access)
+    ↓
+Entity Layer (JPA Entities)
+    ↓
+Database (MySQL)
+```
+
+**包结构规范**:
+```
+com.heartsphere.{module}/
+├── controller/      # REST控制器
+├── service/         # 业务服务层
+├── repository/       # 数据访问层
+├── entity/          # JPA实体类
+├── dto/             # 数据传输对象
+├── config/          # 配置类
+└── exception/       # 异常类
+```
+
+#### 前端架构
+```
+Components (React Components)
+    ↓
+Hooks (Custom Hooks)
+    ↓
+Services (API Services)
+    ↓
+Utils (Utility Functions)
+    ↓
+Backend API (REST API)
+```
+
+**文件组织规范**:
+```
+src/
+├── components/          # 通用组件
+│   ├── common/         # 通用UI组件
+│   └── features/       # 功能组件
+├── services/           # API服务层
+│   ├── api/           # API调用
+│   └── types/         # API类型定义
+├── hooks/             # 自定义Hooks
+├── utils/             # 工具函数
+├── types/             # TypeScript类型定义
+├── contexts/          # Context提供者
+└── App.tsx            # 主应用组件
+```
+
+#### API设计规范
+- **RESTful规范**: 遵循RESTful API设计原则
+- **统一响应格式**: 使用 `ApiResponse<T>` 包装响应
+- **版本控制**: URL中包含版本号（如：`/api/v1/user-profiles`）
+- **认证**: 使用Bearer Token（`Authorization: Bearer {token}`）
+
+**详细规范**: 参考 `docs/12-开发指南/开发规范/心域开发指南.md#三设计规范`
+
+### Testing Strategy
+
+#### 测试类型
+- **单元测试**: 
+  - 后端：JUnit 5 + Mockito
+  - 前端：Jest + React Testing Library
+  - 覆盖率目标：> 80%
+- **集成测试**: 
+  - 后端：Spring Boot Test + TestContainers
+  - 前端：Cypress 或 Playwright
+- **端到端测试**: Cypress / Playwright
+
+#### 测试规范
+- **测试类命名**: `{ClassName}Test`
+- **测试方法命名**: `should_{action}_when_{condition}_then_{result}`
+- **测试覆盖**: 核心业务逻辑必须有测试
+- **测试数据**: 使用测试数据工厂或Builder模式
+
+**详细规范**: 参考 `docs/12-开发指南/开发规范/心域开发指南.md#五测试规范`
+
+### Git Workflow
+
+#### 分支管理
+- **main/master**: 生产环境分支
+- **develop**: 开发分支
+- **feature/{功能名}**: 功能分支
+- **bugfix/{问题名}**: Bug修复分支
+- **hotfix/{问题名}**: 紧急修复分支
+
+#### 提交信息规范
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Type类型**:
+- `feat`: 新功能
+- `fix`: 修复bug
+- `docs`: 文档更新
+- `style`: 代码格式（不影响功能）
+- `refactor`: 重构
+- `test`: 测试相关
+- `chore`: 构建/工具相关
+
+**示例**:
+```
+feat(user): 添加用户资料编辑功能
+
+- 实现用户资料编辑界面
+- 添加表单验证
+- 集成后端API
+
+Closes #123
+```
+
+**详细规范**: 参考 `docs/12-开发指南/开发规范/心域开发指南.md#43-代码提交规范`
+
+## Domain Context
+
+### 核心概念
+
+#### 心域（HeartSphere）
+数字生命体交互系统，用户可以创建和管理自己的数字世界。
+
+#### 场景（Era/WorldScene）
+用户创建的不同世界场景，如"我的大学"、"赛博都市"等。每个场景包含：
+- 角色（Character）：场景中的数字生命体
+- 主线剧情（MainStory）：场景的主要故事线
+- 剧本（Script）：场景中的剧本和事件
+
+#### 角色（Character/E-SOUL）
+数字生命体，可以与用户进行AI对话。每个角色有：
+- 基本信息：名称、头像、描述
+- 技能（Skill）：角色的特殊能力
+- 记忆：与用户的交互历史
+
+#### 插件（Plugin）
+可扩展的功能模块，可以嵌入到场景中，如相册插件、日记插件等。
+
+#### 心域连接
+心域共享和快速连接功能，允许用户分享自己的心域或访问他人的心域。
+
+### 主要功能模块
+
+1. **AI功能** (`01-AI功能/`): AI对话、记忆系统、大模型统一接入层
+2. **温度感系统** (`02-温度感系统/`): 温度感引擎和温度感系统
+3. **心理导师系统** (`03-心理导师系统/`): MindScape心理治疗系统
+4. **剧本系统** (`04-剧本系统/`): 剧本编辑器和事件物品管理
+5. **笔记同步** (`05-笔记同步/`): Notion、Evernote同步功能
+6. **用户系统** (`06-用户系统/`): 用户资料、角色管理
+7. **上下文引擎** (`07-上下文引擎/`): Context Engine
+8. **旅行助手** (`08-旅行助手/`): Travel Assistant
+9. **创作中心** (`09-创作中心/`): Creation Center
+10. **心域连接** (`10-心域连接/`): 心域共享、快速连接
+11. **跨时空信箱** (`11-跨时空信箱/`): 跨时空消息传递
+
+**详细文档**: 参考 `docs/` 目录下的各功能模块文档
+
+## Important Constraints
+
+### 技术约束
+- **Java版本**: 必须使用 Java 17
+- **Spring Boot版本**: 3.2.0
+- **React版本**: 18+
+- **TypeScript**: 严格模式
+- **数据库**: MySQL 8.0+，字符集 utf8mb4
+
+### 安全约束
+- **认证**: 所有API需要JWT认证（除公开接口）
+- **授权**: 实现RBAC权限控制
+- **数据隔离**: 用户数据必须隔离
+- **输入验证**: 所有输入必须验证
+- **HTTPS**: 生产环境必须使用HTTPS
+
+### 性能约束
+- **API响应时间**: < 1秒（正常情况）
+- **数据库查询**: 使用索引，避免N+1查询
+- **前端加载**: 使用代码分割和懒加载
+- **缓存策略**: 合理使用Redis缓存
+
+### 兼容性约束
+- **浏览器**: 支持现代浏览器（Chrome、Firefox、Safari最新版本）
+- **移动端**: 支持iOS和Android（通过Capacitor）
+- **响应式设计**: 支持不同屏幕尺寸
+
+## External Dependencies
+
+### 数据库
+- **MySQL 8.0+**: 主数据库
+- **Redis**: 缓存（可选）
+
+### AI服务
+- **Gemini API**: Google的Gemini大模型
+- **OpenAI API**: OpenAI的GPT模型
+- **Qwen API**: 阿里云通义千问
+- **豆包 API**: 字节跳动豆包模型
+- **AipexBase**: AI服务集成平台
+
+### 其他服务
+- **对象存储**: MinIO / OSS（图片和文件存储）
+- **消息队列**: RabbitMQ / Kafka（可选，用于异步任务）
+
+### 开发工具
+- **IDE**: IntelliJ IDEA（后端）、VS Code（前端）
+- **数据库工具**: DBeaver、MySQL Workbench
+- **API测试**: Postman、Insomnia
+- **版本控制**: Git
+
+## References
+
+### 开发规范文档
+- **核心开发规范**: `docs/12-开发指南/开发规范/心域开发指南.md`
+- **插件开发规范**: `docs/12-开发指南/开发规范/插件开发规范.md`
+- **开发规范索引**: `docs/12-开发指南/开发规范/README.md`
+
+### 项目文档
+- **文档分类索引**: `docs/00-总览/文档分类索引.md`
+- **项目结构**: `PROJECT_STRUCTURE.md`
+
+### 在线资源
+- [Spring Boot文档](https://spring.io/projects/spring-boot)
+- [React文档](https://react.dev/)
+- [TypeScript文档](https://www.typescriptlang.org/)
+- [Tailwind CSS文档](https://tailwindcss.com/)

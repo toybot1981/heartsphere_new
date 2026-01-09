@@ -1,5 +1,8 @@
 package com.heartsphere.mailbox.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 消息类型枚举
  * 
@@ -43,6 +46,7 @@ public enum MessageType {
         this.description = description;
     }
     
+    @JsonValue
     public String getCode() {
         return code;
     }
@@ -51,6 +55,7 @@ public enum MessageType {
         return description;
     }
     
+    @JsonCreator
     public static MessageType fromCode(String code) {
         for (MessageType type : values()) {
             if (type.code.equals(code)) {

@@ -10,6 +10,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.lang.NonNull;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.core.Ordered;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import reactor.netty.http.client.HttpClient;
@@ -26,10 +27,13 @@ import java.util.List;
  * 配置静态资源访问，用于访问上传的图片
  */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
+public class WebMvcConfig implements WebMvcConfigurer, Ordered {
 
     @Value("${app.image.storage.local.path:./uploads/images}")
     private String localStoragePath;
+
+    @Value("${app.video.storage.local.path:./uploads/videos}")
+    private String videoStoragePath;
 
     @Bean
     public ObjectMapper objectMapper() {
@@ -117,14 +121,49 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // 配置图片访问路径
-        // 将 /images/** 映射到本地文件系统的 uploads/images/ 目录
+        // 将所有图片路径统一映射到本地文件系统的 uploads/images/ 目录
         String uploadPath = Paths.get(localStoragePath).toAbsolutePath().normalize().toString();
         // 确保路径以 / 结尾
         if (!uploadPath.endsWith("/") && !uploadPath.endsWith("\\")) {
             uploadPath += "/";
         }
+        
+        // 统一使用 /images/** 路径格式，映射到 uploads/images/ 目录
+        // 例如：/images/item/2026/01/xxx.png -> uploads/images/item/2026/01/xxx.png
+        // 明确只处理图片路径，确保不会拦截 API 路由
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:" + uploadPath);
+                .addResourceLocations("file:" + uploadPath)
+                .resourceChain(false); // 禁用资源链，提高性能
+        
+        // 兼容旧路径格式：/item/** -> /images/item/**
+        // 将 /item/** 也映射到相同的 uploads/images/ 目录
+        // 这样 /item/2026/01/xxx.png 会查找 uploads/images/item/2026/01/xxx.png
+        registry.addResourceHandler("/item/**")
+                .addResourceLocations("file:" + uploadPath + "item/")
+                .resourceChain(false); // 禁用资源链，提高性能
+        
+        // 配置视频访问路径
+        // 将所有视频路径统一映射到本地文件系统的 uploads/videos/ 目录
+        String videoPath = Paths.get(videoStoragePath).toAbsolutePath().normalize().toString();
+        // 确保路径以 / 结尾
+        if (!videoPath.endsWith("/") && !videoPath.endsWith("\\")) {
+            videoPath += "/";
+        }
+        
+        // 使用 /videos/** 路径格式，映射到 uploads/videos/ 目录
+        // 例如：/videos/general/2026/01/xxx.mp4 -> uploads/videos/general/2026/01/xxx.mp4
+        registry.addResourceHandler("/videos/**")
+                .addResourceLocations("file:" + videoPath)
+                .resourceChain(false); // 禁用资源链，提高性能
+    }
+    
+    /**
+     * 设置配置类的优先级
+     * 返回 LOWEST_PRECEDENCE 确保静态资源处理器在所有控制器映射之后处理
+     */
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }
 

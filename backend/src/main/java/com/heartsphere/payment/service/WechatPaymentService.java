@@ -2,6 +2,8 @@ package com.heartsphere.payment.service;
 
 import com.heartsphere.payment.entity.PaymentConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,7 +20,9 @@ import java.util.Map;
  * 3. 实现回调数据的AES-256-GCM解密
  */
 @Slf4j
+@Lazy
 @Service
+@ConditionalOnProperty(prefix = "payment", name = "enabled", havingValue = "true")
 public class WechatPaymentService {
 
     /**

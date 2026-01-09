@@ -15,7 +15,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/heartconnect/requests")
-@CrossOrigin(origins = "*")
 public class ConnectionRequestController {
     
     @Autowired

@@ -16,7 +16,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/entities/relations")
-@CrossOrigin(origins = "*")
 public class AdminEntityRelationController extends BaseAdminController {
     
     @Autowired
