@@ -1,0 +1,184 @@
+// 管理后台API模块统一导出
+
+export * from './types';
+export * from './graphTypes';
+export * from './graphExecutionTypes';
+export * from './entityTypes';
+export type { DashboardStatistics, TrendData } from './dashboard';
+export type {
+  EntityRecommendation,
+  RelationRecommendation,
+  OptimizationSuggestion,
+} from './graphRecommendation';
+export type {
+  HeartSphereShareConfigDTO,
+  ShareScopeDTO,
+  ConnectionRequestDTO,
+  AccessRecordDTO,
+  WarmMessageDTO,
+  HeartSphereConnectionStatisticsDTO,
+  ExceptionHandlingRecordDTO,
+  ComplaintDTO,
+} from './heartSphereConnection';
+
+// 导入各个子模块
+import { adminAuthApi } from './auth';
+import { adminWorldsApi } from './worlds';
+import { adminErasApi } from './eras';
+import { adminCharactersApi } from './characters';
+import { adminMainStoriesApi } from './mainStories';
+import { adminInviteCodesApi } from './inviteCodes';
+import { adminConfigApi } from './config';
+import { adminAIModelsApi, adminAIRoutingStrategiesApi } from './aiConfig';
+import { adminResourcesApi } from './resources';
+import { adminScriptsApi } from './scripts';
+import { adminSubscriptionPlansApi } from './subscriptionPlans';
+import { adminUsersApi } from './users';
+import { adminSystemAdminsApi } from './admins';
+import { adminDashboardApi } from './dashboard';
+import { adminPresetScriptsApi } from './presetScripts';
+import { apiKeysApi } from './apiKeys';
+import { adminHeartSphereConnectionApi } from './heartSphereConnection';
+import { adminMemoryApi } from './memory';
+import { adminGraphApi } from './graph';
+import { adminChronosLettersApi } from './chronosLetters';
+import { adminPluginApi } from './plugin';
+import { promptApi } from './prompt';
+import { adminEntityApi } from './entity';
+import { adminGraphRecommendationApi } from './graphRecommendation';
+import { adminEduApi } from './edu';
+import { mentisMcpApi, mentisAgentApi } from './mentis';
+
+// 导出子模块API（供需要单独使用的场景）
+export {
+  adminAuthApi,
+  adminWorldsApi,
+  adminErasApi,
+  adminCharactersApi,
+  adminMainStoriesApi,
+  adminInviteCodesApi,
+  adminConfigApi,
+  adminAIModelsApi,
+  adminAIRoutingStrategiesApi,
+  adminResourcesApi,
+  adminScriptsApi,
+  adminSubscriptionPlansApi,
+  adminUsersApi,
+  adminSystemAdminsApi,
+  adminDashboardApi,
+  adminPresetScriptsApi,
+  apiKeysApi,
+  adminHeartSphereConnectionApi,
+  adminMemoryApi,
+  adminGraphApi,
+  adminChronosLettersApi,
+  adminPluginApi,
+  promptApi,
+  adminEntityApi,
+  adminGraphRecommendationApi,
+  adminEduApi,
+  mentisMcpApi,
+  mentisAgentApi,
+};
+
+// 导出 edu API 的类型
+export type {
+  StudentPageResponse,
+  StudentStatistics,
+} from './edu/students';
+export type {
+  TeacherPageResponse,
+} from './edu/teachers';
+export type {
+  ContentPageResponse,
+  ContentDTO,
+  ContentStatistics,
+} from './edu/content';
+export type {
+  OverviewStatistics,
+  UserGrowthData,
+  LearningActivitiesData,
+  HomeworkCompletionData,
+} from './edu/analytics';
+
+// 为了向后兼容，创建一个包含所有旧接口的 adminApi 对象
+// 这样现有的代码可以继续使用 adminApi.login, adminApi.worlds.getAll 等
+export const adminApi = {
+  // 管理员登录
+  login: adminAuthApi.login,
+
+  // 系统世界管理
+  worlds: adminWorldsApi,
+
+  // 系统场景管理
+  eras: adminErasApi,
+
+  // 系统角色管理
+  characters: adminCharactersApi,
+
+  // 系统主线剧情管理
+  mainStories: adminMainStoriesApi,
+
+  // 邀请码管理
+  inviteCodes: adminInviteCodesApi,
+
+  // 系统配置
+  config: adminConfigApi,
+
+  // AI配置管理
+  aiConfig: {
+    models: adminAIModelsApi,
+    routingStrategies: adminAIRoutingStrategiesApi,
+  },
+
+  // 系统资源管理
+  resources: adminResourcesApi,
+
+  // 用户剧本管理（管理员专用）
+  scripts: adminScriptsApi,
+
+  // 订阅计划管理
+  subscriptionPlans: adminSubscriptionPlansApi,
+
+  // 用户管理
+  users: adminUsersApi,
+
+  // 系统管理员管理
+  admins: adminSystemAdminsApi,
+
+  // Dashboard统计
+  dashboard: adminDashboardApi,
+
+  // 预置剧本生成
+  presetScripts: adminPresetScriptsApi,
+
+  // API Key管理
+  apiKeys: apiKeysApi,
+
+  // 心域连接管理
+  heartSphereConnection: adminHeartSphereConnectionApi,
+
+  // 记忆系统管理
+  memory: adminMemoryApi,
+
+  // Graph流程编辑器管理
+  graph: adminGraphApi,
+
+  // 超时空信箱管理
+  chronosLetters: adminChronosLettersApi,
+
+  // 插件管理
+  plugin: adminPluginApi,
+
+  // 提示词管理
+  prompt: promptApi,
+
+  // 实体管理
+  entity: adminEntityApi,
+
+  // Graph 推荐
+  graphRecommendation: adminGraphRecommendationApi,
+
+  // 教育版管理
+  edu: adminEduApi,
+};

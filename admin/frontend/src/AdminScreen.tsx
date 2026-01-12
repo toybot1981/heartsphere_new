@@ -1,0 +1,478 @@
+import React from 'react';
+import { adminApi } from './services/api';
+import { AdminHeader } from './components';
+import { AdminSidebar } from './components/AdminSidebar';
+import { AdminLogin } from './components/AdminLogin';
+import { DashboardView } from './components/DashboardView';
+import { ErasManagement } from './components/ErasManagement';
+import { MainStoriesManagement } from './components/MainStoriesManagement';
+import { UsersManagement } from './components/UsersManagement';
+import { CharactersManagement } from './components/CharactersManagement';
+import { ScenariosManagement } from './components/ScenariosManagement';
+import { EventsManagement } from './components/EventsManagement';
+import { ItemsManagement } from './components/ItemsManagement';
+import { InviteCodesManagement } from './components/InviteCodesManagement';
+import { ApiKeysManagement } from './components/ApiKeysManagement';
+import { ResourcesManagement } from './components/ResourcesManagement';
+import { ImageManagement } from './components/ImageManagement';
+import { VideoManagement } from './components/VideoManagement';
+import { SubscriptionPlansManagement } from './components/SubscriptionPlansManagement';
+import { EmailConfigManagement } from './components/EmailConfigManagement';
+import { SettingsManagement } from './components/SettingsManagement';
+import { AdminsManagement } from './components/AdminsManagement';
+import { BillingManagement } from './components/billing';
+import { HeartSphereConnectionManagement } from './components/heartSphereConnection';
+import { MemoryManagement } from './components/memory';
+import { GraphManagement } from './components/GraphManagement';
+import { SkillsManagement } from './components/SkillsManagement';
+import { ChronosLettersManagement } from './components/ChronosLettersManagement';
+import { PluginManagement } from './components/PluginManagement';
+import { PromptManagement } from './components/PromptManagement';
+import { AgentScopeDemoAdmin } from './components/AgentScopeDemoAdmin';
+import { MentisManagementPage } from './components/MentisManagementPage';
+import { useAdminData } from './hooks';
+import { AdminStateProvider, useAdminState } from './contexts/AdminStateContext';
+import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
+import { showAlert } from './utils/dialog';
+import {
+    AdminDashboardPage as EduDashboardPage,
+    AdminStudentManagePage as EduStudentManagePage,
+    AdminTeacherManagePage as EduTeacherManagePage,
+    AdminContentManagePage as EduContentManagePage,
+    ContentReviewQueuePage as EduContentReviewQueuePage,
+    AdminAnalyticsPage as EduAnalyticsPage,
+    AdminSettingsPage as EduSettingsPage
+} from './pages/edu';
+
+// AdminScreen 现在作为独立的管理后台，不需要 gameState 等 props
+interface AdminScreenProps {
+    // 可选：如果需要，可以添加额外的 props
+}
+
+// Sidebar包装组件
+const AdminSidebarWrapper: React.FC = () => {
+    const { activeSection, setActiveSection } = useAdminState();
+    const { adminRole } = useAdminAuth();
+    return (
+        <AdminSidebar 
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+            adminRole={adminRole}
+        />
+    );
+};
+
+// 内部组件：使用Context
+const AdminScreenContent: React.FC = () => {
+    const { adminToken, logout } = useAdminAuth();
+    const { activeSection, setSettingsTab } = useAdminState();
+    
+    // 当切换到settings时，确保默认显示'general' tab
+    React.useEffect(() => {
+        if (activeSection === 'settings') {
+            setSettingsTab('general');
+        }
+    }, [activeSection, setSettingsTab]);
+    const { systemWorlds, systemEras, systemCharacters, systemScripts, systemMainStories, loadSystemData } = useAdminData(adminToken);
+
+    const handleLogout = () => {
+        logout();
+        // onBack removed - admin is standalone
+    };
+
+    const getTitle = () => {
+        const titles: Record<string, string> = {
+            'dashboard': '系统概览',
+            'eras': '场景管理',
+            'characters': 'E-Soul 角色数据库',
+            'scenarios': '互动剧本库',
+            'events': '剧本事件管理',
+            'items': '剧本物品管理',
+            'main-stories': '主线剧情管理',
+            'invite-codes': '邀请码管理',
+            'resources': '资源管理',
+            'images': '图片管理',
+            'videos': '视频管理',
+            'subscription-plans': '会员配置管理',
+            'email-config': '邮箱配置',
+            'users': '用户管理',
+            'admins': '系统管理员管理',
+            'settings': '系统全局设置',
+            'billing': '计费管理',
+            'heartsphere-connection': '心域连接管理',
+            'memory': '记忆系统管理',
+            'graph': 'Graph流程编辑器',
+            'skills': '技能管理',
+            'chronos-letters': '超时空信箱管理',
+            'plugins': '插件管理',
+            'prompts': '提示词管理',
+            'agentscope-demo': 'AgentScope 演示管理',
+            'edu-dashboard': '教育版概览',
+            'edu-students': '学生管理',
+            'edu-teachers': '教师管理',
+            'edu-content': '内容管理',
+            'edu-content-review': '内容审核',
+            'edu-analytics': '数据分析',
+            'edu-settings': '教育版系统设置',
+            'mentis-management': 'Mentis 管理',
+        };
+        return titles[activeSection] || '管理后台';
+    };
+
+        return (
+        <div className="flex h-screen bg-slate-950 text-white">
+            <AdminSidebarWrapper />
+            <div className="flex-1 flex flex-col min-w-0">
+                <AdminHeader 
+                    title={getTitle()} 
+                    onLogout={handleLogout} 
+                />
+                <div className="flex-1 overflow-y-auto p-8 bg-slate-950">
+                    {activeSection === 'dashboard' && (
+                        <DashboardView adminToken={adminToken} />
+                    )}
+                    {activeSection === 'eras' && (
+                        <ErasManagement
+                            eras={systemEras}
+                            adminToken={adminToken}
+                            onSave={async (data, editingId) => {
+                                if (!adminToken) return;
+                                try {
+                                const dto = {
+                                    name: data.name || '未命名场景',
+                                    description: data.description || '',
+                                    imageUrl: data.imageUrl || '',
+                                    startYear: data.startYear || null,
+                                    endYear: data.endYear || null,
+                                    isActive: data.isActive !== undefined ? data.isActive : true,
+                                    sortOrder: data.sortOrder || 0
+                                };
+                                if (editingId && typeof editingId === 'number') {
+                                    await adminApi.eras.update(editingId, dto, adminToken);
+                                } else {
+                                    await adminApi.eras.create(dto, adminToken);
+                                    }
+                                    await loadSystemData(adminToken);
+                                    showAlert('保存成功', '成功', 'success');
+                                } catch (error: any) {
+                                    showAlert('保存失败: ' + (error.message || '未知错误'), '错误', 'error');
+                                }
+                            }}
+                            onDelete={async (id) => {
+                                if (!adminToken) return;
+                                try {
+                                await adminApi.eras.delete(id, adminToken);
+                                    await loadSystemData(adminToken);
+                                    showAlert('删除成功', '成功', 'success');
+                                } catch (error: any) {
+                                    showAlert('删除失败: ' + (error.message || '未知错误'), '错误', 'error');
+                                }
+                            }}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'main-stories' && (
+                        <MainStoriesManagement
+                            mainStories={systemMainStories.map(story => ({
+                                ...story,
+                                systemEraName: systemEras.find(e => e.id === story.systemEraId)?.name
+                            }))}
+                            eras={systemEras}
+                            characters={systemCharacters}
+                            adminToken={adminToken}
+                            onSave={async (data, editingId) => {
+                                if (!adminToken) return;
+                                // MainStoriesManagement内部已处理保存逻辑
+                            }}
+                            onDelete={async (id) => {
+                                if (!adminToken) return;
+                                // MainStoriesManagement内部已处理删除逻辑
+                            }}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'users' && (
+                        <UsersManagement
+                            adminToken={adminToken}
+                            onRefresh={() => {
+                                if (adminToken) {
+                                    loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'characters' && (
+                        <CharactersManagement
+                            characters={systemCharacters}
+                            eras={systemEras}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                                        await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'scenarios' && (
+                        <ScenariosManagement
+                            scripts={systemScripts}
+                            eras={systemEras}
+                            characters={systemCharacters}
+                            worlds={systemWorlds}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'events' && (
+                        <EventsManagement
+                            eras={systemEras}
+                            systemEras={systemEras}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'items' && (
+                        <ItemsManagement
+                            eras={systemEras}
+                            systemEras={systemEras}
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'invite-codes' && (
+                        <InviteCodesManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'api-keys' && (
+                        <ApiKeysManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'resources' && (
+                        <ResourcesManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'images' && (
+                        <ImageManagement
+                            adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'videos' && (
+                        <VideoManagement
+                            adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'subscription-plans' && (
+                        <SubscriptionPlansManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'email-config' && (
+                        <EmailConfigManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'admins' && (
+                        <AdminsManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'settings' && (
+                        <SettingsManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                                                        await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'billing' && (
+                        <BillingManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                                                        await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'heartsphere-connection' && (
+                        <HeartSphereConnectionManagement 
+                            adminToken={adminToken} 
+                            onRefresh={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }} 
+                        />
+                    )}
+                    {activeSection === 'memory' && (
+                        <MemoryManagement adminToken={adminToken} />
+                    )}
+                    {activeSection === 'graph' && (
+                        <GraphManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'skills' && (
+                        <SkillsManagement
+                            adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'chronos-letters' && (
+                        <ChronosLettersManagement
+                            adminToken={adminToken}
+                            onRefresh={() => {
+                                if (adminToken) {
+                                    loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'plugins' && (
+                        <PluginManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'prompts' && (
+                        <PromptManagement
+                            adminToken={adminToken}
+                            onReload={async () => {
+                                if (adminToken) {
+                                    await loadSystemData(adminToken);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeSection === 'agentscope-demo' && (
+                        <AgentScopeDemoAdmin
+                            adminToken={adminToken}
+                        />
+                    )}
+                    {activeSection === 'edu-dashboard' && (
+                        <EduDashboardPage />
+                    )}
+                    {activeSection === 'edu-students' && (
+                        <EduStudentManagePage />
+                    )}
+                    {activeSection === 'edu-teachers' && (
+                        <EduTeacherManagePage />
+                    )}
+                    {activeSection === 'edu-content' && (
+                        <EduContentManagePage />
+                    )}
+                    {activeSection === 'edu-content-review' && (
+                        <EduContentReviewQueuePage />
+                    )}
+                    {activeSection === 'edu-analytics' && (
+                        <EduAnalyticsPage />
+                    )}
+                    {activeSection === 'edu-settings' && (
+                        <EduSettingsPage />
+                    )}
+                    {activeSection === 'mentis-management' && (
+                        <MentisManagementPage />
+                    )}
+                                                </div>
+                                        </div>
+                                </div>
+    );
+};
+
+// 登录包装组件
+const AdminLoginWrapper: React.FC = () => {
+    const { loginError, loading, login } = useAdminAuth();
+    
+    const handleLogin = async (username: string, password: string) => {
+        await login(username, password);
+    };
+
+    return (
+        <AdminLogin
+            onLogin={handleLogin}
+            onBack={() => window.location.href = "/"}
+            loginError={loginError}
+            loading={loading}
+        />
+    );
+};
+
+// 主组件
+// 注意：不再包装 AdminAuthProvider，因为 App.tsx 已经有了
+export const AdminScreen: React.FC<AdminScreenProps> = () => {
+    const { isAuthenticated } = useAdminAuth();
+
+    if (!isAuthenticated) {
+        return <AdminLoginWrapper />;
+    }
+
+    return (
+        <AdminStateProvider>
+            <AdminScreenContent />
+        </AdminStateProvider>
+    );
+};
+
