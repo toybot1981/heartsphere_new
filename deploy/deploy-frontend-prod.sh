@@ -14,7 +14,7 @@ NC='\033[0m'
 # 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+FRONTEND_DIR="${PROJECT_ROOT}/main/frontend"
 DIST_DIR="${FRONTEND_DIR}/dist"
 
 echo -e "${GREEN}========================================${NC}"

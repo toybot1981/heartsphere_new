@@ -1,0 +1,80 @@
+{
+  "0e07094e-2e79-4f32-b5db-a0383f987a8d": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.697065",
+    "updated_at": "2026-01-11T12:31:26.697075"
+  },
+  "c3163339-7f4d-4167-b710-83784d6f6853": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.699281",
+    "updated_at": "2026-01-11T12:31:26.699291"
+  },
+  "30559bc3-effa-4ab7-ba2d-328ebac66586": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.700134",
+    "updated_at": "2026-01-11T12:31:26.700140"
+  },
+  "b8863ab9-ad32-4f8c-ba9c-edf5a2663390": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.702859",
+    "updated_at": "2026-01-11T12:31:26.702870"
+  },
+  "719cdc79-ff6d-46a1-9725-58646e338b71": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.711465",
+    "updated_at": "2026-01-11T12:31:26.711473"
+  },
+  "f13d5a87-4f2e-4b7f-858e-623f2e6e4473": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.712278",
+    "updated_at": "2026-01-11T12:31:26.712282"
+  },
+  "848a49c0-5163-45be-99d4-a3e1bad21fa3": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.715202",
+    "updated_at": "2026-01-11T12:31:26.715212"
+  },
+  "c8dfbf72-36bf-4ce4-9f3e-62093a86f700": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.716370",
+    "updated_at": "2026-01-11T12:31:26.716375"
+  },
+  "59ca22cd-2ae5-4add-a356-9421fd9356d8": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.720799",
+    "updated_at": "2026-01-11T12:31:26.720808"
+  },
+  "30f9384b-551d-44a0-b67a-4e243ad5de0d": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.722291",
+    "updated_at": "2026-01-11T12:31:26.722300"
+  },
+  "8822efee-33af-4f1c-8d52-4bb7b875f1bc": {
+    "name": "general",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.726152",
+    "updated_at": "2026-01-11T12:31:26.726161"
+  },
+  "e7199c77-ab67-49c2-97d1-b5fc859d11a5": {
+    "name": "knowledge",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.728248",
+    "updated_at": "2026-01-11T12:31:26.728251"
+  },
+  "2edc0485-99e9-49d8-9501-b113f9c0d549": {
+    "name": "document",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:31:26.730516",
+    "updated_at": "2026-01-11T12:31:26.730525"
+  }
+}

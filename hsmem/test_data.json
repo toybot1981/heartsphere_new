@@ -1,0 +1,8 @@
+{
+  "messages": [
+    {"role": "user", "content": {"text": "你好，我叫李明"}},
+    {"role": "assistant", "content": {"text": "你好李明！"}},
+    {"role": "user", "content": {"text": "我喜欢编程"}}
+  ],
+  "user_id": "user_liming"
+}

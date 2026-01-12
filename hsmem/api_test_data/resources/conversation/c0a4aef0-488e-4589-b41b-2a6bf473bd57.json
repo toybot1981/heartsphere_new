@@ -1,0 +1,20 @@
+{
+  "id": "c0a4aef0-488e-4589-b41b-2a6bf473bd57",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我喜欢篮球和音乐"
+      },
+      {
+        "role": "assistant",
+        "content": "很好的爱好！"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:31:26.713490",
+  "metadata": {
+    "size": 169
+  }
+}

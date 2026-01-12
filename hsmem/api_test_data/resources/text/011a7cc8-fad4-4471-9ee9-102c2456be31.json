@@ -1,0 +1,15 @@
+{
+  "id": "011a7cc8-fad4-4471-9ee9-102c2456be31",
+  "modality": "text",
+  "data": {
+    "text": "Python 是一种高级编程语言，由 Guido van Rossum 创建",
+    "context": {
+      "topic": "programming",
+      "language": "Python"
+    }
+  },
+  "created_at": "2026-01-11T12:31:26.723740",
+  "metadata": {
+    "size": 174
+  }
+}

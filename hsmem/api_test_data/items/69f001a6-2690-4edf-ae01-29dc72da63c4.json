@@ -1,0 +1,15 @@
+{
+  "id": "69f001a6-2690-4edf-ae01-29dc72da63c4",
+  "resource_id": "c0a4aef0-488e-4589-b41b-2a6bf473bd57",
+  "content": "我喜欢篮球和音乐\n很好的爱好！",
+  "summary": "用户有 2 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.713895",
+  "updated_at": "2026-01-11T12:31:26.713897"
+}

@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # 1. 检查迁移脚本是否存在
 echo "1. 检查迁移脚本..."
-if [ -f "backend/src/main/resources/db/migration/V20250104__create_test_skill.sql" ]; then
+if [ -f "main/backend/src/main/resources/db/migration/V20250104__create_test_skill.sql" ]; then
     echo -e "${GREEN}✓${NC} 迁移脚本存在"
 else
     echo -e "${RED}✗${NC} 迁移脚本不存在"
@@ -29,7 +29,7 @@ if lsof -i :8080 > /dev/null 2>&1; then
     BACKEND_RUNNING=true
 else
     echo -e "${YELLOW}⚠${NC} 后端服务未运行 (端口 8080)"
-    echo "   提示: 请先启动后端服务: cd backend && mvn spring-boot:run"
+    echo "   提示: 请先启动后端服务: cd main/backend && mvn spring-boot:run"
     BACKEND_RUNNING=false
 fi
 
@@ -103,7 +103,7 @@ if [ "$BACKEND_RUNNING" = true ]; then
     echo "3. 查看是否显示'测试技能'"
 else
     echo "下一步操作:"
-    echo "1. 启动后端服务: cd backend && mvn spring-boot:run"
+    echo "1. 启动后端服务: cd main/backend && mvn spring-boot:run"
     echo "2. 等待服务启动完成（迁移脚本会自动执行）"
     echo "3. 重新运行此脚本验证"
 fi

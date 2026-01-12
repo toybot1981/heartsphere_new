@@ -1,0 +1,24 @@
+{
+  "id": "95238ac8-df89-4217-9a3c-672b2416ba40",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我正在学习Python编程"
+      },
+      {
+        "role": "assistant",
+        "content": "很好的选择"
+      },
+      {
+        "role": "user",
+        "content": "我觉得Python很简洁易学"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:12:22.664405",
+  "metadata": {
+    "size": 250
+  }
+}

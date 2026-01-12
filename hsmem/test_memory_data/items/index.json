@@ -1,0 +1,74 @@
+{
+  "ad61fdab-d5e8-4efd-abad-79adb7c3d1eb": {
+    "resource_id": "b299cc44-b8fe-41f3-abd0-12bf467f5da9",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:13:51.271939"
+  },
+  "64ed62c7-3bce-4e1a-9c8c-bfb547a8ba22": {
+    "resource_id": "b299cc44-b8fe-41f3-abd0-12bf467f5da9",
+    "memory_type": "personal_info",
+    "categories": [
+      "personal_info",
+      "basic_info"
+    ],
+    "created_at": "2026-01-11T12:13:51.272851"
+  },
+  "3dd8e594-7a7c-4c8f-9e03-1c72a99899f6": {
+    "resource_id": "73ebd08e-cf17-42d2-a931-42fb5ec4b3d9",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:13:51.277901"
+  },
+  "338781c3-a628-450d-8c4d-1c3dfc1b9f80": {
+    "resource_id": "9946aabb-55db-4ea2-93ff-674aa5508754",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:13:51.314166"
+  },
+  "87fed398-0e41-4691-8d93-dea0c9493afe": {
+    "resource_id": "96582268-c11e-41cb-8037-ae06f0c95483",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:26:39.686587"
+  },
+  "97524820-37e5-49c0-add7-5562394d953c": {
+    "resource_id": "96582268-c11e-41cb-8037-ae06f0c95483",
+    "memory_type": "personal_info",
+    "categories": [
+      "personal_info",
+      "basic_info"
+    ],
+    "created_at": "2026-01-11T12:26:39.690254"
+  },
+  "6bb2813f-9cb9-4a93-944d-7232d8271435": {
+    "resource_id": "378497a3-d223-47ea-aeb8-2e9b559341cf",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:26:39.704041"
+  },
+  "4597aefb-8060-4131-a133-e6d8c214b282": {
+    "resource_id": "32a177ba-595b-464b-aa8a-b6eb7711f52d",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-11T12:26:39.712449"
+  }
+}

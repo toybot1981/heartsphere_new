@@ -1,0 +1,122 @@
+server:
+  port: 8085
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: heartsphere-admin-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  # 多数据源配置
+  datasource:
+    # Admin主数据源（默认数据源）
+    admin:
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+      username: ${DB_USER:root}
+      password: ${DB_PASSWORD:123456}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        pool-name: AdminHikariPool
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+    # Mentis数据源（与admin使用同一个数据库heartsphere）
+    mentis:
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${MENTIS_DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+      username: ${DB_USER:root}
+      password: ${DB_PASSWORD:123456}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        pool-name: MentisHikariPool
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+    # Edu数据源
+    edu:
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${EDU_DB_NAME:heartsphere_edu}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+      username: ${DB_USER:root}
+      password: ${DB_PASSWORD:123456}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        pool-name: EduHikariPool
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+    # 注意：
+    # - main项目直接使用heartsphere数据库（admin数据源），不需要单独配置
+    # - company项目直接使用heartsphere数据库（admin数据源），不需要单独配置
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24小时
+
+# 教育版后端配置
+edu:
+  backend:
+    base-url: ${EDU_BACKEND_BASE_URL:http://localhost:8084}
+    timeout:
+      connect: 5000      # 连接超时（毫秒）
+      read: 30000        # 读取超时（毫秒）
+    retry:
+      max-attempts: 3    # 最大重试次数
+      backoff-delay: 1000  # 重试延迟（毫秒）
+
+# Mentis 后端配置
+mentis:
+  backend:
+    base-url: ${MENTIS_BACKEND_BASE_URL:http://localhost:8082}
+
+# Main 后端配置
+main:
+  backend:
+    base-url: ${MAIN_BACKEND_BASE_URL:http://localhost:8081}
+
+# 应用配置
+app:
+  # 图片存储配置
+  image:
+    storage:
+      base-url: ${IMAGE_BASE_URL:http://localhost:8081/images}
+      local:
+        path: ${IMAGE_STORAGE_PATH:../../uploads/images}
+      max-size: ${IMAGE_MAX_SIZE:10485760}  # 10MB
+    processing:
+      variants:
+        auto-generate: ${IMAGE_AUTO_GENERATE_VARIANTS:true}
+        include-high-quality: ${IMAGE_INCLUDE_HIGH_QUALITY:false}
+  # 视频存储配置
+  video:
+    storage:
+      local:
+        path: ${VIDEO_STORAGE_PATH:../../uploads/videos}
+      max-size: ${VIDEO_MAX_SIZE:104857600}  # 100MB
+      supported-formats: ${VIDEO_SUPPORTED_FORMATS:mp4,mov,avi,webm}
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.heartsphere.admin: DEBUG
+    com.heartsphere.admin.service.edu: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

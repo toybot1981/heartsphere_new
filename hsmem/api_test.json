@@ -1,0 +1,8 @@
+{
+  "messages": [
+    {"role": "user", "content": {"text": "你好，我叫王芳"}},
+    {"role": "assistant", "content": {"text": "你好王芳！"}},
+    {"role": "user", "content": {"text": "我喜欢绘画和音乐"}}
+  ],
+  "user_id": "user_wangfang"
+}

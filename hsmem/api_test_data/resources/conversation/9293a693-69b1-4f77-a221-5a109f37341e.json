@@ -1,0 +1,20 @@
+{
+  "id": "9293a693-69b1-4f77-a221-5a109f37341e",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我叫张伟，是程序员"
+      },
+      {
+        "role": "assistant",
+        "content": "你好张伟！"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:31:26.710058",
+  "metadata": {
+    "size": 169
+  }
+}

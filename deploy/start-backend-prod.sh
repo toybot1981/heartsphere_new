@@ -14,7 +14,7 @@ NC='\033[0m'
 
 # 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$(cd "${SCRIPT_DIR}/../backend" && pwd)"
+BACKEND_DIR="$(cd "${SCRIPT_DIR}/../main/backend" && pwd)"
 JAR_NAME="heartsphere-service-0.0.1-SNAPSHOT.jar"
 JAR_PATH="${BACKEND_DIR}/${JAR_NAME}"
 SERVICE_NAME="heartsphere-backend"

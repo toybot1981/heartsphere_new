@@ -1,0 +1,18 @@
+{
+  "id": "811488bf-506c-4ab0-9639-38dce1438da5",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "string",
+        "content": {
+          "additionalProp1": {}
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:52:37.810800",
+  "metadata": {
+    "size": 70
+  }
+}

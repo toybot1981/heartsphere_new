@@ -1,0 +1,15 @@
+{
+  "id": "872bc08a-7b87-49fa-be16-6e224870ed77",
+  "resource_id": "640ba83e-eef4-4c54-b39a-64a1469b32b9",
+  "content": "我是一名设计师，喜欢摄影和旅行",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.693317",
+  "updated_at": "2026-01-11T12:31:26.693324"
+}

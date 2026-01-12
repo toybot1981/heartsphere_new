@@ -1,0 +1,15 @@
+{
+  "id": "783e6226-40a6-4dc2-b139-b098394850d5",
+  "resource_id": "12cc5880-e67c-4b60-9bba-db37314401ed",
+  "content": "你好，我叫李明，是一名软件工程师",
+  "summary": "个人信息: 你好，我叫李明，是一名软件工程师",
+  "memory_type": "personal_info",
+  "importance": 0.8,
+  "categories": [
+    "personal_info",
+    "basic_info"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:26:37.128716",
+  "updated_at": "2026-01-11T12:26:37.128720"
+}

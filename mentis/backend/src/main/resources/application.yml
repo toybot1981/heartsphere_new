@@ -1,0 +1,91 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: heartsphere-mentis-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+
+# JWT 配置（与主客户端使用相同的 secret，实现单点登录）
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-in-production}  # 与主客户端使用相同的 secret
+  expiration: ${JWT_EXPIRATION:86400000}  # 24小时，与主客户端保持一致
+
+# Mentis 配置
+mentis:
+  enabled: ${MENTIS_ENABLED:true}
+  ai:
+    enabled: ${MENTIS_AI_ENABLED:true}
+    api-base-url: ${MENTIS_AI_API_BASE_URL:http://localhost:8081}
+    api-key: ${MENTIS_AI_API_KEY:hs_x7rIYyIXwC6f7LJte0NhcfVeT4EybksmSEZQt5ovMaiiEUNU}
+  auth:
+    # 用户服务配置（可选，用于从主客户端获取用户信息）
+    user-service:
+      enabled: ${MENTIS_AUTH_USER_SERVICE_ENABLED:true}  # 启用，从主客户端获取用户信息
+      base-url: ${MENTIS_AUTH_USER_SERVICE_BASE_URL:http://localhost:8081}
+  # AgentScope 配置
+  agentscope:
+    enabled: ${MENTIS_AGENTSCOPE_ENABLED:true}  # 是否启用 AgentScope 增强功能
+    # 多智能体协作
+    multi-agent:
+      enabled: ${MENTIS_AGENTSCOPE_MULTI_AGENT_ENABLED:false}
+    # 长期记忆管理
+    memory:
+      enabled: ${MENTIS_AGENTSCOPE_MEMORY_ENABLED:false}
+    # 任务规划
+    planning:
+      enabled: ${MENTIS_AGENTSCOPE_PLANNING_ENABLED:false}
+    # 工具调用优化
+    tool-optimization:
+      enabled: ${MENTIS_AGENTSCOPE_TOOL_OPTIMIZATION_ENABLED:false}
+      parallel-calls: ${MENTIS_AGENTSCOPE_PARALLEL_CALLS_ENABLED:false}
+      streaming-responses: ${MENTIS_AGENTSCOPE_STREAMING_RESPONSES_ENABLED:false}
+    # 结构化输出
+    structured-output:
+      enabled: ${MENTIS_AGENTSCOPE_STRUCTURED_OUTPUT_ENABLED:false}
+    # 钩子函数系统
+    hooks:
+      enabled: ${MENTIS_AGENTSCOPE_HOOKS_ENABLED:false}
+    # 会话状态管理增强
+    session:
+      enabled: ${MENTIS_AGENTSCOPE_SESSION_ENABLED:false}
+  vm:
+    enabled: ${MENTIS_VM_ENABLED:true} # 启用VM服务
+    provider: ${MENTIS_VM_PROVIDER:docker} # 使用 Docker 作为 VM 提供者
+  default-vm-image: ${MENTIS_DEFAULT_VM_IMAGE:ubuntu:latest}
+  default-vm-cpu: ${MENTIS_DEFAULT_VM_CPU:2}
+  default-vm-memory: ${MENTIS_DEFAULT_VM_MEMORY:2048}
+  default-vm-disk: ${MENTIS_DEFAULT_VM_DISK:20}
+  task-timeout: ${MENTIS_TASK_TIMEOUT:300}
+  computer-use-enabled: ${MENTIS_COMPUTER_USE_ENABLED:true}
+  docker:
+    host: ${MENTIS_DOCKER_HOST:tcp://localhost:2375}
+  gui:
+    browser: ${MENTIS_GUI_BROWSER:chrome}
+    headless: ${MENTIS_GUI_HEADLESS:true}
+    timeout: ${MENTIS_GUI_TIMEOUT:30}
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.heartsphere.mentis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log

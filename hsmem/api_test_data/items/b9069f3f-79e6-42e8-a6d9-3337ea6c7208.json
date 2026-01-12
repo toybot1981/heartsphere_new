@@ -1,0 +1,15 @@
+{
+  "id": "b9069f3f-79e6-42e8-a6d9-3337ea6c7208",
+  "resource_id": "9293a693-69b1-4f77-a221-5a109f37341e",
+  "content": "我叫张伟，是程序员",
+  "summary": "个人信息: 我叫张伟，是程序员",
+  "memory_type": "personal_info",
+  "importance": 0.8,
+  "categories": [
+    "personal_info",
+    "basic_info"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.710672",
+  "updated_at": "2026-01-11T12:31:26.710678"
+}

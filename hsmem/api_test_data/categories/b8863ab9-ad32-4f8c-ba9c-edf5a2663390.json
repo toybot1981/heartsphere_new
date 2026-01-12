@@ -1,0 +1,13 @@
+{
+  "id": "b8863ab9-ad32-4f8c-ba9c-edf5a2663390",
+  "name": "basic_info",
+  "summary": "关于 basic_info 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "e4e654ae-03b8-4c2c-9b57-04a408a0a4e2"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.702859",
+  "updated_at": "2026-01-11T12:31:26.702870",
+  "version": 1
+}

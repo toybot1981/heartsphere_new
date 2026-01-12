@@ -1,0 +1,15 @@
+{
+  "id": "6bb2813f-9cb9-4a93-944d-7232d8271435",
+  "resource_id": "378497a3-d223-47ea-aeb8-2e9b559341cf",
+  "content": "我喜欢喝咖啡",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:26:39.704041",
+  "updated_at": "2026-01-11T12:26:39.704044"
+}

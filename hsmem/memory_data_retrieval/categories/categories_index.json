@@ -1,0 +1,74 @@
+{
+  "515fcc7d-8f33-4f03-ba02-9a9cb84539e3": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.662364",
+    "updated_at": "2026-01-11T12:12:22.662367"
+  },
+  "7e945cfa-114c-465c-9d5d-ddddbb62682e": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.662789",
+    "updated_at": "2026-01-11T12:12:22.662792"
+  },
+  "032e0a38-12ec-4946-8ff1-43a746eaeaaa": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.663290",
+    "updated_at": "2026-01-11T12:12:22.663295"
+  },
+  "81f37131-8e34-4c65-8d61-c267819ae6ae": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.663914",
+    "updated_at": "2026-01-11T12:12:22.663920"
+  },
+  "27d63964-b4e5-42c1-a114-ab9289310519": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.665563",
+    "updated_at": "2026-01-11T12:12:22.665566"
+  },
+  "3ecf1a22-94f6-43e8-bfef-4d396f349f32": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:22.666048",
+    "updated_at": "2026-01-11T12:12:22.666051"
+  },
+  "bd33480a-1efb-4613-8cdd-36a07a13d7be": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.979526",
+    "updated_at": "2026-01-11T12:26:56.979528"
+  },
+  "ee81fb60-0d64-4d69-96ed-57cf0b0073bb": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.980307",
+    "updated_at": "2026-01-11T12:26:56.980311"
+  },
+  "e12288cb-8553-42a6-9830-d8c853141115": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.980859",
+    "updated_at": "2026-01-11T12:26:56.980861"
+  },
+  "08a5a430-6787-40e4-9b1b-5f0df927da36": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.981355",
+    "updated_at": "2026-01-11T12:26:56.981357"
+  },
+  "04c6c0ff-f614-4bba-88a9-878d41dd3a57": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.982649",
+    "updated_at": "2026-01-11T12:26:56.982651"
+  },
+  "3e1a9bf1-7fb5-404c-be4b-c5369e442ad4": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:56.983109",
+    "updated_at": "2026-01-11T12:26:56.983111"
+  }
+}

@@ -56,3 +56,4 @@ backend/src/main/resources/application-*.local.yml
 **/*password*.properties
 heartsphere-service-*.jar
 *.jar
+node_modules

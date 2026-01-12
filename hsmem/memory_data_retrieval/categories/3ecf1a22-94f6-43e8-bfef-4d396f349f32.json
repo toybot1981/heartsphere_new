@@ -1,0 +1,13 @@
+{
+  "id": "3ecf1a22-94f6-43e8-bfef-4d396f349f32",
+  "name": "user_profile",
+  "summary": "关于 user_profile 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "419fb0dc-b303-43d1-a27a-a47cef62105e"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:12:22.666048",
+  "updated_at": "2026-01-11T12:12:22.666051",
+  "version": 1
+}

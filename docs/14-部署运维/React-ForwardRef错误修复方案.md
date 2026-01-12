@@ -18,7 +18,7 @@ at vendor-9yK6GhpT.js:9:15063
 
 ### 方案1：更新 Vite 配置（已实施）
 
-已更新 `frontend/vite.config.ts`：
+已更新 `main/frontend/vite.config.ts`：
 
 1. **改进代码分割逻辑**：
    - 确保 React、React-DOM 和 @antv/x6-react 相关包在同一个 chunk (`vendor-react`)
@@ -51,7 +51,7 @@ sudo ./redeploy-frontend.sh
 #### 1. 清理所有缓存和依赖
 
 ```bash
-cd /path/to/heartsphere_new/frontend
+cd /path/to/heartsphere_new/main/frontend
 rm -rf node_modules dist .vite .cache package-lock.json
 npm cache clean --force
 ```

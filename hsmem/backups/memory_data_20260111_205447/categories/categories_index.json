@@ -1,0 +1,74 @@
+{
+  "464ac0bb-aaa9-465e-a0eb-b9106c467e83": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.035396",
+    "updated_at": "2026-01-11T12:12:13.035399"
+  },
+  "03f9d867-1b5e-4363-b8ef-fb19efb8dde3": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.036064",
+    "updated_at": "2026-01-11T12:12:13.036067"
+  },
+  "a0aae42f-1eac-459c-94ac-3cbee0998346": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.036732",
+    "updated_at": "2026-01-11T12:12:13.036736"
+  },
+  "31eab0b2-6e80-4163-aad5-5f01ed5e3706": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.037375",
+    "updated_at": "2026-01-11T12:12:13.037380"
+  },
+  "af9c9b14-fe1a-4245-a646-cbbf35cdea41": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.038260",
+    "updated_at": "2026-01-11T12:12:13.038267"
+  },
+  "9d4d5457-5a76-4b4d-b0f7-4cd20c9272e4": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:13.039456",
+    "updated_at": "2026-01-11T12:12:13.039460"
+  },
+  "9571ea03-8830-49b5-a06d-cf41e2fac36a": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.130531",
+    "updated_at": "2026-01-11T12:26:37.130535"
+  },
+  "d413597e-0276-4e17-a78d-31ee71c957e0": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.132091",
+    "updated_at": "2026-01-11T12:26:37.132098"
+  },
+  "864ed3f8-1c92-47a4-a872-fd8f39c90770": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.133023",
+    "updated_at": "2026-01-11T12:26:37.133026"
+  },
+  "220bd92e-5392-4adb-ba47-fdc2ac148f29": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.133982",
+    "updated_at": "2026-01-11T12:26:37.133986"
+  },
+  "8c99b257-714c-4bcd-a39b-f05ba1ea0f57": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.135427",
+    "updated_at": "2026-01-11T12:26:37.135434"
+  },
+  "119e2754-8419-42ae-90ac-135e59cd1949": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:37.137338",
+    "updated_at": "2026-01-11T12:26:37.137341"
+  }
+}

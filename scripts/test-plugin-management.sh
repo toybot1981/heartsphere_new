@@ -23,7 +23,7 @@ if lsof -ti:8081 > /dev/null 2>&1; then
     BACKEND_RUNNING=true
 else
     echo -e "${RED}✗ 后端服务未运行 (端口 8081)${NC}"
-    echo -e "${YELLOW}  请先启动后端服务: cd backend && mvn spring-boot:run${NC}"
+    echo -e "${YELLOW}  请先启动后端服务: cd main/backend && mvn spring-boot:run${NC}"
     BACKEND_RUNNING=false
 fi
 echo ""
@@ -35,14 +35,14 @@ if lsof -ti:3000 > /dev/null 2>&1; then
     FRONTEND_RUNNING=true
 else
     echo -e "${RED}✗ 前端服务未运行 (端口 3000)${NC}"
-    echo -e "${YELLOW}  请先启动前端服务: cd frontend && npm run dev${NC}"
+    echo -e "${YELLOW}  请先启动前端服务: cd main/frontend && npm run dev${NC}"
     FRONTEND_RUNNING=false
 fi
 echo ""
 
 # 检查数据库迁移文件
 echo "3. 检查数据库迁移文件..."
-MIGRATION_FILES=$(ls -1 backend/src/main/resources/db/migration/V20250104*.sql 2>/dev/null | wc -l | tr -d ' ')
+MIGRATION_FILES=$(ls -1 main/backend/src/main/resources/db/migration/V20250104*.sql 2>/dev/null | wc -l | tr -d ' ')
 if [ "$MIGRATION_FILES" -ge 2 ]; then
     echo -e "${GREEN}✓ 找到 $MIGRATION_FILES 个迁移文件${NC}"
     echo "   - V20250104__create_plugin_system_tables.sql"
@@ -54,7 +54,7 @@ echo ""
 
 # 检查后端代码
 echo "4. 检查后端代码..."
-JAVA_FILES=$(find backend/src/main/java/com/heartsphere/plugin -name "*.java" 2>/dev/null | wc -l | tr -d ' ')
+JAVA_FILES=$(find main/backend/src/main/java/com/heartsphere/plugin -name "*.java" 2>/dev/null | wc -l | tr -d ' ')
 if [ "$JAVA_FILES" -gt 0 ]; then
     echo -e "${GREEN}✓ 找到 $JAVA_FILES 个Java文件${NC}"
 else
@@ -64,9 +64,9 @@ echo ""
 
 # 检查前端代码
 echo "5. 检查前端代码..."
-if [ -f "frontend/admin/components/PluginManagement.tsx" ] && \
-   [ -f "frontend/services/api/admin/plugin.ts" ] && \
-   [ -f "frontend/services/api/admin/pluginTypes.ts" ]; then
+if [ -f "main/frontend/admin/components/PluginManagement.tsx" ] && \
+   [ -f "main/frontend/services/api/admin/plugin.ts" ] && \
+   [ -f "main/frontend/services/api/admin/pluginTypes.ts" ]; then
     echo -e "${GREEN}✓ 前端文件完整${NC}"
 else
     echo -e "${RED}✗ 前端文件不完整${NC}"

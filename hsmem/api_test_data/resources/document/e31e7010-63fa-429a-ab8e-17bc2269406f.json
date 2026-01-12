@@ -1,0 +1,13 @@
+{
+  "id": "e31e7010-63fa-429a-ab8e-17bc2269406f",
+  "modality": "document",
+  "data": {
+    "title": "机器学习入门",
+    "content": "机器学习是人工智能的一个分支",
+    "author": "AI Researcher"
+  },
+  "created_at": "2026-01-11T12:31:26.727199",
+  "metadata": {
+    "size": 175
+  }
+}

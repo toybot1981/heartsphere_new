@@ -1,0 +1,13 @@
+{
+  "id": "30559bc3-effa-4ab7-ba2d-328ebac66586",
+  "name": "personal_info",
+  "summary": "关于 personal_info 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "e4e654ae-03b8-4c2c-9b57-04a408a0a4e2"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.700134",
+  "updated_at": "2026-01-11T12:31:26.700140",
+  "version": 1
+}

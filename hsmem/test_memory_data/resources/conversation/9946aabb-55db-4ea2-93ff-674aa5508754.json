@@ -1,0 +1,20 @@
+{
+  "id": "9946aabb-55db-4ea2-93ff-674aa5508754",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我喜欢喝茶"
+      },
+      {
+        "role": "assistant",
+        "content": "好的"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:13:51.287058",
+  "metadata": {
+    "size": 127
+  }
+}

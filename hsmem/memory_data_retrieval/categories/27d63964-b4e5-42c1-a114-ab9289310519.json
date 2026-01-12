@@ -1,0 +1,13 @@
+{
+  "id": "27d63964-b4e5-42c1-a114-ab9289310519",
+  "name": "preferences",
+  "summary": "关于 preferences 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "419fb0dc-b303-43d1-a27a-a47cef62105e"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:12:22.665563",
+  "updated_at": "2026-01-11T12:12:22.665566",
+  "version": 1
+}

@@ -36,7 +36,7 @@ check_service() {
         return 0
     else
         print_error "后端服务未运行，请先启动后端服务"
-        print_info "启动命令: cd backend && mvn spring-boot:run"
+        print_info "启动命令: cd main/backend && mvn spring-boot:run"
         return 1
     fi
 }

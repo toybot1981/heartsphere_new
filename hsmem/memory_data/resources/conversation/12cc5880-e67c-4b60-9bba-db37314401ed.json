@@ -1,0 +1,40 @@
+{
+  "id": "12cc5880-e67c-4b60-9bba-db37314401ed",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好，我叫李明，是一名软件工程师"
+      },
+      {
+        "role": "assistant",
+        "content": "你好李明！很高兴认识你"
+      },
+      {
+        "role": "user",
+        "content": "我喜欢编程，特别是 Python 和 Java"
+      },
+      {
+        "role": "assistant",
+        "content": "Python 和 Java 都是很好的语言"
+      },
+      {
+        "role": "user",
+        "content": "我每天早上都会喝咖啡，然后开始工作"
+      },
+      {
+        "role": "assistant",
+        "content": "咖啡确实是程序员的燃料！"
+      },
+      {
+        "role": "user",
+        "content": "周末我喜欢去爬山，放松心情"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:26:37.123547",
+  "metadata": {
+    "size": 808
+  }
+}

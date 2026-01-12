@@ -1,0 +1,31 @@
+server.port=8081
+spring.datasource.url=jdbc:mysql://localhost:3306/heartsphere?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# HTTP响应编码配置
+server.servlet.encoding.charset=UTF-8
+server.servlet.encoding.enabled=true
+server.servlet.encoding.force=true
+
+# JSON响应编码
+spring.http.encoding.charset=UTF-8
+spring.http.encoding.enabled=true
+spring.http.encoding.force=true
+
+# 静态资源配置 - 防止API请求被误认为是静态资源
+spring.web.resources.add-mappings=false
+spring.mvc.static-path-pattern=/static/**
+spring.mvc.pathmatch.matching-strategy=ant_path_matcher
+spring.mvc.pathmatch.use-suffix-pattern=false
+spring.mvc.pathmatch.use-trailing-slash=false
+
+# 允许 bean 定义覆盖（解决 MongoDB 和 JPA Repository 名称冲突）
+spring.main.allow-bean-definition-overriding=true
+
+# 禁用 MongoDB 自动配置
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.mongodb.MongoDataAutoConfiguration,org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration

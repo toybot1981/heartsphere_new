@@ -1,0 +1,32 @@
+{
+  "id": "2f00de1e-60fd-4137-859a-6be6e80e10c6",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好，我叫王芳，是一名产品经理"
+      },
+      {
+        "role": "assistant",
+        "content": "你好王芳！很高兴认识你"
+      },
+      {
+        "role": "user",
+        "content": "我在一家科技公司工作，负责AI产品的规划"
+      },
+      {
+        "role": "assistant",
+        "content": "听起来很有挑战性的工作"
+      },
+      {
+        "role": "user",
+        "content": "是的，但我很享受。我平时喜欢阅读科技新闻"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:26:55.189349",
+  "metadata": {
+    "size": 641
+  }
+}

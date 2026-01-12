@@ -1,0 +1,20 @@
+{
+  "id": "49b7f63a-db01-424c-a66e-228857385a0d",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我今年20岁"
+      },
+      {
+        "role": "assistant",
+        "content": "好的"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:13:51.332423",
+  "metadata": {
+    "size": 123
+  }
+}

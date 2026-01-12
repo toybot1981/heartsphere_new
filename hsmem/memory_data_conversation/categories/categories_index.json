@@ -1,0 +1,74 @@
+{
+  "662df073-f775-47ea-b3b8-7e12eec1f3d1": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.170573",
+    "updated_at": "2026-01-11T12:12:21.170576"
+  },
+  "0a9c5aa1-b1ba-4336-8864-b6f27eba399c": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.171127",
+    "updated_at": "2026-01-11T12:12:21.171132"
+  },
+  "676a855f-d959-48a9-9056-ee07ae9e6933": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.171659",
+    "updated_at": "2026-01-11T12:12:21.171663"
+  },
+  "f3e4cae9-1442-4e69-9943-0fe87c361f49": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.172230",
+    "updated_at": "2026-01-11T12:12:21.172236"
+  },
+  "1d22097b-7021-4313-b4d7-b7b8710a8fa9": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.173430",
+    "updated_at": "2026-01-11T12:12:21.173432"
+  },
+  "90298423-fa4c-42fd-8eed-b7249f9660f3": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:12:21.174075",
+    "updated_at": "2026-01-11T12:12:21.174078"
+  },
+  "16025186-ee7d-47a1-9e30-ea3c07ef8823": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.190901",
+    "updated_at": "2026-01-11T12:26:55.190903"
+  },
+  "362a6cba-11cf-4ed9-8de1-9f384f6e9672": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.191461",
+    "updated_at": "2026-01-11T12:26:55.191463"
+  },
+  "8fbd509d-bb91-4459-aace-bb68a8aebe61": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.191895",
+    "updated_at": "2026-01-11T12:26:55.191897"
+  },
+  "7af3c770-4e31-46f7-97a1-b95677a4cd98": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.192349",
+    "updated_at": "2026-01-11T12:26:55.192350"
+  },
+  "099735a5-e098-4a83-8af7-e7b00b8c48ef": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.193319",
+    "updated_at": "2026-01-11T12:26:55.193321"
+  },
+  "67a91142-8aa0-44ea-bc67-3809cf38f896": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-11T12:26:55.193750",
+    "updated_at": "2026-01-11T12:26:55.193752"
+  }
+}

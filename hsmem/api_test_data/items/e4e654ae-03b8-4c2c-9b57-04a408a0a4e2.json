@@ -1,0 +1,15 @@
+{
+  "id": "e4e654ae-03b8-4c2c-9b57-04a408a0a4e2",
+  "resource_id": "640ba83e-eef4-4c54-b39a-64a1469b32b9",
+  "content": "你好，我是王芳\n我是一名设计师，喜欢摄影和旅行",
+  "summary": "个人信息: 你好，我是王芳, 我是一名设计师，喜欢摄影和旅行",
+  "memory_type": "personal_info",
+  "importance": 0.8,
+  "categories": [
+    "personal_info",
+    "basic_info"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.694274",
+  "updated_at": "2026-01-11T12:31:26.694280"
+}

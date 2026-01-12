@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSMem 管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .items-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .item-type {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .item-date {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .item-summary {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .categories-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .category-tag {
+            padding: 6px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🧠 HSMem 管理后台</h1>
+            <p>HeartSphere 记忆系统管理界面</p>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>💬 对话资源</h3>
+                <div class="value" id="resources-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>📝 记忆项</h3>
+                <div class="value" id="items-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>📁 记忆分类</h3>
+                <div class="value" id="categories-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>⚡ 系统状态</h3>
+                <div class="value" id="system-status" style="font-size: 18px;">-</div>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="main-content">
+            <!-- 左侧：添加记忆 -->
+            <div class="panel">
+                <h2>➕ 添加记忆</h2>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('conversation')">对话</button>
+                    <button class="tab" onclick="switchTab('text')">文本</button>
+                    <button class="tab" onclick="switchTab('document')">文档</button>
+                </div>
+
+                <!-- 对话表单 -->
+                <div id="conversation-tab" class="tab-content active">
+                    <form id="conversation-form">
+                        <div class="form-group">
+                            <label>用户ID</label>
+                            <input type="text" id="conv-user-id" placeholder="例如: user_001">
+                        </div>
+                        <div class="form-group">
+                            <label>对话内容</label>
+                            <textarea id="conv-messages" placeholder='例如:
+用户: 你好，我叫李明
+助手: 你好李明！
+用户: 我喜欢编程'></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 保存对话记忆</button>
+                    </form>
+                </div>
+
+                <!-- 文本表单 -->
+                <div id="text-tab" class="tab-content">
+                    <form id="text-form">
+                        <div class="form-group">
+                            <label>用户ID</label>
+                            <input type="text" id="text-user-id" placeholder="例如: user_001">
+                        </div>
+                        <div class="form-group">
+                            <label>文本内容</label>
+                            <textarea id="text-content" placeholder="输入要记忆的文本内容..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 保存文本记忆</button>
+                    </form>
+                </div>
+
+                <!-- 文档表单 -->
+                <div id="document-tab" class="tab-content">
+                    <form id="document-form">
+                        <div class="form-group">
+                            <label>用户ID</label>
+                            <input type="text" id="doc-user-id" placeholder="例如: user_001">
+                        </div>
+                        <div class="form-group">
+                            <label>文档标题</label>
+                            <input type="text" id="doc-title" placeholder="文档标题">
+                        </div>
+                        <div class="form-group">
+                            <label>文档内容</label>
+                            <textarea id="doc-content" placeholder="文档内容..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 保存文档记忆</button>
+                    </form>
+                </div>
+
+                <div id="alert-container"></div>
+            </div>
+
+            <!-- 右侧：记忆列表 -->
+            <div class="panel">
+                <h2>📋 记忆列表</h2>
+
+                <div class="form-group">
+                    <input type="text" id="search-input" placeholder="🔍 搜索记忆...">
+                </div>
+
+                <div class="form-group">
+                    <select id="category-filter">
+                        <option value="">所有分类</option>
+                    </select>
+                </div>
+
+                <div id="memory-items" class="items-list">
+                    <div class="loading">⏳ 加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分类面板 -->
+        <div class="panel">
+            <h2>🗂️ 记忆分类</h2>
+            <div class="categories-list" id="categories-container">
+                <div class="loading">⏳ 加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        // 切换标签页
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 显示提示信息
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                document.getElementById('resources-count').textContent = data.statistics.resources_count || 0;
+                document.getElementById('items-count').textContent = data.statistics.items_count || 0;
+                document.getElementById('categories-count').textContent = data.statistics.categories_count || 0;
+                document.getElementById('system-status').textContent = data.status || 'unknown';
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 加载分类列表
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/memory/categories`);
+                const data = await response.json();
+
+                const container = document.getElementById('categories-container');
+                const filter = document.getElementById('category-filter');
+
+                if (data.success && data.data.categories.length > 0) {
+                    const categories = data.data.categories;
+
+                    // 更新过滤器
+                    filter.innerHTML = '<option value="">所有分类</option>';
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        option.textContent = `${cat.name} (${len(cat.item_ids)})`;
+                        filter.appendChild(option);
+                    });
+
+                    // 显示分类标签
+                    container.innerHTML = categories.map(cat =>
+                        `<span class="category-tag">${cat.name} (${len(cat.item_ids)})</span>`
+                    ).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无分类</p></div>';
+                }
+            } catch (error) {
+                console.error('加载分类失败:', error);
+            }
+        }
+
+        // 加载记忆项
+        async function loadMemoryItems() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/memory/statistics`);
+                const data = await response.json();
+
+                const container = document.getElementById('memory-items');
+
+                if (data.success) {
+                    const stats = data.data.statistics;
+
+                    if (stats.items_count === 0) {
+                        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无记忆项</p></div>';
+                    } else {
+                        container.innerHTML = `
+                            <div class="item">
+                                <div class="item-header">
+                                    <span class="item-type">系统提示</span>
+                                </div>
+                                <div class="item-summary">共有 ${stats.items_count} 个记忆项</div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('加载记忆项失败:', error);
+                document.getElementById('memory-items').innerHTML =
+                    '<div class="alert alert-error">加载失败，请确保API服务器正在运行</div>';
+            }
+        }
+
+        // 保存对话
+        document.getElementById('conversation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('conv-user-id').value;
+            const messagesText = document.getElementById('conv-messages').value;
+
+            if (!messagesText.trim()) {
+                showAlert('请输入对话内容', 'error');
+                return;
+            }
+
+            // 解析对话
+            const lines = messagesText.split('\n').filter(line => line.trim());
+            const messages = [];
+
+            lines.forEach(line => {
+                if (line.toLowerCase().includes('用户:')) {
+                    messages.push({
+                        role: 'user',
+                        content: { text: line.split('用户:')[1].trim() }
+                    });
+                } else if (line.toLowerCase().includes('助手:') || line.toLowerCase().includes('assistant:')) {
+                    messages.push({
+                        role: 'assistant',
+                        content: { text: line.split(/助手:|assistant:/i)[1].trim() }
+                    });
+                }
+            });
+
+            if (messages.length === 0) {
+                // 直接按行分割
+                messages.push({
+                    role: 'user',
+                    content: { text: messagesText }
+                });
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/memory/memorize/conversation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages, user_id: userId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('对话记忆保存成功！');
+                    document.getElementById('conv-messages').value = '';
+                    loadStats();
+                    loadCategories();
+                    loadMemoryItems();
+                } else {
+                    showAlert('保存失败: ' + (data.detail || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误: ' + error.message, 'error');
+            }
+        });
+
+        // 保存文本
+        document.getElementById('text-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('text-user-id').value;
+            const text = document.getElementById('text-content').value;
+
+            if (!text.trim()) {
+                showAlert('请输入文本内容', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/memory/memorize/text`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, user_id: userId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('文本记忆保存成功！');
+                    document.getElementById('text-content').value = '';
+                    loadStats();
+                } else {
+                    showAlert('保存失败: ' + (data.detail || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误: ' + error.message, 'error');
+            }
+        });
+
+        // 保存文档
+        document.getElementById('document-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('doc-user-id').value;
+            const title = document.getElementById('doc-title').value;
+            const content = document.getElementById('doc-content').value;
+
+            if (!title.trim() || !content.trim()) {
+                showAlert('请填写完整的文档信息', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/memory/memorize/document`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content, user_id: userId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('文档记忆保存成功！');
+                    document.getElementById('doc-title').value = '';
+                    document.getElementById('doc-content').value = '';
+                    loadStats();
+                } else {
+                    showAlert('保存失败: ' + (data.detail || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误: ' + error.message, 'error');
+            }
+        });
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadCategories();
+            loadMemoryItems();
+
+            // 定时刷新统计
+            setInterval(loadStats, 5000);
+        });
+    </script>
+</body>
+</html>

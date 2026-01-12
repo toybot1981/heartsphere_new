@@ -1,0 +1,32 @@
+{
+  "id": "640ba83e-eef4-4c54-b39a-64a1469b32b9",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好，我是王芳"
+      },
+      {
+        "role": "assistant",
+        "content": "你好王芳！"
+      },
+      {
+        "role": "user",
+        "content": "我是一名设计师，喜欢摄影和旅行"
+      },
+      {
+        "role": "assistant",
+        "content": "很有艺术气息！"
+      },
+      {
+        "role": "user",
+        "content": "我每周都会去瑜伽课"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:31:26.691615",
+  "metadata": {
+    "size": 447
+  }
+}

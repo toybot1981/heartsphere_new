@@ -1,0 +1,30 @@
+{
+  "id": "47462d46-a97d-4d0c-91c2-a8a90b813503",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "你好，我叫李明"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "你好李明！"
+        }
+      },
+      {
+        "role": "user",
+        "content": {
+          "text": "我喜欢编程"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:37:32.979746",
+  "metadata": {
+    "size": 250
+  }
+}

@@ -1,0 +1,712 @@
+{
+  "characters": [
+    {
+      "name": "时小光",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "time_audit",
+          "name": "时间审计",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我分析一下今天的时间使用情况"
+            },
+            {
+              "type": "natural",
+              "text": "我想知道今天都做了什么"
+            }
+          ]
+        },
+        {
+          "id": "task_breakdown",
+          "name": "任务分解",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "把这个任务分解成小步骤"
+            },
+            {
+              "type": "natural",
+              "text": "帮我拆解一下这个项目"
+            }
+          ]
+        },
+        {
+          "id": "priority_matrix",
+          "name": "优先级矩阵",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我分析一下这些任务的优先级"
+            },
+            {
+              "type": "natural",
+              "text": "哪些任务比较紧急重要"
+            }
+          ]
+        },
+        {
+          "id": "time_blocking",
+          "name": "时间块规划",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "用时间块法帮我安排今天的工作"
+            },
+            {
+              "type": "natural",
+              "text": "帮我用时间块规划今天的时间"
+            }
+          ]
+        },
+        {
+          "id": "deadline_management",
+          "name": "截止日期管理",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我管理一下这些截止日期"
+            },
+            {
+              "type": "natural",
+              "text": "我的任务快到期了，怎么办"
+            }
+          ]
+        },
+        {
+          "id": "procrastination_coach",
+          "name": "拖延克服教练",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我有点拖延，能帮我克服吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我总是拖延，怎么办"
+            }
+          ]
+        },
+        {
+          "id": "pomodoro_assistant",
+          "name": "番茄工作法助手",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "用番茄工作法来安排学习时间"
+            },
+            {
+              "type": "natural",
+              "text": "我想用番茄钟来学习"
+            }
+          ]
+        },
+        {
+          "id": "habit_tracker",
+          "name": "习惯养成追踪",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我追踪一下我的习惯养成情况"
+            },
+            {
+              "type": "natural",
+              "text": "我的习惯养成进度如何"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "康小健",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "health_data_tracking",
+          "name": "健康数据追踪",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想记录一下今天的体重和运动情况"
+            },
+            {
+              "type": "natural",
+              "text": "今天走了多少步"
+            }
+          ]
+        },
+        {
+          "id": "nutrition_advice",
+          "name": "个性化饮食建议",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "给我一些饮食建议"
+            },
+            {
+              "type": "natural",
+              "text": "我应该怎么吃更健康"
+            }
+          ]
+        },
+        {
+          "id": "exercise_plan",
+          "name": "运动计划制定",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我制定一个运动计划"
+            },
+            {
+              "type": "natural",
+              "text": "我想开始运动，怎么制定计划"
+            }
+          ]
+        },
+        {
+          "id": "sleep_optimization",
+          "name": "睡眠优化指导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我的睡眠质量不好，有什么建议吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我晚上睡不好"
+            }
+          ]
+        },
+        {
+          "id": "stress_relief",
+          "name": "压力缓解技巧",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我感觉压力很大，有什么办法缓解吗？"
+            },
+            {
+              "type": "natural",
+              "text": "压力太大了，怎么办"
+            }
+          ]
+        },
+        {
+          "id": "hydration_reminder",
+          "name": "水分摄入提醒",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我养成多喝水的习惯"
+            },
+            {
+              "type": "natural",
+              "text": "我应该喝多少水"
+            }
+          ]
+        },
+        {
+          "id": "health_habit",
+          "name": "健康习惯养成",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想养成早睡早起的习惯"
+            },
+            {
+              "type": "natural",
+              "text": "怎么养成健康习惯"
+            }
+          ]
+        },
+        {
+          "id": "wellness_check",
+          "name": "健康状态评估",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我做一次健康检查评估"
+            },
+            {
+              "type": "natural",
+              "text": "我的健康状况如何"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "学小知",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "study_plan",
+          "name": "学习计划制定",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想制定一个学习计划"
+            },
+            {
+              "type": "natural",
+              "text": "帮我规划一下学习安排"
+            }
+          ]
+        },
+        {
+          "id": "memory_technique",
+          "name": "记忆技巧训练",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "有什么好的记忆方法吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我怎么提高记忆力"
+            }
+          ]
+        },
+        {
+          "id": "note_taking",
+          "name": "笔记方法指导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "教我如何做笔记"
+            },
+            {
+              "type": "natural",
+              "text": "怎么做笔记更有效"
+            }
+          ]
+        },
+        {
+          "id": "focus_training",
+          "name": "专注力训练",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我注意力不集中，能帮我提高专注力吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我怎么提高专注力"
+            }
+          ]
+        },
+        {
+          "id": "exam_prep",
+          "name": "考试复习规划",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我制定一个考试复习计划"
+            },
+            {
+              "type": "natural",
+              "text": "快考试了，怎么复习"
+            }
+          ]
+        },
+        {
+          "id": "learning_style",
+          "name": "学习风格分析",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我分析一下我的学习风格"
+            },
+            {
+              "type": "natural",
+              "text": "我是什么类型的学习者"
+            }
+          ]
+        },
+        {
+          "id": "knowledge_map",
+          "name": "知识图谱构建",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我整理一下这个知识点的知识图谱"
+            },
+            {
+              "type": "natural",
+              "text": "帮我画个思维导图"
+            }
+          ]
+        },
+        {
+          "id": "learning_motivation",
+          "name": "学习动力激励",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我学习没有动力，能激励一下我吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我不想学习了"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "心小暖",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "emotion_journal",
+          "name": "情绪日记",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想记录一下今天的心情"
+            },
+            {
+              "type": "natural",
+              "text": "今天心情不太好"
+            }
+          ]
+        },
+        {
+          "id": "emotional_support",
+          "name": "情感支持",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我今天心情不好，能陪我聊聊吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我很难过"
+            }
+          ]
+        },
+        {
+          "id": "mood_tracking",
+          "name": "情绪变化追踪",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我追踪一下最近的情绪变化"
+            },
+            {
+              "type": "natural",
+              "text": "我最近情绪怎么样"
+            }
+          ]
+        },
+        {
+          "id": "coping_strategies",
+          "name": "应对策略建议",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我感到焦虑，有什么应对方法吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我焦虑了怎么办"
+            }
+          ]
+        },
+        {
+          "id": "gratitude_practice",
+          "name": "感恩练习",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我养成每天感恩的习惯"
+            },
+            {
+              "type": "natural",
+              "text": "我想学会感恩"
+            }
+          ]
+        },
+        {
+          "id": "crisis_support",
+          "name": "危机支持",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我感觉有危机，需要帮助"
+            },
+            {
+              "type": "natural",
+              "text": "我很绝望"
+            }
+          ]
+        },
+        {
+          "id": "companionship",
+          "name": "陪伴与鼓励",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我感觉很孤单，能陪我吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我很孤独"
+            }
+          ]
+        },
+        {
+          "id": "emotional_validation",
+          "name": "情绪确认与倾听",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想倾诉一下我的感受"
+            },
+            {
+              "type": "natural",
+              "text": "我想说说心里话"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "心小安",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "stress_assessment",
+          "name": "压力源分析",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我评估一下我的压力水平"
+            },
+            {
+              "type": "natural",
+              "text": "我的压力来自哪里"
+            }
+          ]
+        },
+        {
+          "id": "cognitive_restructuring",
+          "name": "CBT认知重构",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我的思维模式有问题，能帮我重构吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我总是想太多"
+            }
+          ]
+        },
+        {
+          "id": "mindfulness_guide",
+          "name": "正念冥想指导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "教我如何进行正念冥想"
+            },
+            {
+              "type": "natural",
+              "text": "怎么练习正念"
+            }
+          ]
+        },
+        {
+          "id": "sleep_health",
+          "name": "睡眠健康分析",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我的睡眠有问题，能帮我分析吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我睡眠不好"
+            }
+          ]
+        },
+        {
+          "id": "relationship_advice",
+          "name": "人际关系指导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我在人际关系上遇到问题"
+            },
+            {
+              "type": "natural",
+              "text": "我跟同事关系不好"
+            }
+          ]
+        },
+        {
+          "id": "mental_health_check",
+          "name": "心理健康评估",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我做一次心理健康检查"
+            },
+            {
+              "type": "natural",
+              "text": "我的心理状态如何"
+            }
+          ]
+        },
+        {
+          "id": "anxiety_management",
+          "name": "焦虑管理技巧",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我经常感到焦虑，怎么办？"
+            },
+            {
+              "type": "natural",
+              "text": "我很焦虑"
+            }
+          ]
+        },
+        {
+          "id": "self_care_plan",
+          "name": "自我关爱计划",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我制定一个自我关爱计划"
+            },
+            {
+              "type": "natural",
+              "text": "我怎么爱自己"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "暖小阳",
+      "id": "REPLACE_WITH_ACTUAL_ID",
+      "skills": [
+        {
+          "id": "daily_chat",
+          "name": "日常聊天",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "今天过得怎么样？聊聊吧"
+            },
+            {
+              "type": "natural",
+              "text": "今天天气不错"
+            }
+          ]
+        },
+        {
+          "id": "encouragement",
+          "name": "鼓励与支持",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我最近很沮丧，能鼓励一下我吗？"
+            },
+            {
+              "type": "natural",
+              "text": "我快坚持不住了"
+            }
+          ]
+        },
+        {
+          "id": "interest_sharing",
+          "name": "兴趣话题引导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我想分享一些有趣的事情"
+            },
+            {
+              "type": "natural",
+              "text": "我有兴趣想分享"
+            }
+          ]
+        },
+        {
+          "id": "warm_message",
+          "name": "温暖消息生成",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "给我一些温暖的话"
+            },
+            {
+              "type": "natural",
+              "text": "给我说点温暖的话"
+            }
+          ]
+        },
+        {
+          "id": "activity_suggestions",
+          "name": "活动建议",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "今天不知道该做什么，有什么建议吗？"
+            },
+            {
+              "type": "natural",
+              "text": "今天做什么好"
+            }
+          ]
+        },
+        {
+          "id": "celebration",
+          "name": "成就庆祝",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我完成了一个目标，一起庆祝吧！"
+            },
+            {
+              "type": "natural",
+              "text": "我成功了"
+            }
+          ]
+        },
+        {
+          "id": "comfort_conversation",
+          "name": "安慰性对话",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "我感觉很累，想聊聊天放松一下"
+            },
+            {
+              "type": "natural",
+              "text": "我累了"
+            }
+          ]
+        },
+        {
+          "id": "positive_reflection",
+          "name": "积极回忆引导",
+          "prompts": [
+            {
+              "type": "preset",
+              "text": "帮我回想一下最近开心的事情"
+            },
+            {
+              "type": "natural",
+              "text": "想想开心的事"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

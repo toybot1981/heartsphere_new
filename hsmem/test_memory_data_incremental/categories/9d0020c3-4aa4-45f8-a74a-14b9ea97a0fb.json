@@ -1,0 +1,13 @@
+{
+  "id": "9d0020c3-4aa4-45f8-a74a-14b9ea97a0fb",
+  "name": "personal_info",
+  "summary": "关于 personal_info 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "219d1928-dec8-48b3-a7f3-4d8e383160f9"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:26:39.734490",
+  "updated_at": "2026-01-11T12:26:39.734497",
+  "version": 1
+}

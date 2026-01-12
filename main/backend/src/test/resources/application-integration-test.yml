@@ -1,0 +1,68 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/heartsphere_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 测试环境自动创建和清理表
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  
+  flyway:
+    enabled: false  # 测试环境禁用Flyway，使用JPA自动创建表
+  
+  # 禁用自动配置，只加载需要的组件
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+
+# 图片存储配置
+app:
+  image:
+    storage:
+      type: local
+      local:
+        path: ./target/test-uploads/images
+      base-url: http://localhost:8081/api/images
+      max-size: 10485760
+    processing:
+      thumbnail:
+        default-width: 200
+        default-height: 200
+        default-quality: 0.85
+        keep-aspect-ratio: true
+      crop:
+        max-width: 5000
+        max-height: 5000
+
+  # 视频存储配置
+  video:
+    storage:
+      type: local
+      local:
+        path: ./target/test-uploads/videos
+      base-url: http://localhost:8081/videos
+      max-size: 104857600 # 100MB
+      supported-formats: mp4,mov,avi,webm
+    processing:
+      animation:
+        default-fps: 10
+        max-fps: 30
+        default-width: 640
+        default-height: 480
+        max-duration: 30
+        default-quality: medium
+        supported-formats: gif,lottie,pag
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.heartsphere: DEBUG
+    org.springframework.web: DEBUG

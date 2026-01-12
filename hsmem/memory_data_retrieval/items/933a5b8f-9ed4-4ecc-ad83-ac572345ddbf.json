@@ -1,0 +1,15 @@
+{
+  "id": "933a5b8f-9ed4-4ecc-ad83-ac572345ddbf",
+  "resource_id": "99f30c81-4328-48f1-b446-4de632203954",
+  "content": "我每天早上都要喝一杯",
+  "summary": "用户有 1 个习惯",
+  "memory_type": "habit",
+  "importance": 0.6,
+  "categories": [
+    "habits",
+    "behavior"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:12:22.661833",
+  "updated_at": "2026-01-11T12:12:22.661837"
+}

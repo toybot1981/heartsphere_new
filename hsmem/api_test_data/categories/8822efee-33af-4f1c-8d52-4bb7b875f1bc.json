@@ -1,0 +1,13 @@
+{
+  "id": "8822efee-33af-4f1c-8d52-4bb7b875f1bc",
+  "name": "general",
+  "summary": "关于 general 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "7cbd5944-96f6-413c-9556-cc9c9ec32bc0"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:31:26.726152",
+  "updated_at": "2026-01-11T12:31:26.726161",
+  "version": 1
+}

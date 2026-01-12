@@ -1,0 +1,13 @@
+{
+  "id": "1d22097b-7021-4313-b4d7-b7b8710a8fa9",
+  "name": "habits",
+  "summary": "关于 habits 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "79914ffa-99d4-449b-b423-8adbccdab678"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:12:21.173430",
+  "updated_at": "2026-01-11T12:12:21.173432",
+  "version": 1
+}

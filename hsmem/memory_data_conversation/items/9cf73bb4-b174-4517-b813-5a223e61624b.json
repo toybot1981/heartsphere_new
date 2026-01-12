@@ -1,0 +1,15 @@
+{
+  "id": "9cf73bb4-b174-4517-b813-5a223e61624b",
+  "resource_id": "2f00de1e-60fd-4137-859a-6be6e80e10c6",
+  "content": "我平时喜欢阅读科技新闻",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-11T12:26:55.189845",
+  "updated_at": "2026-01-11T12:26:55.189847"
+}

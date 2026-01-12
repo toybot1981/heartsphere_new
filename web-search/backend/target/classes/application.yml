@@ -1,0 +1,68 @@
+server:
+  port: 8086
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: web-search-service
+
+  # Redis配置 (可选,用于分布式缓存)
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+  # Cache配置
+  cache:
+    type: caffeine,redis
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=30m
+
+# Tavily API配置
+tavily:
+  api-key: ${TAVILY_API_KEY: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}
+  base-url: https://api.tavily.com
+  timeout: 30000
+  max-retries: 3
+
+# 搜索配置
+search:
+  default-max-results: 10
+  default-search-depth: basic
+  cache-enabled: true
+  cache-ttl-minutes: 30
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Swagger配置
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Logging配置
+logging:
+  level:
+    com.heartsphere.websearch: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'

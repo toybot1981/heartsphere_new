@@ -1,0 +1,20 @@
+{
+  "id": "6a565fee-5108-4e18-a3f1-ed1db43a0e44",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "我叫小红"
+      },
+      {
+        "role": "assistant",
+        "content": "你好小红"
+      }
+    ]
+  },
+  "created_at": "2026-01-11T12:26:39.731937",
+  "metadata": {
+    "size": 133
+  }
+}
