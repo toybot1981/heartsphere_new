@@ -27,61 +27,25 @@ public class PortalPermissionService {
     
     /**
      * 检查用户是否可以使用传送门
+     * 已移除权限限制：所有激活的传送门都可以使用
      */
     public boolean canUserTeleport(Long userId, Long portalId) {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PortalPermissionService.class);
+        
         PortalConfig portal = portalConfigRepository.findById(portalId)
                 .orElseThrow(() -> new ResourceNotFoundException("传送门不存在"));
         
-        // 检查传送门是否激活
+        log.debug("[PortalPermissionService] 检查传送权限: userId={}, portalId={}, portalUserId={}, permissionType={}", 
+            userId, portalId, portal.getUserId(), portal.getPermissionType());
+        
+        // 只检查传送门是否激活，不再检查权限
         if (!portal.getIsActive()) {
+            log.warn("[PortalPermissionService] 传送门未激活: portalId={}", portalId);
             return false;
         }
         
-        // 检查传送门权限
-        boolean hasPortalPermission = false;
-        
-        switch (portal.getPermissionType()) {
-            case PUBLIC:
-                // 公开传送门，所有人都可以使用
-                hasPortalPermission = true;
-                break;
-                
-            case APPROVAL:
-                // 需要审批，检查是否已批准
-                hasPortalPermission = permissionRepository.existsByPortalIdAndUserId(portalId, userId);
-                if (!hasPortalPermission) {
-                    // 如果是主人自己，也可以使用
-                    hasPortalPermission = portal.getUserId().equals(userId);
-                }
-                break;
-                
-            case INVITE:
-                // 邀请制，检查是否被邀请
-                hasPortalPermission = permissionRepository.existsByPortalIdAndUserId(portalId, userId);
-                if (!hasPortalPermission) {
-                    // 如果是主人自己，也可以使用
-                    hasPortalPermission = portal.getUserId().equals(userId);
-                }
-                break;
-        }
-        
-        if (!hasPortalPermission) {
-            return false;
-        }
-        
-        // 检查目标心域权限
-        if (portal.getTargetShareCode() != null) {
-            try {
-                boolean canAccessTarget = shareConfigQueryService.canUserAccess(userId, portal.getTargetShareCode());
-                if (!canAccessTarget) {
-                    return false;
-                }
-            } catch (Exception e) {
-                // 目标心域不存在或无效
-                return false;
-            }
-        }
-        
+        // 移除所有权限检查，允许所有人使用激活的传送门
+        log.info("[PortalPermissionService] 传送权限检查通过（已移除权限限制）: portalId={}, userId={}", portalId, userId);
         return true;
     }
     
@@ -112,6 +76,7 @@ public class PortalPermissionService {
     
     /**
      * 检查用户是否有传送门权限（不检查目标心域）
+     * 已移除权限限制：所有激活的传送门都可以使用
      */
     public boolean hasPortalPermission(Long userId, Long portalId) {
         PortalConfig portal = portalConfigRepository.findById(portalId).orElse(null);
@@ -119,19 +84,7 @@ public class PortalPermissionService {
             return false;
         }
         
-        // 主人自己有权限
-        if (portal.getUserId().equals(userId)) {
-            return true;
-        }
-        
-        switch (portal.getPermissionType()) {
-            case PUBLIC:
-                return true;
-            case APPROVAL:
-            case INVITE:
-                return permissionRepository.existsByPortalIdAndUserId(portalId, userId);
-            default:
-                return false;
-        }
+        // 移除所有权限检查，允许所有人使用激活的传送门
+        return true;
     }
 }

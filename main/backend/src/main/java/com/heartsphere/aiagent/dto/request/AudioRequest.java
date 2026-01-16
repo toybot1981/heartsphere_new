@@ -37,4 +37,19 @@ public class AudioRequest {
     
     @Schema(description = "语言（STT使用）", example = "zh-CN")
     private String language;
+    
+    @Schema(description = "流ID（实时识别使用，用于标识同一个音频流）", example = "stream-123")
+    private String streamId;
+    
+    @Schema(description = "音频格式（实时识别使用）", example = "audio/pcm")
+    private String contentType;
+    
+    @Schema(description = "采样率（实时识别使用）", example = "16000")
+    private Integer sampleRate;
+    
+    @Schema(description = "声道数（实时识别使用，1=单声道，2=立体声）", example = "1")
+    private Integer channels;
+    
+    @Schema(description = "是否结束流（实时识别使用）", example = "false")
+    private Boolean endOfStream;
 }

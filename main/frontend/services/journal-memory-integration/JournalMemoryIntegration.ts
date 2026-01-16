@@ -7,6 +7,8 @@ import { MemorySystem, MemorySystemConfig } from '../memory-system/MemorySystem'
 import { MemorySource, MemoryType, MemoryImportance } from '../memory-system/types/MemoryTypes';
 import { JournalEntry } from '../../types';
 import { logger } from '../../utils/logger';
+import { memoryApi } from '../api/memory/memory';
+import { getToken } from '../api/base/tokenStorage';
 
 /**
  * 日记记忆集成配置
@@ -132,6 +134,39 @@ export class JournalMemoryIntegration {
             confidence: 0.7,
           });
         }
+      }
+
+      // HSMem记忆提取：将日记内容提取到hsmem系统（通过 backend API）
+      try {
+        const token = getToken();
+        if (!token) {
+          logger.warn('[JournalMemoryIntegration] 未登录，跳过 HSMem 记忆提取');
+          return;
+        }
+
+        // 构建文档数据
+        const documentData = {
+          title: entry.title || '无标题',
+          content: fullText,
+          author: undefined,
+          user_id: undefined, // 由后端自动从认证信息中提取
+        };
+
+        // 调用 backend API 进行记忆化
+        const hsmemResult = await memoryApi.memorizeDocument(documentData, token);
+
+        logger.debug('[JournalMemoryIntegration] HSMem记忆提取成功', {
+          journalId: entry.id,
+          resourceId: hsmemResult.resource_id,
+          itemsCount: hsmemResult.items_count,
+          categories: hsmemResult.categories,
+        });
+      } catch (error) {
+        // HSMem记忆提取失败不影响主流程，只记录错误
+        logger.error('[JournalMemoryIntegration] HSMem记忆提取失败', {
+          journalId: entry.id,
+          error,
+        });
       }
 
     } catch (error) {

@@ -147,6 +147,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PresetCharacterController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/SystemAdmin.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/repository/BillingAlertRepository.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/entity/converter/PortalTypeConverter.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/security/UserDetailsImpl.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/ImageProcessingService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/util/SkillMigrationTool.java
@@ -168,6 +169,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/security/JwtAuthenticationFilter.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/entity/ConversationMessage.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/InviteCodeService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemRetrieveRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/dto/GraphExecutionPauseRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/quickconnect/service/QuickConnectService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PaymentController.java
@@ -205,6 +207,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/util/MemoryEntityConverter.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/StateChangeNodeExample.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/ApiKey.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/util/LogSanitizer.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/repository/UserMainStoryRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/NoteSync.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/repository/HeartSphereConnectionRepository.java
@@ -262,6 +265,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/SaveFactRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/SystemConfig.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/entity/SkillInstruction.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PresetMainStoryController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/enums/MessageType.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PresetEraController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/dto/UpgradeResult.java
@@ -279,6 +283,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/NoteSyncController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/dto/response/AudioResponse.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/service/AIService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/adapter/RealtimeAsrWebSocketClient.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/service/executor/ScriptSkillExecutor.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/dto/SystemResourceDTO.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/ChronosLetterService.java
@@ -309,6 +314,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/CharacterNode.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/NoteSyncService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/repository/UserScenarioItemRepository.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemDocumentRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/dto/SkillExecutionResultDTO.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/service/UsageRecordService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/plugin/repository/PluginDataRepository.java
@@ -342,6 +348,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/repository/AIModelConfigRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/controller/MailboxMessageController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/entity/HeartSphereShareScope.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemResponse.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/EmailService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/model/ChatMessage.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/entity/SkillConflict.java
@@ -371,6 +378,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/repository/PortalTeleportationLogRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/controller/NotificationSettingsController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/SystemResourceService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemTextRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/payment/service/WechatPaymentService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/plugin/entity/ScenePlugin.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/dto/CreateConversationRequest.java
@@ -380,6 +388,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/service/GraphDefinitionService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/service/ShareConfigQueryService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/service/ShareConfigService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/util/GuestAccessChecker.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/entity/ExecutionLog.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/repository/AIProviderRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/entity/PortalTeleportationLog.java
@@ -395,6 +404,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/model/participant/ParticipantSceneMemory.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/plugin/core/IPluginStorage.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/dto/GraphDefinitionCreateRequest.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/util/HSMemLogHelper.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/service/executor/ApiSkillExecutor.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/EntityRelationNode.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/quickconnect/repository/AccessHistoryRepository.java
@@ -410,6 +420,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/StateChangeNode.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/quickconnect/controller/AccessHistoryController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/service/BillingMonitorService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemConversationRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/dto/TeleportationRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/WaitNodeConfig.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/UserScenarioItem.java
@@ -431,6 +442,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/repository/HeartSphereConnectionRequestRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/dto/GraphEdgeDTO.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/controller/ESoulLetterController.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/entity/converter/PermissionTypeConverter.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/config/OpenApiConfig.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/quickconnect/entity/AccessHistory.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/skill/repository/SkillDefinitionRepository.java
@@ -456,9 +468,11 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/SkillCheckNodeExample.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/service/ResourcePoolService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/entity/ChatMessageEntity.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/util/PerformanceLogger.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/exception/AIServiceException.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/service/UserUsageStatisticsService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/service/EntityRelationService.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/service/hsmem/HSMemClientService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/research/SimpleGraphTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/dto/ApiResponse.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/dto/ai/TextGenerationRequest.java
@@ -466,13 +480,16 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/dto/QuotaResult.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/entity/UserMemoryEntity.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/entity/GraphEdgeEntity.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/ThumbnailGenerationService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/emotion/dto/EmotionAnalysisRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/adapter/DashScopeAdapter.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/hsmem/HSMemMessage.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/ScenarioEventController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/entity/UserTokenQuota.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/repository/jpa/UserMemoryRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PhotoAlbumController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/model/character/CharacterSceneMemory.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/config/GuestModeConfig.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/graph/core/node/NodeFactory.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/mailbox/controller/ResonanceMessageController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/exception/BusinessException.java
@@ -490,6 +507,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/memory/dto/SaveMemoryRequest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/controller/PresetScriptController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/billing/dto/PermissionInfo.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/annotation/RequireRegisteredUser.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/dto/GraphNodeDTO.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/payment/controller/PaymentGuideController.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/util/VideoUrlUtils.java
@@ -505,6 +523,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/service/AIConfigService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/aiagent/entity/GraphNodeEntity.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/plugin/dto/PluginConfigRequest.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/service/SystemMainStoryService.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/entity/Character.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/repository/ScenarioEventRepository.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/main/java/com/heartsphere/heartconnect/portal/dto/CreatePortalRequest.java

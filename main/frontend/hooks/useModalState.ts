@@ -16,6 +16,7 @@ interface ModalState {
   showMembershipModal: boolean;
   showLoginModal: boolean;
   showInitializationWizard: boolean;
+  showSceneCreationWizard: boolean;
 }
 
 interface ModalActions {
@@ -29,6 +30,7 @@ interface ModalActions {
   setShowMembershipModal: (show: boolean) => void;
   setShowLoginModal: (show: boolean) => void;
   setShowInitializationWizard: (show: boolean) => void;
+  setShowSceneCreationWizard: (show: boolean) => void;
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
   openEraCreator: () => void;
@@ -49,6 +51,8 @@ interface ModalActions {
   closeLoginModal: () => void;
   openInitializationWizard: () => void;
   closeInitializationWizard: () => void;
+  openSceneCreationWizard: () => void;
+  closeSceneCreationWizard: () => void;
 }
 
 export const useModalState = (): ModalState & ModalActions => {
@@ -62,6 +66,7 @@ export const useModalState = (): ModalState & ModalActions => {
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showInitializationWizard, setShowInitializationWizard] = useState(false);
+  const [showSceneCreationWizard, setShowSceneCreationWizard] = useState(false);
 
   return {
     // State
@@ -75,6 +80,7 @@ export const useModalState = (): ModalState & ModalActions => {
     showMembershipModal,
     showLoginModal,
     showInitializationWizard,
+    showSceneCreationWizard,
     // Setters
     setShowSettingsModal,
     setShowEraCreator,
@@ -86,6 +92,7 @@ export const useModalState = (): ModalState & ModalActions => {
     setShowMembershipModal,
     setShowLoginModal,
     setShowInitializationWizard,
+    setShowSceneCreationWizard,
     // Convenience methods
     openSettingsModal: useCallback(() => setShowSettingsModal(true), []),
     closeSettingsModal: useCallback(() => setShowSettingsModal(false), []),
@@ -107,6 +114,8 @@ export const useModalState = (): ModalState & ModalActions => {
     closeLoginModal: useCallback(() => setShowLoginModal(false), []),
     openInitializationWizard: useCallback(() => setShowInitializationWizard(true), []),
     closeInitializationWizard: useCallback(() => setShowInitializationWizard(false), []),
+    openSceneCreationWizard: useCallback(() => setShowSceneCreationWizard(true), []),
+    closeSceneCreationWizard: useCallback(() => setShowSceneCreationWizard(false), []),
   };
 };
 

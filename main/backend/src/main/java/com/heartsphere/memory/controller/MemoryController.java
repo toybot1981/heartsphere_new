@@ -5,9 +5,11 @@ import com.heartsphere.memory.dto.SaveMemoryRequest;
 import com.heartsphere.memory.model.ChatMessage;
 import com.heartsphere.memory.model.MemorySource;
 import com.heartsphere.memory.model.UserMemory;
+import com.heartsphere.memory.dto.hsmem.*;
 import com.heartsphere.memory.service.LongMemoryService;
 import com.heartsphere.memory.service.MemoryExtractor;
 import com.heartsphere.memory.service.ShortMemoryService;
+import com.heartsphere.memory.service.hsmem.HSMemClientService;
 import com.heartsphere.memory.service.impl.MySQLLongMemoryService;
 import com.heartsphere.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -43,21 +47,69 @@ public class MemoryController {
     private final MySQLLongMemoryService mySQLLongMemoryService;
     private final ShortMemoryService shortMemoryService;
     private final MemoryExtractor memoryExtractor;
+    private final HSMemClientService hsmemClientService;
+    private final com.heartsphere.service.MembershipService membershipService;
     
     /**
      * 验证用户权限
+     * 优先从 SecurityContext 获取，如果 @AuthenticationPrincipal 为 null
      */
     private String getAuthenticatedUserId(UserDetails userDetails) {
-        if (userDetails instanceof UserDetailsImpl) {
-            return String.valueOf(((UserDetailsImpl) userDetails).getId());
-        } else {
-            try {
-                return userDetails.getUsername();
-            } catch (Exception e) {
-                log.warn("无法获取用户ID: {}", e.getMessage());
-                return null;
+        // 如果 @AuthenticationPrincipal 不为 null，直接使用
+        if (userDetails != null) {
+            if (userDetails instanceof UserDetailsImpl) {
+                return String.valueOf(((UserDetailsImpl) userDetails).getId());
+            } else {
+                try {
+                    return userDetails.getUsername();
+                } catch (Exception e) {
+                    log.warn("无法从 UserDetails 获取用户ID: {}", e.getMessage());
+                }
             }
         }
+        
+        // 如果 @AuthenticationPrincipal 为 null，尝试从 SecurityContext 获取
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() 
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+                
+                Object principal = authentication.getPrincipal();
+                log.debug("[MemoryController] 从 SecurityContext 获取认证信息: principal={}", 
+                    principal != null ? principal.getClass().getSimpleName() : "null");
+                
+                if (principal instanceof UserDetailsImpl) {
+                    Long id = ((UserDetailsImpl) principal).getId();
+                    log.debug("[MemoryController] 从 UserDetailsImpl 获取用户ID: {}", id);
+                    return String.valueOf(id);
+                } else if (principal instanceof UserDetails) {
+                    String username = ((UserDetails) principal).getUsername();
+                    log.debug("[MemoryController] 从 UserDetails 获取用户名: {}", username);
+                    return username;
+                } else if (principal instanceof String) {
+                    log.debug("[MemoryController] 从 String principal 获取: {}", principal);
+                    // 如果是 "anonymousUser"，跳过
+                    if (!"anonymousUser".equals(principal)) {
+                        return (String) principal;
+                    }
+                }
+            } else {
+                log.debug("[MemoryController] SecurityContext 中没有有效认证信息: authentication={}, authenticated={}", 
+                    authentication != null, 
+                    authentication != null ? authentication.isAuthenticated() : false);
+            }
+            
+            // 检查是否是匿名用户
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof String 
+                && "anonymousUser".equals(auth.getPrincipal())) {
+                log.warn("[MemoryController] 检测到匿名用户，JWT token 可能无效或未传递");
+            }
+        } catch (Exception e) {
+            log.warn("[MemoryController] 从 SecurityContext 获取用户ID失败: {}", e.getMessage());
+        }
+        
+        return null;
     }
     
     @Operation(summary = "保存用户记忆", description = "保存用户记忆到长期记忆")
@@ -117,6 +169,19 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
+            // 检查是否为游客（体验会员）- 游客不生成记忆
+            try {
+                Long userIdLong = Long.parseLong(userId);
+                if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+                    log.debug("游客用户尝试批量保存记忆，已跳过: userId={}", userId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE));
+                }
+            } catch (NumberFormatException e) {
+                // 如果userId不是数字，继续执行
+                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
+            }
+            
             // 转换为UserMemory列表
             List<UserMemory> memories = requests.stream()
                 .map(request -> UserMemory.builder()
@@ -161,6 +226,18 @@ public class MemoryController {
             if (authenticatedUserId == null || !authenticatedUserId.equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("无权访问该用户的数据"));
+            }
+            
+            // 检查是否为游客（体验会员）- 游客不生成记忆，返回空列表或提示
+            try {
+                Long userIdLong = Long.parseLong(userId);
+                if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+                    log.debug("游客用户尝试查询记忆，返回空列表: userId={}", userId);
+                    return ResponseEntity.ok(ApiResponse.success(List.of()));
+                }
+            } catch (NumberFormatException e) {
+                // 如果userId不是数字，继续执行
+                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
             }
             
             List<UserMemory> memories = longMemoryService.retrieveRelevantMemories(userId, query, limit);
@@ -318,6 +395,19 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
+            // 检查是否为游客（体验会员）- 游客不生成记忆
+            try {
+                Long userIdLong = Long.parseLong(userId);
+                if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+                    log.debug("游客用户尝试提取记忆，已跳过: userId={}, sessionId={}", userId, sessionId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE));
+                }
+            } catch (NumberFormatException e) {
+                // 如果userId不是数字，继续执行
+                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
+            }
+            
             // 获取会话消息
             List<ChatMessage> messages = shortMemoryService.getMessages(sessionId, 100);
             if (messages == null || messages.isEmpty()) {
@@ -351,6 +441,241 @@ public class MemoryController {
             log.error("从会话提取记忆失败: userId={}, sessionId={}", userId, sessionId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("提取记忆失败: " + e.getMessage()));
+        }
+    }
+    
+    // ==================== HSMem 记忆服务 API ====================
+    
+    /**
+     * 将用户ID转换为 hsmem 格式（user_{userId}）
+     */
+    private String formatUserIdForHsmem(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        // 如果已经是 user_ 格式，直接返回；否则添加前缀
+        if (userId.startsWith("user_")) {
+            return userId;
+        }
+        return "user_" + userId;
+    }
+    
+    @Operation(summary = "记忆化对话", description = "将对话内容提取为记忆")
+    @PostMapping("/hsmem/memorize/conversation")
+    public ResponseEntity<ApiResponse<HSMemResponse.MemorizeData>> memorizeConversation(
+            @Parameter(description = "对话记忆化请求") @RequestBody HSMemConversationRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            log.debug("[MemoryController] 收到记忆化对话请求: messages={}, userDetails={}, authentication={}", 
+                request.getMessages() != null ? request.getMessages().size() : 0, 
+                userDetails != null ? userDetails.getUsername() : "null",
+                SecurityContextHolder.getContext().getAuthentication() != null);
+            
+            // 从认证信息中提取用户ID（支持从 SecurityContext 获取）
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                log.warn("[MemoryController] 记忆化对话失败: 无法获取用户ID, userDetails={}, securityContext={}", 
+                    userDetails, SecurityContextHolder.getContext().getAuthentication());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            log.debug("[MemoryController] 用户认证成功: userId={}, 准备调用 HSMemClientService", authenticatedUserId);
+            
+            // 自动设置 user_id（如果请求中没有提供）
+            if (request.getUser_id() == null || request.getUser_id().isEmpty()) {
+                request.setUser_id(formatUserIdForHsmem(authenticatedUserId));
+            } else {
+                // 验证 user_id 是否与认证用户一致
+                String formattedUserId = formatUserIdForHsmem(authenticatedUserId);
+                if (!formattedUserId.equals(request.getUser_id()) && !authenticatedUserId.equals(request.getUser_id())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("无权为其他用户创建记忆"));
+                }
+            }
+            
+            // 调用 hsmem 服务
+            log.debug("[MemoryController] 调用 HSMemClientService.memorizeConversation");
+            HSMemResponse.MemorizeData result = hsmemClientService.memorizeConversation(request);
+            log.debug("[MemoryController] HSMemClientService 调用成功: resourceId={}, itemsCount={}", 
+                result.getResource_id(), result.getItems_count());
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("[MemoryController] 记忆化对话失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("记忆化对话失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "记忆化文本", description = "将文本内容提取为记忆")
+    @PostMapping("/hsmem/memorize/text")
+    public ResponseEntity<ApiResponse<HSMemResponse.MemorizeData>> memorizeText(
+            @Parameter(description = "文本记忆化请求") @RequestBody HSMemTextRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // 从认证信息中提取用户ID
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            // 自动设置 user_id
+            if (request.getUser_id() == null || request.getUser_id().isEmpty()) {
+                request.setUser_id(formatUserIdForHsmem(authenticatedUserId));
+            }
+            
+            // 调用 hsmem 服务
+            HSMemResponse.MemorizeData result = hsmemClientService.memorizeText(request);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("记忆化文本失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("记忆化文本失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "记忆化文档", description = "将文档内容提取为记忆")
+    @PostMapping("/hsmem/memorize/document")
+    public ResponseEntity<ApiResponse<HSMemResponse.MemorizeData>> memorizeDocument(
+            @Parameter(description = "文档记忆化请求") @RequestBody HSMemDocumentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // 从认证信息中提取用户ID
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            // 自动设置 user_id
+            if (request.getUser_id() == null || request.getUser_id().isEmpty()) {
+                request.setUser_id(formatUserIdForHsmem(authenticatedUserId));
+            }
+            
+            // 调用 hsmem 服务
+            HSMemResponse.MemorizeData result = hsmemClientService.memorizeDocument(request);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("记忆化文档失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("记忆化文档失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "检索记忆", description = "根据查询检索相关记忆")
+    @PostMapping("/hsmem/retrieve")
+    public ResponseEntity<ApiResponse<HSMemResponse.RetrieveData>> retrieve(
+            @Parameter(description = "检索请求") @RequestBody HSMemRetrieveRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // 从认证信息中提取用户ID
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            // 自动添加 user_id 到过滤条件
+            String formattedUserId = formatUserIdForHsmem(authenticatedUserId);
+            if (request.getWhere() == null) {
+                request.setWhere(new java.util.HashMap<>());
+            }
+            // 如果 where 中没有 user_id，自动添加
+            if (!request.getWhere().containsKey("user_id")) {
+                request.getWhere().put("user_id", formattedUserId);
+            } else {
+                // 验证 user_id 是否与认证用户一致
+                Object userIdInWhere = request.getWhere().get("user_id");
+                if (!formattedUserId.equals(userIdInWhere) && !authenticatedUserId.equals(userIdInWhere)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("无权查询其他用户的记忆"));
+                }
+            }
+            
+            // 调用 hsmem 服务
+            HSMemResponse.RetrieveData result = hsmemClientService.retrieve(request);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("检索记忆失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("检索记忆失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取统计信息", description = "获取记忆系统统计信息")
+    @GetMapping("/hsmem/statistics")
+    public ResponseEntity<ApiResponse<HSMemResponse.StatisticsData>> getStatistics() {
+        try {
+            HSMemResponse.StatisticsData result = hsmemClientService.getStatistics();
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("获取统计信息失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取统计信息失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取分类列表", description = "获取所有记忆分类")
+    @GetMapping("/hsmem/categories")
+    public ResponseEntity<ApiResponse<HSMemResponse.CategoriesData>> getCategories() {
+        try {
+            HSMemResponse.CategoriesData result = hsmemClientService.getCategories();
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("获取分类列表失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取分类列表失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取记忆项列表", description = "获取所有记忆项（可选项按用户ID过滤）")
+    @GetMapping("/hsmem/items")
+    public ResponseEntity<ApiResponse<HSMemResponse.ItemsData>> getItems(
+            @Parameter(description = "用户ID（可选）") @RequestParam(required = false) String user_id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // 从认证信息中提取用户ID
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            // 如果没有提供 user_id，使用认证用户的ID
+            String userIdToQuery = user_id;
+            if (userIdToQuery == null || userIdToQuery.isEmpty()) {
+                userIdToQuery = formatUserIdForHsmem(authenticatedUserId);
+            } else {
+                // 验证 user_id 是否与认证用户一致
+                String formattedUserId = formatUserIdForHsmem(authenticatedUserId);
+                if (!formattedUserId.equals(userIdToQuery) && !authenticatedUserId.equals(userIdToQuery)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("无权查询其他用户的记忆"));
+                }
+            }
+            
+            // 调用 hsmem 服务
+            HSMemResponse.ItemsData result = hsmemClientService.getItems(userIdToQuery);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("获取记忆项列表失败: user_id={}", user_id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取记忆项列表失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取资源列表", description = "获取所有资源（仅管理员可访问）")
+    @GetMapping("/hsmem/resources")
+    public ResponseEntity<ApiResponse<HSMemResponse.ResourcesData>> getResources() {
+        try {
+            // TODO: 添加管理员权限验证
+            HSMemResponse.ResourcesData result = hsmemClientService.getResources();
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            log.error("获取资源列表失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取资源列表失败: " + e.getMessage()));
         }
     }
 }

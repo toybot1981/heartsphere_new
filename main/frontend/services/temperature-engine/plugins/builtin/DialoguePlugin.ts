@@ -35,7 +35,6 @@ export class DialoguePlugin implements TemperaturePlugin {
    */
   async onInit(engine: TemperatureEngine): Promise<void> {
     this.engine = engine;
-    console.log('[DialoguePlugin] Initialized');
   }
 
   /**
@@ -44,7 +43,6 @@ export class DialoguePlugin implements TemperaturePlugin {
   async onStart(): Promise<void> {
     // 显示对话开始问候
     await this.showDialogueStartGreeting();
-    console.log('[DialoguePlugin] Started');
   }
 
   /**
@@ -74,7 +72,6 @@ export class DialoguePlugin implements TemperaturePlugin {
       const suggestions = this.getResponseSuggestions(emotion);
       if (suggestions.length > 0) {
         // 可以在这里触发建议显示
-        console.log('[DialoguePlugin] Response suggestions:', suggestions);
       }
     }
   }
@@ -143,7 +140,6 @@ export class DialoguePlugin implements TemperaturePlugin {
     const response = this.getEmotionResponse(emotion);
     if (response) {
       // 可以在这里触发回应显示
-      console.log('[DialoguePlugin] Emotion response:', response);
     }
   }
 

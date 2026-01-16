@@ -23,7 +23,6 @@ async function example1() {
     },
   });
 
-  console.log('提取的记忆:', memories);
 
   // 搜索记忆
   const searchResults = await memorySystem.searchMemories({
@@ -31,11 +30,9 @@ async function example1() {
     limit: 5,
   });
 
-  console.log('搜索结果:', searchResults);
 
   // 获取相关记忆
   const relevantMemories = await memorySystem.getRelevantMemories('看电影', 3);
-  console.log('相关记忆:', relevantMemories);
 }
 
 async function example2() {
@@ -59,11 +56,9 @@ async function example2() {
     confidence: 1.0,
   });
 
-  console.log('添加的记忆:', memory);
 
   // 获取记忆统计
   const statistics = await memorySystem.getMemoryStatistics();
-  console.log('记忆统计:', statistics);
 }
 
 export { example1, example2 };

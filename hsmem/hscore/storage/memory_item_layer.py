@@ -62,6 +62,12 @@ class MemoryItemLayer:
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat()
         }
+        
+        # 保存用户ID和代理ID（如果存在）
+        if "user_id" in item:
+            memory_item["user_id"] = item["user_id"]
+        if "agent_id" in item:
+            memory_item["agent_id"] = item["agent_id"]
 
         # 保存记忆项
         file_path = self.base_path / f"{item_id}.json"
@@ -112,6 +118,29 @@ class MemoryItemLayer:
                 item = await self.get(item_id)
                 if item:
                     results.append(item)
+
+        return results
+
+    async def get_all(self) -> List[Dict[str, Any]]:
+        """获取所有记忆项"""
+        results = []
+        index = self._load_index()
+
+        for item_id in index.keys():
+            item = await self.get(item_id)
+            if item:
+                results.append(item)
+
+        return results
+
+    async def search_by_user_id(self, user_id: str) -> List[Dict[str, Any]]:
+        """按用户ID搜索记忆项"""
+        results = []
+        all_items = await self.get_all()
+
+        for item in all_items:
+            if item.get("user_id") == user_id:
+                results.append(item)
 
         return results
 

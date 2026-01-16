@@ -18,7 +18,7 @@ export const CharacterSkillTab: React.FC<CharacterSkillTabProps> = ({
   adminToken,
 }) => {
   return (
-    <div className="character-skill-tab p-4">
+    <div className="character-skill-tab w-full">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-white">
           {characterName ? `${characterName} 的技能管理` : '技能管理'}
@@ -27,7 +27,9 @@ export const CharacterSkillTab: React.FC<CharacterSkillTabProps> = ({
           角色 ID: {characterId}
         </p>
       </div>
-      <SkillsManagement adminToken={adminToken || null} />
+      <div className="w-full">
+        <SkillsManagement adminToken={adminToken || null} />
+      </div>
     </div>
   );
 };

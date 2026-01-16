@@ -1,7 +1,10 @@
 package com.heartsphere.mentis.service;
 
 import com.heartsphere.mentis.entity.MentisSession;
+import com.heartsphere.mentis.repository.MentisMessageRepository;
 import com.heartsphere.mentis.repository.MentisSessionRepository;
+import com.heartsphere.mentis.repository.MentisTaskRepository;
+import com.heartsphere.mentis.vm.VmManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,9 @@ import java.util.UUID;
 public class MentisSessionServiceImpl implements MentisSessionService {
     
     private final MentisSessionRepository sessionRepository;
+    private final MentisTaskRepository taskRepository;
+    private final MentisMessageRepository messageRepository;
+    private final VmManager vmManager;
     
     @Override
     @Transactional
@@ -66,9 +72,51 @@ public class MentisSessionServiceImpl implements MentisSessionService {
     @Override
     @Transactional
     public void deleteSession(String sessionId) {
-        log.info("删除会话: sessionId={}", sessionId);
+        log.info("删除会话及其所有相关数据: sessionId={}", sessionId);
         
         MentisSession session = getSession(sessionId);
-        sessionRepository.delete(session);
+        Long sessionDbId = session.getId();
+        
+        try {
+            // 1. 删除关联的虚拟机资源
+            try {
+                vmManager.deleteVmForSession(sessionId);
+                log.debug("已删除会话的虚拟机资源: sessionId={}", sessionId);
+            } catch (Exception e) {
+                log.warn("删除会话的虚拟机资源失败（继续删除其他数据）: sessionId={}", sessionId, e);
+            }
+            
+            // 2. 删除所有关联的任务
+            try {
+                List<com.heartsphere.mentis.entity.MentisTask> tasks = 
+                    taskRepository.findBySession_IdOrderByCreatedAtDesc(sessionDbId);
+                if (!tasks.isEmpty()) {
+                    taskRepository.deleteAll(tasks);
+                    log.info("已删除会话的所有任务: sessionId={}, taskCount={}", sessionId, tasks.size());
+                }
+            } catch (Exception e) {
+                log.warn("删除会话的任务失败（继续删除其他数据）: sessionId={}", sessionId, e);
+            }
+            
+            // 3. 删除所有关联的消息
+            try {
+                List<com.heartsphere.mentis.entity.MentisMessage> messages = 
+                    messageRepository.findBySession_IdOrderByCreatedAtAsc(sessionDbId);
+                if (!messages.isEmpty()) {
+                    messageRepository.deleteAll(messages);
+                    log.info("已删除会话的所有消息: sessionId={}, messageCount={}", sessionId, messages.size());
+                }
+            } catch (Exception e) {
+                log.warn("删除会话的消息失败（继续删除其他数据）: sessionId={}", sessionId, e);
+            }
+            
+            // 4. 最后删除会话本身（级联删除应该已经处理了，但显式删除更安全）
+            sessionRepository.delete(session);
+            log.info("会话删除完成: sessionId={}", sessionId);
+            
+        } catch (Exception e) {
+            log.error("删除会话时发生错误: sessionId={}", sessionId, e);
+            throw new RuntimeException("删除会话失败: " + e.getMessage(), e);
+        }
     }
 }

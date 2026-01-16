@@ -95,10 +95,10 @@ class Logger {
 
     switch (level) {
       case 'debug':
-        console.debug(formattedMessage, ...sanitizedArgs);
+        // 移除 debug 日志输出
         break;
       case 'info':
-        console.info(formattedMessage, ...sanitizedArgs);
+        // 移除 info 日志输出
         break;
       case 'warn':
         console.warn(formattedMessage, ...sanitizedArgs);

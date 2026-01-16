@@ -98,8 +98,9 @@ public class EmotionService {
                 }
             }
             
+            // 从提示词管理系统读取提示词，如果不存在则使用硬编码作为fallback
             PromptRenderResponse prompts = templateService.getPrompts(
-                "emotion",
+                "main-emotion-analysis",
                 variables,
                 "你是一个专业的情绪分析专家，擅长深入理解文本中的情绪和情感。",
                 defaultPrompt

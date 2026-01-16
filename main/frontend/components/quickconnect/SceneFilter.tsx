@@ -41,11 +41,9 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
       let eras;
       if (isSharedMode) {
         // 共享模式：获取共享的场景列表
-        console.log('[SceneFilter] 共享模式，加载共享场景列表');
         eras = await sharedApi.getSharedEras(token);
       } else {
         // 正常模式：获取用户的场景列表
-        console.log('[SceneFilter] 正常模式，加载用户场景列表');
         eras = await eraApi.getAllEras(token);
       }
       
@@ -55,7 +53,6 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
         name: era.name || `场景 ${era.id}`,
       }));
       
-      console.log('[SceneFilter] 加载场景成功，数量:', sceneList.length);
       setScenes(sceneList);
     } catch (error) {
       console.error('[SceneFilter] 加载场景失败:', error);

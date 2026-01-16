@@ -15,6 +15,8 @@ import { EmptyState } from './EmptyState';
 import { TaskList } from './TaskList';
 import { VmScreenViewer } from './VmScreenViewer';
 import { ExecutionLogViewer } from './ExecutionLogViewer';
+import { TaskProgressViewer } from './TaskProgressViewer';
+import { VmScreenPreview } from './VmScreenPreview';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import ComputerIcon from '@mui/icons-material/Computer';
@@ -466,6 +468,10 @@ export const Workspace: React.FC = () => {
                   console.log('消息已发送:', message);
                   // 刷新会话列表以更新消息数
                   loadSessions();
+                  // 如果切换到任务标签页，刷新任务列表以显示新任务进度
+                  if (activeTab === 1) {
+                    loadTasks();
+                  }
                 }}
               />
             ) : activeTab === 0 && (
@@ -480,6 +486,20 @@ export const Workspace: React.FC = () => {
             )}
             {activeTab === 1 && currentSessionId ? (
               <Box>
+                {/* 显示当前执行的任务进度 */}
+                {(() => {
+                  const runningTask = tasks.find(t => t.status === 'RUNNING');
+                  const executionId = runningTask?.executionId || runningTask?.taskId;
+                  return executionId ? (
+                    <Box sx={{ mb: 2 }}>
+                      <TaskProgressViewer
+                        executionId={executionId}
+                        autoRefresh={true}
+                        refreshInterval={2000}
+                      />
+                    </Box>
+                  ) : null;
+                })()}
                 {loading && tasks.length === 0 ? (
                   <LoadingSpinner message="加载任务列表..." />
                 ) : (
@@ -494,7 +514,19 @@ export const Workspace: React.FC = () => {
             )}
             
             {activeTab === 2 && currentSessionId ? (
-              <VmScreenViewer sessionId={currentSessionId} />
+              <Box>
+                {/* 使用新的 VmScreenPreview 组件 */}
+                <VmScreenPreview
+                  sessionId={currentSessionId}
+                  autoRefresh={true}
+                  refreshInterval={3000}
+                  showActivity={true}
+                />
+                {/* 保留原有的 VmScreenViewer 作为备用 */}
+                <Box sx={{ mt: 2 }}>
+                  <VmScreenViewer sessionId={currentSessionId} />
+                </Box>
+              </Box>
             ) : activeTab === 2 && (
               <EmptyState
                 title="请先选择一个会话"

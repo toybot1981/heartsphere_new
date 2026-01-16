@@ -2,14 +2,20 @@ package com.heartsphere.mentis.controller;
 
 import com.heartsphere.shared.dto.ApiResponse;
 import com.heartsphere.mentis.entity.MentisSession;
+import com.heartsphere.mentis.service.McpInspectorService;
 import com.heartsphere.mentis.service.MentisSessionService;
+import com.heartsphere.mentis.service.SessionRealtimeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Mentis 会话管理控制器
@@ -20,10 +26,13 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/mentis/sessions")
+@CrossOrigin(origins = "*", allowedHeaders = "*", exposedHeaders = "*")
 @RequiredArgsConstructor
 public class MentisSessionController {
     
     private final MentisSessionService sessionService;
+    private final SessionRealtimeService realtimeService;
+    private final McpInspectorService mcpInspectorService;
     
     /**
      * 创建新会话
@@ -94,7 +103,43 @@ public class MentisSessionController {
             @PathVariable String sessionId) {
         
         sessionService.deleteSession(sessionId);
+        // 移除 SSE 连接
+        realtimeService.removeSessionEmitter(sessionId);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+    
+    /**
+     * 获取 MCP Inspector 信息
+     */
+    @GetMapping("/{sessionId}/mcp/inspector")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMcpInspectorInfo(
+            @PathVariable String sessionId) {
+        
+        Map<String, Object> inspectorInfo = mcpInspectorService.getInspectorInfo(sessionId);
+        return ResponseEntity.ok(ApiResponse.success(inspectorInfo));
+    }
+    
+    /**
+     * 订阅会话实时更新（SSE）
+     */
+    @GetMapping(value = "/{sessionId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamSessionUpdates(@PathVariable String sessionId) {
+        log.info("SSE subscription request for session: {}", sessionId);
+        try {
+            return realtimeService.registerSessionEmitter(sessionId);
+        } catch (Exception e) {
+            log.error("Failed to register SSE emitter for session: {}", sessionId, e);
+            SseEmitter errorEmitter = new SseEmitter(1000L);
+            try {
+                errorEmitter.send(SseEmitter.event()
+                    .name("error")
+                    .data("{\"error\":\"Failed to establish SSE connection\"}"));
+                errorEmitter.complete();
+            } catch (IOException ioException) {
+                log.error("Failed to send error event", ioException);
+            }
+            return errorEmitter;
+        }
     }
     
     private Long getUserId(Authentication authentication) {

@@ -279,7 +279,15 @@ export const McpConfigManager: React.FC = () => {
       )}
 
       {/* 配置对话框 */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
+      >
         <DialogTitle>
           {editingConfig ? '编辑 MCP 配置' : '新建 MCP 配置'}
         </DialogTitle>

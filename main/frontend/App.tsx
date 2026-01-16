@@ -31,6 +31,7 @@ import { RecycleBinModal } from './components/RecycleBinModal';
 import { MembershipModal } from './components/MembershipModal';
 import { GlobalDialogs, showAlert, showConfirm } from './utils/dialog';
 import { InitializationWizard } from './components/InitializationWizard';
+import { SceneCreationWizard } from './components/SceneCreationWizard';
 import { StateManagementTest } from './components/StateManagementTest';
 import { GameStateProvider, useGameState } from './contexts/GameStateContext';
 import { DEFAULT_GAME_STATE } from './contexts/constants/defaultState';
@@ -117,12 +118,7 @@ const AppContent: React.FC = () => {
     setIsLoaded(true);
   }, []);
   
-  // 保留示例剧本（如果还没有的话）
-  useEffect(() => {
-    if (gameState.customScenarios.length === 0) {
-      dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [EXAMPLE_SCENARIO] });
-    }
-  }, [gameState.customScenarios.length, dispatch]);
+  // 不再保留示例剧本到本地缓存，所有剧本都从服务器获取
   
   // 兼容层：将旧的setGameState调用转换为dispatch
   // TODO: 逐步替换所有setGameState调用为具体的dispatch action
@@ -146,6 +142,7 @@ const AppContent: React.FC = () => {
     showRecycleBin,
     showMembershipModal,
     showLoginModal,
+    showSceneCreationWizard,
     setShowSettingsModal,
     setShowEraCreator,
     setShowCharacterCreator,
@@ -155,6 +152,7 @@ const AppContent: React.FC = () => {
     setShowRecycleBin,
     setShowMembershipModal,
     setShowLoginModal,
+    setShowSceneCreationWizard,
     openSettingsModal,
     closeSettingsModal,
     openEraCreator,
@@ -175,6 +173,8 @@ const AppContent: React.FC = () => {
     closeLoginModal,
     openInitializationWizard,
     closeInitializationWizard,
+    openSceneCreationWizard,
+    closeSceneCreationWizard,
   } = useModalState();
   
   const [editingScene, setEditingScene] = useState<WorldScene | null>(null);
@@ -213,6 +213,7 @@ const AppContent: React.FC = () => {
   const [editingMainStorySceneId, setEditingMainStorySceneId] = useState<string | null>(null);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   const [editingCharacterSceneId, setEditingCharacterSceneId] = useState<string | null>(null);
+  const [currentWorldId, setCurrentWorldId] = useState<number | null>(null);
 
   // 使用 Character Handlers Hook（需要在 editingCharacterSceneId 和 editingMainStory 声明之后）
   const { handleSaveCharacter: handleSaveCharacterHook, handleDeleteCharacter: handleDeleteCharacterHook, handleGenerateAvatar: handleGenerateAvatarHook } = useCharacterHandlers(
@@ -293,38 +294,76 @@ const AppContent: React.FC = () => {
 
   // 检查是否需要导航到共享心域页面
   // 监听导航到共享心域的事件
+  const navigateToSharedProcessedRef = useRef<Set<number>>(new Set()); // 用于防止重复处理
+  const dispatchRef = useRef(dispatch);
+  const enterSharedModeRef = useRef(enterSharedMode);
+  
+  // 更新 ref，避免闭包问题
+  useEffect(() => {
+    dispatchRef.current = dispatch;
+    enterSharedModeRef.current = enterSharedMode;
+  }, [dispatch, enterSharedMode]);
+  
   useEffect(() => {
     const handleNavigateToShared = async (event: Event) => {
       const customEvent = event as CustomEvent<{ shareConfigId: number; visitorId: number; shareConfig?: ShareConfig }>;
       if (customEvent.detail) {
         const { shareConfigId, visitorId, shareConfig: providedShareConfig } = customEvent.detail;
         
+        // 确保 shareConfigId 存在
+        if (!shareConfigId) {
+          console.error('[App] handleNavigateToShared: shareConfigId 为空', customEvent.detail);
+          return;
+        }
+        
+        // 防止重复处理同一个 shareConfigId
+        if (navigateToSharedProcessedRef.current.has(shareConfigId)) {
+          return;
+        }
+        navigateToSharedProcessedRef.current.add(shareConfigId);
+        
+        // 5秒后清除标记，允许重新处理（防止永久阻塞）
+        setTimeout(() => {
+          navigateToSharedProcessedRef.current.delete(shareConfigId);
+        }, 5000);
+        
         try {
           // 如果事件中已经提供了 shareConfig，直接使用；否则通过 shareConfigId 获取
           let shareConfig: ShareConfig;
           if (providedShareConfig) {
-            shareConfig = providedShareConfig;
-            console.log('[App] handleNavigateToShared: 使用事件中提供的 shareConfig', shareConfig.id);
+            // 确保 shareConfig.id 存在，如果不存在则使用 shareConfigId
+            if (!providedShareConfig.id && shareConfigId) {
+              shareConfig = { ...providedShareConfig, id: shareConfigId };
+              console.warn('[App] handleNavigateToShared: shareConfig.id 为空，使用 shareConfigId:', shareConfigId);
+            } else {
+              shareConfig = providedShareConfig;
+            }
           } else {
             // 如果没有提供 shareConfig，说明已经在 SharedHeartSphereCard 中调用了 enterSharedMode
             // 这里只需要设置屏幕即可
-            console.log('[App] handleNavigateToShared: shareConfig 已在事件发送前设置，直接导航');
-            dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+            dispatchRef.current({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
             return;
           }
           
+          // 验证 shareConfig.id 是否存在
+          if (!shareConfig.id) {
+            console.error('[App] handleNavigateToShared: shareConfig.id 仍然为空', shareConfig);
+            navigateToSharedProcessedRef.current.delete(shareConfigId);
+            return;
+          }
+          
+          
           // 进入共享模式
-          console.log('[App] handleNavigateToShared: 进入共享模式', shareConfig.id, visitorId);
-          enterSharedMode(shareConfig, visitorId);
+          enterSharedModeRef.current(shareConfig, visitorId);
           
-          // 触发穿越特效（通过全局管理器）
-          const { pageTransitionManager } = await import('./hooks/usePageTransition');
-          pageTransitionManager.enterSharedHeartSphere();
           
-          // 设置屏幕为共享心域页面
-          dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+          // 设置屏幕为共享心域页面（移除动画效果，让传送门动画更突出）
+          dispatchRef.current({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
+          
         } catch (err) {
           console.error('[App] handleNavigateToShared 失败:', err);
+          // 处理失败时清除标记，允许重试
+          navigateToSharedProcessedRef.current.delete(shareConfigId);
         }
       }
     };
@@ -333,7 +372,7 @@ const AppContent: React.FC = () => {
     return () => {
       window.removeEventListener('navigateToShared', handleNavigateToShared);
     };
-  }, [dispatch, enterSharedMode]);
+  }, []); // 空依赖数组，使用 ref 访问最新的函数
 
   // 更新AI配置（当settings变化时）
   useEffect(() => {
@@ -568,17 +607,13 @@ const AppContent: React.FC = () => {
     
     // 强制从数据库获取：登录用户使用 userWorldScenes（从数据库加载），游客使用预置场景
     if (gameState.userProfile && !gameState.userProfile.isGuest) {
-      // 登录用户：使用从数据库获取的用户专属场景（userWorldScenes 现在只从数据库获取）
-      // + 自定义场景（排除已在userWorldScenes中的）
-      const userWorldScenes = gameState.userWorldScenes || []; // 如果为空，说明还在加载中
-      const userWorldSceneIds = new Set(userWorldScenes.map(s => s.id));
-      const customScenesOnly = gameState.customScenes.filter(s => !userWorldSceneIds.has(s.id));
-      return [...userWorldScenes, ...customScenesOnly];
+      // 登录用户：只使用从数据库获取的用户专属场景（不再使用本地缓存）
+      return gameState.userWorldScenes || []; // 如果为空，说明还在加载中
     } else {
-      // 游客：使用本地预置场景 + 自定义场景
-      return [...WORLD_SCENES, ...gameState.customScenes];
+      // 游客：使用本地预置场景（不再使用自定义场景）
+      return WORLD_SCENES;
     }
-  }, [gameState.userProfile, gameState.userWorldScenes, gameState.customScenes, showInitializationWizard]);
+  }, [gameState.userProfile, gameState.userWorldScenes, showInitializationWizard]);
   
   // 为了保持向后兼容，创建一个函数
   const getCurrentScenes = useCallback(() => currentScenes, [currentScenes]);
@@ -608,7 +643,6 @@ const AppContent: React.FC = () => {
   
   let sceneCharacters: Character[] = [];
   if (currentSceneLocal) {
-      const customCharsForScene = gameState.customCharacters[currentSceneLocal.id] || [];
       // 过滤掉主线故事，避免在角色列表中重复显示
       const mainStoryId = currentSceneLocal.mainStory?.id;
       const filteredCharacters = currentSceneLocal.characters.filter(char => {
@@ -618,12 +652,11 @@ const AppContent: React.FC = () => {
           }
           return true;
       });
-      sceneCharacters = [...filteredCharacters, ...customCharsForScene];
+      sceneCharacters = filteredCharacters; // 不再使用本地缓存的角色
   }
 
   const allCharacters = currentScenes.reduce((acc, scene) => {
-      const sceneChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
-      return [...acc, ...sceneChars];
+      return [...acc, ...scene.characters]; // 不再使用本地缓存的角色
   }, [] as Character[]);
 
   let currentCharacterLocal = gameState.tempStoryCharacter || sceneCharacters.find(c => c.id === gameState.selectedCharacterId);
@@ -635,28 +668,18 @@ const AppContent: React.FC = () => {
   // 注意：共享场景的角色是通过 API 动态加载的，不在 sceneCharacters 中
   // 这里我们会在 SharedCharacterSelectionScreen 中处理角色选择
 
-  const editingScenarioLocal = gameState.editingScenarioId 
-    ? gameState.customScenarios.find(s => s.id === gameState.editingScenarioId) 
+  // 从当前场景的 scripts 中查找剧本（不再使用本地缓存的 customScenarios）
+  const editingScenarioLocal = gameState.editingScenarioId && currentSceneLocal
+    ? currentSceneLocal.scripts?.find(s => String(s.id) === String(gameState.editingScenarioId))
     : null;
-  // 查找当前场景：优先从 customScenarios 中查找，确保使用最新的数据
-  // 使用严格相等比较，同时检查字符串和数字类型的 ID
-  const currentScenarioLocal = gameState.selectedScenarioId
-    ? gameState.customScenarios.find(s => {
-        // 同时检查字符串和数字类型的 ID 匹配
+  
+  const currentScenarioLocal = gameState.selectedScenarioId && currentSceneLocal
+    ? currentSceneLocal.scripts?.find(s => {
         const scenarioId = String(s.id);
         const selectedId = String(gameState.selectedScenarioId);
         return scenarioId === selectedId;
       })
     : null;
-  
-  // 检查 currentScenarioLocal 的查找，记录错误
-  if (!currentScenarioLocal && gameState.selectedScenarioId) {
-    console.error('[App] 找不到对应的 scenario', {
-      selectedScenarioId: gameState.selectedScenarioId,
-      selectedScenarioIdType: typeof gameState.selectedScenarioId,
-      availableIds: gameState.customScenarios.map(s => ({ id: s.id, title: s.title }))
-    });
-  }
 
   return (
     <div className="relative h-screen w-screen bg-black overflow-hidden font-sans text-white">
@@ -721,22 +744,103 @@ const AppContent: React.FC = () => {
             avatarUrl={gameState.userProfile?.avatarUrl}
             onOpenSettings={() => setShowSettingsModal(true)}
             onSwitchToMobile={handleSwitchToMobile}
-            currentStyle={gameState.worldStyle}
-            onStyleChange={(style) => {
-              dispatch({ type: 'SET_WORLD_STYLE', payload: style });
-              storageService.saveState({ ...gameState, worldStyle: style });
-            }}
             onLoginSuccess={handleLoginSuccess}
             isGuest={gameState.userProfile?.isGuest || !gameState.userProfile}
-            onGuestEnter={(nickname) => {
-              const profile = { 
-                nickname: nickname, 
-                avatarUrl: '',
-                isGuest: true, 
-                id: `guest_${Date.now()}`
-              }; 
-              dispatch({ type: 'SET_USER_PROFILE', payload: profile });
-              dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+            onGuestEnter={async (nickname) => {
+              try {
+                // 调用游客登录API
+                const response = await authApi.guestLogin(nickname);
+                
+                // 检查响应格式
+                const responseData = (response && typeof response === 'object' && 'data' in response) 
+                  ? response.data 
+                  : response;
+                
+                if (!responseData || !responseData.token) {
+                  console.error('游客登录失败：未获取到token');
+                  return;
+                }
+                
+                // 保存token
+                localStorage.setItem('auth_token', responseData.token);
+                
+                // 获取用户信息
+                const userInfo = await authApi.getCurrentUser(responseData.token);
+                
+                // 更新用户信息
+                dispatch({ type: 'SET_USER_PROFILE', payload: {
+                  id: String(userInfo.id),
+                  nickname: userInfo.nickname || nickname || '游客',
+                  avatarUrl: userInfo.avatar || '',
+                  isGuest: true,
+                }});
+                
+                // 游客使用硬编码的预置场景和角色
+                // 场景ID: 50 (日常生活助手)
+                // 角色ID: 315-320 (6个预置角色)
+                const presetEraId = responseData.presetEraId || 50;
+                const presetCharacterIds = responseData.presetCharacterIds || [315, 316, 317, 318, 319, 320];
+                
+                // 获取预置场景和角色数据
+                try {
+                  const presetEras = await eraApi.getSystemEras();
+                  const presetCharacters = await characterApi.getSystemCharacters();
+                  
+                  // 找到预置场景
+                  const presetEra = presetEras.find((e: any) => e.id === presetEraId);
+                  // 找到预置角色
+                  const presetChars = presetCharacters.filter((c: any) => presetCharacterIds.includes(c.id));
+                  
+                  if (presetEra && presetChars.length > 0) {
+                    // 构建游客的场景数据（使用预置内容）
+                    const guestScene = {
+                      id: presetEra.id.toString(),
+                      name: presetEra.name,
+                      description: presetEra.description,
+                      imageUrl: presetEra.imageUrl || '',
+                      systemEraId: presetEra.id,
+                      characters: presetChars.map((char: any) => ({
+                        id: char.id.toString(),
+                        name: char.name,
+                        age: char.age,
+                        role: char.role,
+                        bio: char.bio,
+                        avatarUrl: char.avatarUrl || '',
+                        backgroundUrl: char.backgroundUrl || '',
+                        themeColor: char.themeColor || 'blue-500',
+                        colorAccent: char.colorAccent || '#3b82f6',
+                        firstMessage: char.firstMessage || '',
+                        systemInstruction: char.systemInstruction || '',
+                        voiceName: char.voiceName || 'Aoede',
+                        mbti: char.mbti || 'INFJ',
+                        tags: char.tags || [],
+                        speechStyle: char.speechStyle || '',
+                        catchphrases: char.catchphrases || [],
+                        secrets: char.secrets || '',
+                        motivations: char.motivations || '',
+                        relationships: char.relationships || ''
+                      })),
+                      scenes: [],
+                      worldId: null, // 游客没有世界
+                    };
+                    
+                    // 更新场景列表（只包含预置场景）
+                    dispatch({ type: 'SET_USER_WORLD_SCENES', payload: [guestScene] });
+                    dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestScene.id });
+                  }
+                } catch (err) {
+                  console.error('加载预置场景和角色失败:', err);
+                  // 即使加载失败，也继续设置用户信息
+                }
+                
+                // 跳转到入口页面
+                dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+                dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
+              } catch (err: any) {
+                console.error('游客登录失败:', err);
+                // 显示错误提示
+                alert(err.message || '游客登录失败，请稍后重试');
+              }
             }}
           />
         );
@@ -794,18 +898,17 @@ const AppContent: React.FC = () => {
              onBack={() => dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
              onConnect={(character) => {
                  requireAuth(() => {
-                     // 登录用户只使用 userWorldScenes，不包含 WORLD_SCENES（体验场景）
-                     const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-                       ? [...gameState.userWorldScenes, ...gameState.customScenes]
-                       : [...WORLD_SCENES, ...gameState.customScenes];
-                     let sceneId: string | null = null;
-                     for (const s of allScenes) {
-                         const chars = [...s.characters, ...(gameState.customCharacters[s.id] || [])];
-                         if (chars.find(c => c.id === character.id)) {
-                             sceneId = s.id;
-                             break;
-                         }
-                     }
+                    // 登录用户只使用 userWorldScenes，不包含 WORLD_SCENES（体验场景）
+                    const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+                      ? gameState.userWorldScenes
+                      : WORLD_SCENES;
+                    let sceneId: string | null = null;
+                    for (const s of allScenes) {
+                        if (s.characters.find(c => c.id === character.id)) {
+                            sceneId = s.id;
+                            break;
+                        }
+                    }
                      if (sceneId) {
                          dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: sceneId });
                          dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: character.id });
@@ -834,6 +937,24 @@ const AppContent: React.FC = () => {
                         setEditingScene(null); 
                         setShowEraCreator(true); 
           }}
+          onOpenSceneCreationWizard={async () => {
+            const token = getToken();
+            if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+              return;
+            }
+            try {
+              const worlds = await worldApi.getAllWorlds(token);
+              if (worlds && worlds.length > 0) {
+                setCurrentWorldId(worlds[0].id);
+                openSceneCreationWizard();
+              } else {
+                showAlert('请先创建一个世界');
+              }
+            } catch (error) {
+              console.error('获取世界ID失败:', error);
+              showAlert('获取世界信息失败，请重试');
+            }
+          }}
           requireAuth={requireAuth}
           dispatch={dispatch}
         />
@@ -858,7 +979,6 @@ const AppContent: React.FC = () => {
           dispatch={dispatch}
           onSceneObjectSelect={(scene) => {
             // 当选择场景时，保存场景对象
-            console.log('[App] 选择共享场景:', scene);
             setSelectedSharedScene(scene);
             dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: scene.id });
             dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedCharacterSelection' });
@@ -1010,11 +1130,11 @@ const AppContent: React.FC = () => {
               if (currentScenarioLocal && currentScenarioLocal.participatingCharacters) {
                 // 登录用户只使用 userWorldScenes，不包含 WORLD_SCENES（体验场景）
       const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-        ? [...gameState.userWorldScenes, ...gameState.customScenes]
-        : [...WORLD_SCENES, ...gameState.customScenes];
+        ? gameState.userWorldScenes
+        : WORLD_SCENES;
               const scene = allScenes.find(s => s.id === currentScenarioLocal.sceneId);
               if (scene) {
-                const allChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
+                const allChars = scene.characters;
                 return currentScenarioLocal.participatingCharacters
                   .map(charId => allChars.find(c => c.id === charId))
                   .filter((char): char is Character => char !== undefined);
@@ -1031,11 +1151,11 @@ const AppContent: React.FC = () => {
           let participatingChars: Character[] = [];
           if (editingScenarioLocal) {
             const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-              ? [...gameState.userWorldScenes, ...gameState.customScenes]
-              : [...WORLD_SCENES, ...gameState.customScenes];
+              ? gameState.userWorldScenes
+              : WORLD_SCENES;
             const scene = allScenes.find(s => s.id === editingScenarioLocal.sceneId);
             if (scene) {
-              const allChars = [...scene.characters, ...(gameState.customCharacters[scene.id] || [])];
+              const allChars = scene.characters;
               if (editingScenarioLocal.participatingCharacters) {
                 participatingChars = editingScenarioLocal.participatingCharacters
                   .map(charId => allChars.find(c => c.id === charId))
@@ -1067,10 +1187,10 @@ const AppContent: React.FC = () => {
           const token = localStorage.getItem('auth_token');
           if (!token) return null;
           
-          // 获取所有用户场景
+          // 获取所有用户场景（不再使用本地缓存的 customScenes）
           const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-              ? [...gameState.userWorldScenes, ...gameState.customScenes]
-              : [...WORLD_SCENES, ...gameState.customScenes];
+              ? gameState.userWorldScenes
+              : WORLD_SCENES;
           
           return (
               <UserScriptEditor
@@ -1194,6 +1314,39 @@ const AppContent: React.FC = () => {
         />
       )}
 
+      {showSceneCreationWizard && currentWorldId && (
+        <SceneCreationWizard
+          token={getToken() || ''}
+          worldId={currentWorldId}
+          onComplete={async () => {
+            closeSceneCreationWizard();
+            setCurrentWorldId(null);
+            // 完整刷新所有数据（包括场景、角色、剧本等）
+            const token = getToken();
+            if (token && gameState.userProfile && !gameState.userProfile.isGuest) {                                                                             
+              try {
+                // 使用 loadAndSyncWorldData 完整刷新数据，确保角色等关联数据也被加载
+                await loadAndSyncWorldDataHook(token, 'sceneCreationWizard');
+              } catch (error) {
+                console.error('刷新数据失败:', error);
+                showAlert('场景创建成功，但刷新数据失败，请刷新页面查看', '提示', 'warning');
+              }
+            }
+          }}
+          onCancel={() => {
+            closeSceneCreationWizard();
+            setCurrentWorldId(null);
+          }}
+          onOpenEraCreator={() => {
+            // 关闭向导，打开创建新场景的模态框
+            closeSceneCreationWizard();
+            setCurrentWorldId(null);
+            setEditingScene(null);
+            setShowEraCreator(true);
+          }}
+        />
+      )}
+
       {showEraCreator && (
           <EraConstructorModal 
              initialScene={editingScene}
@@ -1201,6 +1354,26 @@ const AppContent: React.FC = () => {
              onDelete={editingScene ? () => handleDeleteEra(editingScene.id) : undefined}
              onClose={() => { setShowEraCreator(false); setEditingScene(null); }}
              worldStyle={gameState.worldStyle}
+             onOpenSceneCreationWizard={async () => {
+               const token = getToken();
+               if (!token || !gameState.userProfile || gameState.userProfile.isGuest) {
+                 return;
+               }
+               try {
+                 const worlds = await worldApi.getAllWorlds(token);
+                 if (worlds && worlds.length > 0) {
+                   setCurrentWorldId(worlds[0].id);
+                   setShowEraCreator(false);
+                   setEditingScene(null);
+                   openSceneCreationWizard();
+                 } else {
+                   showAlert('请先创建一个世界');
+                 }
+               } catch (error) {
+                 console.error('获取世界ID失败:', error);
+                 showAlert('获取世界信息失败，请重试');
+               }
+             }}
           />
       )}
 
@@ -1421,10 +1594,14 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
             const currentUser = await authApi.getCurrentUser(token);
             if (currentUser && currentUser.id) {
               enterSharedMode(config, currentUser.id);
-              // 导航到共享心域页面
-              window.location.href = '/';
-              // 通过 sessionStorage 标记需要进入共享心域页面
-              sessionStorage.setItem('navigate_to_shared', 'true');
+              // 先触发导航事件，然后再跳转，确保事件监听器能接收到
+              window.dispatchEvent(new CustomEvent('navigateToShared', { 
+                detail: { shareConfigId: config.id, visitorId: currentUser.id, shareConfig: config } 
+              }));
+              // 延迟一小段时间，确保事件被处理
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 100);
               return;
             }
           } catch (err) {
@@ -1459,11 +1636,14 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
       const currentUser = await authApi.getCurrentUser(token);
       if (currentUser && currentUser.id) {
         enterSharedMode(shareConfig, currentUser.id);
-        // 导航到共享心域页面
+        // 先触发导航事件，然后再跳转，确保事件监听器能接收到
         window.dispatchEvent(new CustomEvent('navigateToShared', { 
-          detail: { shareConfigId: shareConfig.id, visitorId: currentUser.id } 
+          detail: { shareConfigId: shareConfig.id, visitorId: currentUser.id, shareConfig: shareConfig } 
         }));
-        window.location.href = '/';
+        // 延迟一小段时间，确保事件被处理
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       } else {
         setError('无法获取用户信息，请重新登录');
       }

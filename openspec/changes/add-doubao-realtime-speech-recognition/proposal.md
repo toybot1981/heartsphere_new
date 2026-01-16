@@ -9,6 +9,8 @@
 
 豆包（火山引擎）提供了实时语音识别 API（realTimeRecognition），支持 WebSocket 连接和流式处理，适合实时对话场景。
 
+**参考文档**: [火山引擎实时语音识别 API 文档](https://www.volcengine.com/docs/6561/1594356?lang=zh)
+
 ## What Changes
 
 - **BREAKING**: 无（新增功能，不影响现有 API）

@@ -1,6 +1,6 @@
 package com.heartsphere.admin.controller;
 
-import com.heartsphere.admin.dto.McpConfigDTO;
+import com.heartsphere.admin.dto.MentisMcpConfigDTO;
 import com.heartsphere.admin.service.MentisManagementService;
 import com.heartsphere.shared.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,8 +31,8 @@ public class MentisManagementController {
      */
     @Operation(summary = "获取所有 MCP 配置", description = "返回系统中所有 MCP 服务器配置列表")
     @GetMapping("/mcp/configs")
-    public ResponseEntity<ApiResponse<List<McpConfigDTO>>> getMcpConfigs() {
-        List<McpConfigDTO> configs = mentisManagementService.getMcpConfigs();
+    public ResponseEntity<ApiResponse<List<MentisMcpConfigDTO>>> getMcpConfigs() {
+        List<MentisMcpConfigDTO> configs = mentisManagementService.getMcpConfigs();
         return ResponseEntity.ok(ApiResponse.success(configs));
     }
     
@@ -41,8 +41,8 @@ public class MentisManagementController {
      */
     @Operation(summary = "获取 MCP 配置", description = "根据配置 ID 获取单个 MCP 配置详情")
     @GetMapping("/mcp/configs/{id}")
-    public ResponseEntity<ApiResponse<McpConfigDTO>> getMcpConfig(@PathVariable Long id) {
-        McpConfigDTO config = mentisManagementService.getMcpConfig(id);
+    public ResponseEntity<ApiResponse<MentisMcpConfigDTO>> getMcpConfig(@PathVariable Long id) {
+        MentisMcpConfigDTO config = mentisManagementService.getMcpConfig(id);
         return ResponseEntity.ok(ApiResponse.success(config));
     }
     
@@ -51,8 +51,8 @@ public class MentisManagementController {
      */
     @Operation(summary = "创建 MCP 配置", description = "创建新的 MCP 服务器配置")
     @PostMapping("/mcp/configs")
-    public ResponseEntity<ApiResponse<McpConfigDTO>> createMcpConfig(@RequestBody McpConfigDTO dto) {
-        McpConfigDTO created = mentisManagementService.createMcpConfig(dto);
+    public ResponseEntity<ApiResponse<MentisMcpConfigDTO>> createMcpConfig(@RequestBody MentisMcpConfigDTO dto) {
+        MentisMcpConfigDTO created = mentisManagementService.createMcpConfig(dto);
         return ResponseEntity.ok(ApiResponse.success(created));
     }
     
@@ -60,10 +60,10 @@ public class MentisManagementController {
      * 更新 MCP 配置
      */
     @PutMapping("/mcp/configs/{id}")
-    public ResponseEntity<ApiResponse<McpConfigDTO>> updateMcpConfig(
+    public ResponseEntity<ApiResponse<MentisMcpConfigDTO>> updateMcpConfig(
             @PathVariable Long id,
-            @RequestBody McpConfigDTO dto) {
-        McpConfigDTO updated = mentisManagementService.updateMcpConfig(id, dto);
+            @RequestBody MentisMcpConfigDTO dto) {
+        MentisMcpConfigDTO updated = mentisManagementService.updateMcpConfig(id, dto);
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
     
@@ -92,5 +92,19 @@ public class MentisManagementController {
     public ResponseEntity<ApiResponse<List<Object>>> getMcpTools(@PathVariable Long id) {
         List<Object> tools = mentisManagementService.getMcpTools(id);
         return ResponseEntity.ok(ApiResponse.success(tools));
+    }
+    
+    /**
+     * 调用 MCP 工具进行测试
+     */
+    @PostMapping("/mcp/configs/{id}/tools/{toolName}/call")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> callMcpTool(
+            @PathVariable Long id,
+            @PathVariable String toolName,
+            @RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> arguments = (Map<String, Object>) request.get("arguments");
+        Map<String, Object> result = mentisManagementService.callMcpTool(id, toolName, arguments);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

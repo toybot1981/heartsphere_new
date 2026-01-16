@@ -26,7 +26,6 @@ async function example1() {
     },
   });
 
-  console.log('文本情绪分析:', textResult);
 
   // 分析行为情绪
   const interactions: Interaction[] = [
@@ -42,19 +41,15 @@ async function example1() {
     interactions
   );
 
-  console.log('行为情绪分析:', behaviorResult);
 
   // 获取当前情绪
   const currentEmotion = await emotionSystem.getCurrentEmotion();
-  console.log('当前情绪:', currentEmotion);
 
   // 分析情绪趋势
   const trend = await emotionSystem.analyzeTrend('week');
-  console.log('情绪趋势:', trend);
 
   // 获取情绪统计
   const statistics = await emotionSystem.getEmotionStatistics('week');
-  console.log('情绪统计:', statistics);
 }
 
 async function example2() {
@@ -79,10 +74,6 @@ async function example2() {
       source: EmotionSource.CONVERSATION,
     });
     
-    console.log(`消息: ${message}`);
-    console.log(`情绪: ${emotion.primaryEmotion} (${emotion.intensity})`);
-    console.log(`置信度: ${(emotion.confidence * 100).toFixed(0)}%`);
-    console.log('---');
   }
 }
 

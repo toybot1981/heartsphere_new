@@ -102,9 +102,9 @@ export const storageService = {
         editingScenarioId: null, 
         history: state.history,
         customAvatars: state.customAvatars,
-        customScenarios: state.customScenarios,
-        customScenes: state.customScenes,
-        customCharacters: state.customCharacters, // Ensure user-created characters for default scenes are saved
+        customScenarios: [], // 不再保存到本地，一律从服务器读取
+        customScenes: [], // 不再保存到本地，一律从服务器读取
+        customCharacters: {}, // 不再保存到本地，一律从服务器读取
         journalEntries: state.journalEntries,
         settings: state.settings,
         mailbox: state.mailbox,
@@ -171,9 +171,9 @@ export const storageService = {
           editingScenarioId: null, 
           history: state.history,
           customAvatars: state.customAvatars,
-          customScenarios: state.customScenarios,
-          customScenes: state.customScenes,
-          customCharacters: state.customCharacters,
+          customScenarios: [], // 不再保存到本地，一律从服务器读取
+          customScenes: [], // 不再保存到本地，一律从服务器读取
+          customCharacters: {}, // 不再保存到本地，一律从服务器读取
           journalEntries: state.journalEntries,
           settings: state.settings,
           mailbox: state.mailbox,
@@ -262,7 +262,6 @@ export const storageService = {
       // Fallback / Migration: Check LocalStorage
       const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
       if (legacyData) {
-        console.log("Migrating data from LocalStorage...");
         try {
           const parsedData = JSON.parse(legacyData);
           // 如果 IndexedDB 可用，尝试保存到 IndexedDB

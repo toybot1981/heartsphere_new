@@ -100,6 +100,27 @@ export const adminResourcesApi = {
   },
 
   /**
+   * 更新资源的图片（上传新图片并更新URL，不创建新资源记录）
+   */
+  updateImage: (
+    id: number,
+    file: File,
+    token: string
+  ): Promise<SystemResource> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return request<SystemResource>(`/system/resources/${id}/image`, {
+      method: 'PUT',
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // 不设置 Content-Type，让浏览器自动设置（包含 boundary）
+      },
+    });
+  },
+
+  /**
    * 删除系统资源
    */
   delete: (id: number, token: string): Promise<void> => {

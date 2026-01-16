@@ -69,7 +69,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                 { section: 'items', label: '剧本物品', icon: '🎁' },
                 { section: 'main-stories', label: '主线剧情', icon: '📖' },
                 { section: 'graph', label: 'Graph流程编辑器', icon: '🔄' },
-                { section: 'skills', label: '技能管理', icon: '⚡' }
+                { section: 'skills', label: '技能管理', icon: '⚡' },
+                { section: 'resources', label: '资源管理', icon: '🖼️' },
+                { section: 'images', label: '图片管理', icon: '🖼️' },
+                { section: 'videos', label: '视频管理', icon: '🎬' }
             ]
         },
         {
@@ -87,14 +90,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             label: '系统配置',
             icon: '⚙️',
             items: [
-                { section: 'resources', label: '资源管理', icon: '🖼️' },
-                { section: 'images', label: '图片管理', icon: '🖼️' },
-                { section: 'videos', label: '视频管理', icon: '🎬' },
                 { section: 'invite-codes', label: '邀请码管理', icon: '🎫' },
                 { section: 'api-keys', label: 'API Key管理', icon: '🔑' },
-                { section: 'subscription-plans', label: '会员配置', icon: '💎' },
                 { section: 'email-config', label: '邮箱配置', icon: '📧' },
                 { section: 'settings', label: '全局配置', icon: '⚙️' },
+                { section: 'subscription-plans', label: '会员配置', icon: '💎' },
                 { section: 'billing', label: '计费管理', icon: '💳' },
                 { section: 'plugins', label: '插件管理', icon: '🔌' },
                 { section: 'prompts', label: '提示词管理', icon: '💬' },

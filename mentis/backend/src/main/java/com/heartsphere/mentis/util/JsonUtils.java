@@ -2,6 +2,7 @@ package com.heartsphere.mentis.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,7 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JsonUtils {
     
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule()); // 注册 JSR310 模块以支持 LocalDateTime 等类型
     
     /**
      * 对象转JSON字符串

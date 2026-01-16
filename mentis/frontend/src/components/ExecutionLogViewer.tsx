@@ -350,7 +350,13 @@ export const ExecutionLogViewer: React.FC<ExecutionLogViewerProps> = ({
       </Box>
 
       {/* 导出对话框 */}
-      <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+      <Dialog 
+        open={exportDialogOpen} 
+        onClose={() => setExportDialogOpen(false)}
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
+      >
         <DialogTitle>导出日志</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

@@ -44,6 +44,8 @@ import { logger } from '../utils/logger';
 import { getToken } from '../services/api/base/tokenStorage';
 import { mailboxApi } from '../services/api/mailbox';
 import { browserNotificationService } from '../services/mailbox/BrowserNotificationService';
+import { useGameState } from '../contexts/GameStateContext';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
 
 // 类型定义已移至 types/chat.ts
 // 音频解码函数已移至 utils/audio.ts
@@ -260,11 +262,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   });
   
   // 场景生成状态管理（使用自定义Hook）
+  // 注意：场景风格应该从场景对象中获取，但目前场景信息不在 props 中
+  // 暂时使用默认的写实风格，后续可以优化为从场景中获取
+  // 从角色对象中获取场景风格（如果角色有 sceneStyle 属性）
+  // 否则使用默认的写实风格
+  const sceneStyle = (character as any)?.sceneStyle || 'realistic';
+
   const sceneGeneration = useSceneGeneration({
     isStoryMode: !!customScenario || (character?.id?.startsWith('story_') ?? false),
     autoGenerate: settings.autoGenerateStoryScenes || false,
     lastMessage: safeHistory[safeHistory.length - 1],
     defaultBackgroundUrl: character?.backgroundUrl || null,
+    sceneStyle: sceneStyle,
   });
 
   // 流式响应处理（使用自定义Hook）
@@ -618,9 +627,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     // 系统集成：分析用户输入并集成各个系统（使用统一的Hook）
     try {
       await systemIntegration.analyzeAndIntegrate(userText, userMsg.id);
-      console.log('[ChatWindow] 系统集成分析完成');
+      // 系统集成分析完成
     } catch (error) {
-      console.warn('[ChatWindow] 系统集成分析失败，继续执行:', error);
+      // 系统集成分析失败，继续执行（不影响主流程）
       // 系统集成失败不影响主流程，继续执行
     }
     
@@ -654,53 +663,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       // 检查当前配置模式
       const config = await AIConfigManager.getUserConfig();
       
-      console.log('[ChatWindow] 大模型连接模式检测:', {
-        mode: config.mode,
-        textProvider: config.textProvider,
-        textModel: config.textModel,
-        hasApiKeys: {
-          gemini: !!AIConfigManager.getLocalApiKeys().gemini,
-          openai: !!AIConfigManager.getLocalApiKeys().openai,
-          qwen: !!AIConfigManager.getLocalApiKeys().qwen,
-          doubao: !!AIConfigManager.getLocalApiKeys().doubao,
-        }
-      });
-      
       // 统一模式和本地模式都使用相同的AI响应生成逻辑
       // 统一模式：获取相关记忆用于上下文
       let relevantMemories: any[] = [];
       if (config.mode === 'unified') {
-        console.log('[ChatWindow] 使用统一接入模式调用大模型');
-        
         // 温度感引擎：计算温度感（使用系统集成Hook）
         try {
-          const currentTemperature = await systemIntegration.calculateTemperature(userText);
-          console.log('[ChatWindow] 温度感计算完成:', currentTemperature);
+          await systemIntegration.calculateTemperature(userText);
         } catch (error) {
-          console.warn('[ChatWindow] 温度感计算失败，继续执行:', error);
           // 温度感计算失败不影响主流程，继续执行
         }
         
         // 获取相关记忆用于上下文（使用系统集成Hook）
         try {
           relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
-          console.log('[ChatWindow] 相关记忆获取完成，数量:', relevantMemories.length);
         } catch (error) {
-          console.warn('[ChatWindow] 获取相关记忆失败，继续执行（不使用记忆）:', error);
+          // 获取相关记忆失败，继续执行（不使用记忆）
           relevantMemories = []; // 失败时使用空数组
           // 记忆获取失败不影响主流程，继续执行
         }
-      } else {
-        console.log('[ChatWindow] 使用本地配置模式调用大模型', {
-          provider: config.textProvider || 'gemini',
-          model: config.textModel,
-          hasProviderConfig: {
-            gemini: !!AIConfigManager.getLocalApiKeys().gemini,
-            openai: !!AIConfigManager.getLocalApiKeys().openai,
-            qwen: !!AIConfigManager.getLocalApiKeys().qwen,
-            doubao: !!AIConfigManager.getLocalApiKeys().doubao,
-          }
-        });
       }
       
       // 使用统一的AI响应生成函数
@@ -1148,10 +1129,68 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return null;
   }
 
-  // 背景图片预加载
+  // 获取当前场景信息（用于回退到场景背景图）
+  const { state: gameState } = useGameState();
+  const currentScene = React.useMemo(() => {
+    if (!gameState.selectedSceneId) return null;
+    const allScenes = [...(gameState.userWorldScenes || []), ...(gameState.customScenes || [])];
+    return allScenes.find(scene => scene.id === gameState.selectedSceneId) || null;
+  }, [gameState.selectedSceneId, gameState.userWorldScenes, gameState.customScenes]);
+
+  // 主线剧情模式下，如果没有旁白者图片，使用第一位角色的头像
+  const displayCharacter = React.useMemo(() => {
+    // 判断是否是主线剧情模式（旁白者）
+    // 1. 检查是否是主线剧情角色（role 为 '叙事者' 或 id 匹配场景的 mainStory.id）
+    // 2. 或者 id 以 'story_' 开头（旧版剧本模式）
+    const isMainStoryNarrator = 
+      isStoryMode && (
+        character?.role === '叙事者' ||
+        character?.id?.startsWith('story_') ||
+        (currentScene?.mainStory && character?.id === currentScene.mainStory.id.toString())
+      );
+    
+    // 如果是主线剧情模式且没有头像，尝试使用第一位角色的头像
+    if (isMainStoryNarrator && (!character.avatarUrl || !character.avatarUrl.trim())) {
+      const firstCharacter = currentScene?.characters?.[0];
+      if (firstCharacter?.avatarUrl && firstCharacter.avatarUrl.trim()) {
+        return {
+          ...character,
+          avatarUrl: firstCharacter.avatarUrl,
+        };
+      }
+    }
+    
+    return character;
+  }, [character, isStoryMode, currentScene]);
+
+  // 背景图片选择逻辑：优先使用角色背景图，如果没有则使用场景背景图
   const backgroundImage = React.useMemo(() => {
-    return isStoryMode && sceneGeneration.sceneImageUrl ? sceneGeneration.sceneImageUrl : character.backgroundUrl;
-  }, [isStoryMode, sceneGeneration.sceneImageUrl, character.backgroundUrl]);
+    // 故事模式下，优先使用生成的场景图
+    if (isStoryMode && sceneGeneration.sceneImageUrl) {
+      return sceneGeneration.sceneImageUrl;
+    }
+    // 优先使用角色设置的背景图
+    if (character.backgroundUrl && character.backgroundUrl.trim()) {
+      return character.backgroundUrl;
+    }
+    // 如果没有角色背景图，使用场景的背景图（imageUrl）
+    if (currentScene?.imageUrl && currentScene.imageUrl.trim()) {
+      return currentScene.imageUrl;
+    }
+    return null;
+  }, [isStoryMode, sceneGeneration.sceneImageUrl, character.backgroundUrl, currentScene?.imageUrl]);
+
+  // 生成背景图的多分辨率版本
+  const backgroundVariants: ImageVariants | undefined = React.useMemo(() => {
+    if (!backgroundImage || !backgroundImage.trim()) return undefined;
+    
+    return {
+      original: backgroundImage,
+      thumbnail: generateVariantUrl(backgroundImage, 200, 200),
+      medium: generateVariantUrl(backgroundImage, 800, 600),
+      highQuality: generateVariantUrl(backgroundImage, 1920, 1080),
+    };
+  }, [backgroundImage]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
@@ -1160,10 +1199,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         character={character}
         isStoryMode={isStoryMode}
         isCinematic={uiState.isCinematic}
+        backgroundVariants={backgroundVariants}
       />
       
       <CharacterAvatar
-        character={character}
+        character={displayCharacter}
         isStoryMode={isStoryMode}
         isCinematic={uiState.isCinematic}
       />
@@ -1222,7 +1262,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           {safeHistory.length === 0 && !isLoading && (
             <div className="text-white/50 text-center py-4">
               <p>暂无消息</p>
-              <p className="text-xs mt-2 opacity-50">history类型: {typeof history}, 是否为数组: {Array.isArray(history) ? '是' : '否'}, 长度: {safeHistory.length}</p>
             </div>
           )}
           {safeHistory
@@ -1358,11 +1397,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <CardMaker
           userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
           onSave={(card) => {
-            console.log('保存的卡片:', card);
             uiState.setShowCardMaker(false);
           }}
           onSend={(card, recipientId) => {
-            console.log('发送卡片:', card, '给用户:', recipientId);
             uiState.setShowCardMaker(false);
           }}
           onClose={() => uiState.setShowCardMaker(false)}

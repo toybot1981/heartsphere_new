@@ -1,5 +1,6 @@
 package com.heartsphere.dto;
 
+import com.heartsphere.shared.dto.ImageVariantsDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,9 @@ public class CharacterDTO {
     private String role;
     private String bio;
     private String avatarUrl;
+    private ImageVariantsDTO avatarVariants; // 头像多分辨率版本
     private String backgroundUrl;
+    private ImageVariantsDTO backgroundVariants; // 背景多分辨率版本
     private String themeColor;
     private String colorAccent;
     private String firstMessage;

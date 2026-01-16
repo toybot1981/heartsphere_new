@@ -120,7 +120,6 @@ class ImageCacheService {
                 // 将 data URL 转换为 blob
                 const response = await fetch(proxyResult.dataUrl);
                 blob = await response.blob();
-                console.log('[ImageCache] 通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
               } else {
                 throw new Error(proxyResult.error || '后端代理下载失败');
               }
@@ -162,7 +161,6 @@ class ImageCacheService {
         request.onerror = () => reject(request.error);
       });
 
-      console.log('[ImageCache] 图片已缓存:', imageUrl);
       return blobUrl;
     } catch (error) {
       console.error('[ImageCache] 缓存图片失败:', error);
@@ -384,7 +382,6 @@ class ImageCacheService {
 
         const uploadResult = await uploadFn(file);
         if (uploadResult.success && uploadResult.url) {
-          console.log('[ImageCache] 图片已上传到服务器:', uploadResult.url);
           // 使用服务器URL，但仍保留本地缓存
           return uploadResult.url;
         }

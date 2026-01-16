@@ -4,8 +4,11 @@ com/heartsphere/admin/graph/core/node/ParallelNodeConfig.class
 com/heartsphere/admin/dto/graph/GraphExecutionAnalyticsDTO$GraphExecutionAnalyticsDTOBuilder.class
 com/heartsphere/admin/util/ConfigKey.class
 com/heartsphere/admin/entity/heartconnect/HeartSphereShareConfig$AccessPermission.class
+com/heartsphere/admin/repository/MentisMcpConfigRepository.class
+com/heartsphere/admin/service/MentisToolConfigService.class
 com/heartsphere/admin/dto/PromptGenerateResponse.class
 com/heartsphere/admin/dto/heartconnect/UpdateShareConfigRequest$ShareScopeItem.class
+com/heartsphere/admin/dto/MentisMcpConfigDTO.class
 com/heartsphere/admin/service/SystemEraService.class
 com/heartsphere/admin/controller/AdminHeartSphereConnectionController.class
 com/heartsphere/admin/controller/AdminSystemDataController.class
@@ -39,6 +42,7 @@ com/heartsphere/admin/entity/SystemAdmin.class
 com/heartsphere/admin/service/plugin/PluginService$2.class
 com/heartsphere/admin/dto/plugin/PluginDTO.class
 com/heartsphere/admin/config/DataSourceConfig$1.class
+com/heartsphere/admin/controller/AdminVideoController$1.class
 com/heartsphere/admin/graph/core/node/LoopNode$LoopCondition$ConditionType.class
 com/heartsphere/admin/service/ImageStorageService.class
 com/heartsphere/admin/dto/PromptTemplateDTO.class
@@ -66,7 +70,7 @@ com/heartsphere/admin/service/edu/AdminEduAnalyticsService.class
 com/heartsphere/admin/exception/billing/PricingNotFoundException.class
 com/heartsphere/admin/graph/core/node/EndNode$EndNodeBuilder.class
 com/heartsphere/admin/graph/core/node/CharacterNode$1.class
-com/heartsphere/admin/repository/McpConfigRepository.class
+com/heartsphere/admin/controller/AdminVideoController.class
 com/heartsphere/admin/entity/SystemMainStory.class
 com/heartsphere/admin/dto/UserMemoryDTO.class
 com/heartsphere/admin/controller/GraphExecutionController.class
@@ -141,6 +145,7 @@ com/heartsphere/admin/service/AdminHeartSphereConnectionService.class
 com/heartsphere/admin/dto/AdminLoginRequest.class
 com/heartsphere/admin/entity/plugin/Plugin.class
 com/heartsphere/admin/dto/heartconnect/ConnectionRequestDTO.class
+com/heartsphere/admin/repository/MentisMcpConfigRepository$MentisMcpConfigEntity.class
 com/heartsphere/admin/entity/heartconnect/HeartSphereConnection$ConnectionStatus.class
 com/heartsphere/admin/entity/Character.class
 com/heartsphere/admin/dto/ai/ChatCompletionRequest$ChatMessage.class
@@ -157,6 +162,7 @@ com/heartsphere/admin/entity/heartconnect/HeartSphereConnection.class
 com/heartsphere/admin/service/billing/PricingService.class
 com/heartsphere/admin/dto/PerformanceMetricsDTO.class
 com/heartsphere/admin/graph/core/node/ConditionNodeConfig.class
+com/heartsphere/admin/service/ToolTestService.class
 com/heartsphere/admin/service/ai/AIService.class
 com/heartsphere/admin/dto/graph/ExecutionLogDTO.class
 com/heartsphere/admin/service/ImageStorageService$2.class
@@ -185,6 +191,7 @@ com/heartsphere/admin/service/edu/AdminEduStudentService.class
 com/heartsphere/admin/dto/PerformanceMetricsDTO$PerformanceMetricsDTOBuilder.class
 com/heartsphere/admin/security/UserDetailsServiceImpl.class
 com/heartsphere/admin/dto/InviteCodeDTO.class
+com/heartsphere/admin/repository/MentisToolConfigRepository$MentisToolConfigRowMapper.class
 com/heartsphere/admin/graph/core/node/SkillCheckNodeConfig.class
 com/heartsphere/admin/graph/core/node/ChoiceNode$ChoiceOption$ChoiceOptionBuilder.class
 com/heartsphere/admin/dto/ai/TextGenerationResponse.class
@@ -235,6 +242,7 @@ com/heartsphere/admin/service/impl/MentisSyncServiceImpl.class
 com/heartsphere/admin/graph/core/node/WaitNode$WaitType.class
 com/heartsphere/admin/repository/SystemEraEventRepository.class
 com/heartsphere/admin/controller/AdminChronosLetterController.class
+com/heartsphere/admin/repository/MentisToolConfigRepository$MentisToolConfigEntity.class
 com/heartsphere/admin/repository/heartconnect/PortalPermissionRepository.class
 com/heartsphere/admin/dto/HeartSphereConnectionStatisticsDTO.class
 com/heartsphere/admin/graph/core/node/ChoiceNodeConfig$ChoiceNodeConfigBuilder.class
@@ -268,7 +276,6 @@ com/heartsphere/admin/service/SystemEraEventService.class
 com/heartsphere/admin/dto/plugin/PluginPreviewDTO$PluginPreviewDTOBuilder.class
 com/heartsphere/admin/repository/SystemAdminRepository.class
 com/heartsphere/admin/graph/core/node/CharacterNode$CharacterNodeBuilder.class
-com/heartsphere/admin/dto/McpConfigDTO.class
 com/heartsphere/admin/dto/AgentRoleDTO.class
 com/heartsphere/admin/graph/core/node/StateChangeNode$StateChange$StateChangeBuilder.class
 com/heartsphere/admin/dto/ExceptionHandlingRecordDTO$ExceptionHandlingRecordDTOBuilder.class
@@ -279,6 +286,7 @@ com/heartsphere/admin/entity/plugin/UserPlugin$UserPluginBuilder.class
 com/heartsphere/admin/graph/core/node/SkillCheckNode$SkillCheckNodeBuilder.class
 com/heartsphere/admin/graph/core/node/ChoiceNodeConfig$ChoiceEffectConfig.class
 com/heartsphere/admin/controller/GraphExecutionQueryController.class
+com/heartsphere/admin/repository/MentisToolConfigRepository.class
 com/heartsphere/admin/repository/WorldRepository.class
 com/heartsphere/admin/service/MentisSyncService.class
 com/heartsphere/admin/repository/InviteCodeRepository.class
@@ -314,6 +322,7 @@ com/heartsphere/admin/service/ResourceMatchingService.class
 com/heartsphere/admin/repository/graph/GraphExecutionRepository.class
 com/heartsphere/admin/repository/PromptVariableRepository.class
 com/heartsphere/admin/model/memory/MemoryImportance.class
+com/heartsphere/admin/service/ToolTestService$1.class
 com/heartsphere/admin/controller/AdminPromptController.class
 com/heartsphere/admin/service/billing/BillingAlertService.class
 com/heartsphere/admin/dto/WarmMessageDTO.class
@@ -346,6 +355,7 @@ com/heartsphere/admin/dto/graph/GraphExecutionQueryRequest.class
 com/heartsphere/admin/graph/core/GraphEngine$GraphDefinition.class
 com/heartsphere/admin/dto/ai/AudioResponse.class
 com/heartsphere/admin/entity/heartconnect/HeartSphereShareScope$ScopeType.class
+com/heartsphere/admin/controller/MentisToolController.class
 com/heartsphere/admin/repository/AIModelConfigRepository.class
 com/heartsphere/admin/service/graph/GraphExecutionService$4.class
 com/heartsphere/admin/dto/ComplaintDTO$ComplaintDTOBuilder.class
@@ -362,6 +372,7 @@ com/heartsphere/admin/controller/AdminSkillController.class
 com/heartsphere/admin/graph/core/node/ConditionNode$Condition.class
 com/heartsphere/admin/dto/CreateApiKeyRequest.class
 com/heartsphere/admin/graph/core/node/EraNode$1.class
+com/heartsphere/admin/service/ThumbnailGenerationService.class
 com/heartsphere/admin/graph/core/node/EventNode$EventNodeBuilder.class
 com/heartsphere/admin/controller/HeartConnectAdminController.class
 com/heartsphere/admin/config/DataSourceContextHolder.class
@@ -369,6 +380,7 @@ com/heartsphere/admin/entity/billing/BillingAlert.class
 com/heartsphere/admin/service/graph/GraphExecutionManagementService.class
 com/heartsphere/admin/dto/SystemAdminDTO.class
 com/heartsphere/admin/dto/ai/TextGenerationRequest.class
+com/heartsphere/admin/repository/MentisMcpConfigRepository$MentisMcpConfigRowMapper.class
 com/heartsphere/admin/graph/core/GraphEngine$GraphExecutor.class
 com/heartsphere/admin/controller/ExecutionLogController.class
 com/heartsphere/admin/dto/graph/ExecutionLogQueryRequest.class
@@ -436,6 +448,7 @@ com/heartsphere/admin/util/heartconnect/ShareCodeGenerator.class
 com/heartsphere/admin/dto/SubscriptionPlanDTO.class
 com/heartsphere/admin/graph/research/CustomGraphEngine$GraphExecutor.class
 com/heartsphere/admin/controller/AdminBillingPricingController.class
+com/heartsphere/admin/service/VideoConversionService.class
 com/heartsphere/admin/entity/SystemWorld.class
 com/heartsphere/admin/entity/graph/GraphDefinition.class
 com/heartsphere/admin/service/MentisManagementService.class
@@ -445,13 +458,14 @@ com/heartsphere/admin/dto/plugin/PluginDTO$PluginDTOBuilder.class
 com/heartsphere/admin/service/graph/GraphRecommendationService.class
 com/heartsphere/admin/service/graph/GraphDefinitionService.class
 com/heartsphere/admin/graph/core/node/ChoiceNodeConfig$ChoiceOptionConfig$ChoiceOptionConfigBuilder.class
-com/heartsphere/admin/repository/McpConfigRepository$McpConfigRowMapper.class
 com/heartsphere/admin/graph/core/node/ConditionNodeExample.class
 com/heartsphere/admin/dto/ChangePasswordDTO.class
 com/heartsphere/admin/graph/core/GraphEngine$GraphExecutionException.class
+com/heartsphere/admin/config/JdbcConfig.class
 com/heartsphere/admin/repository/EntityRelationRepository.class
 com/heartsphere/admin/graph/core/node/ItemNode$1.class
 com/heartsphere/admin/repository/billing/TokenQuotaTransactionRepository.class
+com/heartsphere/admin/controller/AdminImageController.class
 com/heartsphere/admin/dto/graph/GraphExecutionListResponse.class
 com/heartsphere/admin/util/UpdateScriptPromptsRunner.class
 com/heartsphere/admin/dto/heartconnect/CreateShareConfigRequest.class
@@ -467,6 +481,7 @@ com/heartsphere/admin/config/DataSourceConfig.class
 com/heartsphere/admin/entity/SystemCharacter.class
 com/heartsphere/admin/entity/heartconnect/HeartSphereConnectionRequest$RequestStatus.class
 com/heartsphere/admin/graph/core/node/ChoiceNode$ChoiceCondition$ChoiceConditionBuilder.class
+com/heartsphere/admin/service/MentisToolConfigService$MentisToolConfigDTO.class
 com/heartsphere/admin/dto/heartconnect/ShareConfigDTO.class
 com/heartsphere/admin/entity/heartconnect/PortalTeleportationLog$Status.class
 com/heartsphere/admin/repository/heartconnect/WarmMessageRepository.class
@@ -499,7 +514,6 @@ com/heartsphere/admin/graph/core/node/WaitNode$WaitNodeBuilder.class
 com/heartsphere/admin/dto/graph/GraphExecutionChoiceRequest.class
 com/heartsphere/admin/graph/core/execution/ExecutionContext$WaitType.class
 com/heartsphere/admin/dto/ConnectionRequestDTO$ConnectionRequestDTOBuilder.class
-com/heartsphere/admin/repository/McpConfigRepository$McpConfigEntity.class
 com/heartsphere/admin/dto/graph/ExecutionLogListResponse.class
 com/heartsphere/admin/entity/heartconnect/HeartSphereShareScope.class
 com/heartsphere/admin/controller/AdminSubscriptionPlanController.class

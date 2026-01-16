@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,10 +36,14 @@ public class AIServiceImpl implements AIService {
     private String apiKey;
     
     public AIServiceImpl(RestTemplateBuilder restTemplateBuilder) {
-        this.restTemplate = restTemplateBuilder
-            .setConnectTimeout(java.time.Duration.ofSeconds(30))
-            .setReadTimeout(java.time.Duration.ofSeconds(60))
-            .build();
+        // 创建不使用代理的 RestTemplate
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) java.time.Duration.ofSeconds(30).toMillis());
+        factory.setReadTimeout((int) java.time.Duration.ofSeconds(60).toMillis());
+        // 禁用代理
+        factory.setProxy(null);
+        
+        this.restTemplate = new RestTemplate(factory);
     }
     
     @Override
@@ -54,10 +59,14 @@ public class AIServiceImpl implements AIService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             // 使用 X-API-Key 或 Bearer 方式传递 API Key
             // 如果 api-key 以 hs_ 开头，可以使用 Bearer 方式，否则使用 X-API-Key
-            if (apiKey != null && apiKey.startsWith("hs_")) {
-                headers.setBearerAuth(apiKey);
+            if (apiKey != null && !apiKey.isEmpty()) {
+                if (apiKey.startsWith("hs_")) {
+                    headers.setBearerAuth(apiKey);
+                } else {
+                    headers.set("X-API-Key", apiKey);
+                }
             } else {
-                headers.set("X-API-Key", apiKey);
+                log.warn("API Key 未配置，请求可能失败");
             }
             
             // 构建请求体，将 mentis 的请求转换为原有客户端的请求格式
@@ -139,9 +148,12 @@ public class AIServiceImpl implements AIService {
             // 这里先使用同步方式作为占位实现
             log.warn("流式生成文本功能需要完整的SSE客户端实现，当前使用同步方式作为占位");
             
-            // 临时使用同步方式
+            // 临时使用同步方式：先发送响应（done=false），再发送完成标记（done=true）
             TextGenerationResponse textResponse = generateText(userId, request);
-            handler.handle(textResponse, true);
+            if (textResponse != null && textResponse.getContent() != null && !textResponse.getContent().isEmpty()) {
+                handler.handle(textResponse, false); // 发送响应内容
+            }
+            handler.handle(textResponse, true); // 发送完成标记
             
         } catch (Exception e) {
             log.error("调用AI服务流式生成失败", e);

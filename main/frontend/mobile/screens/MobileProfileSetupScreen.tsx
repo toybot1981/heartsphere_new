@@ -49,7 +49,6 @@ export const MobileProfileSetupScreen: React.FC<MobileProfileSetupScreenProps> =
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[MobileProfileSetup] 登录按钮被点击');
             onLogin();
           }}
           variant="primary"

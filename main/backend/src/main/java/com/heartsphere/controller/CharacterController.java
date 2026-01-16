@@ -1,5 +1,6 @@
 package com.heartsphere.controller;
 
+import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.dto.CharacterDTO;
 import com.heartsphere.entity.Character;
 import com.heartsphere.entity.User;
@@ -10,6 +11,8 @@ import com.heartsphere.repository.UserRepository;
 import com.heartsphere.repository.WorldRepository;
 import com.heartsphere.repository.EraRepository;
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.MembershipService;
+import com.heartsphere.util.GuestAccessChecker;
 import com.heartsphere.utils.DTOMapper;
 import com.heartsphere.exception.ResourceNotFoundException;
 import com.heartsphere.exception.ForbiddenException;
@@ -45,10 +48,62 @@ public class CharacterController {
     @Autowired
     private com.heartsphere.shared.util.ImageUrlUtils imageUrlUtils;
 
+    @Autowired
+    private MembershipService membershipService;
+
+    @Autowired
+    private com.heartsphere.repository.SystemCharacterRepository systemCharacterRepository;
+
     // 获取当前用户的所有角色
     @GetMapping
     public ResponseEntity<List<CharacterDTO>> getAllCharacters() {
         logger.info("========== [CharacterController] 获取所有角色 ==========");
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            // 游客模式：返回硬编码的系统预置角色（ID: 315-320）
+            logger.info("[CharacterController] 游客模式，返回预置角色");
+            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
+            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
+                systemCharacterRepository.findAllById(presetCharacterIds);
+            
+            // 将 SystemCharacter 转换为 CharacterDTO
+            List<CharacterDTO> characterDTOs = systemCharacters.stream()
+                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
+                .map(sc -> {
+                    CharacterDTO dto = new CharacterDTO();
+                    dto.setId(sc.getId());
+                    dto.setName(sc.getName());
+                    dto.setDescription(sc.getDescription());
+                    dto.setBio(sc.getBio());
+                    dto.setAvatarUrl(sc.getAvatarUrl());
+                    dto.setBackgroundUrl(sc.getBackgroundUrl());
+                    dto.setRole(sc.getRole());
+                    dto.setFirstMessage(sc.getFirstMessage());
+                    dto.setSystemInstruction(sc.getSystemInstruction());
+                    dto.setGender(sc.getGender());
+                    dto.setAge(sc.getAge());
+                    // 生成图片多分辨率版本
+                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
+                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
+                    }
+                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
+                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+            
+            logger.info(String.format("[CharacterController] 返回 %d 个预置角色DTO", characterDTOs.size()));
+            return ResponseEntity.ok(characterDTOs);
+        }
         
         // 检查是否处于共享模式
         Long ownerId;
@@ -60,14 +115,10 @@ public class CharacterController {
                     ownerId, visitorId));
             if (ownerId == null) {
                 logger.warning("[CharacterController] 共享模式激活但ownerId为null，使用当前用户ID");
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 ownerId = userDetails.getId();
                 visitorId = ownerId;
             }
         } else {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             ownerId = userDetails.getId();
             visitorId = ownerId;
             logger.info(String.format("[CharacterController] 正常模式 - ownerId: %d, visitorId: %d, 用户名: %s", 
@@ -115,6 +166,45 @@ public class CharacterController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
         
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            // 游客模式：返回硬编码的系统预置角色（ID: 315-320）
+            logger.info("[CharacterController] 游客模式，返回预置角色");
+            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
+            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
+                systemCharacterRepository.findAllById(presetCharacterIds);
+            
+            // 将 SystemCharacter 转换为 CharacterDTO
+            List<CharacterDTO> characterDTOs = systemCharacters.stream()
+                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
+                .map(sc -> {
+                    CharacterDTO dto = new CharacterDTO();
+                    dto.setId(sc.getId());
+                    dto.setName(sc.getName());
+                    dto.setDescription(sc.getDescription());
+                    dto.setBio(sc.getBio());
+                    dto.setAvatarUrl(sc.getAvatarUrl());
+                    dto.setBackgroundUrl(sc.getBackgroundUrl());
+                    dto.setRole(sc.getRole());
+                    dto.setFirstMessage(sc.getFirstMessage());
+                    dto.setSystemInstruction(sc.getSystemInstruction());
+                    dto.setGender(sc.getGender());
+                    dto.setAge(sc.getAge());
+                    // 生成图片多分辨率版本
+                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
+                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
+                    }
+                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
+                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+            
+            logger.info(String.format("[CharacterController] 返回 %d 个预置角色DTO", characterDTOs.size()));
+            return ResponseEntity.ok(characterDTOs);
+        }
+        
         List<Character> characters = characterRepository.findByWorld_Id(worldId);
         logger.info(String.format("[CharacterController] 世界 %d 共有 %d 个角色", worldId, characters.size()));
         
@@ -134,6 +224,49 @@ public class CharacterController {
     public ResponseEntity<List<CharacterDTO>> getCharactersByEraId(@PathVariable Long eraId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            // 游客模式：只返回预置角色（ID: 315-320），且只能访问场景ID 50
+            if (!eraId.equals(50L)) {
+                // 游客只能访问场景ID 50
+                return ResponseEntity.ok(new java.util.ArrayList<>());
+            }
+            // 返回硬编码的系统预置角色（ID: 315-320）
+            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
+            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
+                systemCharacterRepository.findAllById(presetCharacterIds);
+            
+            // 将 SystemCharacter 转换为 CharacterDTO
+            List<CharacterDTO> characterDTOs = systemCharacters.stream()
+                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
+                .map(sc -> {
+                    CharacterDTO dto = new CharacterDTO();
+                    dto.setId(sc.getId());
+                    dto.setName(sc.getName());
+                    dto.setDescription(sc.getDescription());
+                    dto.setBio(sc.getBio());
+                    dto.setAvatarUrl(sc.getAvatarUrl());
+                    dto.setBackgroundUrl(sc.getBackgroundUrl());
+                    dto.setRole(sc.getRole());
+                    dto.setFirstMessage(sc.getFirstMessage());
+                    dto.setSystemInstruction(sc.getSystemInstruction());
+                    dto.setGender(sc.getGender());
+                    dto.setAge(sc.getAge());
+                    // 生成图片多分辨率版本
+                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
+                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
+                    }
+                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
+                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(characterDTOs);
+        }
+        
         List<Character> characters = characterRepository.findByEra_Id(eraId);
         // 过滤出当前用户的角色
         List<CharacterDTO> characterDTOs = characters.stream()
@@ -145,8 +278,17 @@ public class CharacterController {
 
     // 创建新角色
     @PostMapping
-    public ResponseEntity<CharacterDTO> createCharacter(@RequestBody CharacterDTO characterDTO) {
+    public ResponseEntity<?> createCharacter(@RequestBody CharacterDTO characterDTO) {
         logger.info("========== [CharacterController] 创建角色 ==========");
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            logger.warning("[CharacterController] 游客尝试创建角色，已拒绝");
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         logger.info(String.format("[CharacterController] 请求参数: name=%s, worldId=%d, eraId=%s, role=%s", 
             characterDTO.getName(), characterDTO.getWorldId(), characterDTO.getEraId(), characterDTO.getRole()));
         
@@ -214,8 +356,17 @@ public class CharacterController {
 
     // 更新指定ID的角色
     @PutMapping("/{id}")
-    public ResponseEntity<CharacterDTO> updateCharacter(@PathVariable Long id, @RequestBody CharacterDTO characterDTO) {
+    public ResponseEntity<?> updateCharacter(@PathVariable Long id, @RequestBody CharacterDTO characterDTO) {
         logger.info(String.format("========== [CharacterController] 更新角色 ========== ID: %d", id));
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            logger.warning("[CharacterController] 游客尝试更新角色，已拒绝");
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         logger.info(String.format("[CharacterController] 请求参数: name=%s, worldId=%d, eraId=%s, role=%s", 
             characterDTO.getName(), characterDTO.getWorldId(), characterDTO.getEraId(), characterDTO.getRole()));
         
@@ -292,8 +443,17 @@ public class CharacterController {
 
     // 删除指定ID的角色
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCharacter(@PathVariable Long id) {
+    public ResponseEntity<?> deleteCharacter(@PathVariable Long id) {
         logger.info(String.format("========== [CharacterController] 删除角色 ========== ID: %d", id));
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            logger.warning("[CharacterController] 游客尝试删除角色，已拒绝");
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));

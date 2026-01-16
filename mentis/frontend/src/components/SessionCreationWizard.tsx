@@ -228,7 +228,15 @@ export const SessionCreationWizard: React.FC<SessionCreationWizardProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={false}
+    >
       <DialogTitle>创建新会话</DialogTitle>
       <DialogContent>
         <Stepper activeStep={activeStep} sx={{ mb: 3, mt: 2 }}>

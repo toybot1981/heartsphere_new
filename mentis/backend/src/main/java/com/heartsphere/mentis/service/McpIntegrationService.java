@@ -2,8 +2,9 @@ package com.heartsphere.mentis.service;
 
 import com.heartsphere.mentis.dto.ChatRequestDTO;
 import com.heartsphere.mentis.dto.ChatResponseDTO;
-import com.heartsphere.mentis.service.McpToolAdapter.FunctionDefinition;
-import com.heartsphere.mentis.service.McpToolAdapter.ToolExecutionResult;
+import com.heartsphere.mentis.tool.Tool;
+import com.heartsphere.mentis.tool.executor.ToolExecutor;
+import com.heartsphere.mentis.tool.registry.ToolRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,17 @@ import java.util.regex.Pattern;
 /**
  * MCP 集成服务
  * 在对话处理中集成 MCP 工具调用
+ * 
+ * 重构说明：现在使用新的工具系统（tool.mcp.McpToolAdapter）
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class McpIntegrationService {
 
-    private final McpToolAdapter mcpToolAdapter;
+    private final com.heartsphere.mentis.tool.mcp.McpToolAdapter mcpToolAdapter;
+    private final ToolRegistry toolRegistry;
+    private final ToolExecutor toolExecutor;
     private final com.heartsphere.mentis.ai.service.AIService aiService;
 
     /**
@@ -33,8 +38,8 @@ public class McpIntegrationService {
         
         log.info("处理带 MCP 工具的消息: userId={}, sessionId={}", userId, sessionId);
         
-        // 1. 获取可用的 MCP 工具
-        List<FunctionDefinition> availableTools = mcpToolAdapter.getAvailableTools();
+        // 1. 获取可用的 MCP 工具（转换为 FunctionDefinition 格式）
+        List<FunctionDefinition> availableTools = getAvailableTools(sessionId);
         log.debug("可用 MCP 工具数量: {}", availableTools.size());
         
         if (availableTools.isEmpty()) {
@@ -69,7 +74,7 @@ public class McpIntegrationService {
         }
         
         // 5. 执行工具调用
-        List<ToolResult> toolResults = executeToolCalls(toolCalls, availableTools);
+        List<ToolResult> toolResults = executeToolCalls(toolCalls, sessionId);
         
         // 6. 将工具结果反馈给 AI，生成最终响应
         String finalResponse = generateFinalResponse(userMessage, aiResponse, toolResults, sessionId);
@@ -80,6 +85,49 @@ public class McpIntegrationService {
         response.setSessionId(sessionId);
         
         return response;
+    }
+
+    /**
+     * 获取可用的 MCP 工具（转换为 FunctionDefinition 格式）
+     */
+    private List<FunctionDefinition> getAvailableTools(String sessionId) {
+        try {
+            // 从工具注册表中获取所有 MCP 工具
+            List<Tool> allTools = toolRegistry.getAllTools();
+            List<FunctionDefinition> mcpTools = new ArrayList<>();
+            
+            for (Tool tool : allTools) {
+                if (tool.getName().startsWith("mcp_")) {
+                    FunctionDefinition funcDef = new FunctionDefinition();
+                    funcDef.setName(tool.getName());
+                    funcDef.setDescription(tool.getDescription());
+                    funcDef.setParameters(tool.getParametersSchema());
+                    mcpTools.add(funcDef);
+                }
+            }
+            
+            // 如果注册表中没有，尝试发现新的 MCP 工具
+            if (mcpTools.isEmpty()) {
+                try {
+                    List<com.heartsphere.mentis.tool.mcp.McpToolAdapter.McpToolWrapper> discoveredTools = 
+                        mcpToolAdapter.discoverMcpTools(sessionId);
+                    for (com.heartsphere.mentis.tool.mcp.McpToolAdapter.McpToolWrapper wrapper : discoveredTools) {
+                        FunctionDefinition funcDef = new FunctionDefinition();
+                        funcDef.setName(wrapper.getName());
+                        funcDef.setDescription(wrapper.getDescription());
+                        funcDef.setParameters(wrapper.getParametersSchema());
+                        mcpTools.add(funcDef);
+                    }
+                } catch (Exception e) {
+                    log.warn("发现 MCP 工具失败: sessionId={}", sessionId, e);
+                }
+            }
+            
+            return mcpTools;
+        } catch (Exception e) {
+            log.error("获取 MCP 工具失败", e);
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -191,10 +239,10 @@ public class McpIntegrationService {
         
         // 检测搜索意图
         if (needsSearch(userMessage)) {
-            // 查找 Tavily 搜索工具
+            // 查找搜索工具
             for (FunctionDefinition tool : availableTools) {
-                if (tool.getMcpToolName() != null && 
-                    (tool.getMcpToolName().contains("search") || tool.getMcpToolName().contains("tavily"))) {
+                String toolName = tool.getName().toLowerCase();
+                if (toolName.contains("search") || toolName.contains("tavily")) {
                     ToolCall toolCall = new ToolCall();
                     toolCall.setToolName(tool.getName());
                     
@@ -240,8 +288,8 @@ public class McpIntegrationService {
         // 简单的关键词提取逻辑
         // 移除常见的搜索提示词
         String query = message;
-        query = query.replaceAll("(请|帮我|帮我|帮我|能否|可以|想要)?(搜索|查询|查找|找|搜)", "");
-        query = query.replaceAll("(一下|一下|一下|一下)", "");
+        query = query.replaceAll("(请|帮我|能否|可以|想要)?(搜索|查询|查找|找|搜)", "");
+        query = query.replaceAll("(一下)", "");
         query = query.trim();
         
         // 如果提取的关键词太短，使用整个消息
@@ -253,24 +301,26 @@ public class McpIntegrationService {
     }
 
     /**
-     * 执行工具调用
+     * 执行工具调用（使用新的工具系统）
      */
-    private List<ToolResult> executeToolCalls(List<ToolCall> toolCalls, List<FunctionDefinition> availableTools) {
+    private List<ToolResult> executeToolCalls(List<ToolCall> toolCalls, String sessionId) {
         List<ToolResult> results = new ArrayList<>();
         
         for (ToolCall toolCall : toolCalls) {
             try {
-                ToolExecutionResult result = mcpToolAdapter.executeTool(
-                        toolCall.getToolName(), 
-                        toolCall.getArguments()
+                // 使用 ToolExecutor 执行工具
+                Tool.ToolResult toolResult = toolExecutor.execute(
+                    toolCall.getToolName(),
+                    sessionId,
+                    toolCall.getArguments()
                 );
                 
-                ToolResult toolResult = new ToolResult();
-                toolResult.setToolName(toolCall.getToolName());
-                toolResult.setSuccess(result.isSuccess());
-                toolResult.setResult(result.getResult());
-                toolResult.setMessage(result.getMessage());
-                results.add(toolResult);
+                ToolResult result = new ToolResult();
+                result.setToolName(toolCall.getToolName());
+                result.setSuccess(toolResult.isSuccess());
+                result.setResult(toolResult.isSuccess() ? toolResult.getResult() : null);
+                result.setMessage(toolResult.isSuccess() ? "执行成功" : toolResult.getErrorMessage());
+                results.add(result);
             } catch (Exception e) {
                 log.error("执行工具调用失败: {}", toolCall.getToolName(), e);
                 ToolResult toolResult = new ToolResult();
@@ -342,67 +392,86 @@ public class McpIntegrationService {
     /**
      * 格式化工具结果
      */
-    private String formatToolResult(Map<String, Object> result) {
+    @SuppressWarnings("unchecked")
+    private String formatToolResult(Object result) {
         if (result == null) {
             return "无结果";
         }
         
-        // 尝试提取文本内容
-        Object content = result.get("content");
-        if (content != null) {
-            if (content instanceof String) {
-                return (String) content;
-            } else if (content instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
-                StringBuilder sb = new StringBuilder();
-                int index = 1;
-                for (Map<String, Object> item : contentList) {
-                    Object text = item.get("text");
-                    if (text != null) {
-                        sb.append("\n【结果 ").append(index++).append("】\n");
-                        sb.append(text).append("\n");
-                    }
-                }
-                return sb.toString().trim();
-            }
+        if (result instanceof String) {
+            return (String) result;
         }
         
-        // 检查是否有其他常见的结果字段
-        if (result.containsKey("results")) {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> results = (List<Map<String, Object>>) result.get("results");
-            if (results != null) {
-                StringBuilder sb = new StringBuilder();
-                int index = 1;
-                for (Map<String, Object> item : results) {
-                    sb.append("\n【结果 ").append(index++).append("】\n");
-                    if (item.containsKey("title")) {
-                        sb.append("标题: ").append(item.get("title")).append("\n");
-                    }
-                    if (item.containsKey("url")) {
-                        sb.append("链接: ").append(item.get("url")).append("\n");
-                    }
-                    if (item.containsKey("content")) {
-                        String contentStr = String.valueOf(item.get("content"));
-                        // 限制内容长度
-                        if (contentStr.length() > 500) {
-                            contentStr = contentStr.substring(0, 500) + "...";
+        if (result instanceof Map) {
+            Map<String, Object> resultMap = (Map<String, Object>) result;
+            
+            // 尝试提取文本内容
+            Object content = resultMap.get("content");
+            if (content != null) {
+                if (content instanceof String) {
+                    return (String) content;
+                } else if (content instanceof List) {
+                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
+                    StringBuilder sb = new StringBuilder();
+                    int index = 1;
+                    for (Map<String, Object> item : contentList) {
+                        Object text = item.get("text");
+                        if (text != null) {
+                            sb.append("\n【结果 ").append(index++).append("】\n");
+                            sb.append(text).append("\n");
                         }
-                        sb.append("内容: ").append(contentStr).append("\n");
                     }
+                    return sb.toString().trim();
                 }
-                return sb.toString().trim();
+            }
+            
+            // 检查是否有其他常见的结果字段
+            if (resultMap.containsKey("results")) {
+                List<Map<String, Object>> results = (List<Map<String, Object>>) resultMap.get("results");
+                if (results != null) {
+                    StringBuilder sb = new StringBuilder();
+                    int index = 1;
+                    for (Map<String, Object> item : results) {
+                        sb.append("\n【结果 ").append(index++).append("】\n");
+                        if (item.containsKey("title")) {
+                            sb.append("标题: ").append(item.get("title")).append("\n");
+                        }
+                        if (item.containsKey("url")) {
+                            sb.append("链接: ").append(item.get("url")).append("\n");
+                        }
+                        if (item.containsKey("content")) {
+                            String contentStr = String.valueOf(item.get("content"));
+                            // 限制内容长度
+                            if (contentStr.length() > 500) {
+                                contentStr = contentStr.substring(0, 500) + "...";
+                            }
+                            sb.append("内容: ").append(contentStr).append("\n");
+                        }
+                    }
+                    return sb.toString().trim();
+                }
+            }
+            
+            // 如果无法提取，返回 JSON 字符串
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                return mapper.writeValueAsString(resultMap);
+            } catch (Exception e) {
+                return resultMap.toString();
             }
         }
         
-        // 如果无法提取，返回 JSON 字符串
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            return mapper.writeValueAsString(result);
-        } catch (Exception e) {
-            return result.toString();
-        }
+        return result.toString();
+    }
+
+    /**
+     * 函数定义（用于 AI 服务）
+     */
+    @lombok.Data
+    public static class FunctionDefinition {
+        private String name;
+        private String description;
+        private Map<String, Object> parameters;
     }
 
     /**
@@ -421,7 +490,7 @@ public class McpIntegrationService {
     public static class ToolResult {
         private String toolName;
         private boolean success;
-        private Map<String, Object> result;
+        private Object result;
         private String message;
     }
 }

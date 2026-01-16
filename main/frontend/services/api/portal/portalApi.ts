@@ -100,17 +100,29 @@ export async function getPortalPreview(portalId: number): Promise<PortalPreview>
  */
 export async function executeTeleportation(
   portalId: number,
-  request?: TeleportationRequest
+  teleportRequest?: TeleportationRequest
 ): Promise<TeleportationResult> {
-  // request 函数会自动提取 ApiResponse 的 data 字段
-  const response = await request<TeleportationResult>(
-    `/portal/${portalId}/teleport`,
-    {
-      method: 'POST',
-      body: request || {},
-    }
-  );
-  return response;
+  const { logger } = await import('../../../utils/logger');
+  
+  try {
+    // request 函数会自动提取 ApiResponse 的 data 字段
+    const response = await request<TeleportationResult>(
+      `/portal/${portalId}/teleport`,
+      {
+        method: 'POST',
+        body: teleportRequest || {},
+      }
+    );
+    return response;
+  } catch (error: any) {
+    logger.error(`[portalApi] ❌ 传送请求失败: portalId=${portalId}`, {
+      error,
+      message: error?.message,
+      status: error?.status,
+      response: error?.response,
+    });
+    throw error;
+  }
 }
 
 /**

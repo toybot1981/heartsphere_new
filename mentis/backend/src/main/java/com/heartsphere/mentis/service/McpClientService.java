@@ -2,8 +2,8 @@ package com.heartsphere.mentis.service;
 
 import com.heartsphere.mentis.entity.McpServerConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,12 +15,18 @@ import java.util.*;
  * 用于连接和调用 MCP 服务器
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class McpClientService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    /**
+     * 构造函数，注入配置好的 MCP RestTemplate（支持 SSL）
+     */
+    public McpClientService(@Qualifier("mcpRestTemplate") RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     /**
      * 测试 MCP 服务器连接
@@ -44,13 +50,18 @@ public class McpClientService {
             String url = buildRequestUrl(config, "tools/list");
             Map<String, Object> request = createJsonRpcRequest("tools/list", null);
             
-            HttpHeaders headers = createHeaders(config);
+            // MCP 服务器要求客户端必须同时接受 application/json 和 text/event-stream
+            HttpHeaders headers = createHeaders(config, true);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
             
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    url, HttpMethod.POST, entity, Map.class);
+            // 使用 String 接收响应，以便处理 text/event-stream 格式
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, String.class);
             
-            return extractToolsFromResponse(response.getBody());
+            // 解析响应（可能是 JSON 或 SSE 格式）
+            Map<String, Object> responseBody = parseResponse(response);
+            
+            return extractToolsFromResponse(responseBody);
         } catch (Exception e) {
             log.error("Failed to list tools from MCP server: {}", config.getServerUrl(), e);
             throw new RuntimeException("Failed to list tools: " + e.getMessage(), e);
@@ -75,13 +86,18 @@ public class McpClientService {
             
             Map<String, Object> request = createJsonRpcRequest("tools/call", params);
             
-            HttpHeaders headers = createHeaders(config);
+            // MCP 服务器要求客户端必须同时接受 application/json 和 text/event-stream
+            HttpHeaders headers = createHeaders(config, true);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
             
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    url, HttpMethod.POST, entity, Map.class);
+            // 使用 String 接收响应，以便处理 text/event-stream 格式
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, String.class);
             
-            return extractResultFromResponse(response.getBody());
+            // 解析响应（可能是 JSON 或 SSE 格式）
+            Map<String, Object> responseBody = parseResponse(response);
+            
+            return extractResultFromResponse(responseBody);
         } catch (Exception e) {
             log.error("Failed to call tool {} from MCP server: {}", toolName, config.getServerUrl(), e);
             throw new RuntimeException("Failed to call tool: " + e.getMessage(), e);
@@ -198,19 +214,117 @@ public class McpClientService {
 
     /**
      * 创建 HTTP 请求头
+     * @param config MCP 服务器配置
+     * @param acceptEventStream 是否接受 text/event-stream（用于流式响应）
      */
-    private HttpHeaders createHeaders(McpServerConfig config) {
+    private HttpHeaders createHeaders(McpServerConfig config, boolean acceptEventStream) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        // MCP 服务器要求客户端必须同时接受 application/json 和 text/event-stream
+        // 即使对于非流式请求也是如此
+        // 直接设置 Accept 头字符串，确保格式完全符合服务器要求
+        // 格式：application/json, text/event-stream（注意：逗号后面有空格）
+        headers.set("Accept", "application/json, text/event-stream");
+        
         if (config.getApiKey() != null && !config.getApiKey().isEmpty()) {
             // 根据服务器类型设置认证头
-            if (config.getServerType().equals("tavily")) {
+            if (config.getServerType() != null && config.getServerType().equals("tavily")) {
                 // Tavily 使用 URL 参数传递 API key，不需要在 header 中设置
             } else {
                 headers.set("Authorization", "Bearer " + config.getApiKey());
             }
         }
+        
+        log.debug("Created headers for MCP request: Accept={}, Content-Type={}, ServerType={}", 
+            headers.getFirst("Accept"), headers.getContentType(), 
+            config.getServerType() != null ? config.getServerType() : "unknown");
+        
         return headers;
+    }
+    
+    /**
+     * 创建 HTTP 请求头（默认只接受 application/json）
+     */
+    private HttpHeaders createHeaders(McpServerConfig config) {
+        return createHeaders(config, false);
+    }
+
+    /**
+     * 解析响应（支持 JSON 和 SSE 格式）
+     * @param response HTTP 响应
+     * @return 解析后的 Map 对象
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseResponse(ResponseEntity<String> response) {
+        try {
+            String body = response.getBody();
+            if (body == null || body.trim().isEmpty()) {
+                return Collections.emptyMap();
+            }
+            
+            MediaType contentType = response.getHeaders().getContentType();
+            
+            // 如果是 text/event-stream，需要解析 SSE 格式
+            if (contentType != null && contentType.isCompatibleWith(MediaType.TEXT_EVENT_STREAM)) {
+                return parseSseResponse(body);
+            }
+            
+            // 否则直接解析为 JSON
+            return objectMapper.readValue(body, Map.class);
+        } catch (Exception e) {
+            log.error("解析 MCP 响应失败", e);
+            throw new RuntimeException("Failed to parse response: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 解析 Server-Sent Events (SSE) 格式的响应
+     * SSE 格式示例：
+     *   data: {"jsonrpc":"2.0","id":"...","result":{...}}
+     * 
+     * @param sseBody SSE 格式的响应体
+     * @return 解析后的 JSON-RPC 响应 Map
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseSseResponse(String sseBody) {
+        try {
+            // 解析 SSE 格式，提取 data 行中的 JSON
+            String[] lines = sseBody.split("\n");
+            StringBuilder jsonBuilder = new StringBuilder();
+            
+            for (String line : lines) {
+                line = line.trim();
+                if (line.startsWith("data:")) {
+                    // 提取 data: 后面的 JSON 内容
+                    String jsonData = line.substring(5).trim();
+                    if (!jsonData.isEmpty()) {
+                        jsonBuilder.append(jsonData);
+                    }
+                } else if (line.startsWith("{") && !line.startsWith("data:")) {
+                    // 如果行直接以 { 开头（可能是纯 JSON），也添加
+                    jsonBuilder.append(line);
+                }
+            }
+            
+            String jsonString = jsonBuilder.toString();
+            if (jsonString.isEmpty()) {
+                log.warn("SSE 响应中没有找到 JSON 数据");
+                return Collections.emptyMap();
+            }
+            
+            // 解析 JSON
+            return objectMapper.readValue(jsonString, Map.class);
+        } catch (Exception e) {
+            log.error("解析 SSE 响应失败: {}", sseBody, e);
+            // 如果解析失败，尝试直接解析整个响应体（可能是纯 JSON）
+            try {
+                return objectMapper.readValue(sseBody, Map.class);
+            } catch (Exception e2) {
+                log.error("直接解析响应体也失败", e2);
+                throw new RuntimeException("Failed to parse SSE response: " + e.getMessage(), e);
+            }
+        }
     }
 
     /**

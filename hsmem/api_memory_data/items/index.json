@@ -1,1 +1,65 @@
-{}
+{
+  "fa54c434-af9f-40e2-b472-f3fa415231bb": {
+    "resource_id": "a4eb497f-03c3-4c9e-a1dc-e4291eaec9d9",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-15T23:20:03.680416"
+  },
+  "f8de86f7-9990-427d-b4e5-7fd37ce77e07": {
+    "resource_id": "a4eb497f-03c3-4c9e-a1dc-e4291eaec9d9",
+    "memory_type": "habit",
+    "categories": [
+      "habits",
+      "behavior"
+    ],
+    "created_at": "2026-01-15T23:20:03.681208"
+  },
+  "69471aee-764f-480c-8300-833e431f2637": {
+    "resource_id": "a4eb497f-03c3-4c9e-a1dc-e4291eaec9d9",
+    "memory_type": "personal_info",
+    "categories": [
+      "personal_info",
+      "basic_info"
+    ],
+    "created_at": "2026-01-15T23:20:03.681631"
+  },
+  "efb8c629-8247-491e-8852-81b35d93357c": {
+    "resource_id": "33269e30-babb-4689-af78-97babb766f57",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-15T23:21:06.096646"
+  },
+  "05340762-783b-4015-b1ef-d34563cf3a87": {
+    "resource_id": "33269e30-babb-4689-af78-97babb766f57",
+    "memory_type": "habit",
+    "categories": [
+      "habits",
+      "behavior"
+    ],
+    "created_at": "2026-01-15T23:21:06.102299"
+  },
+  "393267bb-549d-44cb-aef3-8d7905916cbe": {
+    "resource_id": "33269e30-babb-4689-af78-97babb766f57",
+    "memory_type": "personal_info",
+    "categories": [
+      "personal_info",
+      "basic_info"
+    ],
+    "created_at": "2026-01-15T23:21:06.103359"
+  },
+  "6151ea65-babe-47dd-a11a-af3741e18d56": {
+    "resource_id": "08e0ec6f-012e-42c8-b093-920d190c11de",
+    "memory_type": "document",
+    "categories": [
+      "knowledge",
+      "document"
+    ],
+    "created_at": "2026-01-16T00:24:26.948823"
+  }
+}

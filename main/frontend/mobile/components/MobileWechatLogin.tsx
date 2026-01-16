@@ -86,6 +86,15 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
     const interval = setInterval(async () => {
       try {
         const status = await wechatApi.checkStatus(state);
+        
+        // 添加调试日志
+        console.log({
+          state,
+          status: status.status,
+          hasToken: !!status.token,
+          hasError: !!status.error,
+          timestamp: new Date().toISOString()
+        });
 
         if (status.status === 'confirmed') {
           // 登录成功
@@ -96,6 +105,8 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
           // 保存token
           if (status.token) {
             localStorage.setItem('auth_token', status.token);
+          } else {
+            console.warn('[MobileWechatLogin] 登录成功但未收到token！');
           }
 
           // 确保token已保存后再调用登录成功回调
@@ -104,6 +115,7 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
           const savedToken = localStorage.getItem('auth_token');
           if (!savedToken) {
             const errorMsg = '登录成功，但保存登录信息失败，请重新登录';
+            console.error('[MobileWechatLogin]', errorMsg);
             setQrStatus('expired');
             onError?.(errorMsg);
             return;
@@ -112,13 +124,19 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
           onLoginSuccess('wechat', status.username || 'wechat_user', status.isFirstLogin, status.worlds);
         } else if (status.status === 'scanned') {
           setQrStatus('scanned');
+        } else if (status.status === 'waiting') {
+          // 保持等待状态，不更新UI
         } else if (status.status === 'expired' || status.status === 'error') {
+          const errorMsg = status.error || '登录失败或已过期';
+          console.error('[MobileWechatLogin] 登录失败:', errorMsg);
           clearInterval(interval);
           setPollingInterval(null);
           setQrStatus('expired');
+          onError?.(errorMsg);
         }
       } catch (err) {
-        console.error('检查登录状态失败:', err);
+        console.error('[MobileWechatLogin] 检查登录状态失败:', err);
+        // 不要因为网络错误就停止轮询，继续尝试
       }
     }, 2000); // 每2秒轮询一次
 
@@ -181,11 +199,11 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
         )}
 
         {qrStatus === 'scanned' && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 rounded-2xl">
+            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-pulse mb-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-white"
+                className="h-12 w-12 text-white"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -193,6 +211,9 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
+            <p className="text-white text-sm font-medium bg-black/60 px-3 py-1 rounded">
+              请在手机上确认登录
+            </p>
           </div>
         )}
 

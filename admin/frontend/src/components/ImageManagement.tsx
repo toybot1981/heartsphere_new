@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { imageApi, type ImageVariants } from '../services/api';
+import { adminApi } from '../services/api/admin';
 import { InputGroup, TextInput } from './AdminUIComponents';
 import { showAlert } from "../utils/dialog";
 import type { ImageProcessingResponse } from '../services/api/image/types';
@@ -36,6 +37,7 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [batchProcessing, setBatchProcessing] = useState(false);
   const [useCustomFolder, setUseCustomFolder] = useState(false);
   const [customFolderName, setCustomFolderName] = useState('');
   const [availableCategories, setAvailableCategories] = useState<Set<string>>(new Set());
@@ -55,23 +57,24 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
     if (!adminToken) return;
     setLoading(true);
     try {
-      // 图片管理模块主要用于系统预置资源
-      const result = await imageApi.listImages(
-        category === 'all' ? 'all' : category,
-        true,  // isSystemResource = true，只获取系统预置资源
-        adminToken
-      );
+      // 使用 adminApi.images.getImages() 获取系统预置资源
+      const result = await adminApi.images.getImages({
+        category: category === 'all' ? undefined : category,
+        isSystemResource: true,
+        page: 0,
+        size: 1000, // 获取所有图片
+      });
       
-      if (result.success && result.images) {
-        const imageItems: ImageItem[] = result.images.map((img) => ({
+      if (result && result.images) {
+        const imageItems: ImageItem[] = result.images.map((img: any) => ({
           url: img.url,
-          relativePath: img.relativePath,
-          name: img.name,
-          category: img.category,
-          size: img.size,
+          relativePath: img.url, // 使用url作为relativePath
+          name: img.name || img.url.split('/').pop() || '未命名',
+          category: img.category || 'general',
+          size: img.fileSize,
           width: img.width,
           height: img.height,
-          createdAt: img.createdAt ? new Date(img.createdAt).toISOString() : undefined,
+          variants: {}, // 暂时为空
         }));
         setImages(imageItems);
         
@@ -137,44 +140,36 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
 
     setUploading(true);
     try {
-      // 图片管理模块主要用于系统预置资源，所以上传时标记为系统资源
-      const result = await imageApi.uploadImage(
-        file,
-        uploadCategory,
-        adminToken,
-        true  // isSystemResource = true，标记为系统资源
-      );
-
-      if (result.success) {
-        showAlert('图片上传成功', '上传成功', 'success');
-        setShowUploadModal(false);
-        // 如果使用自定义文件夹，切换到该文件夹
-        if (useCustomFolder && customFolderName.trim()) {
-          const folderValue = customFolderName.trim();
-          setCategory(folderValue);
-          // 将新文件夹添加到可用分类集合
-          setAvailableCategories(prev => new Set(prev).add(folderValue));
-        }
-        // 重置上传状态
-        setUseCustomFolder(false);
-        setCustomFolderName('');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        await loadImages();
-        // 选中刚上传的图片
-        if (result.url) {
-          setSelectedImage({
-            url: result.url,
-            relativePath: result.url,
-            name: file.name,
-            category: category === 'all' ? 'general' : category,
-            size: file.size,
-            variants: result.variants,
-          });
-        }
-      } else {
-        showAlert(result.error || '上传失败', '上传失败', 'error');
+      // 使用 adminApi.images.uploadImage 上传图片
+      const result = await adminApi.images.uploadImage(file, uploadCategory);
+      
+      // adminApi.images.uploadImage 直接返回 ImageUploadResponse，不需要检查 success
+      showAlert('图片上传成功', '上传成功', 'success');
+      setShowUploadModal(false);
+      // 如果使用自定义文件夹，切换到该文件夹
+      if (useCustomFolder && customFolderName.trim()) {
+        const folderValue = customFolderName.trim();
+        setCategory(folderValue);
+        // 将新文件夹添加到可用分类集合
+        setAvailableCategories(prev => new Set(prev).add(folderValue));
+      }
+      // 重置上传状态
+      setUseCustomFolder(false);
+      setCustomFolderName('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      await loadImages();
+      // 选中刚上传的图片
+      if (result.url) {
+        setSelectedImage({
+          url: result.url,
+          relativePath: result.url,
+          name: file.name,
+          category: uploadCategory,
+          size: file.size,
+          variants: {},
+        });
       }
     } catch (error: any) {
       showAlert('上传失败: ' + (error.message || '未知错误'), '上传失败', 'error');
@@ -209,29 +204,119 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
   };
 
   // 生成缩略图
-  const handleGenerateThumbnail = async (width: number, height: number, quality: number = 0.85) => {
+  const handleGenerateThumbnail = async (
+    width: number, 
+    height: number, 
+    quality: number = 0.85,
+    keepAspectRatio: boolean = true
+  ) => {
     if (!selectedImage || !adminToken) return;
 
     setProcessing(true);
     try {
-      const result = await imageApi.generateThumbnail(
-        selectedImage.url,
+      const result = await adminApi.images.generateThumbnail(selectedImage.url, {
         width,
         height,
-        adminToken
-      );
+        quality,
+        keepAspectRatio,
+      });
 
-      if (result.success) {
-        showAlert('缩略图生成成功', '处理成功', 'success');
-        setShowThumbnailModal(false);
-        await loadImages();
-      } else {
-        showAlert(result.error || '生成缩略图失败', '处理失败', 'error');
-      }
+      showAlert('缩略图生成成功', '处理成功', 'success');
+      setShowThumbnailModal(false);
+      await loadImages();
     } catch (error: any) {
       showAlert('生成缩略图失败: ' + (error.message || '未知错误'), '处理失败', 'error');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // 一键生成所有缩略图（200x200小缩略图、中等质量、高质量）
+  const handleGenerateAllThumbnails = async () => {
+    if (!selectedImage || !adminToken) return;
+
+    setProcessing(true);
+    try {
+      const result = await adminApi.images.generateAllThumbnails(selectedImage.url);
+      
+      const messages: string[] = [];
+      if (result.smallThumbnail) {
+        messages.push('✅ 200×200小缩略图');
+      } else if (result.smallThumbnailError) {
+        messages.push('❌ 小缩略图: ' + result.smallThumbnailError);
+      }
+      
+      if (result.medium) {
+        messages.push('✅ 中等质量缩略图');
+      } else if (result.mediumError) {
+        messages.push('❌ 中等质量: ' + result.mediumError);
+      }
+      
+      if (result.highQuality) {
+        messages.push('✅ 高质量缩略图');
+      } else if (result.highQualityError) {
+        messages.push('❌ 高质量: ' + result.highQualityError);
+      }
+
+      if (messages.length > 0) {
+        const successCount = messages.filter(m => m.startsWith('✅')).length;
+        if (successCount > 0) {
+          showAlert(messages.join('\n'), '生成完成', 'success');
+        } else {
+          showAlert(messages.join('\n'), '生成失败', 'error');
+        }
+      } else {
+        showAlert('未生成任何缩略图', '处理失败', 'error');
+      }
+      
+      await loadImages();
+    } catch (error: any) {
+      showAlert('一键生成缩略图失败: ' + (error.message || '未知错误'), '处理失败', 'error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 批量生成所有图片的缩略图
+  const handleBatchGenerateThumbnails = async () => {
+    if (!adminToken) return;
+
+    const confirmed = window.confirm(
+      `确定要为所有图片生成缩略图吗？\n` +
+      `系统将遍历所有图片，只为没有生成过缩略图的图片生成。\n` +
+      `当前分类: ${category === 'all' ? '全部' : presetCategories.find(c => c.value === category)?.label || category}`
+    );
+
+    if (!confirmed) return;
+
+    setBatchProcessing(true);
+    try {
+      const result = await adminApi.images.batchGenerateThumbnails(
+        category === 'all' ? undefined : category
+      );
+
+      const message = [
+        `总计: ${result.total} 张图片`,
+        `已处理: ${result.processed} 张`,
+        `新生成: ${result.generated} 张`,
+        `已跳过: ${result.skipped} 张（已有缩略图）`,
+        `失败: ${result.failed} 张`,
+      ].join('\n');
+
+      if (result.failed > 0) {
+        showAlert(message, '批量生成完成（部分失败）', 'warning');
+      } else if (result.generated > 0) {
+        showAlert(message, '批量生成完成', 'success');
+      } else {
+        showAlert(message, '批量生成完成', 'info');
+      }
+
+      // 刷新图片列表
+      await loadImages();
+    } catch (error: any) {
+      showAlert('批量生成缩略图失败: ' + (error.message || '未知错误'), '处理失败', 'error');
+    } finally {
+      setBatchProcessing(false);
     }
   };
 
@@ -257,6 +342,14 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
       <div className="image-management-header">
         <h2>图片管理</h2>
         <div className="header-actions">
+          <button
+            className="btn btn-success"
+            onClick={handleBatchGenerateThumbnails}
+            disabled={batchProcessing || loading}
+            title="为所有图片生成缩略图（只生成未生成的）"
+          >
+            {batchProcessing ? '⏳ 批量生成中...' : '🎨 一键生成所有缩略图'}
+          </button>
           <button
             className="btn btn-primary"
             onClick={() => setShowUploadModal(true)}
@@ -417,11 +510,19 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
               <h4>图片处理</h4>
               <div className="tool-buttons">
                 <button
+                  className="btn btn-primary"
+                  onClick={handleGenerateAllThumbnails}
+                  disabled={processing}
+                  title="一键生成200×200小缩略图、中等质量缩略图和高质量缩略图"
+                >
+                  🎨 一键生成缩略图
+                </button>
+                <button
                   className="btn btn-secondary"
                   onClick={() => setShowThumbnailModal(true)}
                   disabled={processing}
                 >
-                  📐 生成缩略图
+                  📐 自定义缩略图
                 </button>
                 <button
                   className="btn btn-secondary"
@@ -587,7 +688,7 @@ export const ImageManagement: React.FC<ImageManagementProps> = ({
 // 生成缩略图模态框组件
 interface ThumbnailGeneratorModalProps {
   image: ImageItem;
-  onGenerate: (width: number, height: number, quality: number) => void;
+  onGenerate: (width: number, height: number, quality: number, keepAspectRatio: boolean) => void;
   onClose: () => void;
   processing: boolean;
   adminToken: string | null;
@@ -766,7 +867,7 @@ const ThumbnailGeneratorModal: React.FC<ThumbnailGeneratorModalProps> = ({
               </button>
               <button
                 className="btn btn-primary"
-                onClick={() => onGenerate(width, height, quality)}
+                onClick={() => onGenerate(width, height, quality, keepAspectRatio)}
                 disabled={processing || width <= 0 || height <= 0}
               >
                 {processing ? '处理中...' : '生成缩略图'}

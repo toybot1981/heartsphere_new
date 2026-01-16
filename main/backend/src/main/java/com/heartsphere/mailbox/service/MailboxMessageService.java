@@ -382,10 +382,7 @@ public class MailboxMessageService {
             categoryUnread.put(category, count);
         }
         
-        return UnreadCountResponse.builder()
-            .totalUnread(totalUnread)
-            .categoryUnread(categoryUnread)
-            .build();
+        return new UnreadCountResponse(totalUnread, categoryUnread);
     }
     
     /**

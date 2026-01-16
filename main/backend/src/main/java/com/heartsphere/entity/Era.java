@@ -33,6 +33,9 @@ public class Era {
     @Column(name = "system_era_id")
     private Long systemEraId;
 
+    @Column(name = "style", length = 50)
+    private String style = "realistic"; // 场景风格，默认写实风格
+
     @ManyToOne
     @JoinColumn(name = "world_id", nullable = false)
     private World world;

@@ -4,7 +4,11 @@ import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.heartconnect.dto.*;
 import com.heartsphere.heartconnect.service.ShareConfigService;
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.MembershipService;
+import com.heartsphere.util.GuestAccessChecker;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,28 +23,43 @@ public class ShareConfigController {
     
     @Autowired
     private ShareConfigService shareConfigService;
+
+    @Autowired
+    private MembershipService membershipService;
     
     /**
      * 创建共享配置
      */
     @PostMapping("/config")
-    public ApiResponse<ShareConfigDTO> createShareConfig(
+    public ResponseEntity<ApiResponse<ShareConfigDTO>> createShareConfig(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @RequestBody CreateShareConfigRequest request) {
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
         ShareConfigDTO config = shareConfigService.createShareConfig(userDetails.getId(), request);
-        return ApiResponse.success("共享配置创建成功", config);
+        return ResponseEntity.ok(ApiResponse.success("共享配置创建成功", config));
     }
     
     /**
      * 更新共享配置
      */
     @PutMapping("/config/{configId}")
-    public ApiResponse<ShareConfigDTO> updateShareConfig(
+    public ResponseEntity<ApiResponse<ShareConfigDTO>> updateShareConfig(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long configId,
             @RequestBody UpdateShareConfigRequest request) {
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
         ShareConfigDTO config = shareConfigService.updateShareConfig(userDetails.getId(), configId, request);
-        return ApiResponse.success("共享配置更新成功", config);
+        return ResponseEntity.ok(ApiResponse.success("共享配置更新成功", config));
     }
     
     /**
@@ -69,22 +88,34 @@ public class ShareConfigController {
      * 重新生成共享码
      */
     @PostMapping("/config/{configId}/regenerate-code")
-    public ApiResponse<ShareConfigDTO> regenerateShareCode(
+    public ResponseEntity<ApiResponse<ShareConfigDTO>> regenerateShareCode(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long configId) {
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
         ShareConfigDTO config = shareConfigService.regenerateShareCode(userDetails.getId(), configId);
-        return ApiResponse.success("共享码重新生成成功", config);
+        return ResponseEntity.ok(ApiResponse.success("共享码重新生成成功", config));
     }
     
     /**
      * 删除共享配置
      */
     @DeleteMapping("/config/{configId}")
-    public ApiResponse<Void> deleteShareConfig(
+    public ResponseEntity<ApiResponse<Void>> deleteShareConfig(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long configId) {
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
         shareConfigService.deleteShareConfig(userDetails.getId(), configId);
-        return ApiResponse.success("共享配置删除成功", null);
+        return ResponseEntity.ok(ApiResponse.success("共享配置删除成功", null));
     }
     
     /**

@@ -44,9 +44,7 @@ export const Footer: React.FC<FooterProps> = ({ className = '' }) => {
                 style={{ maxHeight: '40px', display: 'block' }}
                 onError={(e) => {
                   const img = e.target as HTMLImageElement;
-                  console.log('[Footer] Logo加载失败，当前src:', img.src);
                   if (logoSrc.includes('.jpg')) {
-                    console.log('[Footer] 尝试加载PNG版本');
                     setLogoSrc('/logo.png');
                   } else {
                     console.error('[Footer] Logo加载失败，隐藏图片');
@@ -54,7 +52,6 @@ export const Footer: React.FC<FooterProps> = ({ className = '' }) => {
                   }
                 }}
                 onLoad={() => {
-                  console.log('[Footer] Logo加载成功:', logoSrc);
                 }}
               />
             )}

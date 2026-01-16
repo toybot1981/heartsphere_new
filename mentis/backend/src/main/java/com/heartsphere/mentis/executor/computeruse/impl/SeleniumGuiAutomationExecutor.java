@@ -120,10 +120,11 @@ public class SeleniumGuiAutomationExecutor implements GuiAutomationExecutor {
                     break;
                     
                 case "SCREENSHOT":
-                    String screenshot = captureScreenshot(sessionId);
+                    // 截图操作已注释
+                    // String screenshot = captureScreenshot(sessionId);
                     result.setSuccess(true);
-                    result.setScreenshot(screenshot);
-                    result.setMessage("截图成功");
+                    // result.setScreenshot(screenshot);
+                    result.setMessage("截图功能已禁用");
                     break;
                     
                 case "NAVIGATE":
@@ -144,9 +145,9 @@ public class SeleniumGuiAutomationExecutor implements GuiAutomationExecutor {
                     return result;
             }
             
-            // 操作后自动截图
-            String screenshot = captureScreenshot(sessionId);
-            result.setScreenshot(screenshot);
+            // 操作后自动截图 - 已注释
+            // String screenshot = captureScreenshot(sessionId);
+            // result.setScreenshot(screenshot);
             
         } catch (NoSuchElementException e) {
             log.error("元素未找到: sessionId={}, target={}", sessionId, action.getTarget(), e);

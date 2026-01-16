@@ -102,6 +102,25 @@ class MemoryStore:
         """按分类搜索记忆项"""
         return await self.memory_item_layer.search_by_category(category_name)
 
+    async def get_all_items(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        获取所有记忆项
+        
+        Args:
+            user_id: 可选，按用户ID过滤
+        
+        Returns:
+            记忆项列表
+        """
+        if user_id:
+            return await self.memory_item_layer.search_by_user_id(user_id)
+        else:
+            return await self.memory_item_layer.get_all()
+
+    async def get_all_resources(self) -> List[Dict[str, Any]]:
+        """获取所有资源"""
+        return await self.resource_layer.get_all()
+
     async def get_all_categories(self) -> List[Dict[str, Any]]:
         """获取所有分类"""
         return await self.memory_category_layer.get_all()

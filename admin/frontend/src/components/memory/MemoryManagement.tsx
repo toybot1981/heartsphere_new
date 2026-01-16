@@ -34,6 +34,11 @@ const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }
     setActiveTab(newValue);
   };
 
+  // 提供给子组件切换标签页的回调函数
+  const switchToTab = (tabIndex: number) => {
+    setActiveTab(tabIndex);
+  };
+
   return (
     <Box sx={{ width: '100%', p: 3 }}>
       <Tabs
@@ -49,7 +54,7 @@ const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }
       </Tabs>
 
       <Box sx={{ mt: 2 }}>
-        {activeTab === 0 && <MemoryDashboard adminToken={adminToken} />}
+        {activeTab === 0 && <MemoryDashboard adminToken={adminToken} onNavigateToUserMemory={() => switchToTab(2)} />}
         {activeTab === 1 && <MemoryTesting adminToken={adminToken} />}
         {activeTab === 2 && <UserMemoryManagement adminToken={adminToken} />}
         {activeTab === 3 && <ShortTermMemoryManagement adminToken={adminToken} />}

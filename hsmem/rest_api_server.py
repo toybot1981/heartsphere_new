@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import uvicorn
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from hscore import MemoryService
 
 
@@ -265,9 +268,152 @@ async def get_category_items(category_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== 记忆项 API ====================
+
+@app.get("/api/v1/memory/items")
+async def get_memory_items(user_id: Optional[str] = None):
+    """
+    获取所有记忆项
+
+    - **user_id**: 可选，按用户ID过滤
+    """
+    try:
+        items = await memory_service.get_all_items(user_id=user_id)
+        return {
+            "success": True,
+            "data": {
+                "items": items,
+                "total": len(items)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/memory/items/{item_id}")
+async def get_memory_item(item_id: str):
+    """
+    获取记忆项详情
+
+    - **item_id**: 记忆项ID
+    """
+    try:
+        item = await memory_service.database.get_memory_item(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail=f"记忆项 {item_id} 不存在")
+        
+        return {
+            "success": True,
+            "data": item
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 资源 API ====================
+
+@app.get("/api/v1/memory/resources")
+async def get_resources():
+    """
+    获取所有资源
+    """
+    try:
+        resources = await memory_service.get_all_resources()
+        return {
+            "success": True,
+            "data": {
+                "resources": resources,
+                "total": len(resources)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/memory/resources/{resource_id}")
+async def get_resource(resource_id: str):
+    """
+    获取资源详情
+
+    - **resource_id**: 资源ID
+    """
+    try:
+        resource = await memory_service.database.get_resource(resource_id)
+        if not resource:
+            raise HTTPException(status_code=404, detail=f"资源 {resource_id} 不存在")
+        
+        return {
+            "success": True,
+            "data": resource
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 日志配置 ====================
+
+def setup_logging(log_file: str = "hsmem.log"):
+    """
+    配置日志系统
+    将访问日志和应用日志输出到文件
+    """
+    log_path = Path(log_file)
+    
+    # 创建日志格式
+    log_format = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # 配置根日志记录器
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # 清除现有的处理器
+    root_logger.handlers.clear()
+    
+    # 文件处理器（带日志轮转，最大10MB，保留5个备份）
+    file_handler = RotatingFileHandler(
+        log_path,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=5,
+        encoding='utf-8'
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(log_format)
+    root_logger.addHandler(file_handler)
+    
+    # 控制台处理器（同时输出到控制台）
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(log_format)
+    root_logger.addHandler(console_handler)
+    
+    # 配置 uvicorn 的访问日志
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.setLevel(logging.INFO)
+    access_logger.addHandler(file_handler)
+    access_logger.addHandler(console_handler)
+    
+    # 配置 uvicorn 的错误日志
+    error_logger = logging.getLogger("uvicorn.error")
+    error_logger.setLevel(logging.INFO)
+    error_logger.addHandler(file_handler)
+    error_logger.addHandler(console_handler)
+    
+    return log_path
+
+
 # ==================== 启动服务器 ====================
 
 if __name__ == "__main__":
+    # 设置日志
+    log_file = setup_logging("hsmem.log")
+    
     print("""
     ╔═══════════════════════════════════════════════════════╗
     ║          HSMem REST API 服务器                        ║
@@ -275,12 +421,22 @@ if __name__ == "__main__":
     ║  服务地址: http://localhost:8000                      ║
     ║  API 文档: http://localhost:8000/docs                 ║
     ║  健康检查: http://localhost:8000/health               ║
+    ║  日志文件: {:<43}║
     ╚═══════════════════════════════════════════════════════╝
-    """)
-
+    """.format(str(log_file.absolute())))
+    
+    # 记录启动信息
+    logging.info("=" * 60)
+    logging.info("HSMem REST API 服务器启动")
+    logging.info(f"服务地址: http://localhost:8000")
+    logging.info(f"日志文件: {log_file.absolute()}")
+    logging.info("=" * 60)
+    
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=8000,
-        log_level="info"
+        log_level="info",
+        access_log=True,  # 启用访问日志
+        log_config=None   # 使用我们自定义的日志配置
     )

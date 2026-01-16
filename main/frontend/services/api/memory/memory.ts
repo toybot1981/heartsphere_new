@@ -291,5 +291,274 @@ export const memoryApi = {
       throw error;
     }
   },
+
+  // ==================== HSMem 记忆服务 API ====================
+  
+  /**
+   * HSMem 记忆化对话请求
+   */
+  memorizeConversation: async (
+    request: {
+      messages: Array<{ role: string; content: string | { text: string } }>;
+      user_id?: string;
+      agent_id?: string;
+    },
+    token: string
+  ): Promise<{
+    resource_id: string;
+    items_count: number;
+    categories: Array<{ name: string; item_count: number }>;
+  }> => {
+    try {
+      // 验证 token
+      if (!token || !token.trim()) {
+        logger.error('[memoryApi] 记忆化对话失败: token 为空', { token });
+        throw new Error('认证 token 无效');
+      }
+      
+      logger.debug('[memoryApi] 记忆化对话请求', { 
+        messageCount: request.messages?.length || 0,
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, Math.min(20, token.length))
+      });
+      
+      // request.ts 已经处理了 ApiResponse<T> 格式，直接返回 data 字段
+      const result = await request<{
+        resource_id: string;
+        items_count: number;
+        categories: Array<{ name: string; item_count: number }>;
+      }>('/memory/v1/hsmem/memorize/conversation', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 记忆化对话失败', { error, tokenLength: token?.length });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 记忆化文本
+   */
+  memorizeText: async (
+    request: {
+      text: string;
+      context?: Record<string, any>;
+      user_id?: string;
+    },
+    token: string
+  ): Promise<{
+    resource_id: string;
+    items_count: number;
+    categories: Array<{ name: string; item_count: number }>;
+  }> => {
+    try {
+      const result = await request<{
+        resource_id: string;
+        items_count: number;
+        categories: Array<{ name: string; item_count: number }>;
+      }>('/memory/v1/hsmem/memorize/text', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 记忆化文本失败', { error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 记忆化文档
+   */
+  memorizeDocument: async (
+    request: {
+      title: string;
+      content: string;
+      author?: string;
+      user_id?: string;
+    },
+    token: string
+  ): Promise<{
+    resource_id: string;
+    items_count: number;
+    categories: Array<{ name: string; item_count: number }>;
+  }> => {
+    try {
+      const result = await request<{
+        resource_id: string;
+        items_count: number;
+        categories: Array<{ name: string; item_count: number }>;
+      }>('/memory/v1/hsmem/memorize/document', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 记忆化文档失败', { error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 检索记忆
+   */
+  retrieve: async (
+    request: {
+      queries: Array<{ role: string; content: string | { text: string } }>;
+      where?: Record<string, any>;
+      limit?: number;
+    },
+    token: string
+  ): Promise<{
+    method: string;
+    items: Array<Record<string, any>>;
+  }> => {
+    try {
+      const result = await request<{
+        method: string;
+        items: Array<Record<string, any>>;
+      }>('/memory/v1/hsmem/retrieve', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 检索记忆失败', { error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 获取统计信息
+   */
+  getStatistics: async (
+    token: string
+  ): Promise<{
+    resources_count: number;
+    items_count: number;
+    categories_count: number;
+  }> => {
+    try {
+      const result = await request<{
+        resources_count: number;
+        items_count: number;
+        categories_count: number;
+      }>('/memory/v1/hsmem/statistics', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 获取统计信息失败', { error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 获取分类列表
+   */
+  getCategories: async (
+    token: string
+  ): Promise<{
+    categories: Array<Record<string, any>>;
+    total: number;
+  }> => {
+    try {
+      const result = await request<{
+        categories: Array<Record<string, any>>;
+        total: number;
+      }>('/memory/v1/hsmem/categories', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 获取分类列表失败', { error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 获取记忆项列表
+   */
+  getItems: async (
+    userId: string | number | undefined,
+    token: string
+  ): Promise<{
+    items: Array<Record<string, any>>;
+    total: number;
+  }> => {
+    try {
+      const url = userId 
+        ? `/memory/v1/hsmem/items?user_id=${userId}`
+        : '/memory/v1/hsmem/items';
+      
+      const result = await request<{
+        items: Array<Record<string, any>>;
+        total: number;
+      }>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 获取记忆项列表失败', { userId, error });
+      throw error;
+    }
+  },
+  
+  /**
+   * HSMem 获取资源列表
+   */
+  getResources: async (
+    token: string
+  ): Promise<{
+    resources: Array<Record<string, any>>;
+    total: number;
+  }> => {
+    try {
+      const result = await request<{
+        resources: Array<Record<string, any>>;
+        total: number;
+      }>('/memory/v1/hsmem/resources', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('[memoryApi] 获取资源列表失败', { error });
+      throw error;
+    }
+  },
 };
 

@@ -43,14 +43,12 @@ async function example1() {
     },
   });
 
-  console.log('Temperature:', temperature);
 
   // 分析情绪，插件会自动响应
   const emotion = await engine.analyzeEmotion({
     text: '我今天非常开心！',
   });
 
-  console.log('Emotion:', emotion);
 }
 
 // ========== 示例2：创建自定义插件 ==========
@@ -66,11 +64,9 @@ class CustomNotificationPlugin implements TemperaturePlugin {
 
   async onInit(engine: TemperatureEngine): Promise<void> {
     this.engine = engine;
-    console.log('[CustomNotificationPlugin] Initialized');
   }
 
   async onStart(): Promise<void> {
-    console.log('[CustomNotificationPlugin] Started');
   }
 
   async onTemperatureChange(temperature: any): Promise<void> {
@@ -105,11 +101,9 @@ class CustomNotificationPlugin implements TemperaturePlugin {
   }
 
   async onStop(): Promise<void> {
-    console.log('[CustomNotificationPlugin] Stopped');
   }
 
   async onDestroy(): Promise<void> {
-    console.log('[CustomNotificationPlugin] Destroyed');
   }
 }
 
@@ -159,23 +153,18 @@ async function example3() {
 
   // 获取所有插件
   const allPlugins = pluginManager.getAllPlugins();
-  console.log('All plugins:', allPlugins);
 
   // 获取启用的插件
   const enabledPlugins = pluginManager.getEnabledPlugins();
-  console.log('Enabled plugins:', enabledPlugins);
 
   // 检查插件是否启用
   const isGreetingEnabled = pluginManager.isPluginEnabled('greeting');
-  console.log('Greeting plugin enabled:', isGreetingEnabled);
 
   // 禁用插件
   await engine.disablePlugin('greeting');
-  console.log('Greeting plugin disabled');
 
   // 启用插件
   await engine.enablePlugin('greeting');
-  console.log('Greeting plugin enabled');
 
   // 调用插件方法
   const greetingPlugin = pluginManager.getPlugin('greeting');
@@ -200,21 +189,18 @@ async function example4() {
   // 监听表情变化事件（由表情插件触发）
   window.addEventListener('temperatureExpressionChanged', (event: any) => {
     const { expression } = event.detail;
-    console.log('Expression changed:', expression);
     // 更新UI中的角色表情
   });
 
   // 监听对话开始事件（由对话插件触发）
   window.addEventListener('temperatureDialogueStart', (event: any) => {
     const { greeting } = event.detail;
-    console.log('Dialogue started:', greeting);
     // 显示问候语
   });
 
   // 监听消息调整事件（由对话插件触发）
   window.addEventListener('temperatureMessageAdjusted', (event: any) => {
     const { original, adjusted, temperature } = event.detail;
-    console.log('Message adjusted:', { original, adjusted, temperature });
     // 使用调整后的消息
   });
 }

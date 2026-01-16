@@ -112,4 +112,38 @@ public interface VmManager {
      * @return 是否健康
      */
     boolean healthCheck(String vmId);
+    
+    /**
+     * 获取虚拟机屏幕截图
+     * 
+     * @param vmId 虚拟机ID
+     * @return Base64 编码的截图（data URI 格式），如果无法获取则返回 null
+     */
+    String getVmScreenshot(String vmId);
+    
+    /**
+     * 获取虚拟机 VNC 连接信息
+     * 
+     * @param vmId 虚拟机ID
+     * @return VNC 连接信息（包含 URL、密码、主机、端口等），如果无法获取则返回 null
+     */
+    Map<String, Object> getVncInfo(String vmId);
+    
+    /**
+     * 在虚拟机中执行命令
+     * 
+     * @param vmId 虚拟机ID
+     * @param command 命令
+     * @return 命令执行结果
+     */
+    MentisVmService.CommandResult executeCommand(String vmId, String command);
+    
+    /**
+     * 在会话的虚拟机中执行命令
+     * 
+     * @param sessionId 会话ID
+     * @param command 命令
+     * @return 命令执行结果
+     */
+    MentisVmService.CommandResult executeCommandForSession(String sessionId, String command);
 }

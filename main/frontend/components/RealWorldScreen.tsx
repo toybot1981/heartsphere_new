@@ -101,15 +101,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     });
   }, []);
   
-  // 调试：监听 scenePlugins 变化（包括调用栈）
-  useEffect(() => {
-    const stack = new Error().stack;
-    console.log('[RealWorldScreen] scenePlugins 状态变化', { 
-      count: scenePlugins.length, 
-      plugins: scenePlugins.map(p => ({ id: p.pluginInstanceId, name: p.pluginName, visible: p.visible })),
-      callStack: stack?.split('\n').slice(2, 6).join('\n') // 显示调用栈
-    });
-  }, [scenePlugins]);
+  // 监听 scenePlugins 变化（已移除调试日志）
 
   const loadScenePlugins = async () => {
     if (isGuest) return; // 访客模式不加载插件
@@ -142,11 +134,6 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   };
 
   const handlePluginSelect = async (plugin: Plugin) => {
-    console.log('[RealWorldScreen] handlePluginSelect 被调用', { 
-      pluginId: plugin.pluginId, 
-      pluginName: plugin.name,
-      currentPluginCount: scenePlugins.length
-    });
     
     try {
       const token = localStorage.getItem('auth_token');
@@ -162,17 +149,10 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         config: {},
       };
       
-      console.log('[RealWorldScreen] 开始添加插件到场景', { 
-        pluginId: plugin.pluginId, 
-        sceneId: SCENE_ID,
-        defaultPosition,
-        currentCount
-      });
       logger.debug('[RealWorldScreen] 开始添加插件到场景', { pluginId: plugin.pluginId, sceneId: SCENE_ID });
       
       try {
         const addedPlugin = await scenePluginApi.addPluginToScene(SCENE_ID, plugin.pluginId, defaultPosition, token || undefined);
-        console.log('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
         logger.debug('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
         // 重新加载插件列表
         await loadScenePlugins();
@@ -180,22 +160,13 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       } catch (apiError) {
         // 如果后端API还没有实现，使用前端模拟数据
         const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
-        console.warn('[RealWorldScreen] 后端API可能未实现，使用前端模拟数据', errorMessage, apiError);
         logger.warn('[RealWorldScreen] 后端API可能未实现，使用前端模拟数据', errorMessage);
         
         // 使用函数式更新，避免闭包问题，并且不调用 loadScenePlugins（避免被清空）
         setScenePlugins((prevPlugins) => {
-          console.log('[RealWorldScreen] setScenePlugins 函数式更新开始', { 
-            previousCount: prevPlugins.length,
-            previousPlugins: prevPlugins,
-            newPluginId: plugin.pluginId,
-            newPluginName: plugin.name
-          });
-          
           // 检查是否已存在相同的插件
           const existingIndex = prevPlugins.findIndex(p => p.pluginId === plugin.pluginId);
           if (existingIndex >= 0) {
-            console.log('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId, existingIndex });
             logger.debug('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId });
             return prevPlugins;
           }
@@ -218,30 +189,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           };
           
           const updatedPlugins = [...prevPlugins, newPlugin];
-          console.log('[RealWorldScreen] ✅ 插件已添加到本地状态', { 
-            pluginId: plugin.pluginId, 
-            pluginName: plugin.name,
-            previousCount: prevPlugins.length,
-            newCount: updatedPlugins.length,
-            newPlugin: newPlugin,
-            allPlugins: updatedPlugins
-          });
           logger.debug('[RealWorldScreen] 插件已添加到本地状态', { 
             pluginId: plugin.pluginId, 
             pluginName: plugin.name,
             previousCount: prevPlugins.length,
             newCount: updatedPlugins.length,
-            newPlugin: newPlugin,
-            allPlugins: updatedPlugins
           });
-          
-          // 立即验证状态更新
-          setTimeout(() => {
-            console.log('[RealWorldScreen] ⏰ 状态更新后验证', { 
-              expectedCount: updatedPlugins.length,
-              note: '如果这个数量与页面显示不一致，说明状态更新有问题'
-            });
-          }, 50);
           
           return updatedPlugins;
         });

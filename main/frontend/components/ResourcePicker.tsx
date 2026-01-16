@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { resourceApi } from '../services/api';
+import { LazyImage } from './LazyImage';
 
 interface ResourcePickerProps {
   category: 'avatar' | 'character' | 'era' | 'scenario' | 'journal' | 'general';
@@ -86,13 +87,11 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
                   }`}
                 >
                   <div className="aspect-square bg-slate-800 flex items-center justify-center">
-                    <img
+                    <LazyImage
                       src={resource.url}
                       alt={resource.name}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23334155" width="100" height="100"/%3E%3Ctext fill="%2394a3b8" x="50" y="50" text-anchor="middle" dy=".3em" font-size="12"%3E图片加载失败%3C/text%3E%3C/svg%3E';
-                      }}
+                      purpose="thumbnail"
                     />
                   </div>
                   {selectedUrl === resource.url && (

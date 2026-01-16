@@ -1,5 +1,6 @@
 package com.heartsphere.mentis.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,7 @@ public class MentisTask {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
+    @JsonIgnore // 避免序列化时的无限递归
     private MentisSession session;
 
     /**
@@ -91,6 +93,18 @@ public class MentisTask {
      * 执行耗时（毫秒）
      */
     private Long duration;
+
+    /**
+     * 执行ID（用于查询任务进度）
+     */
+    @Column(length = 200)
+    private String executionId;
+
+    /**
+     * 关联的用户消息ID（用于查询当前对话的任务）
+     */
+    @Column(length = 200)
+    private String messageId;
 
     /**
      * 创建时间

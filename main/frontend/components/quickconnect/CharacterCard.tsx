@@ -134,7 +134,11 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
       {/* 内容区域 */}
       <div className="px-2 pb-2">
         <div className="flex items-center gap-1 mb-0.5">
-          <h3 className="text-sm font-semibold text-white truncate flex-1">
+          <h3 className="text-sm font-bold text-white truncate flex-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+              style={{ 
+                textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)',
+                letterSpacing: '0.01em'
+              }}>
             <HighlightText text={character.characterName} highlight={searchQuery} />
           </h3>
           {/* 生活助手徽章 */}

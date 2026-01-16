@@ -203,7 +203,6 @@ export const ModalsRenderer: React.FC<ModalsRendererProps> = ({
 
       {showMainStoryEditor && editingMainStory && editingMainStorySceneId && (() => {
         const editorScene = currentScenes.find(s => s.id === editingMainStorySceneId) || currentScenes[0];
-        console.log('[MainStoryEditor] 渲染编辑器:', { 
           showMainStoryEditor, 
           editingMainStory: !!editingMainStory, 
           editingMainStorySceneId,

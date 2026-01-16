@@ -60,7 +60,6 @@ export const useSettings = (options: UseSettingsOptions): UseSettingsReturn => {
     const loadConfig = async () => {
       const config = await AIConfigManager.getUserConfig();
       const keys = AIConfigManager.getLocalApiKeys();
-      console.log('[useSettings] 加载AI配置, mode:', config.mode);
       // 确保如果没有配置，默认使用统一接入模式
       if (!config.mode || (config.mode === 'local' && !localStorage.getItem('ai_service_config'))) {
         const defaultConfig = { ...config, mode: 'unified' as AIMode };
@@ -213,12 +212,10 @@ export const useSettings = (options: UseSettingsOptions): UseSettingsReturn => {
   // 切换AI模式
   const switchAIMode = async (mode: AIMode) => {
     const newConfig = { ...aiConfig, mode };
-    console.log('[useSettings] 切换到', mode, '模式, 新配置:', newConfig);
     setAiConfig(newConfig);
     setLoading(true);
     try {
       await AIConfigManager.saveUserConfig(newConfig);
-      console.log('[useSettings] 模式切换成功，已保存到localStorage');
       showAlert(
         mode === 'unified' ? '已切换到统一接入模式' : '已切换到本地配置模式，请配置API Key',
         '模式切换',

@@ -6,7 +6,6 @@ import { MUIProvider } from './components/MUIProvider';
 import { initPortalSystem } from './services/api/portal/init';
 
 // 初始化传送门系统（在应用启动时）
-console.log('[Main] 🚀 应用启动，初始化传送门系统...');
 initPortalSystem().catch(err => {
   console.error('[Main] 传送门系统初始化失败:', err);
 });

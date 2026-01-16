@@ -416,3 +416,129 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* 转换后的动画展示区域 */
+.converted-animations-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #334155;
+}
+
+.converted-animations-section h4 {
+  color: #e2e8f0;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.converted-animations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.converted-animation-item {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.animation-preview {
+  width: 100%;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.animation-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.lottie-placeholder,
+.pag-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #94a3b8;
+}
+
+.lottie-icon,
+.pag-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.lottie-placeholder p,
+.pag-placeholder p {
+  margin: 10px 0;
+  color: #cbd5e1;
+}
+
+.animation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.animation-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.animation-format {
+  background: #6366f1;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.animation-time {
+  color: #64748b;
+}
+
+.animation-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* 滚动条样式 */
+.converted-animations-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.converted-animations-list::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 3px;
+}
+
+.converted-animations-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+.converted-animations-list::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

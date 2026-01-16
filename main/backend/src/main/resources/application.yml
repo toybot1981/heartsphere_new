@@ -197,6 +197,15 @@ heartsphere:
       enable-llm-extraction: true
       enable-rule-extraction: true
       batch-size: 10
+    # HSMem 服务配置
+    hsmem:
+      base-url: ${HSMEM_BASE_URL:http://localhost:8000}  # HSMem 服务地址，可通过环境变量覆盖
+      timeout: 30  # 请求超时时间（秒）
+      retry:
+        enabled: true  # 是否启用重试
+        max-attempts: 3  # 最大重试次数
+        backoff: 1  # 重试退避时间（秒）
+      slow-request-threshold-ms: 1000  # 慢请求阈值（毫秒），超过此值的请求记录 WARN 级别日志
 
 
 # 日志配置
@@ -206,6 +215,10 @@ logging:
     root: INFO
     # 应用包日志级别
     com.heartsphere: INFO
+    # 传送门相关日志（调试模式）
+    com.heartsphere.heartconnect.portal: DEBUG
+    # 枚举转换器日志（调试模式）
+    com.heartsphere.heartconnect.portal.entity.converter: DEBUG
     # Hibernate SQL日志
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
@@ -216,6 +229,8 @@ logging:
     com.zaxxer.hikari: INFO
     # Spring Security日志
     org.springframework.security: INFO
+    # 应用安全过滤器日志
+    com.heartsphere.security: INFO
     # HTTP请求日志
     org.springframework.web: INFO
     # SQL语句和参数日志
@@ -227,6 +242,10 @@ logging:
     com.alibaba.cloud.ai: INFO
     # Netty DNS日志（用于调试DNS问题）
     io.netty.resolver.dns: INFO
+    # HSMem Client 服务日志（默认 INFO，开发环境可调整为 DEBUG）
+    com.heartsphere.memory.service.HSMemClientService: INFO
+    # Memory Controller 日志（用于调试）
+    com.heartsphere.memory.controller.MemoryController: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

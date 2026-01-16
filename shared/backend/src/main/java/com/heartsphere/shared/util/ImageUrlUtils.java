@@ -272,5 +272,106 @@ public class ImageUrlUtils {
             return true;
         }
     }
+    
+    /**
+     * 从原图URL生成多分辨率版本的URL
+     * 根据命名规则生成：原图路径 + "_宽度*高度" + 扩展名
+     * 
+     * @param originalUrl 原图URL（可以是相对路径或绝对URL）
+     * @return ImageVariantsDTO 包含所有分辨率版本的URL
+     */
+    public com.heartsphere.shared.dto.ImageVariantsDTO generateImageVariants(String originalUrl) {
+        if (originalUrl == null || originalUrl.isEmpty()) {
+            return new com.heartsphere.shared.dto.ImageVariantsDTO(null, null, null, null);
+        }
+        
+        // 如果已经是绝对URL，提取路径部分
+        String path = originalUrl;
+        String baseUrl = "";
+        boolean isAbsoluteUrl = originalUrl.startsWith("http://") || originalUrl.startsWith("https://");
+        
+        if (isAbsoluteUrl) {
+            try {
+                java.net.URI uri = new java.net.URI(originalUrl);
+                baseUrl = uri.getScheme() + "://" + uri.getHost();
+                if (uri.getPort() != -1 && uri.getPort() != 80 && uri.getPort() != 443) {
+                    baseUrl += ":" + uri.getPort();
+                }
+                path = uri.getPath();
+            } catch (java.net.URISyntaxException e) {
+                // URI解析失败，使用原URL
+                return new com.heartsphere.shared.dto.ImageVariantsDTO(originalUrl, null, null, null);
+            }
+        } else {
+            // 相对路径，需要转换为完整URL
+            baseUrl = getBaseUrl();
+        }
+        
+        // 提取文件名和扩展名
+        int lastSlashIndex = path.lastIndexOf('/');
+        if (lastSlashIndex < 0) {
+            // 没有路径分隔符，直接返回原图
+            String fullUrl = isAbsoluteUrl ? originalUrl : toFullUrl(originalUrl);
+            return new com.heartsphere.shared.dto.ImageVariantsDTO(fullUrl, null, null, null);
+        }
+        
+        String dirPath = path.substring(0, lastSlashIndex + 1);
+        String filename = path.substring(lastSlashIndex + 1);
+        
+        int lastDotIndex = filename.lastIndexOf('.');
+        if (lastDotIndex < 0) {
+            // 没有扩展名，直接返回原图
+            String fullUrl = isAbsoluteUrl ? originalUrl : toFullUrl(originalUrl);
+            return new com.heartsphere.shared.dto.ImageVariantsDTO(fullUrl, null, null, null);
+        }
+        
+        String nameWithoutExt = filename.substring(0, lastDotIndex);
+        String extension = filename.substring(lastDotIndex);
+        
+        // 生成各分辨率版本的文件名
+        String thumbnailFilename = nameWithoutExt + "_200*200" + extension;
+        String mediumFilename = nameWithoutExt + "_800*600" + extension;
+        String highQualityFilename = nameWithoutExt + "_1920*1080" + extension;
+        
+        // 构建完整URL
+        String originalFullUrl = isAbsoluteUrl ? originalUrl : toFullUrl(originalUrl);
+        String thumbnailUrl = buildVariantUrl(baseUrl, dirPath, thumbnailFilename, isAbsoluteUrl);
+        String mediumUrl = buildVariantUrl(baseUrl, dirPath, mediumFilename, isAbsoluteUrl);
+        String highQualityUrl = buildVariantUrl(baseUrl, dirPath, highQualityFilename, isAbsoluteUrl);
+        
+        return new com.heartsphere.shared.dto.ImageVariantsDTO(
+            originalFullUrl,
+            thumbnailUrl,
+            mediumUrl,
+            highQualityUrl
+        );
+    }
+    
+    /**
+     * 构建变体URL
+     * 
+     * @param baseUrl 基础URL（域名部分）
+     * @param dirPath 目录路径
+     * @param filename 文件名
+     * @param isAbsoluteUrl 原URL是否为绝对URL
+     * @return 完整的变体URL
+     */
+    private String buildVariantUrl(String baseUrl, String dirPath, String filename, boolean isAbsoluteUrl) {
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            return null;
+        }
+        
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        String normalizedDirPath = dirPath.startsWith("/") ? dirPath : "/" + dirPath;
+        String normalizedFilename = filename.startsWith("/") ? filename.substring(1) : filename;
+        
+        if (isAbsoluteUrl) {
+            return normalizedBaseUrl + normalizedDirPath + normalizedFilename;
+        } else {
+            // 相对路径，使用toFullUrl转换
+            String relativePath = (normalizedDirPath + normalizedFilename).replaceAll("^/", "");
+            return toFullUrl(relativePath);
+        }
+    }
 }
 

@@ -89,6 +89,20 @@ public class AdminResourceController extends BaseAdminController {
                 ));
     }
 
+    /**
+     * 更新资源的图片（上传新图片并更新URL，不创建新资源记录）
+     */
+    @PutMapping(value = "/{id}/image", produces = "application/json;charset=UTF-8")
+    public ResponseEntity<SystemResourceDTO> updateResourceImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        validateAdmin(authHeader);
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(systemResourceService.updateResourceImage(id, file));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteResource(
             @PathVariable Long id,

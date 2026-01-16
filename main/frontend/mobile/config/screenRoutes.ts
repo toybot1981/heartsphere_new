@@ -64,6 +64,10 @@ const MobileSharedChatWindowScreen = lazy(() => import('../screens/MobileSharedC
   console.error('[screenRoutes] Failed to load MobileSharedChatWindowScreen:', err);
   throw err;
 }));
+const MobileMailboxScreen = lazy(() => import('../screens/MobileMailboxScreen').then(m => ({ default: m.MobileMailboxScreen })).catch(err => {
+  console.error('[screenRoutes] Failed to load MobileMailboxScreen:', err);
+  throw err;
+}));
 
 /**
  * Screen组件Props基础接口
@@ -94,6 +98,7 @@ export const SCREEN_ROUTES: Record<
   'sharedHeartSphere': MobileSharedHeartSphereScreen,
   'sharedCharacterSelection': MobileSharedCharacterSelectionScreen,
   'sharedChat': MobileSharedChatWindowScreen,
+  'mailbox': MobileMailboxScreen,
   'admin': null, // Mobile版本不支持admin，返回null
 };
 

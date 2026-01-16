@@ -379,6 +379,151 @@ public class AIServiceController {
                     .body(ApiResponse.error(500, "语音转文本失败: " + e.getMessage()));
         }
     }
+    
+    /**
+     * 实时语音识别（流式）
+     * 
+     * 使用 Server-Sent Events (SSE) 推送实时识别结果
+     * 支持豆包实时语音识别 API
+     * 
+     * 参考文档：https://www.volcengine.com/docs/6561/1594356?lang=zh
+     */
+    @Operation(
+        summary = "实时语音识别（流式）",
+        description = "实时语音识别，使用 SSE 推送识别结果。支持豆包实时语音识别 API。"
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "识别成功（流式响应）"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "请求参数错误"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "未授权"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "500",
+            description = "服务器内部错误"
+        )
+    })
+    @PostMapping(value = "/audio/stt/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter speechToTextStream(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "实时语音识别请求",
+                required = true,
+                content = @Content(schema = @Schema(implementation = AudioRequest.class))
+            )
+            @RequestBody AudioRequest request,
+            @Parameter(hidden = true) Authentication authentication) {
+        
+        Long userId = getCurrentUserId(authentication);
+        log.info("[AIServiceController] /audio/stt/stream - 收到实时语音识别请求 - userId={}, provider={}, model={}, streamId={}", 
+            userId, request.getProvider(), request.getModel(), request.getStreamId());
+        
+        // 创建 SSE Emitter（设置较长的超时时间，因为实时识别可能需要持续连接）
+        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
+        
+        // 确保 streamId 存在
+        if (request.getStreamId() == null || request.getStreamId().isEmpty()) {
+            request.setStreamId(UUID.randomUUID().toString());
+        }
+        
+        // 异步处理，避免阻塞
+        CompletableFuture.runAsync(() -> {
+            try {
+                log.info("[AIServiceController] /audio/stt/stream - 开始调用 AIService.speechToTextStream - userId={}, streamId={}", 
+                    userId, request.getStreamId());
+                
+                // 创建 StreamResponseHandler，将响应转换为 SSE 事件
+                aiService.speechToTextStream(userId, request, (response, done) -> {
+                    try {
+                        if (done) {
+                            log.info("[AIServiceController] /audio/stt/stream - 流式响应完成（done=true）");
+                            emitter.complete();
+                            return;
+                        }
+                        
+                        if (response == null) {
+                            log.warn("[AIServiceController] /audio/stt/stream - 收到 null 响应");
+                            return;
+                        }
+                        
+                        // 构建 SSE 数据
+                        StringBuilder sseData = new StringBuilder();
+                        sseData.append("data: ");
+                        
+                        // 构建 JSON 响应
+                        StringBuilder json = new StringBuilder();
+                        json.append("{");
+                        json.append("\"content\":\"").append(escapeJson(response.getContent() != null ? response.getContent() : "")).append("\",");
+                        json.append("\"isPartial\":").append(response.getIsPartial() != null ? response.getIsPartial() : false).append(",");
+                        json.append("\"provider\":\"").append(response.getProvider() != null ? response.getProvider() : "").append("\",");
+                        json.append("\"model\":\"").append(response.getModel() != null ? response.getModel() : "").append("\",");
+                        json.append("\"streamId\":\"").append(response.getStreamId() != null ? response.getStreamId() : "").append("\"");
+                        if (response.getConfidence() != null) {
+                            json.append(",\"confidence\":").append(response.getConfidence());
+                        }
+                        json.append("}");
+                        
+                        sseData.append(json.toString());
+                        sseData.append("\n\n");
+                        
+                        // 发送 SSE 事件
+                        emitter.send(SseEmitter.event()
+                            .data(sseData.toString())
+                            .name("asr_result"));
+                        
+                        log.debug("[AIServiceController] /audio/stt/stream - 发送识别结果 - content={}, isPartial={}", 
+                            response.getContent(), response.getIsPartial());
+                        
+                    } catch (IOException e) {
+                        log.error("[AIServiceController] /audio/stt/stream - 发送 SSE 数据失败", e);
+                        try {
+                            emitter.completeWithError(e);
+                        } catch (Exception ex) {
+                            log.error("[AIServiceController] /audio/stt/stream - 完成 SSE 连接失败", ex);
+                        }
+                    }
+                });
+                
+            } catch (Exception e) {
+                log.error("[AIServiceController] /audio/stt/stream - 实时语音识别失败", e);
+                try {
+                    emitter.send(SseEmitter.event()
+                        .data("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
+                        .name("error"));
+                    emitter.completeWithError(e);
+                } catch (Exception ex) {
+                    log.error("[AIServiceController] /audio/stt/stream - 发送错误信息失败", ex);
+                    try {
+                        emitter.completeWithError(ex);
+                    } catch (Exception exc) {
+                        log.error("[AIServiceController] /audio/stt/stream - 完成 SSE 连接失败", exc);
+                    }
+                }
+            }
+        });
+        
+        // 设置完成和超时回调
+        emitter.onCompletion(() -> {
+            log.info("[AIServiceController] /audio/stt/stream - SSE 连接已完成");
+        });
+        
+        emitter.onTimeout(() -> {
+            log.warn("[AIServiceController] /audio/stt/stream - SSE 连接超时");
+            emitter.complete();
+        });
+        
+        emitter.onError((ex) -> {
+            log.error("[AIServiceController] /audio/stt/stream - SSE 连接错误", ex);
+        });
+        
+        return emitter;
+    }
 
     /**
      * 视频生成

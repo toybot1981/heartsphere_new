@@ -57,14 +57,12 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
   const loadExistingConfig = async () => {
     try {
       const config = await heartConnectApi.getMyShareConfig();
-      console.log('加载现有共享配置:', config);
       setExistingConfig(config);
       setShareType(config.shareType);
       setAccessPermission(config.accessPermission);
       setDescription(config.description || "");
       setCoverImageUrl(config.coverImageUrl || "");
       setSelectedScopes(config.scopes?.map(s => ({ scopeType: s.scopeType, scopeId: s.scopeId })) || []);
-      console.log('共享配置已加载，准备编辑');
     } catch (err: any) {
       // 如果没有配置（404错误），这是正常情况，静默处理
       const errorMessage = err?.message || "";
@@ -75,7 +73,7 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
         console.error("加载共享配置失败:", err);
         setError("加载共享配置失败，请刷新后重试");
       } else {
-        console.debug("共享配置不存在（正常情况），将创建新配置");
+        // 共享配置不存在（正常情况），将创建新配置
         // 重置为默认值
         setExistingConfig(null);
         setShareType('all');

@@ -27,7 +27,6 @@ export const useMailHandlers = () => {
       if (token) {
         try {
           await chronosLetterApi.markAsRead(mailId, token);
-          console.log('[useMailHandlers] 信件已标记为已读:', mailId);
         } catch (error) {
           console.error('[useMailHandlers] 标记信件已读失败:', error);
           // 如果API调用失败，回滚本地状态

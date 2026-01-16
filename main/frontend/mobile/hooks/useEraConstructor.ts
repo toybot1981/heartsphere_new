@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { WorldScene } from '../../types';
+import { WorldScene, WorldStyle } from '../../types';
 import { aiService } from '../../services/ai';
 import { constructEraCoverPrompt } from '../../utils/promptConstructors';
 import { imageApi, eraApi } from '../../services/api';
@@ -12,7 +12,7 @@ import { showAlert, showConfirm } from '../../utils/dialog';
 
 export interface UseEraConstructorOptions {
   initialScene?: WorldScene | null;
-  worldStyle?: string;
+  worldStyle?: string; // 保留向后兼容，但优先使用场景的 style 字段
   onSave: (scene: WorldScene) => void;
   onDelete?: () => void;
 }
@@ -22,6 +22,7 @@ export interface UseEraConstructorReturn {
   name: string;
   description: string;
   imageUrl: string | null;
+  style: WorldStyle; // 场景风格
   imageMode: 'generate' | 'upload';
   creationMode: 'preset' | 'custom';
   selectedPresetEraId: number | undefined;
@@ -51,6 +52,7 @@ export interface UseEraConstructorReturn {
   setName: (name: string) => void;
   setDescription: (description: string) => void;
   setImageUrl: (url: string | null) => void;
+  setStyle: (style: WorldStyle) => void;
   setImageMode: (mode: 'generate' | 'upload') => void;
   setCreationMode: (mode: 'preset' | 'custom') => void;
   setSelectedPresetEraId: (id: number | undefined) => void;
@@ -77,6 +79,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [style, setStyle] = useState<WorldStyle>('realistic'); // 场景风格，默认写实风格
   const [imageMode, setImageMode] = useState<'generate' | 'upload'>('generate');
   const [creationMode, setCreationMode] = useState<'preset' | 'custom'>('preset');
   const [selectedPresetEraId, setSelectedPresetEraId] = useState<number | undefined>(undefined);
@@ -127,6 +130,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
         setName(initialScene.name);
         setDescription(initialScene.description);
         setImageUrl(initialScene.imageUrl);
+        setStyle((initialScene as any).style || 'realistic'); // 恢复场景风格，默认写实
         setSelectedPresetEraId(initialScene.systemEraId);
         setCreationMode('custom');
         if (initialScene.imageUrl && initialScene.imageUrl.startsWith('data:')) {
@@ -136,6 +140,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
         setName('');
         setDescription('');
         setImageUrl(null);
+        setStyle('realistic'); // 新建时默认写实风格
         setSelectedPresetEraId(undefined);
         setCreationMode('preset');
       }
@@ -157,7 +162,9 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
     }
 
     try {
-      const prompt = constructEraCoverPrompt(name, description, worldStyle);
+      // 使用场景的风格，如果没有则使用传入的 worldStyle 或默认写实风格
+      const sceneStyle = style || worldStyle || 'realistic';
+      const prompt = constructEraCoverPrompt(name, description, sceneStyle);
       await navigator.clipboard.writeText(prompt);
       showAlert('提示词已复制到剪贴板！', '提示', 'success');
       return prompt;
@@ -178,7 +185,9 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
     setError('');
 
     try {
-      const prompt = constructEraCoverPrompt(name, description, worldStyle);
+      // 使用场景的风格，如果没有则使用传入的 worldStyle 或默认写实风格
+      const sceneStyle = style || worldStyle || 'realistic';
+      const prompt = constructEraCoverPrompt(name, description, sceneStyle);
       const generatedUrl = await aiService.generateImage(prompt);
       setImageUrl(generatedUrl);
     } catch (err: any) {
@@ -239,6 +248,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
         description: description.trim(),
         imageUrl: imageUrl || undefined,
         systemEraId: selectedPresetEraId,
+        style: style, // 保存场景风格
       } as WorldScene;
 
       onSave(scene);
@@ -268,6 +278,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
     name,
     description,
     imageUrl,
+    style,
     imageMode,
     creationMode,
     selectedPresetEraId,
@@ -282,6 +293,7 @@ export const useEraConstructor = (options: UseEraConstructorOptions): UseEraCons
     setName,
     setDescription,
     setImageUrl,
+    setStyle,
     setImageMode,
     setCreationMode,
     setSelectedPresetEraId,

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -105,7 +106,20 @@ public class MentisTaskServiceImpl implements MentisTaskService {
         var session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
         
-        return taskRepository.findBySession_IdOrderByCreatedAtDesc(session.getId());
+        // 1. 查找会话中最新用户消息的 messageId
+        Optional<String> latestMessageIdOpt = taskRepository.findLatestUserMessageIdBySessionId(session.getId());
+        
+        if (latestMessageIdOpt.isPresent()) {
+            String latestMessageId = latestMessageIdOpt.get();
+            // 返回该消息关联的所有任务，按创建时间正序排列
+            List<MentisTask> tasks = taskRepository.findByMessageIdOrderByCreatedAtAsc(latestMessageId);
+            log.debug("返回当前对话的任务: messageId={}, count={}", latestMessageId, tasks.size());
+            return tasks;
+        }
+        
+        // 2. 如果没有找到用户消息，返回空列表
+        log.debug("会话没有用户消息，返回空任务列表");
+        return List.of();
     }
     
     @Override

@@ -53,4 +53,9 @@ public interface McpConfigService {
      * 测试 MCP 服务器连接
      */
     boolean testConnection(Long id);
+    
+    /**
+     * 从模板创建配置
+     */
+    com.heartsphere.mentis.entity.McpServerConfig createConfigFromTemplate(Long templateId, java.util.Map<String, String> parameters);
 }

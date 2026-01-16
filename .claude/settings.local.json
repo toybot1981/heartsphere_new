@@ -86,7 +86,8 @@
       "Bash(do if [ -d \"$dir\" ])",
       "Bash(then echo \"=== $dir ===\" find \"$dir\" -type f \\\\\\( -name \"*.java\" -o -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.sql\" \\\\\\))",
       "Bash(git clone:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(mvn clean install:*)"
     ]
   }
 }

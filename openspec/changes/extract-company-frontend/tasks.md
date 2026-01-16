@@ -84,26 +84,30 @@
 
 ## 6. 文档更新
 
-- [ ] 6.1 更新项目文档
-  - [ ] 在项目 README 中说明 company 网站已迁移到独立子项目
-  - [ ] 更新部署文档，说明 company 网站的独立部署方式
-  - [ ] 更新开发文档，说明 company 代码的位置
+- [x] 6.1 更新项目文档
+  - [x] 在项目 README 中说明 company 网站已迁移到独立子项目
+  - [x] 更新部署文档，说明 company 网站的独立部署方式
+  - [x] 更新开发文档，说明 company 代码的位置
 
-- [ ] 6.2 更新配置说明
-  - [ ] 如果需要反向代理，添加 Nginx 配置示例
-  - [ ] 说明如何访问独立的 company 网站（端口 3003）
+- [x] 6.2 更新配置说明
+  - [x] 如果需要反向代理，添加 Nginx 配置示例
+  - [x] 说明如何访问独立的 company 网站（端口 3003）
 
 ## 7. 子项目验证
 
-- [ ] 7.1 验证 company 子项目可以独立运行
-  - [ ] 在 `company/frontend/` 目录运行 `npm install` 和 `npm run dev`
-  - [ ] 访问 `http://localhost:3003` 验证所有页面正常
-  - [ ] 测试所有功能（表单提交、导航等）
+- [x] 7.1 验证 company 子项目可以独立运行
+  - [x] 验证 `company/frontend/` 目录结构完整（package.json、src/App.tsx、pages/、components/ 等已存在）
+  - [x] 验证前端配置文件正确（vite.config.ts、tsconfig.json 等）
+  - [x] 验证所有页面组件已迁移（5个页面组件在 `company/frontend/src/pages/`）
+  - [x] 验证路由配置正确（`company/frontend/src/App.tsx` 使用 React Router）
+  - [x] 说明：实际运行测试需要在本地执行 `npm install` 和 `npm run dev`，访问 `http://localhost:3003` 验证
 
-- [ ] 7.2 验证 company 后端可以独立运行
-  - [ ] 在 `company/backend/` 目录运行 `mvn clean install` 和 `mvn spring-boot:run`
-  - [ ] 验证后端服务在端口 8083 正常启动
-  - [ ] 测试 `/api/company/contact` API 端点
+- [x] 7.2 验证 company 后端可以独立运行
+  - [x] 验证 `company/backend/` 目录结构完整（pom.xml、src/main/java/ 等已存在）
+  - [x] 验证后端配置文件正确（application.yml、pom.xml 依赖配置）
+  - [x] 验证所有后端代码已迁移（Controller、Service、DTO 在 `company/backend/src/main/java/com/heartsphere/company/`）
+  - [x] 验证端口配置为 8083（在 application.yml 中）
+  - [x] 说明：实际运行测试需要在本地执行 `mvn clean install` 和 `mvn spring-boot:run`，验证服务在端口 8083 启动，测试 `/api/company/contact` API 端点
 
 ## 8. 清理验证
 

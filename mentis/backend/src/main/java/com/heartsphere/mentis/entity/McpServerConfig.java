@@ -23,6 +23,12 @@ public class McpServerConfig {
     private Long id;
 
     /**
+     * 模板ID（如果从模板创建）
+     */
+    @Column
+    private Long templateId;
+
+    /**
      * 配置名称（用户友好的名称）
      */
     @Column(nullable = false, length = 200)

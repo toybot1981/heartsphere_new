@@ -60,13 +60,23 @@ export interface RetrieveRequest {
 
 export interface MemoryItem {
   id: string;
+  resource_id?: string;
+  user_id?: string;
   summary: string;
   memory_type: string;
   content?: string;
   categories?: string[];
-  importance?: string;
+  importance?: number | string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface Resource {
+  id: string;
+  modality: string;
+  data: Record<string, any>;
+  created_at: string;
+  metadata?: Record<string, any>;
 }
 
 export interface RetrieveResponse {
@@ -92,7 +102,12 @@ export interface StatisticsResponse {
 export interface Category {
   id: string;
   name: string;
+  summary?: string;
+  description?: string;
+  item_ids?: string[];
   item_count: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CategoriesResponse {
@@ -231,6 +246,43 @@ export const hsmemApi = {
   getCategoryItems: async (categoryName: string): Promise<CategoryItemsResponse> => {
     return hsmemRequest<CategoryItemsResponse>(
       `/api/v1/memory/categories/${encodeURIComponent(categoryName)}`
+    );
+  },
+
+  /**
+   * 获取所有记忆项（支持按用户ID过滤）
+   */
+  getAllItems: async (userId?: string): Promise<{ success: boolean; data: { items: MemoryItem[]; total: number } }> => {
+    const url = userId 
+      ? `/api/v1/memory/items?user_id=${encodeURIComponent(userId)}`
+      : '/api/v1/memory/items';
+    return hsmemRequest<{ success: boolean; data: { items: MemoryItem[]; total: number } }>(url);
+  },
+
+  /**
+   * 获取记忆项详情
+   */
+  getItem: async (itemId: string): Promise<{ success: boolean; data: MemoryItem }> => {
+    return hsmemRequest<{ success: boolean; data: MemoryItem }>(
+      `/api/v1/memory/items/${encodeURIComponent(itemId)}`
+    );
+  },
+
+  /**
+   * 获取所有资源
+   */
+  getAllResources: async (): Promise<{ success: boolean; data: { resources: Resource[]; total: number } }> => {
+    return hsmemRequest<{ success: boolean; data: { resources: Resource[]; total: number } }>(
+      '/api/v1/memory/resources'
+    );
+  },
+
+  /**
+   * 获取资源详情
+   */
+  getResource: async (resourceId: string): Promise<{ success: boolean; data: Resource }> => {
+    return hsmemRequest<{ success: boolean; data: Resource }>(
+      `/api/v1/memory/resources/${encodeURIComponent(resourceId)}`
     );
   },
 };

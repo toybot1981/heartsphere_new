@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { WorldScene } from '../types';
 import { showConfirm } from '../utils/dialog';
+import { LazyImage } from './LazyImage';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
 
 interface SceneCardProps {
   scene: WorldScene;
@@ -12,6 +14,49 @@ interface SceneCardProps {
 }
 
 export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, onDelete, isUserOwned = false }) => {
+  // 从 imageUrl 生成多分辨率版本（根据命名规则）
+  const imageVariants: ImageVariants | undefined = useMemo(() => {
+    if (!scene.imageUrl || !scene.imageUrl.trim()) return undefined;
+    
+    return {
+      original: scene.imageUrl,
+      thumbnail: generateVariantUrl(scene.imageUrl, 200, 200),
+      medium: generateVariantUrl(scene.imageUrl, 800, 600),
+      highQuality: generateVariantUrl(scene.imageUrl, 1920, 1080),
+    };
+  }, [scene.imageUrl]);
+
+  // 打印场景图片信息（详细日志）
+  useEffect(() => {
+    if (scene.imageUrl && scene.imageUrl.trim()) {
+      console.log('[SceneCard] 场景列表页面 - 图片展示信息', {
+        componentName: 'SceneCard',
+        pageType: '场景列表页面',
+        imageType: '场景封面图',
+        originalImageUrl: scene.imageUrl,
+        imageVariants: {
+          thumbnail: imageVariants?.thumbnail || null,
+          medium: imageVariants?.medium || null,
+          highQuality: imageVariants?.highQuality || null,
+        },
+        expectedResolution: 'medium (800×600) - 场景列表使用中等分辨率以获得更好的清晰度',
+        sceneObject: {
+          id: scene.id,
+          name: scene.name,
+          description: scene.description,
+          imageUrl: scene.imageUrl,
+          style: scene.style,
+          charactersCount: scene.characters?.length || 0,
+          hasMainStory: !!scene.mainStory,
+          scriptsCount: scene.scripts?.length || 0,
+        },
+        displayPurpose: 'list',
+        isUserOwned,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }, [scene.imageUrl, scene.id, scene.name, isUserOwned, imageVariants]);
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEdit) {
@@ -32,19 +77,21 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
       onClick={onSelect}
       className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-400/50"
     >
-      <div className="absolute inset-0 bg-gray-900">
+      <div className="absolute inset-0 bg-gray-900 pointer-events-none">
         {scene.imageUrl && scene.imageUrl.trim() ? (
-          <img 
-            src={scene.imageUrl} 
+          <LazyImage
+            src={scene.imageUrl}
             alt={scene.name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            variants={imageVariants}
+            purpose="list"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center">
+          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center pointer-events-none">
             <div className="text-6xl opacity-30">✨</div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-90 transition-opacity group-hover:opacity-75" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-90 transition-opacity group-hover:opacity-75 z-0 pointer-events-none" />
       </div>
 
       {/* Action Buttons (Top Right) */}
@@ -75,16 +122,25 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 w-full p-6 text-center">
-        <h3 className="mb-2 text-3xl font-black text-white" style={{ textShadow: '0 2px 15px rgba(0,0,0,0.5)' }}>
+      <div className="absolute bottom-0 left-0 w-full p-6 text-center z-10 pointer-events-none">
+        <h3 className="mb-2 text-3xl font-black text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]" 
+            style={{ 
+              textShadow: '0 3px 15px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.7), 0 0 30px rgba(0,0,0,0.5)',
+              WebkitTextStroke: '1px rgba(0,0,0,0.4)',
+              letterSpacing: '0.03em'
+            }}>
           {scene.name}
         </h3>
-        <p className="text-sm text-white/80 line-clamp-2">
+        <p className="text-sm font-bold text-white line-clamp-2 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+           style={{ 
+             textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.6)',
+             letterSpacing: '0.01em'
+           }}>
           {scene.description}
         </p>
       </div>
       
-      <div className="absolute inset-0 rounded-3xl border-2 border-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:border-purple-400 pointer-events-none" />
+      <div className="absolute inset-0 rounded-3xl border-2 border-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:border-purple-400 pointer-events-none z-0" />
     </div>
   );
 };

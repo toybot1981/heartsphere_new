@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Base64;
@@ -38,6 +39,9 @@ public class DoubaoAdapter implements ModelAdapter {
     
     @Value("${spring.ai.doubao.base-url:https://ark.cn-beijing.volces.com/api/v3}")
     private String baseUrl;
+    
+    @Value("${spring.ai.doubao.app-id:}")
+    private String defaultAppId;
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -756,6 +760,79 @@ public class DoubaoAdapter implements ModelAdapter {
             log.error("[DoubaoAdapter] 豆包语音转文本失败", e);
             throw new AIServiceException("豆包语音转文本失败: " + e.getMessage(), e);
         }
+    }
+    
+    @Override
+    public void speechToTextStream(AudioRequest request, StreamResponseHandler<AudioResponse> handler) {
+        try {
+            log.info("[DoubaoAdapter] 豆包实时语音识别请求: model={}, hasAudioData={}, streamId={}", 
+                request.getModel(), 
+                request.getAudioData() != null && !request.getAudioData().isEmpty(),
+                request.getStreamId());
+            
+            // 获取 API key
+            String apiKey = getApiKey(request);
+            if (apiKey == null || apiKey.isEmpty()) {
+                handler.handle(null, true);
+                throw new AIServiceException("豆包 API key 未配置");
+            }
+            
+            // 确定模型版本（O、SC、1.2.1.0、2.2.0.0）
+            String modelVersion = request.getModel() != null ? request.getModel() : "O";
+            
+            // 构建 WebSocket URL
+            // 参考文档：https://www.volcengine.com/docs/6561/1594356?lang=zh
+            // URL: wss://openspeech.bytedance.com/api/v3/realtime/dialogue
+            String wsUrl = "wss://openspeech.bytedance.com/api/v3/realtime/dialogue";
+            
+            log.info("[DoubaoAdapter] 实时语音识别 WebSocket URL: {}", wsUrl);
+            
+            // 创建 WebSocket 客户端
+            // 注意：需要从配置中获取 APP ID 和 Access Key
+            // 这里暂时使用 apiKey 作为 Access Key，APP ID 需要从配置中获取
+            String appId = getAppId(); // 需要从配置或数据库获取
+            URI uri = new URI(wsUrl);
+            
+            RealtimeAsrWebSocketClient wsClient = new RealtimeAsrWebSocketClient(
+                uri, request, handler, apiKey, modelVersion);
+            
+            // 设置请求头
+            // 参考文档要求的请求头：
+            // X-Api-App-ID: APP ID
+            // X-Api-Access-Key: Access Token
+            // X-Api-Resource-Id: volc.speech.dialog
+            // X-Api-App-Key: PlgvMymc7f3tQnJ6
+            // X-Api-Connect-Id: 可选
+            wsClient.addCustomHeader("X-Api-App-ID", appId);
+            wsClient.addCustomHeader("X-Api-Access-Key", apiKey);
+            wsClient.addCustomHeader("X-Api-Resource-Id", "volc.speech.dialog");
+            wsClient.addCustomHeader("X-Api-App-Key", "PlgvMymc7f3tQnJ6");
+            
+            // 连接 WebSocket（异步）
+            wsClient.connect();
+            
+            // 注意：音频数据的发送会在 WebSocket 连接建立并收到 ConnectionStarted 事件后自动进行
+            // 如果请求中包含初始音频数据，会在 StartSession 成功后自动发送
+            
+        } catch (Exception e) {
+            log.error("[DoubaoAdapter] 豆包实时语音识别失败", e);
+            handler.handle(null, true);
+            throw new AIServiceException("豆包实时语音识别失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 获取 APP ID
+     * 优先级：配置文件 > 默认值
+     * 注意：实际使用时需要在配置文件中设置 spring.ai.doubao.app-id
+     */
+    private String getAppId() {
+        if (defaultAppId != null && !defaultAppId.trim().isEmpty()) {
+            return defaultAppId;
+        }
+        // 如果配置文件中没有，返回空字符串（会导致连接失败，需要配置）
+        log.warn("[DoubaoAdapter] APP ID 未配置，实时语音识别可能失败。请在配置文件中设置 spring.ai.doubao.app-id");
+        return "";
     }
     
     @Override

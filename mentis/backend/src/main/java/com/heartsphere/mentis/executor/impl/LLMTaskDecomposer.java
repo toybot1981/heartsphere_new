@@ -6,9 +6,11 @@ import com.heartsphere.mentis.ai.dto.request.TextGenerationRequest;
 import com.heartsphere.mentis.ai.dto.response.TextGenerationResponse;
 import com.heartsphere.mentis.ai.service.AIService;
 import com.heartsphere.mentis.executor.TaskDecomposer;
+import com.heartsphere.mentis.service.ToolConfigIntegrationService;
 import com.heartsphere.mentis.util.LLMResponseParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -16,7 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 基于 LLM 的任务分解器实现
+ * 基于 LLM 的任务分解器实现（备用实现）
+ * 当 AgentScope 规划未启用时使用此实现
  * 
  * @author HeartSphere
  * @version 1.0
@@ -24,11 +27,13 @@ import java.util.UUID;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "mentis.agentscope.planning", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class LLMTaskDecomposer implements TaskDecomposer {
     
     private final AIService aiService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final LLMResponseParser responseParser;
+    private final ToolConfigIntegrationService toolConfigIntegrationService;
     
     private static final String DECOMPOSE_PROMPT_TEMPLATE = """
         你是一个任务分解专家。请将用户的需求分解为可执行的任务步骤。
@@ -61,8 +66,12 @@ public class LLMTaskDecomposer implements TaskDecomposer {
         log.info("分解任务: sessionId={}, request={}", sessionId, userRequest);
         
         try {
-            // 构建 Prompt
-            String prompt = DECOMPOSE_PROMPT_TEMPLATE.replace("{userRequest}", userRequest);
+            // 从配置读取任务分解提示词，如果不存在则使用默认值
+            String promptTemplate = toolConfigIntegrationService.getToolPromptTemplate(
+                "task_decomposer", // 使用特殊的工具名称标识任务分解器
+                DECOMPOSE_PROMPT_TEMPLATE
+            );
+            String prompt = promptTemplate.replace("{userRequest}", userRequest);
             
             // 调用 LLM
             TextGenerationRequest request = new TextGenerationRequest();

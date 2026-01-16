@@ -60,6 +60,17 @@ public interface VmProvider {
     void restoreSnapshot(String vmId, String snapshotId);
     
     /**
+     * 获取虚拟机屏幕截图
+     * 
+     * @param vmId 虚拟机ID
+     * @return Base64 编码的截图（data URI 格式），如果无法获取则返回 null
+     */
+    default String getScreenshot(String vmId) {
+        // 默认实现返回 null，由具体实现类提供
+        return null;
+    }
+    
+    /**
      * 虚拟机实例
      */
     class VmInstance {

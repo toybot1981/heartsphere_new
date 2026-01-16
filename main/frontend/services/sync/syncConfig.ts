@@ -312,6 +312,5 @@ export function initSyncConfigs(): void {
     },
   });
 
-  console.log('[syncConfig] 同步配置初始化完成（角色和剧本同步已注册，日志已移除同步机制）');
 }
 

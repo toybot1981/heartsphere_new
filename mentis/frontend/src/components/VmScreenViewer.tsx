@@ -27,16 +27,35 @@ export const VmScreenViewer: React.FC<VmScreenViewerProps> = ({
   useEffect(() => {
     if (!autoRefresh) return;
 
+    let retryTimeout: NodeJS.Timeout | null = null;
+    let hasRetried = false;
+
     const fetchScreenshot = async () => {
       try {
         setIsLoading(true);
         const response = await MentisApiService.getVmScreenshot(sessionId);
-        setScreenshotUrl(response.screenshotUrl || null);
+        setScreenshotUrl(response.screenshot || response.screenshotUrl || null);
+        // 如果成功获取截图，清除重试定时器并重置重试标志
+        if (retryTimeout) {
+          clearTimeout(retryTimeout);
+          retryTimeout = null;
+        }
+        hasRetried = false;
       } catch (error: any) {
-        // 如果错误是"该会话未关联虚拟机"，这是正常状态，不记录错误
-        if (error.code === 404 && error.message === '该会话未关联虚拟机') {
+        // 如果错误是"会话没有关联的虚拟机"或"未关联虚拟机"，这是正常状态
+        const errorMessage = error.message || '';
+        if (errorMessage.includes('没有关联的虚拟机') || 
+            errorMessage.includes('未关联虚拟机') || 
+            errorMessage.includes('自动创建失败')) {
           setScreenshotUrl(null);
-          return;
+          // 3秒后自动重试一次（仅在第一次失败时）
+          if (!hasRetried && !retryTimeout) {
+            hasRetried = true;
+            retryTimeout = setTimeout(() => {
+              fetchScreenshot();
+            }, 3000);
+          }
+          return; // 静默处理，不输出错误日志
         }
         console.error('获取截图失败:', error);
         setScreenshotUrl(null);
@@ -48,7 +67,12 @@ export const VmScreenViewer: React.FC<VmScreenViewerProps> = ({
     fetchScreenshot();
     const interval = setInterval(fetchScreenshot, refreshInterval);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+    };
   }, [sessionId, autoRefresh, refreshInterval]);
 
   const handleFullscreen = () => {

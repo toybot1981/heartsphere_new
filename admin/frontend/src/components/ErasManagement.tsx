@@ -41,6 +41,8 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [showResourcePicker, setShowResourcePicker] = useState(false);
+    const [showPortalManagement, setShowPortalManagement] = useState(false);
+    const [selectedEraId, setSelectedEraId] = useState<number | null>(null);
     const eraImageInputRef = useRef<HTMLInputElement>(null);
 
     // 初始化 aiService 配置
@@ -220,6 +222,16 @@ export const ErasManagement: React.FC<ErasManagementProps> = ({ eras, adminToken
                                     <td className="p-4 text-right space-x-2">
                                         <button onClick={() => switchToEdit(era)} className="text-indigo-400 hover:text-white text-sm font-medium">
                                             编辑
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedEraId(era.id);
+                                                setShowPortalManagement(true);
+                                            }} 
+                                            className="text-purple-400 hover:text-white text-sm font-medium"
+                                            title="管理该场景的传送门"
+                                        >
+                                            🔮 传送门
                                         </button>
                                         <button onClick={() => handleDelete(era.id)} className="text-red-400 hover:text-white text-sm font-medium">删除</button>
                                     </td>

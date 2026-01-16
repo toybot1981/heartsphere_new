@@ -10,6 +10,9 @@ import { buildSystemInstruction } from '../../../utils/chat/systemInstruction';
 import { MemorySource } from '../../../services/memory-system/types/MemoryTypes';
 import { skillService } from '../../../services/skill/SkillService';
 import { FunctionDefinition, FunctionCall } from '../../../services/ai/types';
+import { memoryApi } from '../../../services/api/memory/memory';
+import { getToken } from '../../../services/api/base/tokenStorage';
+import { logger } from '../../../utils/logger';
 
 interface GenerateAIResponseOptions {
   userText: string;
@@ -87,19 +90,10 @@ export const generateAIResponse = async ({
       functionDefinitions = allSkills.functionCallingSkills || [];
       promptDrivenSkills = allSkills.promptDrivenSkills || [];
       
-      console.log('[generateAIResponse] 获取到角色技能列表:', {
-        characterId: character.id,
-        characterName: character.name,
-        functionCallingSkillsCount: functionDefinitions.length,
-        promptDrivenSkillsCount: promptDrivenSkills.length,
-        functionCallingSkills: functionDefinitions.map(f => ({ name: f.name, description: f.description })),
-        promptDrivenSkills: promptDrivenSkills.map(s => ({ skillId: s.skillId, name: s.name })),
-      });
       
       // 设置 Function Call 回调
       onFunctionCall = async (functionCall: FunctionCall) => {
         try {
-          console.log('[generateAIResponse] Function Call:', functionCall);
           
           // 解析参数
           const parameters = JSON.parse(functionCall.arguments);
@@ -121,11 +115,6 @@ export const generateAIResponse = async ({
             }
           }
           
-          console.log('[generateAIResponse] 技能激活:', {
-            skillId: skillInfoRef.skillId,
-            skillName: skillInfoRef.skillName,
-          });
-          
           // 执行技能
           const result = await skillService.executeSkill(
             functionCall.name,
@@ -133,7 +122,6 @@ export const generateAIResponse = async ({
             parameters
           );
           
-          console.log('[generateAIResponse] 技能执行结果:', result);
           
           // 返回结果（AI 会继续处理）
           return result;
@@ -202,6 +190,55 @@ export const generateAIResponse = async ({
         });
       }
 
+      // HSMem记忆提取：将完整的对话（用户消息 + AI回复）提取到hsmem系统（通过 backend API）
+      if (userProfile?.id) {
+        try {
+          const token = getToken();
+          if (!token || !token.trim()) {
+            logger.warn('[generateAIResponse] 未登录或 token 无效，跳过 HSMem 记忆提取', { 
+              hasToken: !!token, 
+              tokenLength: token?.length,
+              userId: userProfile?.id 
+            });
+            return;
+          }
+          
+          logger.debug('[generateAIResponse] 准备调用 HSMem 记忆提取', {
+            userId: userProfile.id,
+            tokenLength: token.length,
+            messageCount: 2
+          });
+
+          // 构建包含用户消息和AI回复的完整对话
+          const conversationMessages = [
+            {
+              role: 'user',
+              content: typeof userText === 'string' ? userText : userText || '',
+            },
+            {
+              role: 'assistant',
+              content: fullText,
+            },
+          ];
+
+          // 调用 backend API 进行记忆化（后端会自动添加 user_id）
+          const hsmemResult = await memoryApi.memorizeConversation({
+            messages: conversationMessages,
+            user_id: undefined, // 由后端自动从认证信息中提取
+            agent_id: character?.id ? `character_${character.id}` : undefined,
+          }, token);
+
+          logger.debug('[generateAIResponse] HSMem记忆提取成功', {
+            resourceId: hsmemResult.resource_id,
+            itemsCount: hsmemResult.items_count,
+            categories: hsmemResult.categories,
+          });
+        } catch (error) {
+          // HSMem记忆提取失败不影响主流程，只记录错误
+          logger.error('[generateAIResponse] HSMem记忆提取失败:', error);
+        }
+      }
+
       // 调用外部onComplete回调（如果提供）
       if (onComplete) {
         try {
@@ -215,22 +252,9 @@ export const generateAIResponse = async ({
   
   // 调用AI服务（根据配置自动选择统一模式或本地模式）
         try {
-          console.log('[generateAIResponse] 准备调用AI服务', {
-            hasPrompt: !!userText,
-            promptLength: userText?.length || 0,
-            promptPreview: userText?.substring(0, 50),
-            hasSystemInstruction: !!systemInstruction,
-            systemInstructionLength: systemInstruction?.length || 0,
-            messagesCount: historyMessages.length,
-            hasFunctionDefinitions: functionDefinitions.length > 0,
-            functionDefinitionsCount: functionDefinitions.length,
-            functionDefinitions: functionDefinitions.map(f => ({ name: f.name, description: f.description?.substring(0, 50) })),
-          });
-          
           // 输出系统指令中关于技能的部分（用于调试）
           if (systemInstruction.includes('[可用技能]')) {
             const skillSection = systemInstruction.split('[可用技能]')[1]?.split('\n\n')[0] || '';
-            console.log('[generateAIResponse] 系统指令中的技能部分:', skillSection.substring(0, 500));
           }
     
     await aiService.generateTextStream(
@@ -246,7 +270,6 @@ export const generateAIResponse = async ({
       streamHandler
     );
     
-    console.log('[generateAIResponse] AI服务调用成功完成');
   } catch (error) {
     // 记录详细的错误信息
     const errorDetails: any = {

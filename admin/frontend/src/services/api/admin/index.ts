@@ -48,6 +48,9 @@ import { adminEntityApi } from './entity';
 import { adminGraphRecommendationApi } from './graphRecommendation';
 import { adminEduApi } from './edu';
 import { mentisMcpApi, mentisAgentApi } from './mentis';
+import { adminImageApi } from './image';
+import { adminVideoApi } from './video';
+import { toolApi } from './tools';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -79,6 +82,9 @@ export {
   adminEduApi,
   mentisMcpApi,
   mentisAgentApi,
+  adminImageApi,
+  adminVideoApi,
+  toolApi,
 };
 
 // 导出 edu API 的类型
@@ -181,4 +187,10 @@ export const adminApi = {
 
   // 教育版管理
   edu: adminEduApi,
+
+  // 图片管理
+  images: adminImageApi,
+
+  // 视频管理
+  videos: adminVideoApi,
 };

@@ -104,14 +104,32 @@ public class PortalController {
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long portalId,
             @RequestBody(required = false) TeleportationRequest request) {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PortalController.class);
+        log.info("========== [PortalController] 收到传送请求 ==========");
+        log.info("portalId: {}, skipAnimation: {}, userDetails: {}", 
+            portalId, request != null ? request.getSkipAnimation() : false, 
+            userDetails != null ? "已登录(userId=" + userDetails.getId() + ")" : "未登录");
+        
         if (userDetails == null) {
+            log.warn("[PortalController] 传送请求失败：用户未登录");
             throw new com.heartsphere.exception.UnauthorizedException("未登录，请先登录");
         }
         
         Boolean skipAnimation = request != null ? request.getSkipAnimation() : false;
-        PortalService.TeleportationResult result = portalService.executeTeleportation(
+        log.info("[PortalController] 开始执行传送: userId={}, portalId={}, skipAnimation={}", 
             userDetails.getId(), portalId, skipAnimation);
-        return ApiResponse.success("传送成功", result);
+        
+        try {
+            PortalService.TeleportationResult result = portalService.executeTeleportation(
+                userDetails.getId(), portalId, skipAnimation);
+            log.info("[PortalController] 传送成功: userId={}, portalId={}, targetHeartsphereId={}, targetShareCode={}", 
+                userDetails.getId(), portalId, result.getTargetHeartsphereId(), result.getTargetShareCode());
+            return ApiResponse.success("传送成功", result);
+        } catch (Exception e) {
+            log.error("[PortalController] 传送失败: userId={}, portalId={}", 
+                userDetails.getId(), portalId, e);
+            throw e;
+        }
     }
     
     /**

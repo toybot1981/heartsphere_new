@@ -58,17 +58,13 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
       return;
     }
     
-    console.log('[QuickConnectModal] 模态框已打开，检查共享模式状态');
-    console.log('[QuickConnectModal] isSharedMode:', isSharedMode);
     
     try {
       // 如果已经在共享模式下，保持状态并加载角色
       if (isSharedMode) {
-        console.log('[QuickConnectModal] 已在共享模式下，加载角色');
         loadCharacters();
       } else {
         // 不在共享模式下，清除可能存在的旧状态
-        console.log('[QuickConnectModal] 不在共享模式下，清除旧状态');
         leaveSharedMode();
         // 重置选中状态
         setSelectedShareCode(null);
@@ -112,7 +108,6 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
     ? 'relative w-full h-full bg-gray-900 flex flex-col'
     : 'relative w-full max-w-5xl max-h-[90vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col';
   
-  console.log('[QuickConnectModal] 渲染，isOpen:', isOpen);
   
   return (
     <QuickConnectErrorBoundary>
@@ -121,7 +116,6 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         onClick={(e) => {
           // 只有点击背景区域（不是内容区域）才关闭
           if (e.target === e.currentTarget) {
-            console.log('[QuickConnectModal] 点击背景，关闭模态框');
             onClose();
           }
         }}
@@ -130,7 +124,6 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
           className={contentClasses}
           onClick={(e) => {
             e.stopPropagation();
-            console.log('[QuickConnectModal] 点击内容区域，阻止冒泡');
           }}
         >
         {/* 头部 */}
@@ -151,7 +144,6 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
           <SharedHeartSphereSection 
             selectedShareCode={selectedShareCode}
             onSelectHeartSphere={async (shareCode, sharedHeartSphere) => {
-              console.log('[QuickConnectModal] onSelectHeartSphere 被调用:', shareCode, sharedHeartSphere);
               setSelectedShareCode(shareCode);
               setSelectedSharedHeartSphere(sharedHeartSphere);
               
@@ -188,7 +180,6 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
                   characterCount: sharedHeartSphere.characterCount,
                 };
                 
-                console.log('[QuickConnectModal] 构造的 shareConfig:', shareConfig);
                 
                 // 尝试从 useSharedMode hook 中获取 visitorId（如果已经在共享模式下）
                 let visitorId: number | null = currentVisitorId;
@@ -199,26 +190,21 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
                   const currentUser = await authApi.getCurrentUser(token);
                   if (currentUser && currentUser.id) {
                     visitorId = currentUser.id;
-                    console.log('[QuickConnectModal] 从 API 获取到 visitorId:', visitorId);
                   } else {
                     console.error('[QuickConnectModal] 无法获取用户ID');
                     return;
                   }
                 } else {
-                  console.log('[QuickConnectModal] 使用已有的 visitorId:', visitorId);
                 }
                 
                 // 更新 React 状态
-                console.log('[QuickConnectModal] 调用 enterSharedMode:', shareConfig.id, visitorId);
                 enterSharedMode(shareConfig, visitorId);
                 
                 // 等待一下确保共享模式上下文已设置
                 await new Promise(resolve => setTimeout(resolve, 300));
                 
                 // 加载对应共享心域的角色
-                console.log('[QuickConnectModal] 开始加载角色...');
                 await loadCharacters({ filter: 'all' });
-                console.log('[QuickConnectModal] 角色加载完成');
               } catch (err) {
                 console.error('[QuickConnectModal] 加载共享心域角色失败:', err);
               }

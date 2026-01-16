@@ -29,6 +29,11 @@ public interface UserMemoryRepository extends JpaRepository<UserMemoryEntity, St
     List<UserMemoryEntity> findByUserIdOrderByCreatedAtDesc(String userId);
     
     /**
+     * 根据用户ID获取记忆（分页）
+     */
+    org.springframework.data.domain.Page<UserMemoryEntity> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+    
+    /**
      * 根据用户ID和类型获取记忆
      */
     List<UserMemoryEntity> findByUserIdAndTypeOrderByCreatedAtDesc(

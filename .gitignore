@@ -12,11 +12,11 @@
 *.swo
 
 # 后端忽略规则
-backend/target/
-backend/.mvn/
-backend/mvnw
-backend/mvnw.cmd
-backend/*.jar
+**/target/
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
+**/*.jar
 backend/application-dev.yml
 backend/application-prod.yml
 backend/application-test.yml
@@ -57,3 +57,14 @@ backend/src/main/resources/application-*.local.yml
 heartsphere-service-*.jar
 *.jar
 node_modules
+
+# 数据库备份文件
+sql/backups/
+*.pid
+*.bak
+__pycache__/
+*.pyc
+
+# 排除备份 SQL 文件，但保留迁移脚本
+sql/*.sql
+!sql/clean*.sql

@@ -1,5 +1,6 @@
 package com.heartsphere.mentis.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,7 @@ public class MentisMessage {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
+    @JsonIgnore // 避免序列化时的无限递归
     private MentisSession session;
 
     /**

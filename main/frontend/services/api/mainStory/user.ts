@@ -75,7 +75,6 @@ export const userMainStoryApi = {
       cleanData.name = data.name;
     }
     
-    console.log('[API] userMainStoryApi.create - 发送数据（仅ID）:', cleanData);
     return request<UserMainStory>('/user-main-stories', {
       method: 'POST',
       body: JSON.stringify(cleanData),

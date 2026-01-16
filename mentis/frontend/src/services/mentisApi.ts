@@ -92,6 +92,7 @@ export interface ChatResponse {
   messageId: string;
   response: string;
   taskId?: string;
+  executionId?: string; // 任务执行ID，用于查询任务进度
   taskStatus?: string;
   result?: Record<string, any>;
   conversationHistory?: MentisMessage[];
@@ -127,6 +128,7 @@ export interface Session {
 export interface Task {
   id?: number;
   taskId: string;
+  executionId?: string; // 执行ID，用于查询任务进度
   sessionId: string;
   taskType: 'COMMAND' | 'SCRIPT' | 'INTERACTIVE' | 'COMPUTER_USE';
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
@@ -142,6 +144,16 @@ export interface Task {
   updatedAt?: string;
 }
 
+export interface McpInspectorInfo {
+  available: boolean;
+  mcpUrl?: string;
+  mcpToken?: string;
+  sandboxId?: string;
+  inspectorCommand?: string;
+  inspectorUrl?: string;
+  error?: string;
+}
+
 export interface VmInstance {
   vmId: string;
   sessionId: string;
@@ -151,6 +163,8 @@ export interface VmInstance {
 export interface VmStatus {
   vmId: string;
   status: 'IDLE' | 'RUNNING' | 'STOPPED' | 'ERROR';
+  cpuUsage?: string;
+  memoryUsage?: string;
   ipAddress?: string;
   resourceUsage?: Record<string, string>;
 }
@@ -168,6 +182,16 @@ export class MentisApiService {
   
   // ========== 对话相关 ==========
   
+  /**
+   * 获取会话消息历史
+   */
+  static async getChatHistory(sessionId: string): Promise<MentisMessage[]> {
+    const response = await apiClient.get<ApiResponse<MentisMessage[]>>(
+      `/chat/history/${sessionId}`
+    );
+    return response.data.data || [];
+  }
+
   /**
    * 发送消息给 Mentis
    */
@@ -237,6 +261,11 @@ export class MentisApiService {
             
             buffer += decoder.decode(value, { stream: true });
             
+            // 调试：打印原始数据
+            if (buffer.length > 0 && buffer.length < 1000) {
+              console.debug('SSE 原始数据:', buffer);
+            }
+            
             // 解析 SSE 格式的数据
             const lines = buffer.split('\n\n');
             buffer = lines.pop() || ''; // 保留最后一个不完整的消息
@@ -248,10 +277,12 @@ export class MentisApiService {
                 let data = '';
                 
                 for (const part of parts) {
-                  if (part.startsWith('event: ')) {
-                    eventType = part.substring(7).trim();
-                  } else if (part.startsWith('data: ')) {
-                    data = part.substring(6).trim();
+                  const trimmedPart = part.trim();
+                  // 兼容 "event: message" 和 "event:message" 两种格式
+                  if (trimmedPart.startsWith('event:')) {
+                    eventType = trimmedPart.substring(6).trim();
+                  } else if (trimmedPart.startsWith('data:')) {
+                    data = trimmedPart.substring(5).trim();
                   }
                 }
                 
@@ -368,11 +399,31 @@ export class MentisApiService {
    * 获取任务列表
    */
   static async getTasks(sessionId: string): Promise<Task[]> {
-    const response = await apiClient.get<ApiResponse<Task[]>>(
-      '/tasks',
-      { params: { sessionId } }
-    );
-    return response.data.data;
+    try {
+      const response = await apiClient.get<ApiResponse<Task[]>>(
+        '/tasks',
+        { params: { sessionId } }
+      );
+      console.log('[MentisApiService] getTasks: 原始响应=', response);
+      console.log('[MentisApiService] getTasks: response.data=', response.data);
+      console.log('[MentisApiService] getTasks: response.data.data=', response.data?.data);
+      
+      // 确保返回的是数组
+      const tasks = response.data?.data;
+      if (!tasks) {
+        console.warn('[MentisApiService] getTasks: response.data.data 为空，返回空数组');
+        return [];
+      }
+      if (!Array.isArray(tasks)) {
+        console.warn('[MentisApiService] getTasks: response.data.data 不是数组，类型=', typeof tasks, '值=', tasks);
+        return [];
+      }
+      return tasks;
+    } catch (error: any) {
+      console.error('[MentisApiService] getTasks: API 调用失败:', error);
+      // 如果 API 调用失败，返回空数组而不是抛出异常
+      return [];
+    }
   }
   
   /**
@@ -448,16 +499,127 @@ export class MentisApiService {
   }
   
   /**
-   * 获取虚拟机屏幕截图
+   * 删除虚拟机
+   */
+  static async deleteVm(sessionId: string): Promise<void> {
+    await apiClient.delete(`/vm/${sessionId}`);
+  }
+  
+  /**
+   * 获取虚拟机屏幕截图（新接口）
    */
   static async getVmScreenshot(sessionId: string): Promise<{
-    screenshotUrl: string;
-    timestamp: string;
+    screenshotUrl?: string;
+    screenshot?: string;
+    timestamp: string | number;
+    vmId?: string;
+    vmActivity?: string;
   }> {
     const response = await apiClient.get<ApiResponse<{
+      screenshot: string;
       screenshotUrl: string;
-      timestamp: string;
+      vmId: string;
+      timestamp: string | number;
+      vmActivity?: string;
     }>>(`/vm/${sessionId}/screenshot`);
+    const data = response.data.data;
+    return {
+      screenshotUrl: data.screenshotUrl || data.screenshot,
+      screenshot: data.screenshot || data.screenshotUrl,
+      timestamp: data.timestamp,
+      vmId: data.vmId,
+      vmActivity: data.vmActivity,
+    };
+  }
+  
+  /**
+   * 获取虚拟机 VNC 连接信息
+   */
+  static async getVncInfo(sessionId: string): Promise<{
+    url?: string;
+    password?: string;
+    host?: string;
+    port?: number;
+  }> {
+    const response = await apiClient.get<ApiResponse<{
+      url?: string;
+      password?: string;
+      host?: string;
+      port?: number;
+    }>>(`/vm/${sessionId}/vnc`);
+    return response.data.data;
+  }
+  
+  /**
+   * 在虚拟机中执行命令
+   */
+  static async executeCommand(sessionId: string, command: string): Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+  }> {
+    const response = await apiClient.post<ApiResponse<{
+      exitCode: number;
+      stdout: string;
+      stderr: string;
+    }>>(`/vm/${sessionId}/execute`, { command });
+    return response.data.data;
+  }
+  
+  /**
+   * 获取任务执行状态
+   */
+  /**
+   * 获取任务执行状态
+   */
+  static async getExecutionStatus(executionId: string): Promise<{
+    executionId: string;
+    status: string;
+    currentStep: number;
+    totalSteps: number;
+    currentStepDescription: string;
+    startTime: number | null;
+    currentStepStartTime: number | null;
+    endTime: number | null;
+    vmId: string | null;
+    vmScreenshot: string | null;
+    progress: number;
+    elapsedTime: number | null;
+    currentStepElapsedTime: number | null;
+  }> {
+    const response = await apiClient.get<ApiResponse<{
+      executionId: string;
+      status: string;
+      currentStep: number;
+      totalSteps: number;
+      currentStepDescription: string;
+      startTime: number | null;
+      currentStepStartTime: number | null;
+      endTime: number | null;
+      vmId: string | null;
+      vmScreenshot: string | null;
+      progress: number;
+      elapsedTime: number | null;
+      currentStepElapsedTime: number | null;
+    }>>(`/executions/${executionId}/status`);
+    return response.data.data;
+  }
+  
+  /**
+   * 获取虚拟机状态（新接口）
+   */
+  static async getVmStatusForSession(sessionId: string): Promise<{
+    vmId: string;
+    status: string;
+    cpuUsage: string;
+    memoryUsage: string;
+  }> {
+    const response = await apiClient.get<ApiResponse<{
+      vmId: string;
+      status: string;
+      cpuUsage: string;
+      memoryUsage: string;
+    }>>(`/executions/${sessionId}/vm/status`);
     return response.data.data;
   }
   
@@ -561,10 +723,20 @@ export class MentisApiService {
   /**
    * 调用 MCP 工具
    */
-  static async callMcpTool(id: number, toolName: string, arguments: Record<string, any>): Promise<any> {
+  static async callMcpTool(id: number, toolName: string, args: Record<string, any>): Promise<any> {
     const response = await apiClient.post<ApiResponse<any>>(
       `/mcp/configs/${id}/tools/${toolName}/call`,
-      { arguments }
+      { arguments: args }
+    );
+    return response.data.data;
+  }
+  
+  /**
+   * 获取 MCP Inspector 信息
+   */
+  static async getMcpInspectorInfo(sessionId: string): Promise<McpInspectorInfo> {
+    const response = await apiClient.get<ApiResponse<McpInspectorInfo>>(
+      `/sessions/${sessionId}/mcp/inspector`
     );
     return response.data.data;
   }

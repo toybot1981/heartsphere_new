@@ -18,9 +18,10 @@ import { MUIProvider } from '../MUIProvider';
  */
 interface MemoryDashboardProps {
   adminToken: string | null;
+  onNavigateToUserMemory?: () => void;
 }
 
-const MemoryDashboardContent: React.FC<MemoryDashboardProps> = ({ adminToken }) => {
+const MemoryDashboardContent: React.FC<MemoryDashboardProps> = ({ adminToken, onNavigateToUserMemory }) => {
   const [dashboard, setDashboard] = useState<MemorySystemDashboard | null>(null);
   const [hsmemStats, setHsmemStats] = useState<StatisticsResponse | null>(null);
   const [hsmemHealth, setHsmemHealth] = useState<HSMemHealthStatus | null>(null);
@@ -129,7 +130,18 @@ const MemoryDashboardContent: React.FC<MemoryDashboardProps> = ({ adminToken }) 
                 <Typography variant="body2" color="text.secondary">
                   <strong>资源总数:</strong> {hsmemStats.data.statistics.resources_count}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  onClick={onNavigateToUserMemory}
+                  sx={{
+                    cursor: onNavigateToUserMemory ? 'pointer' : 'default',
+                    '&:hover': onNavigateToUserMemory ? {
+                      color: 'primary.main',
+                      textDecoration: 'underline'
+                    } : {}
+                  }}
+                >
                   <strong>记忆项总数:</strong> {hsmemStats.data.statistics.items_count}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -150,7 +162,18 @@ const MemoryDashboardContent: React.FC<MemoryDashboardProps> = ({ adminToken }) 
                   <Typography variant="body2" color="text.secondary">
                     资源: {hsmemHealth.statistics.resources_count}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    onClick={onNavigateToUserMemory}
+                    sx={{
+                      cursor: onNavigateToUserMemory ? 'pointer' : 'default',
+                      '&:hover': onNavigateToUserMemory ? {
+                        color: 'primary.main',
+                        textDecoration: 'underline'
+                      } : {}
+                    }}
+                  >
                     记忆项: {hsmemHealth.statistics.items_count}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">

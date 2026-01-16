@@ -74,6 +74,16 @@ class MemoryRetriever:
                 score += 0.2
 
             if score > 0:
+                # 如果提供了 where 过滤条件，检查记忆项是否匹配
+                if where and "user_id" in where:
+                    # 获取该分类下的记忆项，检查是否有匹配的 user_id
+                    category_items = await self.store.search_items_by_category(category["name"])
+                    user_id = where["user_id"]
+                    # 检查是否有记忆项的 user_id 匹配
+                    matching_items = [item for item in category_items if item.get("user_id") == user_id]
+                    if not matching_items:
+                        continue  # 如果分类下没有匹配的记忆项，跳过该分类
+
                 results.append({
                     "category": category,
                     "score": score

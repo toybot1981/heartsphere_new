@@ -1,5 +1,6 @@
 package com.heartsphere.controller;
 
+import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.dto.EraDTO;
 import com.heartsphere.entity.Era;
 import com.heartsphere.entity.User;
@@ -34,6 +35,12 @@ public class EraController {
     @Autowired
     private com.heartsphere.shared.util.ImageUrlUtils imageUrlUtils;
 
+    @Autowired
+    private com.heartsphere.service.MembershipService membershipService;
+
+    @Autowired
+    private com.heartsphere.repository.SystemEraRepository systemEraRepository;
+
     // 获取指定世界的所有时代（必须在 /{id} 之前）
     @GetMapping("/world/{worldId}")
     public ResponseEntity<List<EraDTO>> getErasByWorldId(@PathVariable Long worldId) {
@@ -42,6 +49,28 @@ public class EraController {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            // 游客模式：返回硬编码的系统预置场景（ID: 50，日常生活助手）
+            java.util.Optional<com.heartsphere.entity.SystemEra> presetEra = systemEraRepository.findById(50L);
+            if (presetEra.isPresent() && presetEra.get().getIsActive()) {
+                com.heartsphere.entity.SystemEra systemEra = presetEra.get();
+                EraDTO eraDTO = new EraDTO();
+                eraDTO.setId(systemEra.getId());
+                eraDTO.setName(systemEra.getName());
+                eraDTO.setDescription(systemEra.getDescription());
+                eraDTO.setImageUrl(systemEra.getImageUrl());
+                eraDTO.setSystemEraId(systemEra.getId());
+                eraDTO.setStyle(systemEra.getStyle() != null ? systemEra.getStyle() : "minimalist");
+                // 生成图片多分辨率版本
+                if (systemEra.getImageUrl() != null && imageUrlUtils != null) {
+                    eraDTO.setImageVariants(imageUrlUtils.generateImageVariants(systemEra.getImageUrl()));
+                }
+                return ResponseEntity.ok(java.util.Arrays.asList(eraDTO));
+            }
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+        }
         
         // 正常模式：直接获取当前用户在指定世界中的时代
         List<Era> eras = eraRepository.findByWorld_IdAndUser_Id(worldId, userDetails.getId());
@@ -59,6 +88,30 @@ public class EraController {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            // 游客模式：返回硬编码的系统预置场景（ID: 50，日常生活助手）
+            java.util.Optional<com.heartsphere.entity.SystemEra> presetEra = systemEraRepository.findById(50L);
+            if (presetEra.isPresent() && presetEra.get().getIsActive()) {
+                // 将 SystemEra 转换为 EraDTO
+                com.heartsphere.entity.SystemEra systemEra = presetEra.get();
+                EraDTO eraDTO = new EraDTO();
+                eraDTO.setId(systemEra.getId());
+                eraDTO.setName(systemEra.getName());
+                eraDTO.setDescription(systemEra.getDescription());
+                eraDTO.setImageUrl(systemEra.getImageUrl());
+                eraDTO.setSystemEraId(systemEra.getId());
+                eraDTO.setStyle(systemEra.getStyle() != null ? systemEra.getStyle() : "minimalist");
+                // 生成图片多分辨率版本
+                if (systemEra.getImageUrl() != null && imageUrlUtils != null) {
+                    eraDTO.setImageVariants(imageUrlUtils.generateImageVariants(systemEra.getImageUrl()));
+                }
+                return ResponseEntity.ok(java.util.Arrays.asList(eraDTO));
+            }
+            // 如果预置场景不存在，返回空列表
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+        }
         
         // 正常模式：返回当前用户的所有场景
         List<Era> eras = eraRepository.findByUser_Id(userDetails.getId());
@@ -98,12 +151,19 @@ public class EraController {
 
     // 创建新时代
     @PostMapping
-    public ResponseEntity<EraDTO> createEra(@RequestBody EraDTO eraDTO) {
+    public ResponseEntity<?> createEra(@RequestBody EraDTO eraDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
 
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userDetails.getId()));
@@ -114,6 +174,16 @@ public class EraController {
         // 确保世界属于当前用户
         if (!world.getUser().getId().equals(userDetails.getId())) {
             return ResponseEntity.status(403).build();
+        }
+
+        // 检查是否已经存在相同的 systemEraId（防止重复添加预置场景）
+        if (eraDTO.getSystemEraId() != null) {
+            boolean exists = eraRepository.existsByWorldIdAndSystemEraId(world.getId(), eraDTO.getSystemEraId());
+            if (exists) {
+                return ResponseEntity.status(400).body(
+                    ApiResponse.error("该预置场景已经添加过了，不能重复添加")
+                );
+            }
         }
 
         Era era = new Era();
@@ -128,17 +198,24 @@ public class EraController {
         era.setUser(user);
 
         Era savedEra = eraRepository.save(era);
-        return ResponseEntity.ok(DTOMapper.toEraDTO(savedEra));
+        return ResponseEntity.ok(ApiResponse.success("场景创建成功", DTOMapper.toEraDTO(savedEra)));
     }
 
     // 更新指定ID的时代
     @PutMapping("/{id}")
-    public ResponseEntity<EraDTO> updateEra(@PathVariable Long id, @RequestBody EraDTO eraDTO) {
+    public ResponseEntity<?> updateEra(@PathVariable Long id, @RequestBody EraDTO eraDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
 
         Era era = eraRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Era not found with id: " + id));
@@ -181,12 +258,19 @@ public class EraController {
 
     // 删除指定ID的时代
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEra(@PathVariable Long id) {
+    public ResponseEntity<?> deleteEra(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).build();
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        // 检查是否为游客（体验会员）
+        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
 
         Era era = eraRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Era not found with id: " + id));

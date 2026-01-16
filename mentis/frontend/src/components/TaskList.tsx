@@ -375,6 +375,9 @@ export const TaskList: React.FC<TaskListProps> = ({ tasks, onTaskClick, onTasksU
         onClose={() => setPreviewDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -78,22 +78,15 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
 
   // 加载共享心域列表
   useEffect(() => {
-    console.log('[MobileConnectionSpaceScreen] ========== 加载共享心域列表 ==========');
     setLoadingSharedSpheres(true);
     
     const loadSharedHeartSpheres = async () => {
       try {
-        console.log('[MobileConnectionSpaceScreen] 调用heartConnectApi.getPublicSharedHeartSpheres()...');
         const data = await heartConnectApi.getPublicSharedHeartSpheres();
-        console.log('[MobileConnectionSpaceScreen] getPublicSharedHeartSpheres返回:', data);
-        console.log('[MobileConnectionSpaceScreen] 返回数据数量:', data?.length || 0);
         
         if (data && data.length > 0) {
-          console.log('[MobileConnectionSpaceScreen] 有共享心域数据，开始处理...');
           setSharedHeartSpheres(data);
-          console.log('[MobileConnectionSpaceScreen] sharedHeartSpheres状态已更新，数量:', data.length);
         } else {
-          console.log('[MobileConnectionSpaceScreen] 没有共享心域数据');
           setSharedHeartSpheres([]);
         }
       } catch (err: any) {
@@ -101,7 +94,6 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
         setSharedHeartSpheres([]);
       } finally {
         setLoadingSharedSpheres(false);
-        console.log('[MobileConnectionSpaceScreen] ========== 共享心域列表加载完成 ==========');
       }
     };
     
@@ -110,28 +102,22 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
 
   // Initialize Stars
   useEffect(() => {
-    console.log('[MobileConnectionSpaceScreen] ========== 初始化星辰 ==========');
-    console.log('[MobileConnectionSpaceScreen] characters数量:', characters.length);
-    console.log('[MobileConnectionSpaceScreen] characters:', characters);
     
     const canvas = canvasRef.current;
     if (!canvas) {
       console.warn('[MobileConnectionSpaceScreen] ❌ canvas不存在');
       return;
     }
-    console.log('[MobileConnectionSpaceScreen] ✅ canvas存在');
     
     // Resize canvas for mobile
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      console.log('[MobileConnectionSpaceScreen] canvas尺寸已更新 - width:', canvas.width, 'height:', canvas.height);
     };
     window.addEventListener('resize', resize);
     resize();
 
     // Create Background Stars (fewer for mobile performance)
-    console.log('[MobileConnectionSpaceScreen] 创建背景星辰...');
     const bgStars: Star[] = Array.from({ length: 100 }).map((_, i) => {
       const isBlue = Math.random() > 0.8;
       const color = isBlue ? '#a5f3fc' : '#ffffff';
@@ -151,7 +137,6 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
     });
 
     // Create Soul Stars (Characters)
-    console.log('[MobileConnectionSpaceScreen] 创建角色星辰...');
     const charStars: Star[] = characters.map(char => {
       const star = {
         id: `soul_${char.id}`,
@@ -168,14 +153,11 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
         pulseOffset: Math.random() * Math.PI * 2,
         glow: 20 // More glow for mobile visibility
       };
-      console.log('[MobileConnectionSpaceScreen] 创建角色星辰:', char.name, 'ID:', star.id, '位置:', star.x.toFixed(2), star.y.toFixed(2), '尺寸:', star.size.toFixed(2));
       return star;
     });
-    console.log('[MobileConnectionSpaceScreen] 角色星辰创建完成，数量:', charStars.length);
 
     
     // Create Shared Heart Sphere Stars (更大、更显著的颜色)
-    console.log('[MobileConnectionSpaceScreen] 创建共享心域星辰...');
     const sharedStars: Star[] = sharedHeartSpheres.map((shared, index) => {
       // 使用更显著的颜色：金色、紫色、青色等
       const colors = ['#fbbf24', '#a855f7', '#06b6d4', '#f59e0b', '#ec4899'];
@@ -194,17 +176,12 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
         pulseOffset: Math.random() * Math.PI * 2,
         glow: 40 // 更强的光晕效果
       };
-      console.log('[MobileConnectionSpaceScreen] 创建共享心域星辰:', shared.shareCode, 'ID:', star.id, '位置:', star.x.toFixed(2), star.y.toFixed(2), '尺寸:', star.size.toFixed(2), '颜色:', color);
       return star;
     });
-    console.log('[MobileConnectionSpaceScreen] 共享心域星辰创建完成，数量:', sharedStars.length);
 
 starsRef.current = [...bgStars, ...charStars, ...sharedStars];
-    console.log('[MobileConnectionSpaceScreen] ✅ 所有星辰已创建，总数:', starsRef.current.length);
-    console.log('[MobileConnectionSpaceScreen] ========== 星辰初始化完成 ==========');
 
     return () => {
-      console.log('[MobileConnectionSpaceScreen] 清理resize监听器');
       window.removeEventListener('resize', resize);
     };
   }, [characters, sharedHeartSpheres]);
@@ -371,29 +348,20 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
   // 处理点击的通用函数（支持触摸和鼠标）
   const handleCanvasClick = useCallback((clientX: number, clientY: number, eventType: string) => {
-    console.log('[MobileConnectionSpaceScreen] ========== 画布点击事件 ==========');
-    console.log('[MobileConnectionSpaceScreen] 事件类型:', eventType);
-    console.log('[MobileConnectionSpaceScreen] 点击坐标 - clientX:', clientX, 'clientY:', clientY);
     
     const canvas = canvasRef.current;
     if (!canvas) {
       console.warn('[MobileConnectionSpaceScreen] ❌ canvas不存在');
       return;
     }
-    console.log('[MobileConnectionSpaceScreen] ✅ canvas存在');
     
     const rect = canvas.getBoundingClientRect();
     const clickX = clientX - rect.left;
     const clickY = clientY - rect.top;
-    console.log('[MobileConnectionSpaceScreen] 画布坐标 - clickX:', clickX, 'clickY:', clickY);
-    console.log('[MobileConnectionSpaceScreen] canvas尺寸 - width:', canvas.width, 'height:', canvas.height);
-    console.log('[MobileConnectionSpaceScreen] 当前星辰数量:', starsRef.current.length);
-    console.log('[MobileConnectionSpaceScreen] 角色星辰数量:', starsRef.current.filter(s => s.character).length);
 
     // Check collision with Stars (优先检测共享心域星辰，因为它们更大)
     let clicked: Star | null = null;
     
-    console.log('[MobileConnectionSpaceScreen] 开始检测碰撞...');
     // 先检测共享心域星辰（更大的hitbox）
     for (const star of starsRef.current) {
         if (star.sharedHeartSphere) {
@@ -401,9 +369,7 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
             const dy = star.y - clickY;
             const dist = Math.sqrt(dx*dx + dy*dy);
             const hitbox = 70; // 更大的hitbox因为共享心域星辰更大
-            console.log('[MobileConnectionSpaceScreen] 检测共享心域星辰:', star.id, '共享码:', star.sharedHeartSphere?.shareCode, '距离:', dist.toFixed(2), 'hitbox:', hitbox);
             if (dist < hitbox) {
-                console.log('[MobileConnectionSpaceScreen] ✅ 检测到共享心域碰撞！星辰ID:', star.id, '共享码:', star.sharedHeartSphere?.shareCode);
                 clicked = star;
                 break;
             }
@@ -416,9 +382,7 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
                 const dx = star.x - clickX;
                 const dy = star.y - clickY;
                 const dist = Math.sqrt(dx*dx + dy*dy);
-                console.log('[MobileConnectionSpaceScreen] 检测角色星辰:', star.id, '角色:', star.character?.name, '距离:', dist.toFixed(2), 'hitbox: 50');
                 if (dist < 50) { // Larger hitbox for mobile
-                    console.log('[MobileConnectionSpaceScreen] ✅ 检测到角色碰撞！星辰ID:', star.id, '角色:', star.character?.name);
                     clicked = star;
                     break;
                 }
@@ -427,22 +391,14 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
     }
     
     if (clicked) {
-      console.log('[MobileConnectionSpaceScreen] ✅ 选中星辰:', clicked.id, '角色:', clicked.character?.name);
       setSelectedStar(clicked);
-      console.log('[MobileConnectionSpaceScreen] selectedStar状态已更新');
     } else {
-      console.log('[MobileConnectionSpaceScreen] ❌ 未检测到碰撞，清除选中');
       setSelectedStar(null);
     }
-    console.log('[MobileConnectionSpaceScreen] ========== 画布点击事件处理完成 ==========');
   }, []);
 
   // Handle Touch/Click
   const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
-    console.log('[MobileConnectionSpaceScreen] ========== 画布触摸事件 ==========');
-    console.log('[MobileConnectionSpaceScreen] 事件类型:', e.type);
-    console.log('[MobileConnectionSpaceScreen] touches数量:', e.touches.length);
-    console.log('[MobileConnectionSpaceScreen] changedTouches数量:', e.changedTouches.length);
     
     e.preventDefault();
     const touch = e.touches[0] || e.changedTouches[0];
@@ -450,18 +406,12 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
       console.warn('[MobileConnectionSpaceScreen] ❌ 无法获取touch对象');
       return;
     }
-    console.log('[MobileConnectionSpaceScreen] ✅ touch对象获取成功');
-    console.log('[MobileConnectionSpaceScreen] touch.clientX:', touch.clientX, 'touch.clientY:', touch.clientY);
     
     handleCanvasClick(touch.clientX, touch.clientY, `touch-${e.type}`);
   }, [handleCanvasClick]);
 
   // Handle Mouse Click (for testing in browser)
   const handleCanvasMouseClick = useCallback((e: React.MouseEvent) => {
-    console.log('[MobileConnectionSpaceScreen] ========== 画布鼠标点击事件 ==========');
-    console.log('[MobileConnectionSpaceScreen] 事件类型:', e.type);
-    console.log('[MobileConnectionSpaceScreen] 按钮:', e.button);
-    console.log('[MobileConnectionSpaceScreen] clientX:', e.clientX, 'clientY:', e.clientY);
     
     e.preventDefault();
     handleCanvasClick(e.clientX, e.clientY, `mouse-${e.type}`);
@@ -469,9 +419,6 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
   // 连接共享心域
   const handleConnectSharedHeartSphere = useCallback(async () => {
-    console.log('[MobileConnectionSpaceScreen] ========== 连接共享心域 ==========');
-    console.log('[MobileConnectionSpaceScreen] selectedStar:', selectedStar);
-    console.log('[MobileConnectionSpaceScreen] selectedStar?.sharedHeartSphere:', selectedStar?.sharedHeartSphere);
     
     if (!selectedStar?.sharedHeartSphere) {
       console.warn('[MobileConnectionSpaceScreen] ❌ 没有选中的共享心域');
@@ -479,13 +426,8 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
     }
     
     const shared = selectedStar.sharedHeartSphere;
-    console.log('[MobileConnectionSpaceScreen] ✅ 开始连接共享心域流程');
-    console.log('[MobileConnectionSpaceScreen] 共享心域信息:', shared);
-    console.log('[MobileConnectionSpaceScreen] shareCode:', shared.shareCode);
-    console.log('[MobileConnectionSpaceScreen] shareConfigId:', shared.shareConfigId);
     
     setConnecting(true);
-    console.log('[MobileConnectionSpaceScreen] connecting状态已设置为true');
     
     try {
       // 获取token
@@ -495,17 +437,13 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
         setConnecting(false);
         return;
       }
-      console.log('[MobileConnectionSpaceScreen] ✅ token已获取');
       
       // 获取visitorId
       let visitorId: number | null = currentVisitorId;
       if (!visitorId) {
-        console.log('[MobileConnectionSpaceScreen] currentVisitorId为空，调用getCurrentUser获取用户ID...');
         const currentUser = await authApi.getCurrentUser(token);
-        console.log('[MobileConnectionSpaceScreen] getCurrentUser返回:', currentUser);
         if (currentUser && currentUser.id) {
           visitorId = currentUser.id;
-          console.log('[MobileConnectionSpaceScreen] ✅ visitorId已获取:', visitorId);
         } else {
           console.error('[MobileConnectionSpaceScreen] ❌ 无法获取用户ID');
           setConnecting(false);
@@ -533,20 +471,15 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
         eraCount: shared.eraCount,
         characterCount: shared.characterCount,
       };
-      console.log('[MobileConnectionSpaceScreen] shareConfig已构造:', shareConfig);
       
       // 进入共享模式
-      console.log('[MobileConnectionSpaceScreen] 调用enterSharedMode...');
       enterSharedMode(shareConfig, visitorId);
-      console.log('[MobileConnectionSpaceScreen] enterSharedMode调用完成');
       
       // 等待一下确保共享模式上下文已设置
       await new Promise(resolve => setTimeout(resolve, 300));
       
       // 导航到共享心域页面
-      console.log('[MobileConnectionSpaceScreen] 导航到sharedHeartSphere页面');
       dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
-      console.log('[MobileConnectionSpaceScreen] ✅ 导航完成');
     } catch (err: any) {
       console.error('[MobileConnectionSpaceScreen] ❌ 连接共享心域失败:', err);
       setConnecting(false);
@@ -554,31 +487,18 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
   }, [selectedStar, enterSharedMode, currentVisitorId, dispatch]);
 
   const handleConnect = useCallback(() => {
-    console.log('[MobileConnectionSpaceScreen] ========== 连接按钮点击 ==========');
-    console.log('[MobileConnectionSpaceScreen] selectedStar:', selectedStar);
-    console.log('[MobileConnectionSpaceScreen] selectedStar?.character:', selectedStar?.character);
     
     if (!selectedStar?.character) {
       console.warn('[MobileConnectionSpaceScreen] ❌ 没有选中的星辰或角色');
       return;
     }
     
-    console.log('[MobileConnectionSpaceScreen] ✅ 开始连接流程');
-    console.log('[MobileConnectionSpaceScreen] 角色信息:', selectedStar.character);
-    console.log('[MobileConnectionSpaceScreen] 角色ID:', selectedStar.character.id);
-    console.log('[MobileConnectionSpaceScreen] 角色名称:', selectedStar.character.name);
     
     setConnecting(true);
-    console.log('[MobileConnectionSpaceScreen] connecting状态已设置为true');
     
     setTimeout(() => {
-      console.log('[MobileConnectionSpaceScreen] 延迟1.5秒后调用onConnect回调');
-      console.log('[MobileConnectionSpaceScreen] onConnect回调存在:', !!onConnect);
       onConnect(selectedStar.character!);
-      console.log('[MobileConnectionSpaceScreen] ✅ onConnect回调已调用');
       setConnecting(false);
-      console.log('[MobileConnectionSpaceScreen] connecting状态已设置为false');
-      console.log('[MobileConnectionSpaceScreen] ========== 连接流程完成 ==========');
     }, 1500);
   }, [selectedStar, onConnect]);
 

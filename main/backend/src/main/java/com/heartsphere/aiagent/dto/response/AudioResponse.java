@@ -31,4 +31,16 @@ public class AudioResponse {
     
     @Schema(description = "置信度（STT使用，0-1）", example = "0.95")
     private Double confidence;
+    
+    @Schema(description = "是否为部分结果（实时识别使用）", example = "true")
+    private Boolean isPartial;
+    
+    @Schema(description = "流ID（实时识别使用，用于标识同一个音频流）", example = "stream-123")
+    private String streamId;
+    
+    @Schema(description = "开始时间（实时识别使用，毫秒）", example = "1000")
+    private Long startTime;
+    
+    @Schema(description = "结束时间（实时识别使用，毫秒）", example = "5000")
+    private Long endTime;
 }

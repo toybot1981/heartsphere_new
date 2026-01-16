@@ -35,7 +35,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
 }) => {
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onCancel} 
+      maxWidth="sm" 
+      fullWidth
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={false}
+    >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <WarningIcon color={confirmColor === 'error' ? 'error' : 'warning'} />
         {title}

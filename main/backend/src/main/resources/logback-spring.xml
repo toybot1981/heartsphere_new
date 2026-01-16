@@ -55,6 +55,12 @@
     <!-- 应用日志 -->
     <logger name="com.heartsphere" level="INFO"/>
     
+    <!-- Memory Controller 和 HSMem Client 日志（DEBUG级别，用于调试） -->
+    <logger name="com.heartsphere.memory.controller.MemoryController" level="DEBUG"/>
+    <logger name="com.heartsphere.memory.service.HSMemClientService" level="INFO"/>
+    <logger name="com.heartsphere.memory.util" level="DEBUG"/>
+    <logger name="com.heartsphere.security.JwtAuthenticationFilter" level="DEBUG"/>
+    
     <!-- AI服务日志 -->
     <logger name="com.heartsphere.aiagent" level="INFO"/>
     
@@ -70,6 +76,9 @@
     
     <!-- Spring Security -->
     <logger name="org.springframework.security" level="INFO"/>
+    
+    <!-- 应用安全过滤器 -->
+    <logger name="com.heartsphere.security" level="INFO"/>
     
     <!-- HTTP请求 -->
     <logger name="org.springframework.web" level="INFO"/>

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heartsphere.aiagent.dto.request.TextGenerationRequest;
 import com.heartsphere.aiagent.dto.response.TextGenerationResponse;
 import com.heartsphere.aiagent.service.AIService;
+import com.heartsphere.shared.dto.PromptRenderResponse;
+import com.heartsphere.shared.service.PromptTemplateIntegrationService;
 import com.heartsphere.emotion.entity.EmotionRecord;
 import com.heartsphere.emotion.service.EmotionService;
 import com.heartsphere.entity.Character;
@@ -12,11 +14,17 @@ import com.heartsphere.mailbox.dto.ESoulLetterContent;
 import com.heartsphere.mailbox.enums.ESoulLetterType;
 import com.heartsphere.repository.CharacterRepository;
 import com.heartsphere.repository.JournalEntryRepository;
+import com.heartsphere.memory.repository.jpa.UserMemoryRepository;
+import com.heartsphere.memory.entity.UserMemoryEntity;
+import com.heartsphere.memory.model.MemoryImportance;
+import org.springframework.data.domain.PageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +43,8 @@ public class ESoulLetterGenerator {
     private final EmotionService emotionService;
     private final JournalEntryRepository journalEntryRepository;
     private final CharacterRepository characterRepository;
+    private final PromptTemplateIntegrationService templateService;
+    private final UserMemoryRepository userMemoryRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
@@ -59,13 +69,104 @@ public class ESoulLetterGenerator {
                 .limit(5) // 只取最近5条日记
                 .collect(Collectors.toList());
             
-            // 构建AI提示词
-            String prompt = buildLetterPrompt(character, letterType, currentEmotion, recentJournals);
+            // 获取用户的重要记忆（用于了解用户心境）
+            List<UserMemoryEntity> importantMemories = userMemoryRepository
+                .findByUserIdAndImportanceOrderByCreatedAtDesc(
+                    String.valueOf(userId),
+                    MemoryImportance.IMPORTANT,
+                    PageRequest.of(0, 10) // 获取最近10条重要记忆
+                );
+            
+            // 如果没有重要记忆，获取最近的记忆
+            if (importantMemories == null || importantMemories.isEmpty()) {
+                List<UserMemoryEntity> recentMemories = userMemoryRepository
+                    .findByUserIdOrderByCreatedAtDesc(String.valueOf(userId));
+                if (recentMemories != null && !recentMemories.isEmpty()) {
+                    importantMemories = recentMemories.stream()
+                        .limit(10)
+                        .collect(Collectors.toList());
+                }
+            }
+            
+            // 构建AI提示词（硬编码作为fallback）
+            String defaultPrompt = buildLetterPrompt(character, letterType, currentEmotion, recentJournals, importantMemories);
+            
+            // 从提示词管理系统读取提示词，如果不存在则使用硬编码作为fallback
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("characterName", character.getName());
+            variables.put("characterRole", character.getRole());
+            variables.put("characterBio", character.getBio());
+            variables.put("speechStyle", character.getSpeechStyle() != null ? character.getSpeechStyle() : "");
+            variables.put("letterType", letterType.getDescription());
+            
+            // 构建情绪信息
+            StringBuilder emotionInfo = new StringBuilder();
+            if (currentEmotion != null) {
+                emotionInfo.append("用户当前情绪状态：\n");
+                emotionInfo.append(String.format("情绪类型：%s\n", currentEmotion.getEmotionType()));
+                emotionInfo.append(String.format("情绪强度：%s\n", currentEmotion.getEmotionIntensity()));
+                if (currentEmotion.getReasoning() != null && !currentEmotion.getReasoning().isEmpty()) {
+                    emotionInfo.append(String.format("情绪分析：%s\n", currentEmotion.getReasoning()));
+                }
+            }
+            variables.put("emotionInfo", emotionInfo.toString());
+            
+            // 构建日记信息
+            StringBuilder journalInfo = new StringBuilder();
+            if (recentJournals != null && !recentJournals.isEmpty()) {
+                journalInfo.append("用户最近的日记（用于了解用户的心境和想法）：\n");
+                for (JournalEntry journal : recentJournals) {
+                    if (journal.getTitle() != null && !journal.getTitle().isEmpty()) {
+                        journalInfo.append(String.format("- %s：%s\n", 
+                            journal.getTitle(), 
+                            journal.getContent() != null && journal.getContent().length() > 100 
+                                ? journal.getContent().substring(0, 100) + "..." 
+                                : journal.getContent()));
+                    }
+                }
+            }
+            variables.put("journalInfo", journalInfo.toString());
+            
+            // 构建记忆信息
+            StringBuilder memoryInfo = new StringBuilder();
+            if (importantMemories != null && !importantMemories.isEmpty()) {
+                memoryInfo.append("用户的重要记忆（用于了解用户的心境和经历）：\n");
+                for (UserMemoryEntity memory : importantMemories) {
+                    if (memory.getContent() != null && !memory.getContent().isEmpty()) {
+                        String content = memory.getContent().length() > 150 
+                            ? memory.getContent().substring(0, 150) + "..." 
+                            : memory.getContent();
+                        memoryInfo.append(String.format("- %s\n", content));
+                    }
+                }
+            }
+            variables.put("memoryInfo", memoryInfo.toString());
+            
+            // 构建系统提示词，强调角色定位
+            String systemPrompt = String.format(
+                "你是%s，%s。你的性格特点：%s。\n" +
+                "你正在给用户写一封充满情感的信件。请用第一人称，完全符合你的角色定位和说话风格。\n" +
+                "信件应该体现你的性格特点，同时结合用户的心境（情绪、日记、记忆）来表达关心。",
+                character.getName(),
+                character.getRole() != null ? character.getRole() : "一个温暖的朋友",
+                character.getBio() != null && !character.getBio().isEmpty() 
+                    ? character.getBio() 
+                    : (character.getSpeechStyle() != null && !character.getSpeechStyle().isEmpty()
+                        ? character.getSpeechStyle()
+                        : "温暖、体贴、真诚")
+            );
+            
+            PromptRenderResponse prompts = templateService.getPrompts(
+                "main-letter-generation",
+                variables,
+                systemPrompt,
+                defaultPrompt
+            );
             
             // 调用AI生成来信内容
             TextGenerationRequest aiRequest = new TextGenerationRequest();
-            aiRequest.setPrompt(prompt);
-            aiRequest.setSystemInstruction("你是一个温暖的角色，正在给用户写一封充满情感的信件。请用第一人称，像真正的朋友一样表达关心和思念。");
+            aiRequest.setPrompt(prompts.getUserPrompt());
+            aiRequest.setSystemInstruction(prompts.getSystemPrompt());
             aiRequest.setTemperature(0.8); // 较高的温度以获得更有创造性的内容
             aiRequest.setMaxTokens(1000);
             
@@ -89,17 +190,21 @@ public class ESoulLetterGenerator {
             Character character,
             ESoulLetterType letterType,
             EmotionRecord emotion,
-            List<JournalEntry> journals) {
+            List<JournalEntry> journals,
+            List<UserMemoryEntity> memories) {
         
         StringBuilder prompt = new StringBuilder();
         
-        // 角色信息
-        prompt.append("角色信息：\n");
+        // 角色信息（强调角色定位）
+        prompt.append("角色信息（请严格按照角色定位和性格特点来写这封信）：\n");
         prompt.append(String.format("姓名：%s\n", character.getName()));
-        prompt.append(String.format("角色：%s\n", character.getRole()));
-        prompt.append(String.format("简介：%s\n", character.getBio()));
+        prompt.append(String.format("角色定位：%s\n", character.getRole() != null ? character.getRole() : "朋友"));
+        prompt.append(String.format("角色简介：%s\n", character.getBio() != null ? character.getBio() : ""));
         if (character.getSpeechStyle() != null && !character.getSpeechStyle().isEmpty()) {
-            prompt.append(String.format("说话风格：%s\n", character.getSpeechStyle()));
+            prompt.append(String.format("说话风格：%s（请严格按照这个风格来写）\n", character.getSpeechStyle()));
+        }
+        if (character.getCatchphrases() != null && !character.getCatchphrases().isEmpty()) {
+            prompt.append(String.format("常用语：%s\n", character.getCatchphrases()));
         }
         prompt.append("\n");
         
@@ -120,7 +225,7 @@ public class ESoulLetterGenerator {
         
         // 用户日记信息
         if (journals != null && !journals.isEmpty()) {
-            prompt.append("用户最近的日记（用于个性化信件内容）：\n");
+            prompt.append("用户最近的日记（用于了解用户的心境和想法，请自然地融入信件中）：\n");
             for (JournalEntry journal : journals) {
                 if (journal.getTitle() != null && !journal.getTitle().isEmpty()) {
                     prompt.append(String.format("- %s：%s\n", 
@@ -133,10 +238,26 @@ public class ESoulLetterGenerator {
             prompt.append("\n");
         }
         
+        // 用户记忆信息
+        if (memories != null && !memories.isEmpty()) {
+            prompt.append("用户的重要记忆（用于了解用户的心境和经历，请自然地融入信件中）：\n");
+            for (UserMemoryEntity memory : memories) {
+                if (memory.getContent() != null && !memory.getContent().isEmpty()) {
+                    String content = memory.getContent().length() > 150 
+                        ? memory.getContent().substring(0, 150) + "..." 
+                        : memory.getContent();
+                    prompt.append(String.format("- %s\n", content));
+                }
+            }
+            prompt.append("\n");
+        }
+        
         // 信件要求
         prompt.append("请根据以上信息，生成一封温暖的信件。要求：\n");
         prompt.append("1. 使用JSON格式返回：{\"title\": \"信件标题\", \"content\": \"信件正文\"}\n");
-        prompt.append("2. 信件应该充满情感，像真正的朋友一样表达关心\n");
+        prompt.append("2. 信件必须完全符合角色的定位、性格特点和说话风格\n");
+        prompt.append("3. 信件应该充满情感，结合用户的心境（情绪、日记、记忆）来表达关心\n");
+        prompt.append("4. 如果提到了用户的日记或记忆，请自然地融入，不要显得生硬\n");
         
         switch (letterType) {
             case GREETING:

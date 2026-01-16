@@ -199,16 +199,32 @@ public class PortalService {
     public List<PortalConfigDTO> getPortalsByScene(Long sceneId, Boolean onlyActive) {
         checkFeatureEnabled();
         
-        List<PortalConfig> portals;
-        if (onlyActive != null && onlyActive) {
-            portals = portalConfigRepository.findBySceneIdAndIsActive(sceneId, true);
-        } else {
-            portals = portalConfigRepository.findBySceneId(sceneId);
+        try {
+            List<PortalConfig> portals;
+            if (onlyActive != null && onlyActive) {
+                log.debug("查询场景 {} 的激活传送门", sceneId);
+                portals = portalConfigRepository.findBySceneIdAndIsActive(sceneId, true);
+            } else {
+                log.debug("查询场景 {} 的所有传送门", sceneId);
+                portals = portalConfigRepository.findBySceneId(sceneId);
+            }
+            
+            log.debug("找到 {} 个传送门", portals.size());
+            
+            return portals.stream()
+                    .map(portal -> {
+                        try {
+                            return convertToDTO(portal);
+                        } catch (Exception e) {
+                            log.error("转换传送门DTO失败: portalId={}, error={}", portal.getId(), e.getMessage(), e);
+                            throw new RuntimeException("转换传送门数据失败: " + e.getMessage(), e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取场景 {} 的传送门列表失败: {}", sceneId, e.getMessage(), e);
+            throw new RuntimeException("获取传送门列表失败: " + e.getMessage(), e);
         }
-        
-        return portals.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
     }
     
     /**
@@ -243,14 +259,19 @@ public class PortalService {
                 .orElseThrow(() -> new ResourceNotFoundException("传送门不存在"));
         
         // 验证权限
-        if (!permissionService.canUserTeleport(userId, portalId)) {
-            PortalTeleportationLog log = new PortalTeleportationLog();
-            log.setPortalId(portalId);
-            log.setVisitorId(userId);
-            log.setStatus(PortalTeleportationLog.Status.FAILED);
-            log.setErrorMessage("无权限传送");
-            teleportationLogRepository.save(log);
+        boolean canTeleport = permissionService.canUserTeleport(userId, portalId);
+        log.debug("[PortalService] 传送权限检查结果: userId={}, portalId={}, canTeleport={}", userId, portalId, canTeleport);
+        
+        if (!canTeleport) {
+            PortalTeleportationLog logEntry = new PortalTeleportationLog();
+            logEntry.setPortalId(portalId);
+            logEntry.setVisitorId(userId);
+            logEntry.setStatus(PortalTeleportationLog.Status.FAILED);
+            logEntry.setErrorMessage("无权限传送");
+            teleportationLogRepository.save(logEntry);
             
+            log.warn("[PortalService] 传送权限检查失败: userId={}, portalId={}, portalUserId={}, permissionType={}", 
+                userId, portalId, portal.getUserId(), portal.getPermissionType());
             throw new BusinessException("无权限使用此传送门");
         }
         

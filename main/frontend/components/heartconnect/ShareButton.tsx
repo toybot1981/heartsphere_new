@@ -30,11 +30,9 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       e.preventDefault();
     }
     
-    console.log('ShareButton clicked, loading share config...');
     setLoading(true);
     try {
       const config = await heartConnectApi.getMyShareConfig();
-      console.log('Share config loaded:', config);
       setShareConfig(config);
       setShowShareDisplay(true);
     } catch (err: any) {
@@ -50,7 +48,6 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       
       if (isNotFound) {
         // 没有配置，打开创建界面（这是正常情况，不记录为错误）
-        console.log('No share config found, opening create modal');
         setShowConfigModal(true);
       } else {
         // 其他错误才记录为错误
@@ -80,7 +77,6 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       <>
         <button
           onClick={(e) => {
-            console.log('ShareButton icon clicked');
             handleOpenShare(e);
           }}
           disabled={loading}
@@ -203,7 +199,6 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     <>
       <button
         onClick={(e) => {
-          console.log('ShareButton clicked, variant:', variant);
           handleOpenShare(e);
         }}
         disabled={loading}

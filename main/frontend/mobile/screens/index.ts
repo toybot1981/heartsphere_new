@@ -16,3 +16,4 @@ export { MobileConnectionSpaceScreen } from './MobileConnectionSpaceScreen';
 export { MobileSharedHeartSphereScreen } from './MobileSharedHeartSphereScreen';
 export { MobileSharedCharacterSelectionScreen } from './MobileSharedCharacterSelectionScreen';
 export { MobileSharedChatWindowScreen } from './MobileSharedChatWindowScreen';
+export { MobileMailboxScreen } from './MobileMailboxScreen';

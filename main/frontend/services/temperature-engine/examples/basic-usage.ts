@@ -19,7 +19,6 @@ async function example1() {
 
   // 监听温度感变化
   engine.on('temperatureChanged', (temperature) => {
-    console.log('温度感变化:', temperature.level, temperature.score);
   });
 
   // 计算温度感
@@ -40,14 +39,12 @@ async function example1() {
     },
   });
 
-  console.log('当前温度感:', temperature);
 
   // 分析情绪
   const emotion = await engine.analyzeEmotion({
     text: '我今天很开心！',
   });
 
-  console.log('检测到的情绪:', emotion);
 
   // 停止引擎
   await engine.stop();
@@ -85,7 +82,6 @@ async function example2() {
 
   // 获取当前温度感
   const current = api.getTemperature();
-  console.log('当前温度感:', current);
 
   // 调节温度感
   await api.adjust('warm', {
@@ -110,7 +106,6 @@ function MyComponent() {
 
     // 监听事件
     engine.on('temperatureChanged', (temperature) => {
-      console.log('温度感变化:', temperature);
     });
 
     // 计算温度感
@@ -150,20 +145,16 @@ async function example4() {
 
   // 监听多个事件
   engine.on('temperatureChanged', (temperature) => {
-    console.log('温度感变化:', temperature);
   });
 
   engine.on('emotionDetected', (emotion) => {
-    console.log('情绪检测:', emotion);
   });
 
   engine.on('contextUpdated', (context) => {
-    console.log('上下文更新:', context);
   });
 
   // 一次性监听
   engine.once('engineStarted', () => {
-    console.log('引擎已启动');
   });
 }
 
@@ -184,7 +175,6 @@ async function example5() {
 
   // 获取配置
   const config = engine.getConfig();
-  console.log('当前配置:', config);
 
   // 更新配置
   engine.updateConfig({

@@ -29,12 +29,23 @@ public class ApiKeyService {
      * 验证API Key
      */
     public ApiKey validateApiKey(String apiKey) {
-        // 移除前缀（如果有）
-        String keyValue = apiKey.startsWith(API_KEY_PREFIX) 
-            ? apiKey.substring(API_KEY_PREFIX.length()) 
-            : apiKey;
+        // 尝试两种方式查找：
+        // 1. 直接使用传入的 API Key（可能包含 hs_ 前缀）
+        // 2. 如果失败，尝试移除前缀后查找（兼容旧数据）
+        Optional<ApiKey> keyOpt = apiKeyRepository.findByApiKey(apiKey);
         
-        Optional<ApiKey> keyOpt = apiKeyRepository.findByApiKey(keyValue);
+        // 如果直接查找失败，尝试移除前缀后查找
+        if (keyOpt.isEmpty() && apiKey.startsWith(API_KEY_PREFIX)) {
+            String keyValue = apiKey.substring(API_KEY_PREFIX.length());
+            keyOpt = apiKeyRepository.findByApiKey(keyValue);
+        }
+        
+        // 如果还是失败，尝试添加前缀后查找（兼容数据库中存储的是去掉前缀的情况）
+        if (keyOpt.isEmpty() && !apiKey.startsWith(API_KEY_PREFIX)) {
+            String keyWithPrefix = API_KEY_PREFIX + apiKey;
+            keyOpt = apiKeyRepository.findByApiKey(keyWithPrefix);
+        }
+        
         if (keyOpt.isEmpty()) {
             throw new RuntimeException("无效的API Key");
         }
@@ -59,11 +70,19 @@ public class ApiKeyService {
      */
     @Transactional
     public void recordApiKeyUsage(String apiKey) {
-        String keyValue = apiKey.startsWith(API_KEY_PREFIX) 
-            ? apiKey.substring(API_KEY_PREFIX.length()) 
-            : apiKey;
+        // 尝试多种方式查找 API Key（与 validateApiKey 保持一致）
+        Optional<ApiKey> keyOpt = apiKeyRepository.findByApiKey(apiKey);
         
-        Optional<ApiKey> keyOpt = apiKeyRepository.findByApiKey(keyValue);
+        if (keyOpt.isEmpty() && apiKey.startsWith(API_KEY_PREFIX)) {
+            String keyValue = apiKey.substring(API_KEY_PREFIX.length());
+            keyOpt = apiKeyRepository.findByApiKey(keyValue);
+        }
+        
+        if (keyOpt.isEmpty() && !apiKey.startsWith(API_KEY_PREFIX)) {
+            String keyWithPrefix = API_KEY_PREFIX + apiKey;
+            keyOpt = apiKeyRepository.findByApiKey(keyWithPrefix);
+        }
+        
         if (keyOpt.isPresent()) {
             ApiKey key = keyOpt.get();
             key.setLastUsedAt(LocalDateTime.now());

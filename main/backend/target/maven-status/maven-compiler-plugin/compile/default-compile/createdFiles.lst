@@ -10,6 +10,7 @@ com/heartsphere/skill/service/executor/ApiSkillExecutor.class
 com/heartsphere/service/ImageProcessingService$ImageInfo.class
 com/heartsphere/heartconnect/portal/dto/PortalPreviewDTO.class
 com/heartsphere/heartconnect/dto/CreateShareConfigRequest$ShareScopeItem.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse.class
 com/heartsphere/aiagent/adapter/OpenAIAdapter.class
 com/heartsphere/aiagent/graph/research/GraphResearchController.class
 com/heartsphere/memory/model/character/CharacterSelfMemory.class
@@ -53,6 +54,7 @@ com/heartsphere/service/ai/adapter/ModelAdapter.class
 com/heartsphere/entity/SystemConfig.class
 com/heartsphere/repository/UserScenarioEventRepository.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$8.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$CategoriesData.class
 com/heartsphere/billing/dto/UsageStats.class
 com/heartsphere/plugin/entity/ScenePlugin$ScenePluginBuilder.class
 com/heartsphere/plugin/controller/ScenePluginController.class
@@ -85,6 +87,7 @@ com/heartsphere/heartconnect/portal/dto/UpdatePortalRequest.class
 com/heartsphere/heartconnect/context/SharedModeContext.class
 com/heartsphere/plugin/plugins/photoalbum/entity/Photo$PhotoBuilder.class
 com/heartsphere/aiagent/graph/core/execution/ExecutionContext$WaitType.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$ItemsData.class
 com/heartsphere/mailbox/enums/MessageType.class
 com/heartsphere/aiagent/graph/core/node/StartNode.class
 com/heartsphere/controller/PhotoAlbumController$1.class
@@ -96,6 +99,7 @@ com/heartsphere/memory/config/MemoryProperties$LongMemory.class
 com/heartsphere/skill/dto/CharacterAvailableSkillsDTO$PromptDrivenSkillDTO.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$GraphEdge.class
 com/heartsphere/mailbox/dto/UnreadCountResponse$UnreadCountResponseBuilder.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$5.class
 com/heartsphere/heartconnect/config/SharedModeConfig.class
 com/heartsphere/entity/SystemEraItem.class
 com/heartsphere/billing/service/UserUsageStatisticsService$AudioStats.class
@@ -117,6 +121,7 @@ com/heartsphere/payment/service/AlipayPaymentService.class
 com/heartsphere/skill/service/CharacterSkillService$EquipSkillRequest$EquipSkillRequestBuilder.class
 com/heartsphere/controller/PresetEraController.class
 com/heartsphere/util/ConfigKey.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$4.class
 com/heartsphere/skill/service/executor/ScriptSkillExecutor.class
 com/heartsphere/service/UserScenarioItemService.class
 com/heartsphere/plugin/core/IPluginStorage.class
@@ -167,9 +172,11 @@ com/heartsphere/heartconnect/dto/CreateConnectionRequestRequest.class
 com/heartsphere/heartconnect/entity/HeartSphereConnectionRequest$RequestStatus.class
 com/heartsphere/aiagent/graph/research/SpringAIGraphTest.class
 com/heartsphere/quickconnect/service/AccessHistoryService.class
+com/heartsphere/service/SystemMainStoryService.class
 com/heartsphere/exception/ResourceNotFoundException.class
 com/heartsphere/memory/model/participant/ParticipantRelationship$RelationshipChange$RelationshipChangeBuilder.class
 com/heartsphere/heartconnect/dto/UpdateShareConfigRequest$ShareScopeItem.class
+com/heartsphere/memory/util/PerformanceLogger.class
 com/heartsphere/plugin/core/IPlugin.class
 com/heartsphere/repository/ScriptRepository.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$2.class
@@ -215,6 +222,7 @@ com/heartsphere/skill/dto/EquipSkillRequest.class
 com/heartsphere/skill/entity/CharacterSkillBinding.class
 com/heartsphere/dto/ApiResponse.class
 com/heartsphere/skill/service/executor/ScriptSkillExecutor$2.class
+com/heartsphere/memory/dto/hsmem/HSMemTextRequest.class
 com/heartsphere/controller/EmailVerificationController.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$SimpleGraphState.class
 com/heartsphere/billing/service/BillingMonitorService.class
@@ -225,6 +233,7 @@ com/heartsphere/payment/entity/PaymentConfig.class
 com/heartsphere/billing/service/CostStatisticsService.class
 com/heartsphere/controller/ConversationLogController$CreateConversationLogRequest.class
 com/heartsphere/aiagent/graph/core/node/ChoiceNode$ChoiceNodeBuilder.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$1.class
 com/heartsphere/memory/model/participant/ParticipantRelationship$InteractionRecord.class
 com/heartsphere/service/AIRoutingStrategyService.class
 com/heartsphere/controller/CharacterController.class
@@ -315,9 +324,11 @@ com/heartsphere/aiagent/repository/GraphEdgeRepository.class
 com/heartsphere/config/OpenApiConfig.class
 com/heartsphere/aiagent/dto/ExecutionLogListResponse$ExecutionLogListResponseBuilder.class
 com/heartsphere/quickconnect/dto/AccessHistoryDTO.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$3.class
 com/heartsphere/skill/dto/SkillDefinitionDTO$SkillDefinitionDTOBuilder.class
 com/heartsphere/memory/model/UserPreference$UserPreferenceBuilder.class
 com/heartsphere/service/video/AnimationFormat.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$6.class
 com/heartsphere/aiagent/dto/GraphExecutionListResponse.class
 com/heartsphere/aiagent/dto/GraphNodeDTO.class
 com/heartsphere/entity/ScenarioItem.class
@@ -348,6 +359,7 @@ com/heartsphere/service/AIRoutingStrategyService$1.class
 com/heartsphere/aiagent/service/AIService.class
 com/heartsphere/entity/Membership.class
 com/heartsphere/billing/entity/AICostDaily.class
+com/heartsphere/heartconnect/portal/entity/converter/PortalTypeConverter.class
 com/heartsphere/repository/SystemEraItemRepository.class
 com/heartsphere/payment/dto/PaymentConfigDTO.class
 com/heartsphere/payment/service/WechatPaymentService.class
@@ -358,8 +370,10 @@ com/heartsphere/aiagent/graph/research/CustomGraphEngine$GraphNode.class
 com/heartsphere/heartconnect/repository/HeartSphereConnectionRequestRepository.class
 com/heartsphere/aiagent/graph/core/node/SkillCheckNodeConfig.class
 com/heartsphere/heartconnect/entity/HeartSphereConnection$ConnectionStatus.class
+com/heartsphere/memory/dto/hsmem/HSMemConversationRequest.class
 com/heartsphere/heartconnect/portal/repository/PortalPermissionRepository.class
 com/heartsphere/heartconnect/portal/config/PortalProperties.class
+com/heartsphere/config/GuestModeConfig.class
 com/heartsphere/billing/dto/UsageStats$DailyUsage$DailyUsageBuilder.class
 com/heartsphere/aiagent/service/AIConfigService.class
 com/heartsphere/mailbox/service/ESoulLetterGenerator.class
@@ -402,9 +416,12 @@ com/heartsphere/service/MembershipPermissionService.class
 com/heartsphere/skill/service/SkillRegistry$FunctionDefinition.class
 com/heartsphere/billing/dto/UsageStats$QuotaUsageStats$QuotaUsageStatsBuilder.class
 com/heartsphere/dto/ai/ImageGenerationResponse$ImageUsage.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$8.class
 com/heartsphere/skill/service/CharacterSkillService.class
 com/heartsphere/aiagent/dto/GraphExecutionDTO$GraphExecutionDTOBuilder.class
+com/heartsphere/memory/dto/hsmem/HSMemDocumentRequest.class
 com/heartsphere/config/WebMvcConfig.class
+com/heartsphere/memory/util/HSMemLogHelper.class
 com/heartsphere/controller/WorldController.class
 com/heartsphere/security/UserDetailsServiceImpl.class
 com/heartsphere/aiagent/graph/core/node/EventNode.class
@@ -426,6 +443,7 @@ com/heartsphere/repository/UserScenarioItemRepository.class
 com/heartsphere/skill/service/SkillRegistry$1.class
 com/heartsphere/heartconnect/entity/HeartSphereShareScope$ScopeType.class
 com/heartsphere/skill/entity/SkillDefinition.class
+com/heartsphere/util/GuestAccessChecker.class
 com/heartsphere/memory/service/impl/MySQLLongMemoryService.class
 com/heartsphere/billing/entity/ProviderResourcePool.class
 com/heartsphere/repository/SystemCharacterRepository.class
@@ -478,6 +496,7 @@ com/heartsphere/aiagent/graph/core/node/StateChangeNode$StateChange$ChangeType.c
 com/heartsphere/memory/service/LongMemoryService.class
 com/heartsphere/skill/dto/CharacterSkillBindingDTO$CharacterSkillBindingDTOBuilder.class
 com/heartsphere/billing/entity/TokenPackage.class
+com/heartsphere/memory/util/PerformanceLogger$Statistics.class
 com/heartsphere/billing/service/UserUsageStatisticsService$UserUsageStatistics.class
 com/heartsphere/aiagent/dto/request/ChatCompletionRequest$ResponseFormat.class
 com/heartsphere/aiagent/graph/core/node/StateChangeNode$StateChange$StateChangeBuilder.class
@@ -510,14 +529,17 @@ com/heartsphere/skill/repository/SkillInstructionRepository.class
 com/heartsphere/aiagent/service/GraphDefinitionService$1.class
 com/heartsphere/plugin/model/PluginConfig.class
 com/heartsphere/aiagent/dto/response/ChatCompletionResponse$Usage.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$7.class
 com/heartsphere/skill/dto/SkillExecutionResultDTO.class
 com/heartsphere/aiagent/graph/core/node/EndNode.class
 com/heartsphere/aiagent/graph/core/GraphEngine$GraphDefinition.class
+com/heartsphere/memory/service/hsmem/HSMemClientService$2.class
 com/heartsphere/skill/service/SkillExecutor$SkillExecutionResult$SkillExecutionResultBuilder.class
 com/heartsphere/memory/model/MemoryVector$MemoryVectorBuilder.class
 com/heartsphere/repository/SystemAdminRepository.class
 com/heartsphere/billing/repository/BillingAlertRepository.class
 com/heartsphere/repository/SystemEraEventRepository.class
+com/heartsphere/memory/dto/hsmem/HSMemMessage.class
 com/heartsphere/heartconnect/service/WarmMessageService.class
 com/heartsphere/mailbox/service/ResonanceMessageService.class
 com/heartsphere/aiagent/graph/core/node/ConditionNode$Condition.class
@@ -549,6 +571,7 @@ com/heartsphere/quickconnect/controller/FavoriteController$ToggleFavoriteRequest
 com/heartsphere/billing/dto/UsageStats$QuotaUsageStats.class
 com/heartsphere/aiagent/service/UnifiedModelRoutingService.class
 com/heartsphere/memory/model/ArchivedMemory$ArchivedMemoryBuilder.class
+com/heartsphere/annotation/RequireRegisteredUser.class
 com/heartsphere/dto/UserMainStoryDTO.class
 com/heartsphere/plugin/model/PluginStatus.class
 com/heartsphere/memory/model/MemorySource.class
@@ -595,6 +618,7 @@ com/heartsphere/skill/service/executor/ApiSkillExecutor$1.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$GraphExecutor.class
 com/heartsphere/mailbox/entity/Conversation.class
 com/heartsphere/billing/dto/CostAnalysis$QuotaCostBreakdown$QuotaCostBreakdownBuilder.class
+com/heartsphere/memory/config/MemoryProperties$HSMem$Retry.class
 com/heartsphere/plugin/dto/PluginPreviewDTO.class
 com/heartsphere/aiagent/graph/core/node/ChoiceNodeConfig$ChoiceConditionConfig$ChoiceConditionConfigBuilder.class
 com/heartsphere/aiagent/graph/core/node/StateChangeNode$StateChange.class
@@ -638,6 +662,7 @@ com/heartsphere/memory/repository/jpa/WorkingMemoryRepository.class
 com/heartsphere/constants/ApplicationConstants$LogConstants.class
 com/heartsphere/controller/CompanyFeedbackController.class
 com/heartsphere/plugin/dto/PluginListRequest$PluginListRequestBuilder.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$MemorizeData$Category.class
 com/heartsphere/memory/service/ShortMemoryService.class
 com/heartsphere/mailbox/listener/ResonanceMessageEventListener.class
 com/heartsphere/mailbox/dto/NotificationSettingsResponse.class
@@ -647,6 +672,7 @@ com/heartsphere/mailbox/controller/ConversationController.class
 com/heartsphere/heartconnect/controller/ShareConfigController.class
 com/heartsphere/aiagent/graph/core/node/ChoiceNodeConfig$ChoiceEffectConfig.class
 com/heartsphere/dto/SystemEraDTO.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$RetrieveData.class
 com/heartsphere/memory/util/MemoryEntityConverter$6.class
 com/heartsphere/entity/EntityRelation.class
 com/heartsphere/aiagent/repository/GraphNodeRepository.class
@@ -681,6 +707,7 @@ com/heartsphere/aiagent/service/ExecutionLogService.class
 com/heartsphere/billing/controller/UserUsageStatisticsController.class
 com/heartsphere/memory/model/character/CharacterMemoryProfile$CharacterMemoryProfileBuilder.class
 com/heartsphere/aiagent/adapter/BigModelAdapter.class
+com/heartsphere/memory/service/hsmem/HSMemClientService.class
 com/heartsphere/aiagent/repository/GraphDefinitionRepository.class
 com/heartsphere/skill/service/SkillExecutor$SkillExecutionContext$SkillExecutionContextBuilder.class
 com/heartsphere/aiagent/service/GraphExecutionManagementService.class
@@ -689,11 +716,12 @@ com/heartsphere/skill/entity/SkillPrerequisite.class
 com/heartsphere/controller/MembershipController$SubscriptionPlanResponse.class
 com/heartsphere/memory/entity/ChatMessageEntity$ChatMessageEntityBuilder.class
 com/heartsphere/aiagent/graph/core/node/EntityRelationNode$RelationAction.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$StatisticsData.class
 com/heartsphere/dto/ai/UserAIConfig.class
 com/heartsphere/billing/repository/ProviderResourcePoolRepository.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$ResourcesData.class
 com/heartsphere/aiagent/dto/GraphExecutionQueryRequest$GraphExecutionQueryRequestBuilder.class
 com/heartsphere/emotion/controller/EmotionController.class
-com/heartsphere/heartconnect/portal/entity/PortalPermission.class
 com/heartsphere/controller/MembershipController$UpgradePriceResponse.class
 com/heartsphere/heartconnect/dto/ResponseConnectionRequestRequest.class
 com/heartsphere/aiagent/graph/core/node/CharacterNode$1.class
@@ -720,6 +748,7 @@ com/heartsphere/aiagent/dto/ExecutionLogQueryRequest$ExecutionLogQueryRequestBui
 com/heartsphere/aiagent/graph/core/node/StateChangeNode$1.class
 com/heartsphere/aiagent/graph/core/node/ConditionNode$1.class
 com/heartsphere/entity/AIModelConfig.class
+com/heartsphere/memory/config/MemoryProperties$HSMem.class
 com/heartsphere/skill/service/executor/GraphSkillExecutor$1.class
 com/heartsphere/service/EmailVerificationCodeService.class
 com/heartsphere/repository/PaymentOrderRepository.class
@@ -787,6 +816,8 @@ com/heartsphere/memory/util/MemoryEntityConverter$1.class
 com/heartsphere/controller/PaymentController.class
 com/heartsphere/constants/ApplicationConstants$HttpConstants.class
 com/heartsphere/security/UserDetailsImpl.class
+com/heartsphere/memory/dto/hsmem/HSMemRetrieveRequest.class
+com/heartsphere/controller/PresetMainStoryController.class
 com/heartsphere/aiagent/adapter/DoubaoAdapter$1.class
 com/heartsphere/memory/service/impl/RuleBasedMemoryExtractor.class
 com/heartsphere/billing/repository/UserTokenQuotaRepository.class
@@ -795,6 +826,7 @@ com/heartsphere/aiagent/graph/core/node/LoopNode.class
 com/heartsphere/controller/PhotoAlbumController$2.class
 com/heartsphere/repository/WorldRepository.class
 com/heartsphere/billing/dto/CostAnalysis$QuotaCostBreakdown.class
+com/heartsphere/memory/util/LogSanitizer.class
 com/heartsphere/billing/repository/TokenQuotaTransactionRepository.class
 com/heartsphere/quickconnect/service/QuickConnectService.class
 com/heartsphere/skill/service/CharacterSkillService$SkillNotEquippedException.class
@@ -807,6 +839,7 @@ com/heartsphere/aiagent/dto/request/TextGenerationRequest$Message.class
 com/heartsphere/memory/model/participant/ParticipantRelationship$InteractionRecord$InteractionRecordBuilder.class
 com/heartsphere/aiagent/graph/research/SimpleGraphTest.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$GraphState.class
+com/heartsphere/heartconnect/portal/entity/converter/PermissionTypeConverter.class
 com/heartsphere/aiagent/graph/core/node/SkillCheckNode$SkillCheckNodeBuilder.class
 com/heartsphere/dto/UserDTO.class
 com/heartsphere/constants/ApplicationConstants.class
@@ -844,6 +877,7 @@ com/heartsphere/aiagent/graph/core/node/CharacterNode$CharacterAction.class
 com/heartsphere/repository/UserRepository.class
 com/heartsphere/mailbox/enums/ConversationType.class
 com/heartsphere/entity/NoteSync.class
+com/heartsphere/service/ThumbnailGenerationService.class
 com/heartsphere/aiagent/graph/core/node/ItemNode$ItemNodeBuilder.class
 com/heartsphere/entity/User.class
 com/heartsphere/service/AIModelConfigService.class
@@ -878,7 +912,6 @@ com/heartsphere/memory/entity/ChatMessageEntity.class
 com/heartsphere/memory/entity/UserMemoryEntity.class
 com/heartsphere/billing/dto/CostAnalysis.class
 com/heartsphere/service/video/VideoInfo.class
-com/heartsphere/heartconnect/portal/service/PortalPermissionService$1.class
 com/heartsphere/aiagent/graph/core/node/WaitNodeConfig.class
 com/heartsphere/skill/repository/SkillDefinitionRepository.class
 com/heartsphere/utils/DTOMapper.class
@@ -891,7 +924,9 @@ com/heartsphere/heartconnect/dto/ConnectionRequestDTO.class
 com/heartsphere/service/ApiKeyService.class
 com/heartsphere/aiagent/graph/core/node/ChoiceNode$ChoiceOption.class
 com/heartsphere/skill/controller/SkillController.class
+com/heartsphere/aiagent/adapter/RealtimeAsrWebSocketClient.class
 com/heartsphere/billing/service/UsageRecordService.class
+com/heartsphere/memory/dto/hsmem/HSMemResponse$MemorizeData.class
 com/heartsphere/aiagent/service/GraphExecutionService.class
 com/heartsphere/controller/AuthController.class
 com/heartsphere/aiagent/graph/research/CustomGraphEngine$GraphRouter.class

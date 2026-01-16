@@ -11,7 +11,6 @@ import com.heartsphere.mailbox.enums.SenderType;
 import com.heartsphere.mailbox.repository.MailboxMessageRepository;
 import com.heartsphere.repository.CharacterRepository;
 import com.heartsphere.repository.UserRepository;
-import com.heartsphere.quickconnect.repository.AccessHistoryRepository;
 import com.heartsphere.emotion.service.EmotionService;
 import com.heartsphere.emotion.entity.EmotionRecord;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +38,6 @@ public class ESoulLetterService {
     private final MailboxMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final CharacterRepository characterRepository;
-    private final AccessHistoryRepository accessHistoryRepository;
     private final EmotionService emotionService;
     
     /**
@@ -124,33 +122,19 @@ public class ESoulLetterService {
     
     /**
      * 选择发件人角色
-     * 优先选择最近聊过的角色，如果没有则选择第一个场景的第一个角色
+     * 随机从用户创建的角色中选择一个角色
      */
     private Long selectSenderCharacter(Long userId) {
-        // 优先：最近聊过的角色
-        List<com.heartsphere.quickconnect.entity.AccessHistory> recentHistory = 
-            accessHistoryRepository.findByUserIdOrderByAccessTimeDesc(userId);
-        
-        if (recentHistory != null && !recentHistory.isEmpty()) {
-            // 去重，获取最近访问的角色ID
-            List<Long> recentCharacterIds = recentHistory.stream()
-                .map(ah -> ah.getCharacter().getId())
-                .distinct()
-                .limit(1)
-                .collect(Collectors.toList());
-            
-            if (!recentCharacterIds.isEmpty()) {
-                return recentCharacterIds.get(0);
-            }
-        }
-        
-        // 备选：第一个场景的第一个角色
+        // 获取用户创建的所有角色
         List<Character> characters = characterRepository.findByUser_Id(userId);
-        if (characters != null && !characters.isEmpty()) {
-            return characters.get(0).getId();
+        if (characters == null || characters.isEmpty()) {
+            return null;
         }
         
-        return null;
+        // 随机选择一个角色
+        java.util.Random random = new java.util.Random();
+        int randomIndex = random.nextInt(characters.size());
+        return characters.get(randomIndex).getId();
     }
     
     /**

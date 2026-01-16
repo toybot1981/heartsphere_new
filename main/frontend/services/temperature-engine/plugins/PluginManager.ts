@@ -68,7 +68,6 @@ export class PluginManager {
     }
 
     this.eventSystem?.emit('pluginRegistered', { pluginId: plugin.id });
-    console.log(`[PluginManager] Plugin registered: ${plugin.id}`);
   }
 
   /**
@@ -91,7 +90,6 @@ export class PluginManager {
 
     this.plugins.delete(pluginId);
     this.eventSystem?.emit('pluginDisabled', { pluginId });
-    console.log(`[PluginManager] Plugin unregistered: ${pluginId}`);
   }
 
   /**

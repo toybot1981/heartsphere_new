@@ -84,7 +84,6 @@ export async function migrateOldMailsToNewSystem(
     errors: [] as string[],
   };
   
-  console.log('[MailMigrationService] 开始迁移旧信箱数据，数量:', oldMails.length);
   
   for (const oldMail of oldMails) {
     try {
@@ -111,7 +110,6 @@ export async function migrateOldMailsToNewSystem(
       await mailboxApi.createMessage(createRequest, token);
       results.success++;
       
-      console.log(`[MailMigrationService] ✅ 迁移成功: ${oldMail.id} -> ${oldMail.subject}`);
     } catch (error: any) {
       results.failed++;
       const errorMsg = `迁移失败 ${oldMail.id}: ${error.message}`;
@@ -120,7 +118,6 @@ export async function migrateOldMailsToNewSystem(
     }
   }
   
-  console.log('[MailMigrationService] 迁移完成:', results);
   return results;
 }
 

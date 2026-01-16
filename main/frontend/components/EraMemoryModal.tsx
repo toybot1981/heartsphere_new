@@ -47,7 +47,6 @@ export const EraMemoryModal: React.FC<EraMemoryModalProps> = ({ scene, memories,
         if (result.variants) {
           setImageVariants(result.variants);
         }
-        console.log('图片上传成功:', result.url, 'variants:', result.variants);
       } else {
         throw new Error(result.error || '上传失败');
       }

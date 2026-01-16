@@ -49,22 +49,28 @@ export const usePortal = (sceneId?: number | null) => {
     const id = targetSceneId ?? sceneId;
     if (!id) {
       logger.warn('[usePortal] loadPortals: sceneId未提供');
+      setState(prev => ({ ...prev, loading: false }));
       return;
     }
 
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
+      // 添加一个小延迟以便观察 loading 状态（仅用于调试）
+      // 在生产环境可以移除这个延迟
+      if (process.env.NODE_ENV === 'development') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       const portals = await portalApi.getPortalsByScene(id, true); // 只加载激活的传送门
       setState(prev => ({
         ...prev,
         portals,
         loading: false,
       }));
-      logger.debug(`[usePortal] 加载传送门列表成功: sceneId=${id}, count=${portals.length}`);
     } catch (error: any) {
       const errorMessage = error?.message || '加载传送门列表失败';
-      logger.error(`[usePortal] 加载传送门列表失败:`, error);
+      logger.error(`[usePortal] ❌ 加载传送门列表失败:`, error);
       setState(prev => ({
         ...prev,
         portals: [], // 确保 portals 始终是数组
@@ -87,7 +93,6 @@ export const usePortal = (sceneId?: number | null) => {
         portals: [...prev.portals, portal],
         loading: false,
       }));
-      logger.debug(`[usePortal] 创建传送门成功: portalId=${portal.id}`);
       return portal;
     } catch (error: any) {
       const errorMessage = error?.message || '创建传送门失败';
@@ -117,7 +122,6 @@ export const usePortal = (sceneId?: number | null) => {
         portals: prev.portals.map(p => p.id === portalId ? portal : p),
         loading: false,
       }));
-      logger.debug(`[usePortal] 更新传送门成功: portalId=${portalId}`);
       return portal;
     } catch (error: any) {
       const errorMessage = error?.message || '更新传送门失败';
@@ -145,7 +149,6 @@ export const usePortal = (sceneId?: number | null) => {
         activePortalId: prev.activePortalId === portalId ? null : prev.activePortalId,
         loading: false,
       }));
-      logger.debug(`[usePortal] 删除传送门成功: portalId=${portalId}`);
       return true;
     } catch (error: any) {
       const errorMessage = error?.message || '删除传送门失败';
@@ -187,17 +190,53 @@ export const usePortal = (sceneId?: number | null) => {
     }));
 
     try {
+      
+      // 检查是否已登录
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        logger.warn('[usePortal] ⚠️ 未找到认证token，传送请求可能失败');
+      } else {
+      }
+      
       const result = await portalApi.executeTeleportation(portalId, { skipAnimation });
       setState(prev => ({
         ...prev,
         isTeleporting: false,
         teleportationResult: result,
       }));
-      logger.debug(`[usePortal] 传送成功: portalId=${portalId}, result=`, result);
+      logger.info(`[usePortal] ✅ 传送成功: portalId=${portalId}, result=`, result);
       return result;
     } catch (error: any) {
-      const errorMessage = error?.message || '传送失败';
-      logger.error(`[usePortal] 传送失败:`, error);
+      // 详细记录错误信息
+      const errorDetails = {
+        message: error?.message,
+        response: error?.response,
+        status: error?.status,
+        data: error?.data,
+        stack: error?.stack,
+        fullError: error,
+      };
+      logger.error(`[usePortal] ❌ 传送失败: portalId=${portalId}`, errorDetails);
+      
+      // 提取更详细的错误信息
+      let errorMessage = '传送失败';
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      // 检查是否是登录相关错误
+      if (error?.status === 401 || error?.response?.status === 401 || errorMessage.includes('未登录') || errorMessage.includes('未授权')) {
+        errorMessage = '使用传送门需要登录，请先登录后再试';
+      } else if (error?.status === 403 || error?.response?.status === 403 || errorMessage.includes('权限')) {
+        errorMessage = '无权限使用此传送门';
+      }
+      
       setState(prev => ({
         ...prev,
         isTeleporting: false,
@@ -240,13 +279,19 @@ export const usePortal = (sceneId?: number | null) => {
     logger.debug('[usePortal] sceneId变化，检查是否需要加载传送门', {
       sceneId,
       hasSceneId: !!sceneId,
+      currentLoading: state.loading,
     });
     
     if (sceneId) {
-      logger.info(`[usePortal] 开始自动加载传送门列表: sceneId=${sceneId}`);
+      logger.info(`[usePortal] 🔄 sceneId变化，开始自动加载传送门列表: sceneId=${sceneId}`);
       loadPortals(sceneId);
     } else {
       logger.warn('[usePortal] sceneId为空，跳过加载传送门列表');
+      setState(prev => ({
+        ...prev,
+        portals: [],
+        loading: false,
+      }));
     }
   }, [sceneId, loadPortals]);
 

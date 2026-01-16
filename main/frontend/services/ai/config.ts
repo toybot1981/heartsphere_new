@@ -116,11 +116,9 @@ export class AIConfigManager {
           // 如果用户保存的配置中没有mode字段，使用默认的'unified'
           mode: config.mode || DEFAULT_CONFIG.mode
         };
-        console.log('[AIConfigManager] 从localStorage加载配置, mode:', mergedConfig.mode);
         return mergedConfig;
       } else {
         // 没有保存的配置，使用默认配置（默认模式为 'unified'）
-        console.log('[AIConfigManager] localStorage中没有配置，使用默认配置, mode:', DEFAULT_CONFIG.mode, '(统一接入模式)');
       }
     } catch (error) {
       console.error('[AIConfigManager] 加载配置失败，使用默认配置:', error);
@@ -163,9 +161,7 @@ export class AIConfigManager {
     try {
       // 不保存API Keys到配置中
       const { localApiKeys, ...configToSave } = config;
-      console.log('[AIConfigManager] 保存配置到localStorage, mode:', configToSave.mode);
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configToSave));
-      console.log('[AIConfigManager] 配置保存成功');
     } catch (error) {
       console.error('[AIConfigManager] 保存配置失败:', error);
     }

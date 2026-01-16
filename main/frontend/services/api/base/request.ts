@@ -40,12 +40,15 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
   if (needsSharedMode && !excludesSharedMode) {
     try {
       const sharedModeState = getSharedModeState();
+      logger.debug('[request] 共享模式检查:', { url, needsSharedMode, shareConfigId: sharedModeState.shareConfigId });
       if (sharedModeState.shareConfigId) {
         // 将 shareConfigId 添加到 URL 查询参数中
-        const urlObj = new URL(url, 'http://dummy'); // 使用虚拟base URL来解析相对路径
-        urlObj.searchParams.set('shareConfigId', sharedModeState.shareConfigId.toString());
-        // 获取修改后的路径和查询参数
-        finalUrl = urlObj.pathname + urlObj.search;
+        // 使用更可靠的方式处理相对路径和查询参数
+        const separator = url.includes('?') ? '&' : '?';
+        finalUrl = `${url}${separator}shareConfigId=${sharedModeState.shareConfigId}`;
+        logger.debug('[request] 已添加 shareConfigId 查询参数:', finalUrl);
+      } else {
+        logger.warn('[request] 需要共享模式但 shareConfigId 为空:', { url, sharedModeState });
       }
     } catch (err) {
       // 静默处理，不影响正常请求
@@ -95,13 +98,18 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     if (!hasCustomAuthorization) {
       try {
         const token = localStorage.getItem('auth_token');
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
+        if (token && token.trim()) {
+          headers.set('Authorization', `Bearer ${token.trim()}`);
+          logger.debug(`[request] 从 localStorage 添加 Authorization header: Bearer ${token.substring(0, Math.min(20, token.length))}...`);
+        } else {
+          logger.warn(`[request] localStorage 中没有找到有效的 auth_token (token=${token})`);
         }
       } catch (err) {
         // 静默处理，不影响正常请求
         logger.debug('获取认证token失败:', err);
       }
+    } else {
+      logger.debug(`[request] 检测到自定义 Authorization header，跳过从 localStorage 读取`);
     }
     
     // 3. 合并自定义headers
@@ -109,7 +117,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       if (options.headers instanceof Headers) {
         options.headers.forEach((value, key) => {
           const lowerKey = key.toLowerCase();
-          // 保护系统请求头
+          // 保护系统请求头，但允许覆盖 Authorization
           if (lowerKey !== 'content-type' && 
               lowerKey !== 'accept') {
             headers.set(key, value);
@@ -119,8 +127,11 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         const customHeaders = options.headers as Record<string, unknown>;
         Object.entries(customHeaders).forEach(([key, value]) => {
           const lowerKey = key.toLowerCase();
-          // 保护系统请求头
-          if (lowerKey !== 'content-type' && 
+          // 保护系统请求头，但允许覆盖 Authorization（自定义 Authorization 优先）
+          if (lowerKey === 'authorization' && value != null) {
+            // 如果自定义 headers 中有 Authorization，使用自定义的（覆盖从 localStorage 读取的）
+            headers.set(key, String(value));
+          } else if (lowerKey !== 'content-type' && 
               lowerKey !== 'accept' && 
               value != null) {
             headers.set(key, String(value));

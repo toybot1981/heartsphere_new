@@ -25,7 +25,6 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
   const [hasSelectedDefault, setHasSelectedDefault] = useState(false); // 标记是否已经选中过默认项
   
   useEffect(() => {
-    console.log('[SharedHeartSphereSection] 组件已挂载，开始加载共享心域...');
     loadSharedHeartSpheres();
   }, []);
   
@@ -33,7 +32,6 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
   useEffect(() => {
     if (sharedHeartSpheres.length > 0 && !selectedShareCode && !hasSelectedDefault && onSelectHeartSphere) {
       const firstShared = sharedHeartSpheres[0];
-      console.log('[SharedHeartSphereSection] 默认选中第一个共享心域:', firstShared.shareCode, firstShared);
       setHasSelectedDefault(true);
       onSelectHeartSphere(firstShared.shareCode, firstShared);
     }
@@ -45,9 +43,7 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
     // 重置选中状态，以便刷新后重新选中第一个
     setHasSelectedDefault(false);
     try {
-      console.log('[SharedHeartSphereSection] 开始加载共享心域列表...');
       const data = await heartConnectApi.getPublicSharedHeartSpheres();
-      console.log('[SharedHeartSphereSection] 加载成功，数据数量:', data?.length || 0);
       if (data && data.length > 0) {
         // 如果数据多于5个，随机选择5个
         let selectedData = data;
@@ -55,7 +51,6 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
           // 随机打乱数组并取前5个
           const shuffled = [...data].sort(() => Math.random() - 0.5);
           selectedData = shuffled.slice(0, 5);
-          console.log('[SharedHeartSphereSection] 随机选择了5个共享心域:', selectedData.map(s => s.shareCode));
         }
         setSharedHeartSpheres(selectedData);
       } else {

@@ -426,10 +426,10 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
               />
               {mainStory.avatarUrl && (
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-700">
-                  <img src={mainStory.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <AvatarPreviewImage src={mainStory.avatarUrl} />
                   <button
                     onClick={() => updateField('avatarUrl', '')}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
+                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs z-10"
                   >
                     ×
                   </button>
@@ -486,10 +486,10 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
               />
               {mainStory.backgroundUrl && (
                 <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-700">
-                  <img src={mainStory.backgroundUrl} alt="Background" className="w-full h-full object-cover" />
+                  <BackgroundPreviewImage src={mainStory.backgroundUrl} />
                   <button
                     onClick={() => updateField('backgroundUrl', '')}
-                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
                   >
                     ×
                   </button>
@@ -654,6 +654,59 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
       </div>
     </div>
   );
+};
+
+/**
+ * 头像预览图片组件（使用缩略图）
+ */
+const AvatarPreviewImage: React.FC<{ src: string }> = ({ src }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt="Avatar Preview"
+            className="w-full h-full object-cover"
+            variants={imageVariants}
+            purpose="thumbnail"
+        />
+    );
+};
+
+/**
+ * 背景预览图片组件（使用高像素）
+ */
+const BackgroundPreviewImage: React.FC<{ src: string }> = ({ src }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt="Background Preview"
+            className="w-full h-full object-cover"
+            variants={imageVariants}
+            purpose="chatBackground"
+            isMobile={false}
+        />
+    );
 };
 
 

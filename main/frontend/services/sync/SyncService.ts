@@ -54,7 +54,6 @@ export class SyncService {
    */
   registerSyncConfig<T extends SyncableEntity>(config: SyncConfig<T>): void {
     this.syncConfigs.set(config.entityType, config);
-    console.log(`[SyncService] 注册同步配置: ${config.entityType}`);
   }
 
   /**
@@ -75,7 +74,6 @@ export class SyncService {
     // 保存到本地存储
     this.saveEntityToLocal(entityType, entityWithSync);
     
-    console.log(`[SyncService] 标记实体为待同步: ${entityType}, ID: ${entity.id}, 操作: ${operation}`);
     
     return entityWithSync;
   }
@@ -106,22 +104,9 @@ export class SyncService {
       syncError: undefined,
     } as T;
     
-    console.log(`[SyncService] 标记实体同步成功: ${entityType}`, {
-      oldId: oldId,
-      newId: syncedEntity.id,
-      idChanged: oldId !== syncedEntity.id,
-      oldSyncStatus: entity.syncStatus,
-      newSyncStatus: syncedEntity.syncStatus,
-      title: (syncedEntity as any).title || 'N/A',
-      localInsight: (entity as any).insight ? `长度: ${(entity as any).insight.length}` : 'null',
-      serverInsight: (serverEntity && (serverEntity as any).insight) ? `长度: ${(serverEntity as any).insight.length}` : 'null',
-      mergedInsight: (syncedEntity as any).insight ? `长度: ${(syncedEntity as any).insight.length}` : 'null',
-    });
-    
     // 如果 ID 发生了变化（从临时 ID 变为真实 ID），先删除旧的本地存储项
     if (isTemporaryId && oldId !== syncedEntity.id) {
       const oldKey = `sync_${entityType}_${oldId}`;
-      console.log(`[SyncService] 🔄 删除旧的临时 ID 本地存储: ${oldKey}`);
       localStorage.removeItem(oldKey);
     }
     
@@ -130,13 +115,7 @@ export class SyncService {
     
     // 验证保存后的状态
     const savedEntity = this.loadEntityFromLocal(entityType, syncedEntity.id);
-    if (savedEntity) {
-      console.log(`[SyncService] ✅ 验证保存后的状态: ${entityType}, ID: ${syncedEntity.id}`, {
-        syncStatus: savedEntity.syncStatus,
-        title: (savedEntity as any).title || 'N/A',
-        lastSyncTime: savedEntity.lastSyncTime,
-      });
-    } else {
+    if (!savedEntity) {
       console.error(`[SyncService] ❌ 保存后无法读取实体: ${entityType}, ID: ${syncedEntity.id}`);
     }
     
@@ -184,26 +163,8 @@ export class SyncService {
 
     // 检查是否已经同步过（防止重复同步）
     const currentEntity = this.loadEntityFromLocal(entityType, entity.id);
-    console.log(`[SyncService] syncEntity 检查实体状态: ${entityType}, ID: ${entity.id}`, {
-      currentEntity: currentEntity ? {
-        id: currentEntity.id,
-        syncStatus: currentEntity.syncStatus,
-        lastSyncTime: currentEntity.lastSyncTime,
-        title: (currentEntity as any).title || 'N/A',
-      } : null,
-      incomingEntity: {
-        id: entity.id,
-        syncStatus: entity.syncStatus,
-        title: (entity as any).title || 'N/A',
-      },
-    });
     
     if (currentEntity && currentEntity.syncStatus === 1) {
-      console.log(`[SyncService] ⚠️ 实体已同步（状态=1），跳过同步: ${entityType}, ID: ${entity.id}`, {
-        syncStatus: currentEntity.syncStatus,
-        lastSyncTime: currentEntity.lastSyncTime,
-        title: (currentEntity as any).title || 'N/A',
-      });
       return currentEntity as T;
     }
 
@@ -216,11 +177,9 @@ export class SyncService {
         // 注意：日志已移除本地缓存同步机制，不再处理日志类型
         // 执行创建操作
         syncedEntity = await config.createApi(entity, token);
-        console.log(`[SyncService] 创建实体成功: ${entityType}, ID: ${entity.id} -> ${syncedEntity.id}`);
       } else {
         // 已有ID，执行更新操作
         syncedEntity = await config.updateApi(entity.id, entity, token);
-        console.log(`[SyncService] 更新实体成功: ${entityType}, ID: ${entity.id}`);
       }
 
       // 标记为同步成功
@@ -260,7 +219,6 @@ export class SyncService {
     try {
       // 先调用后台API删除
       await config.deleteApi(entityId, token);
-      console.log(`[SyncService] 删除实体成功: ${entityType}, ID: ${entityId}`);
       
       // 删除成功后，删除本地缓存
       this.removeEntityFromLocal(entityType, entityId);
@@ -282,7 +240,6 @@ export class SyncService {
    */
   async syncAllPendingEntities(entityType?: string): Promise<void> {
     if (this.isSyncing) {
-      console.log('[SyncService] 同步正在进行中，跳过本次同步');
       return;
     }
 
@@ -297,30 +254,13 @@ export class SyncService {
 
         const entities = this.loadEntitiesFromLocal(type);
         
-        // 打印所有实体的同步状态（用于调试）
-        console.log(`[SyncService] ${type} 所有实体状态:`, entities.map((e: SyncableEntity) => ({
-          id: e.id,
-          syncStatus: e.syncStatus,
-          title: (e as any).title || 'N/A',
-          lastSyncTime: e.lastSyncTime,
-        })));
-        
         const pendingEntities = entities.filter(
           (e: SyncableEntity) => e.syncStatus === 0 || e.syncStatus === -1
         );
 
         if (pendingEntities.length === 0) {
-          console.log(`[SyncService] ${type} 没有待同步的实体`);
           continue;
         }
-
-        console.log(`[SyncService] 开始同步 ${type}，待同步数量: ${pendingEntities.length}，待同步实体:`, 
-          pendingEntities.map((e: SyncableEntity) => ({
-            id: e.id,
-            syncStatus: e.syncStatus,
-            title: (e as any).title || 'N/A',
-          }))
-        );
 
         // 用于跟踪已处理的实体，避免重复处理
         const processedIds = new Set<string>();
@@ -328,32 +268,13 @@ export class SyncService {
         for (const entity of pendingEntities) {
           // 检查是否已处理（防止重复）
           if (processedIds.has(entity.id)) {
-            console.log(`[SyncService] 跳过已处理的实体: ${type}, ID: ${entity.id}`);
             continue;
           }
 
           // 再次检查同步状态（可能在处理过程中被其他流程更新）
           const currentEntity = this.loadEntityFromLocal(type, entity.id);
-          console.log(`[SyncService] syncAllPendingEntities 检查实体状态: ${type}, ID: ${entity.id}`, {
-            currentEntity: currentEntity ? {
-              id: currentEntity.id,
-              syncStatus: currentEntity.syncStatus,
-              lastSyncTime: currentEntity.lastSyncTime,
-              title: (currentEntity as any).title || 'N/A',
-            } : null,
-            pendingEntity: {
-              id: entity.id,
-              syncStatus: entity.syncStatus,
-              title: (entity as any).title || 'N/A',
-            },
-          });
           
           if (currentEntity && currentEntity.syncStatus === 1) {
-            console.log(`[SyncService] ⚠️ 实体已同步（状态=1），跳过同步: ${type}, ID: ${entity.id}`, {
-              syncStatus: currentEntity.syncStatus,
-              lastSyncTime: currentEntity.lastSyncTime,
-              title: (currentEntity as any).title || 'N/A',
-            });
             processedIds.add(entity.id);
             continue;
           }
@@ -388,7 +309,6 @@ export class SyncService {
       });
     }, intervalMs);
 
-    console.log(`[SyncService] 启动自动同步，间隔: ${intervalMs}ms`);
   }
 
   /**
@@ -398,7 +318,6 @@ export class SyncService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('[SyncService] 停止自动同步');
     }
   }
 
@@ -417,19 +336,9 @@ export class SyncService {
         : null;
       
       if (oldKey && oldKey !== key) {
-        console.log(`[SyncService] ID 已变化，删除旧的本地存储: ${oldKey} -> ${key}`);
         localStorage.removeItem(oldKey);
       }
       
-      console.log(`[SyncService] 保存实体到localStorage: ${key}`, {
-        id: entity.id,
-        title: (entity as any).title || 'N/A',
-        syncStatus: entity.syncStatus,
-        lastSyncTime: entity.lastSyncTime,
-        isTemporaryId: entity.id.startsWith('entry_') || entity.id.startsWith('temp_') || entity.id.startsWith('e_') || entity.id.startsWith('preset_'),
-        hasInsight: (entity as any).insight !== undefined && (entity as any).insight !== null,
-        insightLength: (entity as any).insight ? (entity as any).insight.length : 0,
-      });
       localStorage.setItem(key, serialized);
     } catch (error) {
       console.error(`[SyncService] 保存实体到本地存储失败: ${entityType}, ID: ${entity.id}`, error);
@@ -459,12 +368,10 @@ export class SyncService {
   private loadEntitiesFromLocal<T extends SyncableEntity>(entityType: string): T[] {
     // 日志和场景不再使用同步服务，直接返回空数组
     if (entityType === 'journal') {
-      console.log(`[SyncService] 日志已移除本地缓存同步机制，跳过加载本地实体: ${entityType}`);
       return [];
     }
     
     if (entityType === 'scene') {
-      console.log(`[SyncService] 场景已移除本地缓存同步机制，跳过加载本地实体: ${entityType}`);
       return [];
     }
     
@@ -479,13 +386,6 @@ export class SyncService {
           if (value) {
             try {
               const entity = JSON.parse(value) as T;
-              console.log(`[SyncService] 从localStorage加载实体: ${key}`, {
-                id: entity.id,
-                hasInsight: (entity as any).insight !== undefined && (entity as any).insight !== null,
-                insightLength: (entity as any).insight ? (entity as any).insight.length : 0,
-                syncStatus: entity.syncStatus,
-                fullEntity: entity,
-              });
               entities.push(entity);
             } catch (e) {
               console.error(`[SyncService] 解析实体失败: ${key}`, e);
@@ -497,7 +397,6 @@ export class SyncService {
       console.error(`[SyncService] 从本地存储加载实体失败: ${entityType}`, error);
     }
 
-    console.log(`[SyncService] 从localStorage加载了 ${entities.length} 个实体`);
     return entities;
   }
 
@@ -508,7 +407,6 @@ export class SyncService {
     try {
       const key = `sync_${entityType}_${entityId}`;
       localStorage.removeItem(key);
-      console.log(`[SyncService] 从本地存储删除实体: ${entityType}, ID: ${entityId}`);
     } catch (error) {
       console.error(`[SyncService] 从本地存储删除实体失败: ${entityType}, ID: ${entityId}`, error);
     }
@@ -523,23 +421,19 @@ export class SyncService {
   async handleLocalDataChange(dataType: 'journal' | 'scene' | 'character' | 'scenario', data: any): Promise<any> {
     // 日志和场景不再使用同步服务，直接返回
     if (dataType === 'journal') {
-      console.log('[SyncService] 日志已移除本地缓存同步机制，跳过 handleLocalDataChange');
       return;
     }
     
     if (dataType === 'scene') {
-      console.log('[SyncService] 场景已移除本地缓存同步机制，跳过 handleLocalDataChange');
       return;
     }
 
     if (!navigator.onLine) {
-      console.log('[SyncService] 离线状态，稍后同步');
       return;
     }
 
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      console.log('[SyncService] 未找到认证token，跳过同步');
       return;
     }
 
@@ -548,25 +442,7 @@ export class SyncService {
       const entityId = data.id || `temp_${Date.now()}`;
       const currentEntity = this.loadEntityFromLocal(dataType, entityId);
       
-      console.log(`[SyncService] handleLocalDataChange 检查实体状态: ${dataType}, ID: ${entityId}`, {
-        currentEntity: currentEntity ? {
-          id: currentEntity.id,
-          syncStatus: currentEntity.syncStatus,
-          lastSyncTime: currentEntity.lastSyncTime,
-          title: (currentEntity as any).title || 'N/A',
-        } : null,
-        incomingData: {
-          id: data.id,
-          title: data.title || 'N/A',
-        },
-      });
-      
       if (currentEntity && currentEntity.syncStatus === 1) {
-        console.log(`[SyncService] ⚠️ 实体已同步（状态=1），跳过 handleLocalDataChange: ${dataType}, ID: ${entityId}`, {
-          syncStatus: currentEntity.syncStatus,
-          lastSyncTime: currentEntity.lastSyncTime,
-          title: (currentEntity as any).title || 'N/A',
-        });
         return currentEntity;
       }
 
@@ -622,13 +498,11 @@ export class SyncService {
 
     // 1. 先返回本地缓存数据（立即返回，不等待后台查询）
     const localEntities = this.loadEntitiesFromLocal<T>(entityType);
-    console.log(`[SyncService] 查询实体 ${entityType}，本地缓存数量: ${localEntities.length}`);
 
     // 2. 后台异步查询并更新（不阻塞返回）
     if (config.queryApi) {
       (async () => {
         try {
-          console.log(`[SyncService] 开始后台查询实体: ${entityType}`);
           const serverEntities = await config.queryApi(token);
           
           // 将服务器返回的实体标记为同步成功（syncStatus=1）
@@ -640,11 +514,6 @@ export class SyncService {
             
             // 查找本地缓存中是否已有该实体，如果有，合并数据（保留本地缓存中的字段，如insight）
             const localEntity = localEntities.find(e => e.id === entity.id);
-            
-            console.log(`[SyncService] 处理服务器实体 ${(entity as any).id}:`, {
-              localInsight: localEntity ? ((localEntity as any).insight ? `长度: ${(localEntity as any).insight.length}` : 'null') : '不存在',
-              serverInsight: (entity as any).insight ? `长度: ${(entity as any).insight.length}` : 'null',
-            });
             
             // 合并数据：优先使用服务器返回的数据，但保留本地缓存中可能存在的额外字段（如insight）
             // 如果服务器返回的insight为null或undefined，保留本地缓存中的insight
@@ -660,19 +529,11 @@ export class SyncService {
               syncError: undefined,
             } as T;
             
-            console.log(`[SyncService] 合并后的实体 ${(entity as any).id}:`, {
-              mergedInsight: (mergedEntity as any).insight ? `长度: ${(mergedEntity as any).insight.length}` : 'null',
-            });
-            
             return mergedEntity;
           });
 
           // 更新本地缓存
           for (const entity of syncedEntities) {
-            console.log(`[SyncService] 保存实体到本地缓存: ${entity.id}`, {
-              hasInsight: (entity as any).insight !== undefined && (entity as any).insight !== null,
-              insightLength: (entity as any).insight ? (entity as any).insight.length : 0,
-            });
             this.saveEntityToLocal(entityType, entity);
           }
 
@@ -691,12 +552,10 @@ export class SyncService {
               const localEntity = localEntities.find(e => e.id === localId);
               if (localEntity && localEntity.syncStatus === 1) {
                 this.removeEntityFromLocal(entityType, localId);
-                console.log(`[SyncService] 清理已删除的实体: ${entityType}, ID: ${localId}`);
               }
             }
           }
 
-          console.log(`[SyncService] 后台查询完成: ${entityType}，服务器数量: ${serverEntities.length}`);
 
           // 触发查询回调
           if (config.onEntitiesQueried) {

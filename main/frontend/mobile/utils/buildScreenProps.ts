@@ -188,7 +188,6 @@ export const buildScreenProps = (
         ...(s.characters || []),
         ...(gameState.customCharacters[s.id] || [])
       ]);
-      console.log('[buildScreenProps] connectionSpace - scenes:', connectionScenes.length, 'characters:', allCharacters.length);
       return {
         gameState,
         dispatch,
@@ -287,6 +286,18 @@ export const buildScreenProps = (
         },
         onBack: handlers.handleBack,
       } as MobileSharedChatWindowScreenProps;
+
+    case 'mailbox':
+      const token = localStorage.getItem('auth_token') || '';
+      const currentUserId = gameState.userProfile?.id ? parseInt(String(gameState.userProfile.id)) : 0;
+      if (!token || !currentUserId) return null;
+      return {
+        token,
+        currentUserId,
+        onBack: () => {
+          dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' });
+        },
+      };
 
     default:
       return null;

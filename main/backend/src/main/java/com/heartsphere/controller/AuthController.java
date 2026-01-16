@@ -30,6 +30,7 @@ import com.heartsphere.dto.ApiResponse;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -67,6 +68,12 @@ public class AuthController {
 
     @Autowired
     com.heartsphere.mailbox.listener.ESoulLetterTriggerListener esoulLetterTriggerListener;
+
+    @Autowired
+    com.heartsphere.service.MembershipService membershipService;
+
+    @Autowired
+    com.heartsphere.repository.SubscriptionPlanRepository subscriptionPlanRepository;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> authenticateUser(
@@ -166,27 +173,61 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Map<String, Object>>> registerUser(
-            @Valid @RequestBody RegisterRequest registerRequest) {
-        // 检查是否需要邀请码
-        boolean inviteCodeRequired = systemConfigService.isInviteCodeRequired();
-        if (inviteCodeRequired) {
-            if (registerRequest.getInviteCode() == null || registerRequest.getInviteCode().trim().isEmpty()) {
-                throw new BusinessException("邀请码是必需的");
-            }
-            // 验证邀请码（但不核销，等用户创建成功后再核销）
-            try {
-                inviteCodeService.validateInviteCode(registerRequest.getInviteCode().trim());
-            } catch (RuntimeException e) {
-                throw new BusinessException(e.getMessage());
+            @Valid @RequestBody RegisterRequest registerRequest,
+            Authentication authentication) {
+        
+        // 检查当前用户是否为游客（体验会员）
+        User existingGuestUser = null;
+        boolean isGuestUpgrade = false;
+        
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            existingGuestUser = userRepository.findById(userDetails.getId()).orElse(null);
+            
+            if (existingGuestUser != null) {
+                // 检查是否为体验会员
+                Optional<com.heartsphere.entity.Membership> membership = 
+                    membershipService.getUserMembership(existingGuestUser.getId());
+                if (membership.isPresent() && "trial".equals(membership.get().getPlanType())) {
+                    isGuestUpgrade = true;
+                }
             }
         }
+        
+        // 如果是游客升级，跳过用户名和邮箱唯一性检查（允许更新）
+        if (!isGuestUpgrade) {
+            // 检查是否需要邀请码
+            boolean inviteCodeRequired = systemConfigService.isInviteCodeRequired();
+            if (inviteCodeRequired) {
+                if (registerRequest.getInviteCode() == null || registerRequest.getInviteCode().trim().isEmpty()) {
+                    throw new BusinessException("邀请码是必需的");
+                }
+                // 验证邀请码（但不核销，等用户创建成功后再核销）
+                try {
+                    inviteCodeService.validateInviteCode(registerRequest.getInviteCode().trim());
+                } catch (RuntimeException e) {
+                    throw new BusinessException(e.getMessage());
+                }
+            }
 
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new BusinessException("用户名已被使用");
-        }
+            if (userRepository.existsByUsername(registerRequest.getUsername())) {
+                throw new BusinessException("用户名已被使用");
+            }
 
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new BusinessException("邮箱已被使用");
+            if (userRepository.existsByEmail(registerRequest.getEmail())) {
+                throw new BusinessException("邮箱已被使用");
+            }
+        } else {
+            // 游客升级：检查新用户名和邮箱是否与其他用户冲突（排除当前游客用户）
+            if (userRepository.existsByUsername(registerRequest.getUsername()) && 
+                !existingGuestUser.getUsername().equals(registerRequest.getUsername())) {
+                throw new BusinessException("用户名已被使用");
+            }
+
+            if (userRepository.existsByEmail(registerRequest.getEmail()) && 
+                !existingGuestUser.getEmail().equals(registerRequest.getEmail())) {
+                throw new BusinessException("邮箱已被使用");
+            }
         }
 
         // 检查是否需要邮箱验证码
@@ -207,40 +248,67 @@ public class AuthController {
             }
         }
 
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(encoder.encode(registerRequest.getPassword()));
-        // 如果提供了nickname则使用，否则使用username作为默认值
-        user.setNickname(registerRequest.getNickname() != null && !registerRequest.getNickname().trim().isEmpty() 
-            ? registerRequest.getNickname().trim() 
-            : registerRequest.getUsername());
-        user.setIsEnabled(true); // 确保用户是启用状态
-
-        userRepository.save(user);
-
-        // 如果使用了邀请码，核销它
-        if (inviteCodeRequired && registerRequest.getInviteCode() != null) {
-            try {
-                inviteCodeService.useInviteCode(registerRequest.getInviteCode().trim(), user.getId());
-            } catch (RuntimeException e) {
-                // 如果核销失败，记录日志但不影响注册流程（因为已经验证过了）
-                java.util.logging.Logger.getLogger(AuthController.class.getName())
-                    .warning("邀请码核销失败: " + e.getMessage());
-            }
-        }
+        User user;
+        boolean isFirstLogin;
         
-        // 初始化用户数据（世界、时代、角色）
-        initializationService.initializeUserData(user);
+        if (isGuestUpgrade) {
+            // 游客升级：更新现有用户信息
+            user = existingGuestUser;
+            user.setUsername(registerRequest.getUsername());
+            user.setEmail(registerRequest.getEmail());
+            user.setPassword(encoder.encode(registerRequest.getPassword()));
+            user.setNickname(registerRequest.getNickname() != null && !registerRequest.getNickname().trim().isEmpty() 
+                ? registerRequest.getNickname().trim() 
+                : registerRequest.getUsername());
+            user.setIsEnabled(true);
+            userRepository.save(user);
+            
+            // 升级会员类型为免费会员（或用户选择的会员）
+            membershipService.getOrCreateFreeMembership(user.getId());
+            
+            // 检查是否需要初始化（如果用户还没有世界数据）
+            List<World> existingWorlds = worldRepository.findByUserId(user.getId());
+            if (existingWorlds.isEmpty()) {
+                initializationService.initializeUserData(user);
+            }
+            isFirstLogin = existingWorlds.isEmpty();
+        } else {
+            // 新用户注册
+            user = new User();
+            user.setUsername(registerRequest.getUsername());
+            user.setEmail(registerRequest.getEmail());
+            user.setPassword(encoder.encode(registerRequest.getPassword()));
+            // 如果提供了nickname则使用，否则使用username作为默认值
+            user.setNickname(registerRequest.getNickname() != null && !registerRequest.getNickname().trim().isEmpty() 
+                ? registerRequest.getNickname().trim() 
+                : registerRequest.getUsername());
+            user.setIsEnabled(true); // 确保用户是启用状态
 
-        Authentication authentication = authenticationManager.authenticate(
+            userRepository.save(user);
+
+            // 如果使用了邀请码，核销它
+            boolean inviteCodeRequired = systemConfigService.isInviteCodeRequired();
+            if (inviteCodeRequired && registerRequest.getInviteCode() != null) {
+                try {
+                    inviteCodeService.useInviteCode(registerRequest.getInviteCode().trim(), user.getId());
+                } catch (RuntimeException e) {
+                    // 如果核销失败，记录日志但不影响注册流程（因为已经验证过了）
+                    java.util.logging.Logger.getLogger(AuthController.class.getName())
+                        .warning("邀请码核销失败: " + e.getMessage());
+                }
+            }
+            
+            // 初始化用户数据（世界、时代、角色）
+            initializationService.initializeUserData(user);
+            isFirstLogin = true;
+        }
+
+        // 重新认证（使用新密码）
+        Authentication newAuthentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(registerRequest.getUsername(), registerRequest.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-
-        // 新注册用户一定是首次登录
-        boolean isFirstLogin = true;
+        SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+        String jwt = jwtUtils.generateJwtToken(newAuthentication);
 
         // 注册完成后查询初始化生成的世界列表，便于前端首屏使用
         List<World> userWorlds = worldRepository.findByUserId(user.getId());
@@ -261,6 +329,115 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("注册成功", resp));
     }
 
+    /**
+     * 游客注册为正式用户 - 独立接口
+     */
+    @PostMapping("/guest-register")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> guestRegister(
+            @Valid @RequestBody RegisterRequest registerRequest,
+            Authentication authentication) {
+        try {
+            // 检查当前用户是否为游客（体验会员）
+            if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+                throw new UnauthorizedException("请先以游客身份登录");
+            }
+            
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User existingGuestUser = userRepository.findById(userDetails.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("用户", userDetails.getId()));
+            
+            // 检查是否为体验会员
+            Optional<com.heartsphere.entity.Membership> membership = 
+                membershipService.getUserMembership(existingGuestUser.getId());
+            if (membership.isEmpty() || !"trial".equals(membership.get().getPlanType())) {
+                throw new BusinessException("当前用户不是游客，请使用正式用户注册接口");
+            }
+            
+            // 检查新用户名和邮箱是否与其他用户冲突（排除当前游客用户）
+            if (userRepository.existsByUsername(registerRequest.getUsername()) && 
+                !existingGuestUser.getUsername().equals(registerRequest.getUsername())) {
+                throw new BusinessException("用户名已被使用");
+            }
+
+            if (userRepository.existsByEmail(registerRequest.getEmail()) && 
+                !existingGuestUser.getEmail().equals(registerRequest.getEmail())) {
+                throw new BusinessException("邮箱已被使用");
+            }
+            
+            // 检查是否需要邮箱验证码
+            boolean emailVerificationRequired = systemConfigService.isEmailVerificationRequired();
+            if (emailVerificationRequired) {
+                if (registerRequest.getEmailVerificationCode() == null || 
+                    registerRequest.getEmailVerificationCode().trim().isEmpty()) {
+                    throw new BusinessException("邮箱验证码不能为空");
+                }
+                
+                boolean codeValid = emailVerificationCodeService.verifyCode(
+                    registerRequest.getEmail(), 
+                    registerRequest.getEmailVerificationCode().trim()
+                );
+                if (!codeValid) {
+                    throw new BusinessException("邮箱验证码错误或已过期");
+                }
+            }
+            
+            // 更新游客用户信息
+            existingGuestUser.setUsername(registerRequest.getUsername());
+            existingGuestUser.setEmail(registerRequest.getEmail());
+            existingGuestUser.setPassword(encoder.encode(registerRequest.getPassword()));
+            existingGuestUser.setNickname(registerRequest.getNickname() != null && !registerRequest.getNickname().trim().isEmpty() 
+                ? registerRequest.getNickname().trim() 
+                : registerRequest.getUsername());
+            existingGuestUser.setIsEnabled(true);
+            userRepository.save(existingGuestUser);
+            
+            // 升级会员类型为免费会员
+            membershipService.getOrCreateFreeMembership(existingGuestUser.getId());
+            
+            // 初始化个人场景和角色（首次创建）
+            List<World> existingWorlds = worldRepository.findByUserId(existingGuestUser.getId());
+            boolean isFirstLogin = existingWorlds.isEmpty();
+            if (isFirstLogin) {
+                initializationService.initializeUserData(existingGuestUser);
+            }
+            
+            // 重新认证（使用新密码）
+            Authentication newAuthentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(registerRequest.getUsername(), registerRequest.getPassword()));
+
+            SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+            String jwt = jwtUtils.generateJwtToken(newAuthentication);
+
+            // 查询初始化生成的世界列表
+            List<World> userWorlds = worldRepository.findByUserId(existingGuestUser.getId());
+            List<WorldDTO> worldDTOs = userWorlds.stream()
+                .map(DTOMapper::toWorldDTO)
+                .collect(Collectors.toList());
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("token", jwt);
+            resp.put("id", existingGuestUser.getId());
+            resp.put("username", existingGuestUser.getUsername());
+            resp.put("email", existingGuestUser.getEmail());
+            resp.put("nickname", existingGuestUser.getNickname());
+            resp.put("avatar", existingGuestUser.getAvatar());
+            resp.put("isGuest", false);
+            resp.put("isFirstLogin", isFirstLogin);
+            resp.put("worlds", worldDTOs);
+
+            return ResponseEntity.ok(ApiResponse.success("注册成功，已升级为正式用户", resp));
+        } catch (Exception e) {
+            java.util.logging.Logger.getLogger(AuthController.class.getName())
+                .severe("游客注册失败: " + e.getMessage());
+            e.printStackTrace();
+            if (e instanceof BusinessException || e instanceof UnauthorizedException) {
+                throw e;
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("注册失败: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/invite-code-required")
     public ResponseEntity<Map<String, Object>> isInviteCodeRequired() {
         boolean required = systemConfigService.isInviteCodeRequired();
@@ -271,6 +448,121 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> isEmailVerificationRequired() {
         boolean required = systemConfigService.isEmailVerificationRequired();
         return ResponseEntity.ok(Map.of("emailVerificationRequired", required));
+    }
+
+    /**
+     * 游客登录 - 自动创建临时用户并分配体验会员
+     */
+    @PostMapping("/guest-login")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> guestLogin(
+            @RequestBody(required = false) Map<String, String> request) {
+        try {
+            // 生成唯一的临时用户名
+            String guestUsername = generateUniqueGuestUsername();
+            
+            // 生成临时邮箱（格式：guest_<timestamp>_<random>@guest.temp）
+            String guestEmail = guestUsername + "@guest.temp";
+            
+            // 生成随机密码（游客不需要密码，但User实体要求非空）
+            String randomPassword = java.util.UUID.randomUUID().toString();
+            
+            // 创建游客用户
+            User guestUser = new User();
+            guestUser.setUsername(guestUsername);
+            guestUser.setEmail(guestEmail);
+            guestUser.setPassword(encoder.encode(randomPassword));
+            guestUser.setNickname(request != null && request.containsKey("nickname") 
+                ? request.get("nickname") 
+                : "游客");
+            guestUser.setIsEnabled(true);
+            
+            guestUser = userRepository.save(guestUser);
+            
+            // 分配体验会员
+            com.heartsphere.entity.Membership trialMembership = membershipService.getOrCreateTrialMembership(guestUser.getId());
+            
+            // 获取体验会员计划信息
+            com.heartsphere.entity.SubscriptionPlan trialPlan = null;
+            try {
+                java.util.List<com.heartsphere.entity.SubscriptionPlan> plans = 
+                    subscriptionPlanRepository.findByTypeAndIsActiveTrueOrderBySortOrderAsc("trial");
+                if (!plans.isEmpty()) {
+                    trialPlan = plans.get(0);
+                }
+            } catch (Exception e) {
+                // 如果无法获取计划信息，继续执行
+                java.util.logging.Logger.getLogger(AuthController.class.getName())
+                    .warning("无法获取体验会员计划信息: " + e.getMessage());
+            }
+            
+            // 直接生成JWT Token（游客用户不需要通过密码认证）
+            String jwt = jwtUtils.generateJwtTokenFromUsername(guestUsername);
+            
+            // 设置认证上下文（用于后续请求）
+            UserDetailsImpl userDetails = UserDetailsImpl.build(guestUser);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+            // 构建响应
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("token", jwt);
+            resp.put("id", guestUser.getId());
+            resp.put("username", guestUser.getUsername());
+            resp.put("email", guestUser.getEmail());
+            resp.put("nickname", guestUser.getNickname());
+            resp.put("avatar", guestUser.getAvatar());
+            resp.put("isGuest", true);
+            resp.put("isFirstLogin", true);
+            
+            // 添加会员信息
+            Map<String, Object> membershipInfo = new HashMap<>();
+            membershipInfo.put("type", "trial");
+            membershipInfo.put("planType", trialMembership.getPlanType());
+            if (trialPlan != null) {
+                membershipInfo.put("textTokenQuota", trialPlan.getTextTokenQuota());
+            }
+            resp.put("membership", membershipInfo);
+            
+            // 游客不需要初始化世界数据，直接返回空列表
+            resp.put("worlds", new java.util.ArrayList<>());
+            
+            // 添加预置场景和角色ID（硬编码）
+            resp.put("presetEraId", 50L); // 日常生活助手
+            resp.put("presetCharacterIds", java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L));
+            
+            return ResponseEntity.ok(ApiResponse.success("游客登录成功", resp));
+        } catch (Exception e) {
+            java.util.logging.Logger.getLogger(AuthController.class.getName())
+                .severe("游客登录失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("游客登录失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 生成唯一的游客用户名
+     * 格式：guest_<timestamp>_<random>
+     */
+    private String generateUniqueGuestUsername() {
+        String baseUsername = "guest_" + System.currentTimeMillis() + "_" + 
+            java.util.UUID.randomUUID().toString().substring(0, 8);
+        
+        // 确保用户名唯一
+        int attempts = 0;
+        String username = baseUsername;
+        while (userRepository.existsByUsername(username) && attempts < 10) {
+            username = "guest_" + System.currentTimeMillis() + "_" + 
+                java.util.UUID.randomUUID().toString().substring(0, 8);
+            attempts++;
+        }
+        
+        if (attempts >= 10) {
+            throw new BusinessException("无法生成唯一的游客用户名，请稍后重试");
+        }
+        
+        return username;
     }
 
     @GetMapping("/me")

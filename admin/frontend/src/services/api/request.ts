@@ -35,10 +35,10 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     
     // 构建Headers对象
     const headers = new Headers();
-    headers.set('Accept', 'application/json');
+    headers.set('Accept', 'application/json;charset=UTF-8');
     
     if (contentType) {
-      headers.set('Content-Type', contentType);
+      headers.set('Content-Type', `${contentType};charset=UTF-8`);
     }
     
     // 检查自定义headers中是否已有Authorization
@@ -86,29 +86,68 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       signal: options?.signal,
     });
     
-    // 处理响应
+    // 解析响应
+    const responseContentType = response.headers.get('content-type');
+    let responseData: any;
+    
+    if (responseContentType && responseContentType.includes('application/json')) {
+      // 使用TextDecoder确保UTF-8编码正确解析
+      const text = await response.text();
+      try {
+        responseData = JSON.parse(text);
+      } catch (e) {
+        // 如果JSON解析失败，尝试使用TextDecoder
+        const decoder = new TextDecoder('utf-8');
+        const buffer = await response.arrayBuffer();
+        const decodedText = decoder.decode(buffer);
+        responseData = JSON.parse(decodedText);
+      }
+    } else {
+      responseData = await response.text();
+    }
+    
+    // 优先检测 401 未授权错误（token 过期）
+    if (response.status === 401) {
+      console.warn('[request] 检测到 401 未授权错误，token 可能已过期');
+      // 触发 token 过期事件
+      window.dispatchEvent(new CustomEvent('admin-token-expired', {
+        detail: { reason: 'unauthorized', status: 401 }
+      }));
+      throw new Error('登录已过期，请重新登录');
+    }
+    
+    // 处理 ApiResponse 格式的响应
+    // 后端返回格式: { code: 200, message: "...", data: <实际数据>, timestamp: "..." }
+    if (responseData && typeof responseData === 'object' && 'code' in responseData) {
+      // 检查响应状态码
+      if (responseData.code !== 200 && responseData.code !== 0) {
+        const errorMessage = responseData.message || `请求失败: ${responseData.code}`;
+        throw new Error(errorMessage);
+      }
+      // 如果响应不成功（HTTP状态码不是2xx），也抛出错误
+      if (!response.ok) {
+        const errorMessage = responseData.message || `请求失败: ${response.status} ${response.statusText}`;
+        throw new Error(errorMessage);
+      }
+      // 返回 data 字段的内容
+      return responseData.data !== undefined ? responseData.data : responseData;
+    }
+    
+    // 处理非 ApiResponse 格式的响应
     if (!response.ok) {
       let errorMessage = `请求失败: ${response.status} ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
+      if (responseData && typeof responseData === 'object') {
+        if (responseData.message) {
+          errorMessage = responseData.message;
+        } else if (responseData.error) {
+          errorMessage = responseData.error;
         }
-      } catch {
-        // 如果响应不是JSON，使用默认错误信息
       }
       throw new Error(errorMessage);
     }
     
-    // 解析响应
-    const responseContentType = response.headers.get('content-type');
-    if (responseContentType && responseContentType.includes('application/json')) {
-      return await response.json();
-    } else {
-      return await response.text() as unknown as T;
-    }
+    // 直接返回响应数据（非 ApiResponse 格式）
+    return responseData as T;
   } catch (error: any) {
     console.error(`[Admin API Request] ${method} ${fullUrl} 失败:`, error);
     throw error;

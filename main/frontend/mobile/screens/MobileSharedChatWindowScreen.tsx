@@ -99,7 +99,6 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
           return;
         }
 
-        console.log('[MobileSharedChatWindow] 加载消息历史，sessionId:', sessionId);
         const result = await sharedApi.getChatMessages(sessionId, token, 100);
 
         if (result && result.messages) {
@@ -111,7 +110,6 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
             timestamp: msg.timestamp || Date.now(),
           }));
 
-          console.log('[MobileSharedChatWindow] 加载到消息数量:', messages.length);
           onUpdateHistory(messages);
         }
       } catch (err) {

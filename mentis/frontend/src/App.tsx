@@ -7,6 +7,7 @@ import { VmManagementPage } from './pages/VmManagementPage';
 import { ExecutionLogPage } from './pages/ExecutionLogPage';
 import { Workspace } from './components/Workspace';
 import { McpConfigManager } from './components/McpConfigManager';
+import { MentisMainPageManus } from './components/manus/MentisMainPageManus';
 
 /**
  * Mentis 应用主组件
@@ -15,7 +16,11 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 统一工作台（新界面）- 包含左侧会话列表 */}
+        {/* Manus 风格工作台（新界面） */}
+        <Route path="/mentis/manus" element={<MentisMainPageManus />} />
+        <Route path="/mentis/manus/:sessionId" element={<MentisMainPageManus />} />
+        
+        {/* 统一工作台（旧界面）- 包含左侧会话列表 */}
         <Route path="/mentis/workspace" element={<Workspace />} />
         <Route path="/mentis/workspace/:sessionId" element={<Workspace />} />
         

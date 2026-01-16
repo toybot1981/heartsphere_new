@@ -30,6 +30,11 @@ public class MemoryProperties {
      */
     private Extraction extraction = new Extraction();
     
+    /**
+     * HSMem 服务配置
+     */
+    private HSMem hsmem = new HSMem();
+    
     @Data
     public static class ShortMemory {
         /**
@@ -77,6 +82,47 @@ public class MemoryProperties {
          * 提取批次大小，默认10
          */
         private int batchSize = 10;
+    }
+    
+    @Data
+    public static class HSMem {
+        /**
+         * HSMem 服务基础URL，默认 http://localhost:8000
+         */
+        private String baseUrl = "http://localhost:8000";
+        
+        /**
+         * 请求超时时间（秒），默认30秒
+         */
+        private int timeout = 30;
+        
+        /**
+         * 重试配置
+         */
+        private Retry retry = new Retry();
+        
+        /**
+         * 慢请求阈值（毫秒），默认1000ms
+         */
+        private long slowRequestThresholdMs = 1000;
+        
+        @Data
+        public static class Retry {
+            /**
+             * 是否启用重试，默认true
+             */
+            private boolean enabled = true;
+            
+            /**
+             * 最大重试次数，默认3次
+             */
+            private int maxAttempts = 3;
+            
+            /**
+             * 重试退避时间（秒），默认1秒
+             */
+            private int backoff = 1;
+        }
     }
 }
 

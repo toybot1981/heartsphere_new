@@ -34,6 +34,9 @@ public class SystemEra {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(length = 50)
+    private String style;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

@@ -420,4 +420,60 @@ public class ImageProcessingService {
         
         return variants;
     }
+
+    /**
+     * 检查缩略图是否已存在
+     * @param originalPath 原始图片的相对路径
+     * @param width 缩略图宽度
+     * @param height 缩略图高度
+     * @return 如果缩略图已存在，返回true；否则返回false
+     */
+    public boolean thumbnailExists(String originalPath, int width, int height) {
+        try {
+            // 如果是URL，转换为相对路径
+            String relativePath = originalPath;
+            if (originalPath.startsWith("http://") || originalPath.startsWith("https://")) {
+                relativePath = imageUrlUtils.toRelativePath(originalPath);
+                if (relativePath == null || relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
+                    return false;
+                }
+            }
+
+            // 解析原始路径，提取目录和文件名
+            Path originalFilePath = Paths.get(localStoragePath, relativePath);
+            String originalFilename = originalFilePath.getFileName().toString();
+            Path originalDir = originalFilePath.getParent();
+
+            // 生成缩略图文件名：原文件名_宽度*高度.扩展名
+            String nameWithoutExt = originalFilename;
+            String extension = "";
+            int lastDotIndex = originalFilename.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                nameWithoutExt = originalFilename.substring(0, lastDotIndex);
+                extension = originalFilename.substring(lastDotIndex);
+            }
+
+            String suffix = "_" + width + "*" + height;
+            String thumbnailFilename = nameWithoutExt + suffix + extension;
+            Path thumbnailPath = originalDir.resolve(thumbnailFilename);
+
+            return Files.exists(thumbnailPath) && Files.isRegularFile(thumbnailPath);
+        } catch (Exception e) {
+            logger.warning("检查缩略图是否存在时出错: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 检查所有三种缩略图是否都已存在
+     * @param originalPath 原始图片的相对路径
+     * @return 包含三种缩略图存在状态的Map
+     */
+    public java.util.Map<String, Boolean> checkAllThumbnailsExist(String originalPath) {
+        java.util.Map<String, Boolean> result = new java.util.HashMap<>();
+        result.put("smallThumbnail", thumbnailExists(originalPath, 200, 200));
+        result.put("medium", thumbnailExists(originalPath, mediumWidth, mediumHeight));
+        result.put("highQuality", thumbnailExists(originalPath, highQualityWidth, highQualityHeight));
+        return result;
+    }
 }

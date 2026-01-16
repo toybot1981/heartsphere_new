@@ -55,7 +55,6 @@ export async function getMessages(
     // MessageCategory枚举值（如 'ESOUL_LETTER'）需要转换为后端API期望的格式（如 'esoul_letter'）
     const categoryCode = query.category.toLowerCase();
     params.append('category', categoryCode);
-    console.log('[mailboxApi] 添加分类参数:', { original: query.category, code: categoryCode });
   }
   if (query.isRead !== undefined) params.append('isRead', String(query.isRead));
   if (query.isImportant !== undefined) params.append('isImportant', String(query.isImportant));
@@ -66,7 +65,6 @@ export async function getMessages(
   if (query.page !== undefined) params.append('page', String(query.page));
   if (query.size !== undefined) params.append('size', String(query.size));
   
-  console.log('[mailboxApi] 查询参数:', params.toString());
 
   const response = await fetch(`${API_BASE}/messages?${params.toString()}`, {
     method: 'GET',
@@ -91,18 +89,7 @@ export async function getMessages(
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    console.log('[mailboxApi.getMessages] 原始响应数据:', {
-      hasData: 'data' in data,
-      hasContent: 'content' in data,
-      keys: Object.keys(data),
-      contentLength: data.content?.length || 0
-    });
     const result = parseApiResponse<Page<MailboxMessage>>(data);
-    console.log('[mailboxApi.getMessages] 解析后的结果:', {
-      hasContent: 'content' in result,
-      contentLength: result.content?.length || 0,
-      totalElements: result.totalElements
-    });
     return result;
   } else {
     const text = await response.text();

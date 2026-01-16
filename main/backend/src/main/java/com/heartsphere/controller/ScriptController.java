@@ -9,9 +9,12 @@ import com.heartsphere.repository.ScriptRepository;
 import com.heartsphere.repository.UserRepository;
 import com.heartsphere.repository.WorldRepository;
 import com.heartsphere.repository.EraRepository;
+import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.entity.SystemScript;
 import com.heartsphere.repository.SystemScriptRepository;
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.MembershipService;
+import com.heartsphere.util.GuestAccessChecker;
 import com.heartsphere.utils.DTOMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +47,9 @@ public class ScriptController {
 
     @Autowired
     private SystemScriptRepository systemScriptRepository;
+
+    @Autowired
+    private MembershipService membershipService;
 
     // 获取当前用户的所有剧本
     @GetMapping
@@ -116,11 +122,19 @@ public class ScriptController {
 
     // 创建新剧本
     @PostMapping
-    public ResponseEntity<ScriptDTO> createScript(@RequestBody ScriptDTO scriptDTO) {
+    public ResponseEntity<?> createScript(@RequestBody ScriptDTO scriptDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }
+        
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long userId = userDetails.getId();
 
@@ -228,11 +242,19 @@ public class ScriptController {
 
     // 更新指定ID的剧本
     @PutMapping("/{id}")
-    public ResponseEntity<ScriptDTO> updateScript(@PathVariable Long id, @RequestBody ScriptDTO scriptDTO) {
+    public ResponseEntity<?> updateScript(@PathVariable Long id, @RequestBody ScriptDTO scriptDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }
+        
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Script script = scriptRepository.findById(id)
@@ -286,11 +308,19 @@ public class ScriptController {
 
     // 删除指定ID的剧本
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteScript(@PathVariable Long id) {
+    public ResponseEntity<?> deleteScript(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }
+        
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+        
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Script script = scriptRepository.findById(id)

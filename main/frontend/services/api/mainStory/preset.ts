@@ -29,7 +29,6 @@ export const presetMainStoryApi = {
     } catch (error: any) {
       // 如果是 404，返回 null（表示该场景没有主线剧情）
       if (error?.message?.includes('404') || error?.message?.includes('not found') || error?.message?.includes('Not Found')) {
-        console.log(`[presetMainStoryApi] 场景 ${eraId} 没有预置主线剧情（404）`);
         return null;
       }
       // 其他错误重新抛出

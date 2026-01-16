@@ -16,7 +16,7 @@ export const InviteCodesManagement: React.FC<InviteCodesManagementProps> = ({
     onReload,
 }) => {
     const { inviteCodeFilter, setInviteCodeFilter } = useAdminState();
-    const { inviteCodes, inviteCodeRequired, loadSystemData } = useAdminData(adminToken);
+    const { inviteCodes, inviteCodeRequired, loadSystemData, loadInviteCodeConfig } = useAdminData(adminToken);
     const [generateQuantity, setGenerateQuantity] = useState(10);
     const [generateExpiresAt, setGenerateExpiresAt] = useState('');
 
@@ -43,7 +43,8 @@ export const InviteCodesManagement: React.FC<InviteCodesManagementProps> = ({
         if (!adminToken) return;
         try {
             await adminApi.config.setInviteCodeRequired(checked, adminToken);
-            await loadSystemData(adminToken);
+            // 重新加载邀请码配置以更新UI状态
+            await loadInviteCodeConfig(adminToken);
             showAlert('设置成功', '成功', 'success');
         } catch (error: any) {
             showAlert('设置失败: ' + (error.message || '未知错误'), '设置失败', 'error');

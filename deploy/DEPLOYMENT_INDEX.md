@@ -43,17 +43,29 @@
 
 ## Nginx配置
 
+### 多项目统一部署架构
+
+所有项目通过统一的 Nginx 端口访问，通过路径前缀区分不同项目：
+
+| 项目 | 访问路径 | 说明 |
+|------|---------|------|
+| main (PC) | `/` | 主项目 PC 端 |
+| main (Mobile) | `/mobile.html` | 主项目移动端 |
+| admin | `/admin.html` | 管理后台 |
+| edu | `/edu.html` | 教育版 |
+| mentis | `/mentis` | Mentis 系统 |
+
 ### 配置文件
 - **`nginx-heartsphere-local.conf`** - 本地开发环境配置
-  - 路径: `/Users/admin/Workspace/heartsphere_new`
   - 监听端口: 8080
-  - 后端API: http://localhost:8081
+  - 多项目路径路由支持
+  - API 代理: `/api/main/`, `/api/admin/`, `/api/edu/`, `/api/mentis/`
 
 - **`nginx-heartsphere-production.conf`** - 生产环境配置
-  - 路径: `/opt/heartsphere`
   - 监听端口: 80
-  - 后端API: http://localhost:8080
   - 域名: heartsphere.cn（需修改）
+  - 多项目路径路由支持
+  - API 代理: `/api/main/`, `/api/admin/`, `/api/edu/`, `/api/mentis/`
 
 ### 安装工具
 - **`install-nginx-config-dev.sh`** - 本地开发环境Nginx配置安装脚本
@@ -113,23 +125,35 @@ sudo ./install-nginx-config-prod.sh
 ## 配置文件位置
 
 ### 开发环境
-- 前端目录: `/Users/admin/Workspace/heartsphere_new/frontend/dist`
-- 后端目录: `/Users/admin/Workspace/heartsphere_new/backend`
-- 图片目录: `/Users/admin/Workspace/heartsphere_new/backend/uploads/images/`
+- main 前端: `/Users/admin/Workspace/heartsphere_new/main/frontend/dist`
+- admin 前端: `/Users/admin/Workspace/heartsphere_new/admin/frontend/dist`
+- edu 前端: `/Users/admin/Workspace/heartsphere_new/edu/frontend/dist`
+- mentis 前端: `/Users/admin/Workspace/heartsphere_new/mentis/frontend/dist`
+- 后端目录: `/Users/admin/Workspace/heartsphere_new/main/backend`
+- 图片目录: `/Users/admin/Workspace/heartsphere_new/main/backend/uploads/images/`
 - Nginx配置: `/usr/local/etc/nginx/servers/heartsphere.conf` (macOS)
 
 ### 生产环境
-- 前端目录: `/opt/heartsphere/frontend`
-- 后端目录: `/opt/heartsphere/backend`
-- 图片目录: `/opt/heartsphere/backend/uploads/images/`
+- main 前端: `/opt/heartsphere/main/frontend`
+- admin 前端: `/opt/heartsphere/admin/frontend`
+- edu 前端: `/opt/heartsphere/edu/frontend`
+- mentis 前端: `/opt/heartsphere/mentis/frontend`
+- 后端目录: `/opt/heartsphere/main/backend`
+- 图片目录: `/opt/heartsphere/main/backend/uploads/images/`
 - Nginx配置: `/etc/nginx/conf.d/heartsphere.conf` (Linux)
 
 ## 端口配置
 
-| 环境 | Nginx | 后端API | 说明 |
-|------|-------|---------|------|
-| 开发环境 | 8080 | 8081 | 本地开发 |
-| 生产环境 | 80 | 8080 | 生产服务器 |
+| 环境 | Nginx | 后端服务端口 | 说明 |
+|------|-------|------------|------|
+| 开发环境 | 8080 | main:8081, admin:8085, edu:8084, mentis:8082 | 本地开发 |
+| 生产环境 | 80 | main:8081, admin:8085, edu:8084, mentis:8082 | 生产服务器 |
+
+**API 代理路径**:
+- `/api/main/` → `http://localhost:8081/api/`
+- `/api/admin/` → `http://localhost:8085/api/`
+- `/api/edu/` → `http://localhost:8084/api/`
+- `/api/mentis/` → `http://localhost:8082/api/`
 
 ## 常用命令
 

@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class UpdatePortalRequest {
     private String portalName; // 传送门名称
-    private String portalType; // "stargate", "wormhole", "quantum"
+    private String portalType; // "stargate", "wormhole", "quantum", "garden", "sakura", "butterfly", "rainbow"
     private Long targetHeartsphereId; // 目标心域ID
     private String targetShareCode; // 目标心域共享码
     private Double positionX; // X坐标

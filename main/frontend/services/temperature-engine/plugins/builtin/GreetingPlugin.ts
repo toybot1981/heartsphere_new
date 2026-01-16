@@ -37,7 +37,6 @@ export class GreetingPlugin implements TemperaturePlugin {
    */
   async onInit(engine: TemperatureEngine): Promise<void> {
     this.engine = engine;
-    console.log('[GreetingPlugin] Initialized');
   }
 
   /**
@@ -50,7 +49,6 @@ export class GreetingPlugin implements TemperaturePlugin {
     // 显示初始问候语
     await this.showInitialGreeting();
     
-    console.log('[GreetingPlugin] Started');
   }
 
   /**

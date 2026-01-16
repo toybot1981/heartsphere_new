@@ -24,8 +24,8 @@
 
 ```bash
 # 主项目
-./scripts/start-backend.sh      # 后端 (8081)
-./scripts/start-frontend.sh     # 前端 (3000)
+./scripts/start-main-backend.sh      # 后端 (8081)
+./scripts/start-main-frontend.sh     # 前端 (3000)
 
 # 教育版
 ./scripts/start-edu-backend.sh  # 后端 (8084)

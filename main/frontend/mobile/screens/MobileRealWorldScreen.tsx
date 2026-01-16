@@ -81,7 +81,6 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
       const loadDailyGreeting = async () => {
           setIsLoadingGreeting(true);
           try {
-              console.log("[MobileRealWorld] 开始生成每日问候");
               const recentEntries = entries.slice(-3);
               const greeting = await aiService.generateDailyGreeting(recentEntries, userName);
               
@@ -89,7 +88,6 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
               if (!isCancelled) {
                   if (greeting) {
                       setDailyGreeting(greeting);
-                      console.log("[MobileRealWorld] 每日问候生成成功");
                   } else {
                       // 兜底：如果返回 null 或 undefined，使用默认问候
                       setDailyGreeting({
@@ -210,6 +208,20 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
 
       if (selectedEntry && view === 'edit' && selectedEntry.id) {
           // Update
+          // 验证 ID 是否为有效（不是临时ID）
+          const isTemporaryId = selectedEntry.id.startsWith('entry_') || selectedEntry.id.startsWith('e_');
+          if (isTemporaryId) {
+              // 临时ID无法更新，应该创建新条目
+              // 这里可以选择创建新条目或显示错误提示
+              return;
+          }
+
+          // 验证 ID 是否为非空字符串（后端接受String类型的ID，包括UUID）
+          if (!selectedEntry.id || selectedEntry.id.trim() === '') {
+              console.error('[MobileRealWorldScreen] 无效的日记ID: 空字符串');
+              return;
+          }
+
           const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
           const updated = { ...selectedEntry, title, content, insight: insight || undefined, tags: tagsString };
           onUpdateEntry(updated);

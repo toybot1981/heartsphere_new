@@ -31,17 +31,6 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
     // 初始化表单数据
     useEffect(() => {
         if (script) {
-            console.log('[UserScriptEditor] 初始化表单数据，接收到的script对象:', {
-                id: script.id,
-                title: script.title,
-                description: script.description,
-                eraId: script.eraId,
-                worldId: script.worldId,
-                tags: script.tags,
-                characterIds: script.characterIds,
-                hasContent: !!script.content
-            });
-            
             try {
                 const content = JSON.parse(script.content || '{}');
                 
@@ -70,14 +59,6 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                     characterIds: script.characterIds || null,
                     tags: script.tags || null
                 };
-                
-                console.log('[UserScriptEditor] 设置表单数据:', {
-                    title: initialFormData.title,
-                    description: initialFormData.description,
-                    eraId: initialFormData.eraId,
-                    tags: initialFormData.tags,
-                    characterIds: initialFormData.characterIds
-                });
                 
                 setFormData(initialFormData);
             } catch (e) {

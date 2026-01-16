@@ -80,21 +80,13 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
       return;
     }
 
-    console.log('[CharacterSkillManagement] 开始装备技能:', {
-      characterId,
-      skillId: selectedSkill.skillId,
-      options,
-    });
-
     try {
-      const result = await skillService.equipSkill(
+      await skillService.equipSkill(
         characterId, 
         selectedSkill.skillId, 
         options, 
         token || undefined
       );
-      
-      console.log('[CharacterSkillManagement] 装备技能成功:', result);
       
       // 关闭对话框
       setEquipDialogOpen(false);

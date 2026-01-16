@@ -5,9 +5,12 @@ import com.heartsphere.entity.Era;
 import com.heartsphere.entity.User;
 import com.heartsphere.entity.UserMainStory;
 import com.heartsphere.repository.EraRepository;
+import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.repository.UserMainStoryRepository;
 import com.heartsphere.repository.UserRepository;
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.MembershipService;
+import com.heartsphere.util.GuestAccessChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +40,9 @@ public class UserMainStoryController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private MembershipService membershipService;
 
     /**
      * 获取当前用户的所有主线剧情
@@ -106,12 +112,19 @@ public class UserMainStoryController {
      * 创建主线剧情
      */
     @PostMapping
-    public ResponseEntity<UserMainStory> createMainStory(
+    public ResponseEntity<?> createMainStory(
             @RequestBody UserMainStoryDTO dto,
             Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null || 
             authentication.getPrincipal().equals("anonymousUser")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -171,13 +184,20 @@ public class UserMainStoryController {
      * 更新主线剧情
      */
     @PutMapping("/{id}")
-    public ResponseEntity<UserMainStory> updateMainStory(
+    public ResponseEntity<?> updateMainStory(
             @PathVariable Long id,
             @RequestBody UserMainStory mainStoryData,
             Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null || 
             authentication.getPrincipal().equals("anonymousUser")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -217,12 +237,19 @@ public class UserMainStoryController {
      * 删除主线剧情（软删除）
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMainStory(
+    public ResponseEntity<?> deleteMainStory(
             @PathVariable Long id,
             Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null || 
             authentication.getPrincipal().equals("anonymousUser")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();

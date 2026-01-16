@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { WorldScene, Character, CustomScenario } from '../../types';
 import { MobileTouchableButton } from '../components/MobileTouchableButton';
 import { MobileEmptyState } from '../components/MobileEmptyState';
@@ -6,6 +6,7 @@ import { MobileSmoothScroll } from '../components/MobileSmoothScroll';
 import { MobileLazyImage } from '../components/MobileLazyImage';
 import { MobileBackButton } from '../components/MobileBackButton';
 import { MobileColors, MobileCardStyles } from '../components/MobileStyleGuide';
+import { generateVariantUrl, type ImageVariants } from '../../utils/imageResolution';
 
 interface MobileCharacterSelectionProps {
     scene: WorldScene;
@@ -25,11 +26,29 @@ interface MobileCharacterSelectionProps {
 export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> = memo(({ 
     scene, characters, scenarios, onBack, onSelectCharacter, onPlayScenario, onAddCharacter, onAddScenario 
 }) => {
+    // 从场景 imageUrl 生成多分辨率版本
+    const sceneImageVariants: ImageVariants | undefined = useMemo(() => {
+        if (!scene.imageUrl || !scene.imageUrl.trim()) return undefined;
+        
+        return {
+            original: scene.imageUrl,
+            thumbnail: generateVariantUrl(scene.imageUrl, 200, 200),
+            medium: generateVariantUrl(scene.imageUrl, 800, 600),
+            highQuality: generateVariantUrl(scene.imageUrl, 1920, 1080),
+        };
+    }, [scene.imageUrl]);
+
     return (
         <div className="h-full bg-black flex flex-col">
             {/* Header / Hero */}
             <div className="relative h-64 shrink-0">
-                <MobileLazyImage src={scene.imageUrl} alt="Scene Cover" className="w-full h-full object-cover opacity-80" />
+                <MobileLazyImage 
+                    src={scene.imageUrl} 
+                    alt="Scene Cover" 
+                    className="w-full h-full object-cover opacity-80" 
+                    variants={sceneImageVariants}
+                    displayPurpose="detail"
+                />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black" />
                 
                 <MobileBackButton
@@ -73,7 +92,7 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                                     <p className={`text-xs ${MobileColors.text.muted} mt-2 line-clamp-2`}>{scene.mainStory.bio}</p>
                                 </div>
                                 <div className={`w-16 h-16 ml-3 rounded-lg overflow-hidden ${MobileColors.border.default} shrink-0`}>
-                                    <MobileLazyImage src={scene.mainStory.avatarUrl} alt={scene.mainStory.name} className="w-full h-full object-cover" />
+                                    <MainStoryAvatarImage avatarUrl={scene.mainStory.avatarUrl} name={scene.mainStory.name} />
                                 </div>
                             </div>
                         </div>
@@ -122,11 +141,23 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                                 }}
                                 aria-label={`选择角色: ${char.name}`}
                             >
-                                <MobileLazyImage src={char.avatarUrl} alt={char.name} className="w-full h-full object-cover" />
+                                <CharacterAvatarImage avatarUrl={char.avatarUrl} name={char.name} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
                                 <div className="absolute bottom-3 left-3">
-                                    <p className={`${MobileColors.text.primary} font-bold text-sm`}>{char.name}</p>
-                                    <p className={`text-[10px] ${MobileColors.text.muted}`}>{char.role}</p>
+                                    <p className={`${MobileColors.text.primary} font-black text-sm drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]`}
+                                       style={{ 
+                                         textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.7)',
+                                         WebkitTextStroke: '0.5px rgba(0,0,0,0.3)',
+                                         letterSpacing: '0.02em'
+                                       }}>
+                                        {char.name}
+                                    </p>
+                                    <p className={`text-[10px] font-semibold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]`}
+                                       style={{ 
+                                         textShadow: '0 1px 5px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.6)'
+                                       }}>
+                                        {char.role}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -205,3 +236,59 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
 });
 
 MobileCharacterSelection.displayName = 'MobileCharacterSelection';
+
+/**
+ * 主线故事头像图片组件（内部组件，用于生成图片变体）
+ */
+const MainStoryAvatarImage: React.FC<{ avatarUrl: string; name: string }> = memo(({ avatarUrl, name }) => {
+    const imageVariants: ImageVariants | undefined = useMemo(() => {
+        if (!avatarUrl || !avatarUrl.trim()) return undefined;
+        
+        return {
+            original: avatarUrl,
+            thumbnail: generateVariantUrl(avatarUrl, 200, 200),
+            medium: generateVariantUrl(avatarUrl, 800, 600),
+            highQuality: generateVariantUrl(avatarUrl, 1920, 1080),
+        };
+    }, [avatarUrl]);
+
+    return (
+        <MobileLazyImage 
+            src={avatarUrl} 
+            alt={name} 
+            className="w-full h-full object-cover" 
+            variants={imageVariants}
+            displayPurpose="detail"
+        />
+    );
+});
+
+MainStoryAvatarImage.displayName = 'MainStoryAvatarImage';
+
+/**
+ * 角色头像图片组件（内部组件，用于生成图片变体）
+ */
+const CharacterAvatarImage: React.FC<{ avatarUrl: string; name: string }> = memo(({ avatarUrl, name }) => {
+    const imageVariants: ImageVariants | undefined = useMemo(() => {
+        if (!avatarUrl || !avatarUrl.trim()) return undefined;
+        
+        return {
+            original: avatarUrl,
+            thumbnail: generateVariantUrl(avatarUrl, 200, 200),
+            medium: generateVariantUrl(avatarUrl, 800, 600),
+            highQuality: generateVariantUrl(avatarUrl, 1920, 1080),
+        };
+    }, [avatarUrl]);
+
+    return (
+        <MobileLazyImage 
+            src={avatarUrl} 
+            alt={name} 
+            className="w-full h-full object-cover" 
+            variants={imageVariants}
+            displayPurpose="list"
+        />
+    );
+});
+
+CharacterAvatarImage.displayName = 'CharacterAvatarImage';

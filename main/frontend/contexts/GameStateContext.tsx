@@ -115,7 +115,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
           mailbox: loadedState.mailbox || [],
           lastLoginTime: loadedState.lastLoginTime || Date.now(),
           sceneMemories: loadedState.sceneMemories || {},
-          customCharacters: loadedState.customCharacters || {},
+          customCharacters: {}, // 不再从本地加载，一律从服务器读取
           userWorldScenes: loadedState.userWorldScenes || [],
           debugLogs: [],
           settings: mergedSettings,

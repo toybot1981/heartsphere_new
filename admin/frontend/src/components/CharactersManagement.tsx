@@ -201,8 +201,13 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
     }
 
     // 创建/编辑表单
+    // 根据标签页选择不同的宽度：技能管理需要更宽的布局
+    const containerWidthClass = (viewMode === 'edit' && editingId && activeTab === 'skills') 
+        ? 'max-w-full mx-4' // 技能管理使用全宽
+        : 'max-w-4xl mx-auto'; // 基本信息使用固定宽度
+    
     return (
-        <div className="max-w-4xl mx-auto bg-slate-900 p-8 rounded-xl border border-slate-800">
+        <div className={`${containerWidthClass} bg-slate-900 p-8 rounded-xl border border-slate-800`}>
             <h3 className="text-xl font-bold text-white mb-6">
                 {viewMode === 'create' ? '新建角色' : '编辑角色'}
             </h3>
@@ -245,7 +250,7 @@ export const CharactersManagement: React.FC<CharactersManagementProps> = ({
 
             {/* 技能管理标签页 */}
             {viewMode === 'edit' && editingId && activeTab === 'skills' ? (
-                <div className="character-skill-management-container">
+                <div className="character-skill-management-container w-full">
                     <CharacterSkillTab
                         characterId={parseInt(editingId)}
                         characterName={formData.name}

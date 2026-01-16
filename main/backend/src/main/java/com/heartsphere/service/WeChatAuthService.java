@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +49,18 @@ public class WeChatAuthService {
     @Value("${wechat.redirect-uri:http://localhost:8081/api/wechat/callback}")
     private String defaultRedirectUri;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    // 初始化RestTemplate，配置字符编码
+    public WeChatAuthService() {
+        this.restTemplate = new RestTemplate();
+        // 配置消息转换器，确保正确处理UTF-8编码
+        org.springframework.http.converter.StringHttpMessageConverter stringConverter = 
+            new org.springframework.http.converter.StringHttpMessageConverter(java.nio.charset.StandardCharsets.UTF_8);
+        stringConverter.setWriteAcceptCharset(false);
+        restTemplate.getMessageConverters().add(0, stringConverter);
+    }
 
     /**
      * 获取微信AppID（优先从数据库读取，如果数据库没有则使用配置文件默认值）
@@ -197,8 +209,12 @@ public class WeChatAuthService {
 
         Map<String, Object> stateInfo = loginStates.get(state);
         if (stateInfo == null) {
-            throw new RuntimeException("无效的state参数");
+            logger.warning(String.format("无效的state参数: %s，当前存储的状态数: %d", state, loginStates.size()));
+            logger.warning("存储的所有state: " + loginStates.keySet());
+            throw new RuntimeException("无效的state参数，可能已过期");
         }
+        
+        logger.info(String.format("找到对应的state信息，当前状态: %s", stateInfo.get("status")));
 
         try {
             String appId = getAppId();
@@ -215,7 +231,36 @@ public class WeChatAuthService {
             );
 
             logger.info(String.format("请求微信access_token，URL: %s", tokenUrl.replace(appSecret, "***")));
-            Map<String, Object> tokenResponse = restTemplate.getForObject(tokenUrl, Map.class);
+            
+            // 先获取字符串响应，避免HttpMessageConverter错误
+            Map<String, Object> tokenResponse = null;
+            try {
+                String responseBody = restTemplate.getForObject(tokenUrl, String.class);
+                if (responseBody != null && !responseBody.trim().isEmpty()) {
+                    // 尝试解析JSON
+                    try {
+                        tokenResponse = objectMapper.readValue(responseBody, Map.class);
+                    } catch (Exception e) {
+                        // 如果不是JSON格式，可能是错误消息
+                        logger.warning("微信API返回非JSON响应，尝试解析: " + responseBody);
+                        // 创建错误响应
+                        tokenResponse = new HashMap<>();
+                        tokenResponse.put("errcode", -1);
+                        // 尝试从响应中提取有用的错误信息
+                        if (responseBody.length() > 200) {
+                            tokenResponse.put("errmsg", "微信API返回格式错误（响应过长）");
+                        } else {
+                            tokenResponse.put("errmsg", "微信API返回格式错误: " + responseBody);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.severe("请求微信access_token异常: " + e.getMessage());
+                tokenResponse = new HashMap<>();
+                tokenResponse.put("errcode", -1);
+                tokenResponse.put("errmsg", "请求异常: " + e.getMessage());
+            }
+            
             if (tokenResponse == null || tokenResponse.containsKey("errcode")) {
                 String errorMsg = "获取access_token失败";
                 if (tokenResponse != null) {
@@ -255,7 +300,38 @@ public class WeChatAuthService {
                 accessToken, openid
             );
 
-            Map<String, Object> userInfoResponse = restTemplate.getForObject(userInfoUrl, Map.class);
+            // 同样处理用户信息API响应，确保UTF-8编码
+            Map<String, Object> userInfoResponse = null;
+            try {
+                // 使用ResponseEntity确保能获取正确的字符编码
+                org.springframework.http.ResponseEntity<String> responseEntity = 
+                    restTemplate.getForEntity(userInfoUrl, String.class);
+                String responseBody = responseEntity.getBody();
+                
+                if (responseBody != null && !responseBody.trim().isEmpty()) {
+                    try {
+                        // 配置ObjectMapper正确处理UTF-8和Unicode转义
+                        objectMapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                        // 使用UTF-8字符集读取JSON，确保正确解析中文字符
+                        userInfoResponse = objectMapper.readValue(
+                            responseBody.getBytes(java.nio.charset.StandardCharsets.UTF_8), 
+                            Map.class
+                        );
+                        logger.info("成功解析微信用户信息JSON，响应长度: " + responseBody.length());
+                    } catch (Exception e) {
+                        logger.warning("微信用户信息API返回非JSON响应: " + responseBody);
+                        userInfoResponse = new HashMap<>();
+                        userInfoResponse.put("errcode", -1);
+                        userInfoResponse.put("errmsg", "响应格式错误: " + responseBody);
+                    }
+                }
+            } catch (Exception e) {
+                logger.severe("请求微信用户信息异常: " + e.getMessage());
+                userInfoResponse = new HashMap<>();
+                userInfoResponse.put("errcode", -1);
+                userInfoResponse.put("errmsg", "请求异常: " + e.getMessage());
+            }
+            
             if (userInfoResponse == null || userInfoResponse.containsKey("errcode")) {
                 logger.severe("获取用户信息失败: " + userInfoResponse);
                 stateInfo.put("status", "error");
@@ -263,7 +339,34 @@ public class WeChatAuthService {
                 return stateInfo;
             }
 
-            String nickname = (String) userInfoResponse.get("nickname");
+            // 处理昵称，确保正确编码
+            String nickname = null;
+            Object nicknameObj = userInfoResponse.get("nickname");
+            if (nicknameObj != null) {
+                if (nicknameObj instanceof String) {
+                    nickname = (String) nicknameObj;
+                } else {
+                    nickname = nicknameObj.toString();
+                }
+                
+                if (nickname != null) {
+                    nickname = nickname.trim();
+                    if (!nickname.isEmpty()) {
+                        // 记录原始昵称用于调试
+                        logger.info("微信昵称原始值: [" + nickname + "], 字符数: " + nickname.length());
+                        // 清理控制字符
+                        nickname = nickname.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "").trim();
+                        if (nickname.isEmpty()) {
+                            nickname = null;
+                        } else {
+                            logger.info("最终昵称: [" + nickname + "]");
+                        }
+                    } else {
+                        nickname = null;
+                    }
+                }
+            }
+            
             String avatar = (String) userInfoResponse.get("headimgurl");
             // unionid可能为空，不需要使用
 
@@ -322,6 +425,9 @@ public class WeChatAuthService {
                 return stateInfo;
             } else {
                 // 登录操作：查找或创建用户
+                // 创建 final 副本变量供 lambda 表达式使用
+                final String finalNickname = nickname;
+                final String finalAvatar = avatar;
                 User user = userRepository.findByWechatOpenid(openid)
                         .orElseGet(() -> {
                             User newUser = new User();
@@ -329,8 +435,8 @@ public class WeChatAuthService {
                             newUser.setUsername("wx_" + openid.substring(0, Math.min(10, openid.length())));
                             newUser.setEmail(openid + "@wechat.com");
                             newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-                            newUser.setNickname(nickname != null ? nickname : "微信用户");
-                            newUser.setAvatar(avatar);
+                            newUser.setNickname(finalNickname != null ? finalNickname : "微信用户");
+                            newUser.setAvatar(finalAvatar);
                             newUser.setIsEnabled(true);
                             User saved = userRepository.save(newUser);
                             // 初始化用户数据
@@ -355,7 +461,7 @@ public class WeChatAuthService {
                 // 生成JWT token
                 String jwt = jwtUtils.generateJwtTokenFromUsername(user.getUsername());
 
-                // 更新状态
+                // 更新状态（确保状态被正确更新并保存）
                 stateInfo.put("status", "confirmed");
                 stateInfo.put("openid", openid);
                 stateInfo.put("token", jwt);
@@ -363,8 +469,13 @@ public class WeChatAuthService {
                 stateInfo.put("username", user.getUsername());
                 stateInfo.put("nickname", user.getNickname());
                 stateInfo.put("avatar", user.getAvatar());
+                
+                // 确保状态被保存到loginStates中（重要：确保状态更新被持久化）
+                loginStates.put(state, stateInfo);
 
-                logger.info("微信登录成功，用户ID: " + user.getId() + ", openid: " + openid);
+                logger.info(String.format("微信登录成功，用户ID: %d, openid: %s, token长度: %d", 
+                    user.getId(), openid, jwt != null ? jwt.length() : 0));
+                logger.info(String.format("状态已更新为confirmed，state: %s，当前状态数: %d", state, loginStates.size()));
                 return stateInfo;
             }
 
@@ -410,5 +521,6 @@ public class WeChatAuthService {
             return createdAt < expireTime;
         });
     }
+    
 }
 

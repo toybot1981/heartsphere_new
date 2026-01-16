@@ -4,7 +4,7 @@ spring:
     lazy-initialization: true  # 开发环境启用懒加载，加速启动
   
   jpa:
-    show-sql: true  # 开发环境显示SQL
+    show-sql: false  # 开发环境显示SQL
     properties:
       hibernate:
         format_sql: true

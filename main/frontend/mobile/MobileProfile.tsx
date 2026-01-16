@@ -138,7 +138,6 @@ export const MobileProfile: React.FC<MobileProfileProps> = ({
             <button 
                 onClick={(e) => {
                     e.stopPropagation();
-                    console.log("Logout clicked");
                     onLogout();
                 }} 
                 className="w-full py-4 text-red-500/80 font-bold text-sm bg-red-900/10 rounded-xl border border-red-900/20 hover:bg-red-900/20 hover:text-red-400 active:scale-95 transition-all cursor-pointer"

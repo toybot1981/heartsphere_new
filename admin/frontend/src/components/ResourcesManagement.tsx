@@ -417,30 +417,45 @@ export const ResourcesManagement: React.FC<ResourcesManagementProps> = ({
                                                     const file = e.target.files?.[0];
                                                     if (!file || !adminToken) return;
                                                     try {
-                                                        // 系统资源上传，不包含userId
-                                                        // 优先使用资源的实际 category，如果不存在则使用当前选择的 category（排除 'all'），最后使用 'general'
-                                                        // 注意：system_resources 的图片存储直接使用 category，不使用 resource_ 前缀
-                                                        const category = editingResource?.category || 
-                                                                         (resourceCategory && resourceCategory !== 'all' ? resourceCategory : null) || 
-                                                                         'general';
-                                                        console.log('[ResourcesManagement] 上传图片，使用的 category:', category, 'editingResource:', editingResource);
-                                                        const url = await imageApi.uploadImage(file, category, adminToken, true);
-                                                        if (url && url.success && url.url) {
-                                                            setEditResourceUrl(url.url);
-                                                            // 立即更新右侧列表中的资源项，显示新上传的图片
-                                                            // 使用 key 属性（${resource.id}-${resource.url}）强制 LazyImage 重新渲染
-                                                            if (editingResource) {
+                                                        // 如果是在编辑资源的情况下，更新现有资源的图片（不创建新资源记录）
+                                                        if (editingResource) {
+                                                            console.log('[ResourcesManagement] 更新现有资源的图片, ID:', editingResource.id);
+                                                            const updatedResource = await adminApi.resources.updateImage(
+                                                                editingResource.id,
+                                                                file,
+                                                                adminToken
+                                                            );
+                                                            if (updatedResource && updatedResource.url) {
+                                                                setEditResourceUrl(updatedResource.url);
+                                                                // 立即更新右侧列表中的资源项，显示新上传的图片
                                                                 setResources(prevResources => 
                                                                     prevResources.map(resource => 
                                                                         resource.id === editingResource.id 
-                                                                            ? { ...resource, url: url.url }
+                                                                            ? { ...resource, ...updatedResource }
                                                                             : resource
                                                                     )
                                                                 );
+                                                                showAlert('图片更新成功', '成功', 'success');
+                                                            } else {
+                                                                showAlert('图片更新失败：未返回URL', '更新失败', 'error');
                                                             }
-                                                            // 上传成功后，图片会在预览框中显示，无需提示框
                                                         } else {
-                                                            showAlert('图片上传失败：未返回URL', '上传失败', 'error');
+                                                            // 如果不是编辑资源，创建新资源记录
+                                                            // 系统资源上传，不包含userId
+                                                            // 优先使用当前选择的 category（排除 'all'），最后使用 'general'
+                                                            const category = (resourceCategory && resourceCategory !== 'all' ? resourceCategory : null) || 'general';
+                                                            console.log('[ResourcesManagement] 创建新资源，使用的 category:', category);
+                                                            const result = await imageApi.uploadImage(file, category, adminToken, true);
+                                                            // 后端返回的格式：{ url: string, relativePath: string, id: string }
+                                                            const imageUrl = (result && typeof result === 'object') 
+                                                                ? (result.url || (result as any).url) 
+                                                                : (result && typeof result === 'string' ? result : null);
+                                                            if (imageUrl) {
+                                                                setEditResourceUrl(imageUrl);
+                                                                showAlert('图片上传成功', '成功', 'success');
+                                                            } else {
+                                                                showAlert('图片上传失败：未返回URL', '上传失败', 'error');
+                                                            }
                                                         }
                                                     } catch (err: any) {
                                                         showAlert('上传失败: ' + (err.message || '未知错误'), '上传失败', 'error');

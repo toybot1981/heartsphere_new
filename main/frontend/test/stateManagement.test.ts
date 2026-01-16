@@ -24,13 +24,11 @@ class TestRunner {
   }
 
   async run() {
-    console.log('🧪 开始运行状态管理测试...\n');
 
     for (const test of this.tests) {
       try {
         test.fn();
         this.passed++;
-        console.log(`✅ ${test.name}`);
       } catch (error: any) {
         this.failed++;
         console.error(`❌ ${test.name}`);
@@ -38,7 +36,6 @@ class TestRunner {
       }
     }
 
-    console.log(`\n📊 测试结果: ${this.passed} 通过, ${this.failed} 失败`);
     return this.failed === 0;
   }
 }

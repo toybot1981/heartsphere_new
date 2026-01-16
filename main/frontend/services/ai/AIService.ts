@@ -289,7 +289,6 @@ export class AIService {
     if (currentConfig.mode === 'unified') {
       // 移除 mode 字段，保持当前配置的 mode（'unified'）
       delete userConfig.mode;
-      console.log('[AIService] 当前模式为统一接入模式，保留不覆盖');
     }
     
     // 更新配置
@@ -310,9 +309,7 @@ export class AIService {
   setLogCallback(callback: ((log: DebugLog) => void) | null): void {
     this.logCallback = callback;
     if (callback) {
-      console.log('[AIService] 日志回调已设置');
     } else {
-      console.log('[AIService] 日志回调已清除');
     }
   }
 
@@ -324,7 +321,6 @@ export class AIService {
    */
   resetSession(characterId: string): void {
     this.chatSessions.delete(characterId);
-    console.log(`[AIService] 会话已重置: ${characterId}`);
   }
 
   // ========== 本地配置模式实现 ==========
@@ -376,9 +372,6 @@ export class AIService {
       }
     }
 
-    console.log('[AIService] 本地模式（同步） - 配置的provider:', preferredProvider);
-    console.log('[AIService] 本地模式（同步） - 已配置的providers:', configuredProviders);
-    console.log('[AIService] 本地模式（同步） - 准备尝试providers:', providersToTry);
 
     // 尝试每个provider，直到成功
     let lastError: Error | null = null;
@@ -398,7 +391,6 @@ export class AIService {
       }
 
       try {
-        console.log(`[AIService] 本地模式（同步） - 尝试使用provider: ${provider}`);
         
         // 确定使用的model
         let providerModel: string | undefined;
@@ -416,10 +408,8 @@ export class AIService {
           model: providerModel,
         };
         
-        console.log(`[AIService] 本地模式（同步） - 使用provider: ${provider}, model: ${providerModel || '(使用adapter默认模型)'}`);
         
         const response = await adapter.generateText(requestForProvider);
-        console.log(`[AIService] 本地模式（同步） - Provider ${provider} 调用成功`);
         return response;
       } catch (error) {
         console.error(`[AIService] 本地模式（同步） - Provider ${provider} 调用失败:`, error);
@@ -470,7 +460,6 @@ export class AIService {
     
     // 设置当前请求ID
     this.activeStreamRequestId = requestId;
-    console.log(`[AIService] 开始新的流式请求: ${requestId}`);
 
     try {
       // 创建一个包装的onChunk，确保只处理当前请求的响应
@@ -538,9 +527,6 @@ export class AIService {
         }
       }
 
-      console.log(`[AIService] 本地模式 [${requestId}] - 配置的provider:`, preferredProvider);
-      console.log(`[AIService] 本地模式 [${requestId}] - 已配置的providers:`, configuredProviders);
-      console.log(`[AIService] 本地模式 [${requestId}] - 准备尝试providers:`, providersToTry);
 
       // 尝试每个provider，直到成功
       let lastError: Error | null = null;
@@ -572,7 +558,6 @@ export class AIService {
         }
 
         try {
-          console.log(`[AIService] 本地模式 [${requestId}] - 尝试使用provider: ${provider}`);
           
           // 为当前provider构建请求，确保使用对应provider的正确模型
           let providerModel: string | undefined;
@@ -594,10 +579,8 @@ export class AIService {
           };
           
           // 确保不传递错误的model给其他provider
-          console.log(`[AIService] 本地模式 [${requestId}] - 使用provider: ${provider}, model: ${providerModel || '(使用adapter默认模型)'}`);
           
           await adapter.generateTextStream(requestForProvider, wrappedOnChunk);
-          console.log(`[AIService] 本地模式 [${requestId}] - Provider ${provider} 调用成功`);
           
           // 只有在当前请求仍然有效时才返回
           if (this.activeStreamRequestId === requestId) {
@@ -634,7 +617,6 @@ export class AIService {
       if (this.activeStreamRequestId === requestId) {
         this.activeStreamRequestId = null;
         this.activeStreamAbortController = null;
-        console.log(`[AIService] 流式请求完成，清理: ${requestId}`);
       }
     }
   }
@@ -973,7 +955,6 @@ export class AIService {
               console.warn('[AIService] 解析SSE数据失败:', e, '原始行:', trimmedLine.substring(0, 100));
             }
           } else if (trimmedLine === '[DONE]') {
-            console.log('[AIService] 收到[DONE]信号');
             // OpenAI格式的结束信号，可以忽略，因为已经有done=true的处理
           } else {
             // 记录非data行（可能是其他SSE事件）
@@ -1002,7 +983,24 @@ export class AIService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/ai/image/generate`, {
+      // 确保路径正确：/api/ai/image/generate
+      const url = API_BASE_URL === '/api' 
+        ? '/api/ai/image/generate' 
+        : `${API_BASE_URL}/ai/image/generate`;
+      
+      console.log('[AIService] 统一模式图片生成请求:', {
+        url,
+        method: 'POST',
+        hasToken: !!token,
+        request: {
+          prompt: request.prompt?.substring(0, 50) + '...',
+          aspectRatio: request.aspectRatio,
+          width: request.width,
+          height: request.height,
+        }
+      });
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1013,9 +1011,25 @@ export class AIService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: '请求失败' }));
-        throw new AIServiceException(
-          errorData.message || `HTTP ${response.status}: ${response.statusText}`
-        );
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        
+        // 如果是 405 Method Not Allowed，说明路径可能错误
+        if (response.status === 405) {
+          console.error('[AIService] 请求方法不支持，可能是路径错误:', {
+            url,
+            method: 'POST',
+            status: response.status,
+            statusText: response.statusText,
+            errorMessage,
+            actualRequestUrl: url,
+            expectedUrl: '/api/ai/image/generate',
+          });
+          throw new AIServiceException(
+            `请求方法不支持: ${errorMessage}。请检查后端接口配置，路径应为 /api/ai/image/generate (POST)。实际请求路径: ${url}`
+          );
+        }
+        
+        throw new AIServiceException(errorMessage);
       }
 
       const apiResponse = await response.json();
@@ -1216,13 +1230,10 @@ export class AIService {
     capability: 'text' | 'image',
     method: 'generateText' | 'generateImage'
   ): Promise<any> {
-    console.log(`[AIService] 尝试容错降级，失败的provider: ${failedProvider}, 能力: ${capability}`);
     
     const availableProviders = adapterManager.getAvailableProviders(capability);
-    console.log(`[AIService] 可用的providers:`, availableProviders);
     
     const fallbackProviders = availableProviders.filter(p => p !== failedProvider);
-    console.log(`[AIService] 容错providers:`, fallbackProviders);
 
     if (fallbackProviders.length === 0) {
       throw new AIServiceException(
@@ -1233,7 +1244,6 @@ export class AIService {
 
     for (const provider of fallbackProviders) {
       try {
-        console.log(`[AIService] 尝试使用容错provider: ${provider}`);
         const adapter = adapterManager.getAdapter(provider);
         if (!adapter || !adapter.isConfigured()) {
           console.warn(`[AIService] Provider ${provider} 未配置，跳过`);
@@ -1242,11 +1252,9 @@ export class AIService {
 
         if (method === 'generateText') {
           const result = await adapter.generateText(request as TextGenerationRequest);
-          console.log(`[AIService] 容错成功，使用provider: ${provider}`);
           return result;
         } else if (method === 'generateImage') {
           const result = await adapter.generateImage(request as ImageGenerationRequest);
-          console.log(`[AIService] 容错成功，使用provider: ${provider}`);
           return result;
         }
       } catch (error) {

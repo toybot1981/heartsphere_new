@@ -23,17 +23,6 @@ export const useInitializationWizard = () => {
 
   // 监听初始化向导状态变化，用于调试和自动清理
   useEffect(() => {
-    console.log('[App] 初始化向导状态变化:', {
-      showInitializationWizard,
-      hasInitializationData: !!initializationData,
-      currentScreen: gameState.currentScreen,
-      initializationData: initializationData ? {
-        userId: initializationData.userId,
-        worldId: initializationData.worldId,
-        tokenExists: !!initializationData.token
-      } : null
-    });
-    
     // 如果初始化向导状态为 true，但没有数据，或者不在正确的页面，自动清理
     if (showInitializationWizard && (!initializationData || (gameState.currentScreen !== 'entryPoint' && gameState.currentScreen !== 'profileSetup'))) {
       console.warn('[App] 检测到初始化向导状态不一致，自动清理:', {
@@ -56,7 +45,6 @@ export const useInitializationWizard = () => {
   }, [showInitializationWizard, initializationData, gameState.currentScreen]);
 
   const handleWizardComplete = async () => {
-    console.log('[初始化向导] 完成初始化，开始同步数据');
     setShowInitializationWizard(false);
     setInitializationData(null);
     initializationWizardProcessedRef.current = false; // 重置标记
@@ -66,20 +54,11 @@ export const useInitializationWizard = () => {
     if (token) {
       try {
         // 重新加载数据，确保新创建的场景、角色和剧本都能显示
-        console.log('[初始化向导] 开始重新加载数据...');
         const worlds = await worldApi.getAllWorlds(token);
         const eras = await eraApi.getAllEras(token);
         const characters = await characterApi.getAllCharacters(token);
         const scripts = await scriptApi.getAllScripts(token);
         const userMainStories = await userMainStoryApi.getAll(token);
-        
-        console.log('[初始化向导] 数据加载完成:', {
-          worlds: worlds.length,
-          eras: eras.length,
-          characters: characters.length,
-          scripts: scripts.length,
-          userMainStories: userMainStories.length
-        });
         
         // 更新游戏状态
         // 重新构建 userWorldScenes
@@ -180,7 +159,6 @@ export const useInitializationWizard = () => {
         dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
         dispatch({ type: 'SET_LAST_LOGIN_TIME', payload: Date.now() });
         
-        console.log('[初始化向导] 数据同步完成，页面已更新');
       } catch (error) {
         console.error('[初始化向导] 数据同步失败，使用页面刷新:', error);
         // 如果数据同步失败，使用页面刷新作为后备方案
@@ -193,7 +171,6 @@ export const useInitializationWizard = () => {
   };
 
   const handleWizardCancel = () => {
-    console.log('[初始化向导] 取消初始化');
     setShowInitializationWizard(false);
     setInitializationData(null);
     initializationWizardProcessedRef.current = false; // 重置标记

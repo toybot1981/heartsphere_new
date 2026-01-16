@@ -1,5 +1,6 @@
 package com.heartsphere.dto;
 
+import com.heartsphere.shared.dto.ImageVariantsDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ public class JournalEntryDTO {
     private String tags;
     private String insight; // 本我镜像（Mirror of Truth）分析结果
     private String imageUrl; // 日志配图URL
+    private ImageVariantsDTO imageVariants; // 日志配图多分辨率版本
     private LocalDateTime entryDate;
     private Long timestamp;
     private Long worldId;

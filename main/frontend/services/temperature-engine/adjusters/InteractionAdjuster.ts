@@ -159,7 +159,6 @@ export class InteractionAdjuster {
   private enableSoundFeedback(volume: number): void {
     // 创建音频上下文（如果需要）
     // 这里只是示例，实际实现可能需要音频文件
-    console.log('[InteractionAdjuster] Sound feedback enabled with volume:', volume);
   }
 
   /**

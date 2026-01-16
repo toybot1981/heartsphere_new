@@ -3,6 +3,7 @@ package com.heartsphere.mentis.executor.computeruse.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heartsphere.mentis.executor.computeruse.ScriptExecutor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "mentis.vm.provider", havingValue = "none", matchIfMissing = false)
 public class PythonScriptExecutor implements ScriptExecutor {
     
     private final ObjectMapper objectMapper = new ObjectMapper();

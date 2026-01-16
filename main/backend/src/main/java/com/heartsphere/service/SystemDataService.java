@@ -1,5 +1,6 @@
 package com.heartsphere.service;
 
+import com.heartsphere.dto.SystemMainStoryDTO;
 import com.heartsphere.dto.SystemScriptDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ public class SystemDataService {
     @Autowired
     private SystemScriptService scriptService;
 
+    @Autowired
+    private SystemMainStoryService mainStoryService;
+
     // ========== SystemScript CRUD ==========
     public List<SystemScriptDTO> getAllScripts() {
         return scriptService.getAllScripts();
@@ -28,5 +32,18 @@ public class SystemDataService {
 
     public SystemScriptDTO getScriptById(Long id) {
         return scriptService.getScriptById(id);
+    }
+
+    // ========== SystemMainStory CRUD ==========
+    public List<SystemMainStoryDTO> getAllMainStories() {
+        return mainStoryService.getAllMainStories();
+    }
+
+    public SystemMainStoryDTO getMainStoryByEraId(Long eraId) {
+        return mainStoryService.getMainStoryByEraId(eraId);
+    }
+
+    public SystemMainStoryDTO getMainStoryById(Long id) {
+        return mainStoryService.getMainStoryById(id);
     }
 }

@@ -83,6 +83,18 @@ public interface ModelAdapter {
     AudioResponse speechToText(AudioRequest request);
     
     /**
+     * 流式语音转文本（实时语音识别）
+     * @param request 音频请求
+     * @param handler 流式响应处理器
+     */
+    default void speechToTextStream(AudioRequest request, 
+                                   StreamResponseHandler<AudioResponse> handler) {
+        // 默认实现：如果不支持实时识别，抛出异常
+        throw new UnsupportedOperationException(
+            "实时语音识别不支持，请使用 speechToText 方法");
+    }
+    
+    /**
      * 生成视频
      * @param request 视频生成请求
      * @return 视频生成响应

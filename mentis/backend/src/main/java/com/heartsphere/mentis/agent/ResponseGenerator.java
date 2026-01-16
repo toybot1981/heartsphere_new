@@ -1,5 +1,8 @@
 package com.heartsphere.mentis.agent;
 
+import com.heartsphere.mentis.ai.util.StreamResponseHandler;
+import com.heartsphere.mentis.dto.ChatResponseDTO;
+
 import java.util.List;
 
 /**
@@ -19,6 +22,17 @@ public interface ResponseGenerator {
      * @return 生成的响应文本
      */
     String generate(ExecutionResult executionResult, String sessionId);
+    
+    /**
+     * 流式生成响应
+     * 
+     * @param executionResult 执行结果
+     * @param sessionId 会话ID
+     * @param messageId 消息ID
+     * @param handler 流式响应处理器
+     */
+    void generateStream(ExecutionResult executionResult, String sessionId, String messageId,
+                       StreamResponseHandler<ChatResponseDTO> handler);
     
     /**
      * 执行结果

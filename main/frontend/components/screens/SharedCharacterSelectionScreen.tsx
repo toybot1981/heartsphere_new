@@ -56,12 +56,10 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
           return;
         }
 
-        console.log('[SharedCharacterSelectionScreen] 加载共享场景角色，eraId:', eraId);
         
         // 使用共享模式API加载角色
         const characterDTOs = await sharedApi.getSharedCharactersByEraId(eraId, token);
         
-        console.log('[SharedCharacterSelectionScreen] 加载成功，角色数量:', characterDTOs.length);
         
         // 转换为前端 Character 格式（使用完整的角色数据转换函数，确保包含systemInstruction等所有字段）
         const convertedCharacters: Character[] = characterDTOs.map((dto: any) => {

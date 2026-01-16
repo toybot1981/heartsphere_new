@@ -214,7 +214,6 @@ export const MobileProfile: React.FC<MobileProfileProps> = memo(({
               <MobileTouchableButton
                 onClick={(e) => {
                     e.stopPropagation();
-                    console.log("Logout clicked");
                     onLogout();
                 }}
                 variant="danger"

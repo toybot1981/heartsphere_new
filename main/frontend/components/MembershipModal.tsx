@@ -59,7 +59,6 @@ export const MembershipModal: React.FC<MembershipModalProps> = ({
     setLoading(true);
 
     try {
-      console.log('创建支付订单，planId:', plan.id, 'paymentType:', paymentType, 'token存在:', !!token);
       const order = await paymentApi.createOrder(plan.id, paymentType, token);
       setPaymentOrder(order);
     } catch (error) {

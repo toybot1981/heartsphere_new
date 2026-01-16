@@ -45,12 +45,6 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
   }
 
   const handleConfirm = () => {
-    console.log('[SkillEquipDialog] 确认装备:', {
-      skillId: skill.skillId,
-      isEnabled,
-      autoTrigger,
-      priority,
-    });
     onConfirm({
       isEnabled,
       autoTrigger,

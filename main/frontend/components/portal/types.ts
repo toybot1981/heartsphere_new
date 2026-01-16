@@ -15,7 +15,7 @@ export enum PortalAnimationState {
 /**
  * 传送门类型
  */
-export type PortalType = 'stargate' | 'wormhole' | 'quantum';
+export type PortalType = 'stargate' | 'wormhole' | 'quantum' | 'garden' | 'sakura' | 'butterfly' | 'rainbow';
 
 /**
  * 传送门位置

@@ -39,6 +39,9 @@ public class ImageStorageService {
 
     @Autowired(required = false)
     private ImageProcessingService imageProcessingService;
+    
+    @Autowired(required = false)
+    private ThumbnailGenerationService thumbnailGenerationService;
 
     @Value("${app.image.storage.max-size:10485760}")
     private long maxFileSize; // 10MB default
@@ -205,12 +208,22 @@ public class ImageStorageService {
         }
         logger.info("[ImageStorageService] 返回图片相对路径: " + relativePath);
         
-        // 如果启用了自动生成多分辨率版本，生成所有分辨率版本
-        if (autoGenerateVariants && imageProcessingService != null) {
+        // 如果启用了自动生成多分辨率版本，异步生成所有分辨率版本
+        if (autoGenerateVariants) {
             try {
-                logger.info("[ImageStorageService] 开始生成多分辨率版本: " + relativePath);
-                imageProcessingService.generateAllVariants(relativePath, includeHighQuality);
-                logger.info("[ImageStorageService] 多分辨率版本生成完成");
+                logger.info("[ImageStorageService] 开始异步生成多分辨率版本: " + relativePath);
+                // 获取完整URL用于异步生成
+                String fullUrl = imageUrlUtils.toFullUrl(relativePath);
+                // 异步生成缩略图
+                if (thumbnailGenerationService != null) {
+                    thumbnailGenerationService.generateAllThumbnailsAsync(fullUrl);
+                    logger.info("[ImageStorageService] 已启动异步生成缩略图任务");
+                } else if (imageProcessingService != null) {
+                    // 如果异步服务不可用，尝试同步生成（向后兼容）
+                    logger.warning("[ImageStorageService] ThumbnailGenerationService不可用，使用同步模式");
+                    imageProcessingService.generateAllVariants(relativePath, includeHighQuality);
+                    logger.info("[ImageStorageService] 多分辨率版本生成完成（同步模式）");
+                }
             } catch (Exception e) {
                 // 如果生成失败，记录警告但不影响原图保存
                 logger.warning("[ImageStorageService] 生成多分辨率版本失败: " + e.getMessage());

@@ -70,7 +70,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
     const loadConfig = async () => {
       const config = await AIConfigManager.getUserConfig();
       const keys = AIConfigManager.getLocalApiKeys();
-      console.log('[SettingsModal] 加载AI配置, mode:', config.mode);
       // 确保如果没有配置，默认使用统一接入模式
       if (!config.mode || config.mode === 'local' && !localStorage.getItem('ai_service_config')) {
         // 如果localStorage中没有保存过配置，强制使用统一接入模式
@@ -361,12 +360,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                                         checked={aiConfig.mode === 'unified'}
                                         onChange={async (e) => {
                                             const newConfig = { ...aiConfig, mode: 'unified' as AIMode };
-                                            console.log('[SettingsModal] 切换到统一接入模式, 新配置:', newConfig);
                                             setAiConfig(newConfig);
                                             setLoading(true);
                                             try {
                                                 await AIConfigManager.saveUserConfig(newConfig);
-                                                console.log('[SettingsModal] 模式切换成功，已保存到localStorage');
                                                 showAlert('已切换到统一接入模式', '模式切换', 'success');
                                             } catch (error) {
                                                 console.error('[SettingsModal] 模式切换失败:', error);
@@ -403,12 +400,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, gameStat
                                         checked={aiConfig.mode === 'local'}
                                         onChange={async (e) => {
                                             const newConfig = { ...aiConfig, mode: 'local' as AIMode };
-                                            console.log('[SettingsModal] 切换到本地配置模式, 新配置:', newConfig);
                                             setAiConfig(newConfig);
                                             setLoading(true);
                                             try {
                                                 await AIConfigManager.saveUserConfig(newConfig);
-                                                console.log('[SettingsModal] 模式切换成功，已保存到localStorage');
                                                 showAlert('已切换到本地配置模式，请配置API Key', '模式切换', 'success');
                                             } catch (error) {
                                                 console.error('[SettingsModal] 模式切换失败:', error);

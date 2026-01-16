@@ -63,7 +63,12 @@ public class DTOMapper implements ApplicationContextAware {
         Long userId = era.getUser() != null ? era.getUser().getId() : null;
         String imageUrl = smartImageUrl(era.getImageUrl(), userId);
         dto.setImageUrl(imageUrl);
+        // 生成图片多分辨率版本
+        if (imageUrl != null && imageUrlUtils != null) {
+            dto.setImageVariants(imageUrlUtils.generateImageVariants(imageUrl));
+        }
         dto.setSystemEraId(era.getSystemEraId());
+        dto.setStyle(era.getStyle() != null ? era.getStyle() : "realistic"); // 默认写实风格
         dto.setWorldId(era.getWorld() != null ? era.getWorld().getId() : null);
         dto.setUserId(era.getUser() != null ? era.getUser().getId() : null);
         dto.setCreatedAt(era.getCreatedAt());
@@ -77,34 +82,49 @@ public class DTOMapper implements ApplicationContextAware {
         Long userId = character.getUser() != null ? character.getUser().getId() : null;
         String avatarUrl = smartImageUrl(character.getAvatarUrl(), userId);
         String backgroundUrl = smartImageUrl(character.getBackgroundUrl(), userId);
-        return new CharacterDTO(
-            character.getId(),
-            character.getName(),
-            character.getDescription(),
-            character.getAge(),
-            character.getGender(),
-            character.getRole(),
-            character.getBio(),
-            avatarUrl,  // 使用转换后的URL
-            backgroundUrl,  // 使用转换后的URL
-            character.getThemeColor(),
-            character.getColorAccent(),
-            character.getFirstMessage(),
-            character.getSystemInstruction(),
-            character.getVoiceName(),
-            character.getMbti(),
-            character.getTags(),
-            character.getSpeechStyle(),
-            character.getCatchphrases(),
-            character.getSecrets(),
-            character.getMotivations(),
-            character.getRelationships(),
-            character.getWorld() != null ? character.getWorld().getId() : null,
-            character.getEra() != null ? character.getEra().getId() : null,
-            character.getUser() != null ? character.getUser().getId() : null,
-            character.getCreatedAt(),
-            character.getUpdatedAt()
-        );
+        
+        // 生成图片多分辨率版本
+        com.heartsphere.shared.dto.ImageVariantsDTO avatarVariants = null;
+        com.heartsphere.shared.dto.ImageVariantsDTO backgroundVariants = null;
+        if (imageUrlUtils != null) {
+            if (avatarUrl != null) {
+                avatarVariants = imageUrlUtils.generateImageVariants(avatarUrl);
+            }
+            if (backgroundUrl != null) {
+                backgroundVariants = imageUrlUtils.generateImageVariants(backgroundUrl);
+            }
+        }
+        
+        CharacterDTO dto = new CharacterDTO();
+        dto.setId(character.getId());
+        dto.setName(character.getName());
+        dto.setDescription(character.getDescription());
+        dto.setAge(character.getAge());
+        dto.setGender(character.getGender());
+        dto.setRole(character.getRole());
+        dto.setBio(character.getBio());
+        dto.setAvatarUrl(avatarUrl);
+        dto.setAvatarVariants(avatarVariants);
+        dto.setBackgroundUrl(backgroundUrl);
+        dto.setBackgroundVariants(backgroundVariants);
+        dto.setThemeColor(character.getThemeColor());
+        dto.setColorAccent(character.getColorAccent());
+        dto.setFirstMessage(character.getFirstMessage());
+        dto.setSystemInstruction(character.getSystemInstruction());
+        dto.setVoiceName(character.getVoiceName());
+        dto.setMbti(character.getMbti());
+        dto.setTags(character.getTags());
+        dto.setSpeechStyle(character.getSpeechStyle());
+        dto.setCatchphrases(character.getCatchphrases());
+        dto.setSecrets(character.getSecrets());
+        dto.setMotivations(character.getMotivations());
+        dto.setRelationships(character.getRelationships());
+        dto.setWorldId(character.getWorld() != null ? character.getWorld().getId() : null);
+        dto.setEraId(character.getEra() != null ? character.getEra().getId() : null);
+        dto.setUserId(character.getUser() != null ? character.getUser().getId() : null);
+        dto.setCreatedAt(character.getCreatedAt());
+        dto.setUpdatedAt(character.getUpdatedAt());
+        return dto;
     }
     
     public static UserDTO toUserDTO(User user) {
@@ -140,6 +160,10 @@ public class DTOMapper implements ApplicationContextAware {
         Long userId = entry.getUser() != null ? entry.getUser().getId() : null;
         String imageUrl = smartImageUrl(entry.getImageUrl(), userId);
         dto.setImageUrl(imageUrl);
+        // 生成图片多分辨率版本
+        if (imageUrl != null && imageUrlUtils != null) {
+            dto.setImageVariants(imageUrlUtils.generateImageVariants(imageUrl));
+        }
         // 添加日志记录
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DTOMapper.class.getName());
         logger.info(String.format("[DTOMapper] toJournalEntryDTO - 转换字段, ID: %s, Insight: %s (长度: %s), ImageUrl: %s", 

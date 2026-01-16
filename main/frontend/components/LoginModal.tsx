@@ -64,7 +64,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
         authApi.isInviteCodeRequired(),
         authApi.isEmailVerificationRequired()
       ]);
-      console.log('[LoginModal] 检查注册要求结果:', { inviteCodeRequired: inviteCodeResponse.inviteCodeRequired, emailVerificationRequired: emailVerificationResponse.emailVerificationRequired });
       setInviteCodeRequired(inviteCodeResponse.inviteCodeRequired);
       setEmailVerificationRequired(emailVerificationResponse.emailVerificationRequired);
     } catch (err) {
@@ -159,7 +158,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                 // 保存token
                 if (status.token) {
                     localStorage.setItem('auth_token', status.token);
-                    console.log('[LoginModal] 微信登录成功，token已保存到localStorage，长度:', status.token.length);
                 } else {
                     console.error('[LoginModal] 微信登录成功但未收到token！');
                 }
@@ -214,15 +212,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
 
       try {
           const response = await authApi.login(username, password);
-          console.log('[LoginModal] 登录响应:', response);
           
           // 检查响应格式，如果是 ApiResponse 格式，提取 data 字段
           const responseData = (response && typeof response === 'object' && 'data' in response) 
             ? response.data 
             : response;
           
-          console.log('[LoginModal] 提取的响应数据:', responseData);
-          console.log('[LoginModal] token存在:', !!responseData?.token);
           
           if (!responseData || !responseData.token) {
               setError('登录成功，但未获取到登录令牌，请重新登录');
@@ -231,7 +226,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
           
           // 保存token到本地存储
           localStorage.setItem('auth_token', responseData.token);
-          console.log('[LoginModal] token已保存到localStorage');
           
           onLoginSuccess('password', username, responseData.isFirstLogin, responseData.worlds);
       } catch (err: any) {
@@ -369,34 +363,72 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
       setRegisterError('');
 
       try {
-          const response = await authApi.register(
-              registerUsername, 
-              registerEmail, 
-              registerPassword, 
-              registerNickname.trim(),
-              inviteCodeRequired ? registerInviteCode.trim() : undefined,
-              emailVerificationRequired ? registerEmailVerificationCode.trim() : undefined
-          );
-          console.log('[LoginModal] 注册响应:', response);
+          // 检查当前是否为游客（通过检查是否有token且用户信息为游客）
+          const token = localStorage.getItem('auth_token');
+          let isGuestUpgrade = false;
           
-          // 检查响应格式，如果是 ApiResponse 格式，提取 data 字段
-          const responseData = (response && typeof response === 'object' && 'data' in response) 
-            ? response.data 
-            : response;
-          
-          console.log('[LoginModal] 提取的响应数据:', responseData);
-          console.log('[LoginModal] token存在:', !!responseData?.token);
-          
-          if (!responseData || !responseData.token) {
-              setRegisterError('注册成功，但未获取到登录令牌，请重新登录');
-              return;
+          if (token && initialNickname) {
+              // 可能是游客升级，尝试调用游客注册接口
+              try {
+                  const response = await authApi.guestRegister(
+                      registerUsername, 
+                      registerEmail, 
+                      registerPassword, 
+                      registerNickname.trim(),
+                      emailVerificationRequired ? registerEmailVerificationCode.trim() : undefined
+                  );
+                  
+                  // 检查响应格式
+                  const responseData = (response && typeof response === 'object' && 'data' in response) 
+                    ? response.data 
+                    : response;
+                  
+                  if (!responseData || !responseData.token) {
+                      setRegisterError('注册成功，但未获取到登录令牌，请重新登录');
+                      return;
+                  }
+                  
+                  // 保存token到本地存储
+                  localStorage.setItem('auth_token', responseData.token);
+                  
+                  onLoginSuccess('password', registerUsername, responseData.isFirstLogin, responseData.worlds);
+                  isGuestUpgrade = true;
+                  return;
+              } catch (guestErr: any) {
+                  // 如果不是游客升级，继续使用普通注册流程
+                  if (guestErr.message && !guestErr.message.includes('不是游客')) {
+                      throw guestErr;
+                  }
+              }
           }
           
-          // 保存token到本地存储
-          localStorage.setItem('auth_token', responseData.token);
-          console.log('[LoginModal] token已保存到localStorage');
-          
-          onLoginSuccess('password', registerUsername, responseData.isFirstLogin, responseData.worlds);
+          // 普通注册流程
+          if (!isGuestUpgrade) {
+              const response = await authApi.register(
+                  registerUsername, 
+                  registerEmail, 
+                  registerPassword, 
+                  registerNickname.trim(),
+                  inviteCodeRequired ? registerInviteCode.trim() : undefined,
+                  emailVerificationRequired ? registerEmailVerificationCode.trim() : undefined
+              );
+              
+              // 检查响应格式，如果是 ApiResponse 格式，提取 data 字段
+              const responseData = (response && typeof response === 'object' && 'data' in response) 
+                ? response.data 
+                : response;
+              
+              
+              if (!responseData || !responseData.token) {
+                  setRegisterError('注册成功，但未获取到登录令牌，请重新登录');
+                  return;
+              }
+              
+              // 保存token到本地存储
+              localStorage.setItem('auth_token', responseData.token);
+              
+              onLoginSuccess('password', registerUsername, responseData.isFirstLogin, responseData.worlds);
+          }
       } catch (err: any) {
           setRegisterError(err.message || '注册失败，请稍后重试');
       } finally {

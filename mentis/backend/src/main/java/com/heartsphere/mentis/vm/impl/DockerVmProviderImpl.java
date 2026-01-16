@@ -2,6 +2,8 @@ package com.heartsphere.mentis.vm.impl;
 
 import com.heartsphere.mentis.service.MentisVmService;
 import com.heartsphere.mentis.vm.VmProvider;
+import com.heartsphere.mentis.vm.VmScreenshotService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,8 +26,11 @@ import java.util.UUID;
 @Slf4j
 @Lazy
 @Component
+@RequiredArgsConstructor
 @ConditionalOnProperty(name = "mentis.vm.provider", havingValue = "docker", matchIfMissing = false)
 public class DockerVmProviderImpl implements VmProvider {
+    
+    private final VmScreenshotService screenshotService;
     
     @Value("${mentis.docker.host:tcp://localhost:2375}")
     private String dockerHost;
@@ -232,5 +237,22 @@ public class DockerVmProviderImpl implements VmProvider {
             log.error("恢复 Docker 镜像快照失败: vmId={}, snapshotId={}", vmId, snapshotId, e);
             throw new RuntimeException("Failed to restore Docker snapshot", e);
         }
+    }
+    
+    @Override
+    public String getScreenshot(String vmId) {
+        log.debug("获取 Docker 容器截图（已禁用）: vmId={}", vmId);
+        // 截图功能已禁用，直接返回 null
+        return null;
+        
+        /* 截图功能已注释
+        try {
+            // 使用 VmScreenshotService 获取截图
+            return screenshotService.captureScreenshotFromDocker(vmId);
+        } catch (Exception e) {
+            log.error("获取 Docker 容器截图失败: vmId={}", vmId, e);
+            return null;
+        }
+        */
     }
 }

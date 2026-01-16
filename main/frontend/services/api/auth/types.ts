@@ -24,7 +24,15 @@ export interface AuthResponse {
   nickname: string;
   avatar: string;
   isFirstLogin?: boolean;
+  isGuest?: boolean; // 是否为游客
   worlds?: UserWorld[];
+  membership?: {
+    type: string;
+    planType: string;
+    textTokenQuota?: number;
+  };
+  presetEraId?: number; // 游客预置场景ID
+  presetCharacterIds?: number[]; // 游客预置角色ID列表
 }
 
 /**

@@ -1,7 +1,10 @@
 package com.heartsphere.admin.entity.heartconnect;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +13,10 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "heartsphere_connection_request")
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 public class HeartSphereConnectionRequest {
     
     @Id
@@ -46,7 +52,12 @@ public class HeartSphereConnectionRequest {
     protected void onCreate() {
         requestedAt = LocalDateTime.now();
     }
-    
+
+    // 为了兼容性，添加这些方法
+    public String getRequestId() {
+        return id != null ? id.toString() : null;
+    }
+
     /**
      * 请求状态枚举
      */

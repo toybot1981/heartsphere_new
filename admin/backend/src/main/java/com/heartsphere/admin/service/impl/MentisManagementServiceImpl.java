@@ -1,8 +1,7 @@
 package com.heartsphere.admin.service.impl;
 
-import com.heartsphere.admin.config.DataSourceContextHolder;
-import com.heartsphere.admin.dto.McpConfigDTO;
-import com.heartsphere.admin.repository.McpConfigRepository;
+import com.heartsphere.admin.dto.MentisMcpConfigDTO;
+import com.heartsphere.admin.repository.MentisMcpConfigRepository;
 import com.heartsphere.admin.service.MentisManagementService;
 import com.heartsphere.admin.service.MentisSyncService;
 import lombok.RequiredArgsConstructor;
@@ -10,13 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MentisManagementServiceImpl implements MentisManagementService {
     
-    private final McpConfigRepository mcpConfigRepository;
+    private final MentisMcpConfigRepository mentisMcpConfigRepository;
     private final MentisSyncService mentisSyncService;
     private final RestTemplate restTemplate;
     
@@ -35,23 +35,23 @@ public class MentisManagementServiceImpl implements MentisManagementService {
     private String mentisBackendBaseUrl;
     
     @Override
-    public List<McpConfigDTO> getMcpConfigs() {
-        return mcpConfigRepository.findAll().stream()
+    public List<MentisMcpConfigDTO> getMcpConfigs() {
+        return mentisMcpConfigRepository.findAll().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
     
     @Override
-    public McpConfigDTO getMcpConfig(Long id) {
-        return mcpConfigRepository.findById(id)
+    public MentisMcpConfigDTO getMcpConfig(Long id) {
+        return mentisMcpConfigRepository.findById(id)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("MCP config not found: " + id));
     }
     
     @Override
-    public McpConfigDTO createMcpConfig(McpConfigDTO dto) {
-        McpConfigRepository.McpConfigEntity entity = toEntity(dto);
-        McpConfigRepository.McpConfigEntity saved = mcpConfigRepository.save(entity);
+    public MentisMcpConfigDTO createMcpConfig(MentisMcpConfigDTO dto) {
+        MentisMcpConfigRepository.MentisMcpConfigEntity entity = toEntity(dto);
+        MentisMcpConfigRepository.MentisMcpConfigEntity saved = mentisMcpConfigRepository.save(entity);
         
         // 通知 Mentis 重新加载配置
         mentisSyncService.notifyMentisReload();
@@ -60,8 +60,8 @@ public class MentisManagementServiceImpl implements MentisManagementService {
     }
     
     @Override
-    public McpConfigDTO updateMcpConfig(Long id, McpConfigDTO dto) {
-        McpConfigRepository.McpConfigEntity existing = mcpConfigRepository.findById(id)
+    public MentisMcpConfigDTO updateMcpConfig(Long id, MentisMcpConfigDTO dto) {
+        MentisMcpConfigRepository.MentisMcpConfigEntity existing = mentisMcpConfigRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MCP config not found: " + id));
         
         // 更新字段
@@ -76,7 +76,7 @@ public class MentisManagementServiceImpl implements MentisManagementService {
         existing.setExtraConfig(dto.getExtraConfig());
         existing.setUserId(dto.getUserId());
         
-        McpConfigRepository.McpConfigEntity saved = mcpConfigRepository.save(existing);
+        MentisMcpConfigRepository.MentisMcpConfigEntity saved = mentisMcpConfigRepository.save(existing);
         
         // 通知 Mentis 重新加载配置
         mentisSyncService.notifyMentisReload();
@@ -86,7 +86,7 @@ public class MentisManagementServiceImpl implements MentisManagementService {
     
     @Override
     public void deleteMcpConfig(Long id) {
-        mcpConfigRepository.deleteById(id);
+        mentisMcpConfigRepository.deleteById(id);
         
         // 通知 Mentis 重新加载配置
         mentisSyncService.notifyMentisReload();
@@ -94,7 +94,7 @@ public class MentisManagementServiceImpl implements MentisManagementService {
     
     @Override
     public boolean testMcpConnection(Long id) {
-        McpConfigRepository.McpConfigEntity config = mcpConfigRepository.findById(id)
+        MentisMcpConfigRepository.MentisMcpConfigEntity config = mentisMcpConfigRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MCP config not found: " + id));
         
         try {
@@ -112,7 +112,7 @@ public class MentisManagementServiceImpl implements MentisManagementService {
             } else {
                 config.setLastError(null);
             }
-            mcpConfigRepository.save(config);
+            mentisMcpConfigRepository.save(config);
             
             return success;
         } catch (Exception e) {
@@ -120,7 +120,7 @@ public class MentisManagementServiceImpl implements MentisManagementService {
             config.setLastTestedAt(LocalDateTime.now());
             config.setConnectionStatus("ERROR");
             config.setLastError(e.getMessage());
-            mcpConfigRepository.save(config);
+            mentisMcpConfigRepository.save(config);
             return false;
         }
     }
@@ -133,14 +133,16 @@ public class MentisManagementServiceImpl implements MentisManagementService {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 // 假设返回的是包含 tools 列表的对象
-                if (response.getBody() instanceof java.util.Map) {
+                if (response.getBody() instanceof Map) {
                     @SuppressWarnings("unchecked")
-                    java.util.Map<String, Object> body = (java.util.Map<String, Object>) response.getBody();
-                    Object data = body.get("data");
-                    if (data != null && data instanceof java.util.List) {
-                        @SuppressWarnings("unchecked")
-                        List<Object> tools = (List<Object>) data;
-                        return tools;
+                    Map<String, Object> body = (Map<String, Object>) response.getBody();
+                    if (body != null) {
+                        Object data = body.get("data");
+                        if (data != null && data instanceof List) {
+                            @SuppressWarnings("unchecked")
+                            List<Object> tools = (List<Object>) data;
+                            return tools;
+                        }
                     }
                 }
             }
@@ -152,12 +154,48 @@ public class MentisManagementServiceImpl implements MentisManagementService {
     }
     
     @Override
+    public Map<String, Object> callMcpTool(Long id, String toolName, Map<String, Object> arguments) {
+        try {
+            String url = mentisBackendBaseUrl + "/api/mentis/mcp/configs/" + id + "/tools/" + toolName + "/call";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("arguments", arguments);
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<Object> response = restTemplate.postForEntity(url, entity, Object.class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                if (response.getBody() instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> body = (Map<String, Object>) response.getBody();
+                    if (body != null) {
+                        return body;
+                    }
+                }
+            }
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", "调用失败");
+            return errorResult;
+        } catch (Exception e) {
+            log.error("Failed to call MCP tool {} for config {}", toolName, id, e);
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", e.getMessage() != null ? e.getMessage() : "未知错误");
+            return errorResult;
+        }
+    }
+    
+    @Override
     public void notifyMentisReload() {
         mentisSyncService.notifyMentisReload();
     }
     
-    private McpConfigDTO toDTO(McpConfigRepository.McpConfigEntity entity) {
-        McpConfigDTO dto = new McpConfigDTO();
+    private MentisMcpConfigDTO toDTO(MentisMcpConfigRepository.MentisMcpConfigEntity entity) {
+        MentisMcpConfigDTO dto = new MentisMcpConfigDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
         dto.setServerType(entity.getServerType());
@@ -175,8 +213,8 @@ public class MentisManagementServiceImpl implements MentisManagementService {
         return dto;
     }
     
-    private McpConfigRepository.McpConfigEntity toEntity(McpConfigDTO dto) {
-        McpConfigRepository.McpConfigEntity entity = new McpConfigRepository.McpConfigEntity();
+    private MentisMcpConfigRepository.MentisMcpConfigEntity toEntity(MentisMcpConfigDTO dto) {
+        MentisMcpConfigRepository.MentisMcpConfigEntity entity = new MentisMcpConfigRepository.MentisMcpConfigEntity();
         entity.setId(dto.getId());
         entity.setName(dto.getName());
         entity.setServerType(dto.getServerType());

@@ -56,14 +56,12 @@ export const EmotionMemoryDemo: React.FC<EmotionMemoryDemoProps> = ({ userId }) 
     try {
       // 1. 分析情绪
       const emotion = await emotionSystem.analyzeEmotion(inputText, 'conversation');
-      console.log('情绪分析:', emotion);
 
       // 2. 提取记忆
       const memories = await memorySystem.extractAndSave(
         inputText,
         MemorySource.CONVERSATION
       );
-      console.log('提取的记忆:', memories);
 
       // 3. 获取相关记忆
       const relevantMemories = await memorySystem.getRelevantMemories(inputText, 3);
@@ -97,7 +95,6 @@ export const EmotionMemoryDemo: React.FC<EmotionMemoryDemoProps> = ({ userId }) 
 
     try {
       const trend = await emotionSystem.getTrend('week');
-      console.log('情绪趋势:', trend);
       alert(`情绪趋势: ${trend.trend} (${trend.trendDescription})`);
     } catch (error) {
       console.error('获取趋势失败:', error);
@@ -109,7 +106,6 @@ export const EmotionMemoryDemo: React.FC<EmotionMemoryDemoProps> = ({ userId }) 
 
     try {
       const statistics = await emotionSystem.getStatistics('week');
-      console.log('情绪统计:', statistics);
       setResults({ statistics });
     } catch (error) {
       console.error('获取统计失败:', error);

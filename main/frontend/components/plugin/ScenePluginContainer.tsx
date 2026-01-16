@@ -41,30 +41,28 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
   const [isExecuting, setIsExecuting] = useState(false);
   const [showAlbumView, setShowAlbumView] = useState(false); // 是否显示相册视图
   const [isMobile, setIsMobile] = useState(false); // 是否为移动设备
-  const [isHidden, setIsHidden] = useState(false); // 是否隐藏（吸附到右边栏）
+  // 从本地存储加载隐藏状态
+  const getHiddenStateFromStorage = (): boolean => {
+    try {
+      const key = `plugin_hidden_${plugin.pluginInstanceId}`;
+      const stored = localStorage.getItem(key);
+      return stored === 'true';
+    } catch {
+      return false;
+    }
+  };
 
-  // 调试日志：组件初始化
-  useEffect(() => {
-    console.log('[ScenePluginContainer] 组件初始化', {
-      pluginInstanceId: plugin.pluginInstanceId,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      isEditMode,
-      showAlbumView,
-      sceneId,
-    });
-  }, []);
+  const [isHidden, setIsHidden] = useState(getHiddenStateFromStorage()); // 是否隐藏（吸附到右边栏）
 
-  // 调试日志：showAlbumView 状态变化
+  // 保存隐藏状态到本地存储
   useEffect(() => {
-    console.log('[ScenePluginContainer] showAlbumView 状态变化', {
-      showAlbumView,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      isEditMode,
-      pluginInstanceId: plugin.pluginInstanceId,
-    });
-  }, [showAlbumView, plugin.pluginId, plugin.pluginName, isEditMode]);
+    try {
+      const key = `plugin_hidden_${plugin.pluginInstanceId}`;
+      localStorage.setItem(key, String(isHidden));
+    } catch (error) {
+      // 忽略存储错误
+    }
+  }, [isHidden, plugin.pluginInstanceId]);
   const [position, setPosition] = useState({ x: plugin.positionX, y: plugin.positionY });
   const [size, setSize] = useState({ width: plugin.width, height: plugin.height });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,30 +78,6 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // 调试日志：组件初始化
-  useEffect(() => {
-    logger.debug('[ScenePluginContainer] 组件初始化', {
-      pluginInstanceId: plugin.pluginInstanceId,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      isEditMode,
-      showAlbumView,
-      visible: plugin.visible,
-      isMobile,
-    });
-  }, []);
-
-  // 调试日志：showAlbumView 状态变化
-  useEffect(() => {
-    logger.debug('[ScenePluginContainer] showAlbumView 状态变化', {
-      pluginInstanceId: plugin.pluginInstanceId,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      showAlbumView,
-      isEditMode,
-    });
-  }, [showAlbumView, isEditMode]);
 
   useEffect(() => {
     setPosition({ x: plugin.positionX, y: plugin.positionY });
@@ -215,36 +189,8 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
 
   const handleExecutePlugin = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    console.log('[ScenePluginContainer] ========== handleExecutePlugin 被调用 ==========');
-    console.log('[ScenePluginContainer] 调用信息:', {
-      pluginInstanceId: plugin.pluginInstanceId,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      isEditMode,
-      isExecuting,
-      visible: plugin.visible,
-      showAlbumView: showAlbumView, // 当前状态
-    });
-    
-    logger.debug('[ScenePluginContainer] handleExecutePlugin 被调用', {
-      pluginInstanceId: plugin.pluginInstanceId,
-      pluginId: plugin.pluginId,
-      pluginName: plugin.pluginName,
-      isEditMode,
-      isExecuting,
-      visible: plugin.visible,
-    });
 
     if (isEditMode || isExecuting) {
-      console.warn('[ScenePluginContainer] ⚠️ 插件执行被阻止', {
-        reason: isEditMode ? '编辑模式' : '正在执行中',
-        pluginInstanceId: plugin.pluginInstanceId,
-      });
-      logger.warn('[ScenePluginContainer] 插件执行被阻止', {
-        reason: isEditMode ? '编辑模式' : '正在执行中',
-        pluginInstanceId: plugin.pluginInstanceId,
-      });
       return;
     }
 
@@ -253,24 +199,7 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
       // 获取token（从localStorage或context）
       const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || undefined;
       
-      logger.debug('[ScenePluginContainer] 开始执行插件', {
-        pluginInstanceId: plugin.pluginInstanceId,
-        pluginId: plugin.pluginId,
-        pluginName: plugin.pluginName,
-        sceneId,
-        hasToken: !!token,
-        config: plugin.config,
-      });
-      
       // 执行插件
-      console.log('[ScenePluginContainer] 调用 userPluginApi.executePlugin...', {
-        pluginId: plugin.pluginId,
-        sceneId,
-        action: 'execute',
-        hasConfig: !!plugin.config,
-        configKeys: plugin.config ? Object.keys(plugin.config) : [],
-      });
-      
       const result = await userPluginApi.executePlugin(
         plugin.pluginId,
         {
@@ -281,28 +210,8 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
         token
       );
 
-      console.log('[ScenePluginContainer] ========== 插件执行结果 ==========');
-      console.log('[ScenePluginContainer] 执行结果详情:', {
-        pluginInstanceId: plugin.pluginInstanceId,
-        pluginId: plugin.pluginId,
-        result,
-        resultAction: result?.action,
-        resultMessage: result?.message,
-        resultType: typeof result,
-        resultKeys: result ? Object.keys(result) : [],
-        resultStringified: JSON.stringify(result, null, 2),
-      });
-      
-      logger.debug('[ScenePluginContainer] 插件执行结果', {
-        pluginInstanceId: plugin.pluginInstanceId,
-        pluginId: plugin.pluginId,
-        result,
-        resultAction: result?.action,
-      });
-
       // 根据插件类型处理结果，实现与日志/相册的联动
       if (result?.action === 'open_journal') {
-        logger.debug('[ScenePluginContainer] 处理 open_journal 动作');
         // 打开日志编辑器
         showAlert(result.message || '正在打开日志编辑器...', 'success');
         if (onOpenJournal) {
@@ -310,82 +219,25 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
           setTimeout(() => {
             onOpenJournal();
           }, 500);
-        } else {
-          logger.warn('[ScenePluginContainer] onOpenJournal 回调未提供');
         }
       } else if (result?.action === 'open_album') {
-        console.log('[ScenePluginContainer] ========== 处理 open_album 动作 ==========');
-        console.log('[ScenePluginContainer] 插件信息:', {
-          pluginInstanceId: plugin.pluginInstanceId,
-          pluginId: plugin.pluginId,
-          pluginName: plugin.pluginName,
-          isEditMode,
-          showAlbumView: showAlbumView, // 当前状态
-        });
-        
-        logger.debug('[ScenePluginContainer] 处理 open_album 动作', {
-          pluginId: plugin.pluginId,
-          pluginName: plugin.pluginName,
-          isPhotoAlbum: plugin.pluginId === 'photo-album',
-          nameIncludesAlbum: plugin.pluginName?.includes('相册'),
-        });
-        
         // 如果是相册插件，直接显示相册视图
         const isPhotoAlbumPlugin = plugin.pluginId === 'photo-album' || plugin.pluginName?.includes('相册');
         
-        console.log('[ScenePluginContainer] 插件匹配检查:', {
-          pluginId: plugin.pluginId,
-          pluginName: plugin.pluginName,
-          'plugin.pluginId === "photo-album"': plugin.pluginId === 'photo-album',
-          'plugin.pluginName?.includes("相册")': plugin.pluginName?.includes('相册'),
-          isPhotoAlbumPlugin,
-        });
-        
-        logger.debug('[ScenePluginContainer] 判断是否为相册插件', {
-          pluginId: plugin.pluginId,
-          pluginName: plugin.pluginName,
-          isPhotoAlbumPlugin,
-          willShowAlbumView: isPhotoAlbumPlugin,
-        });
-        
         if (isPhotoAlbumPlugin) {
-          console.log('[ScenePluginContainer] ✅ 是相册插件，准备设置 showAlbumView = true');
-          console.log('[ScenePluginContainer] 设置前 showAlbumView 状态:', showAlbumView);
-          logger.info('[ScenePluginContainer] 设置 showAlbumView = true');
           setShowAlbumView(true);
-          console.log('[ScenePluginContainer] 已调用 setShowAlbumView(true)');
-          
           // 显示提示并自动关闭（1.5秒后）
           showAlert(result.message || '正在打开相册...', 'success', 'success', undefined, 1500);
-          
-          // 使用 setTimeout 确保状态更新后立即检查
-          setTimeout(() => {
-            console.log('[ScenePluginContainer] 设置后 showAlbumView 状态检查（延迟）:', showAlbumView);
-          }, 100);
         } else {
-          console.log('[ScenePluginContainer] ❌ 不是相册插件，使用外部回调');
           if (onOpenAlbum) {
-            logger.debug('[ScenePluginContainer] 使用外部相册回调');
             // 其他插件类型，使用回调打开外部相册
             setTimeout(() => {
               onOpenAlbum();
             }, 500);
-          } else {
-            console.warn('[ScenePluginContainer] ⚠️ onOpenAlbum 回调未提供');
-            logger.warn('[ScenePluginContainer] onOpenAlbum 回调未提供');
           }
         }
-        console.log('[ScenePluginContainer] ========== open_album 处理完成 ==========');
       } else {
-        console.log('[ScenePluginContainer] ⚠️ 进入 else 分支（未匹配 open_journal 或 open_album）');
-        console.log('[ScenePluginContainer] 结果详情:', {
-          action: result?.action,
-          message: result?.message,
-          resultType: typeof result,
-          resultKeys: result ? Object.keys(result) : [],
-          fullResult: result,
-        });
-        
+        // 处理其他类型的插件结果
         logger.debug('[ScenePluginContainer] 处理其他插件动作', {
           action: result?.action,
           message: result?.message,
@@ -394,8 +246,6 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
         // 兜底逻辑：如果是相册插件，即使后端没有返回 open_album action，也直接打开相册视图
         const isPhotoAlbumPlugin = plugin.pluginId === 'photo-album' || plugin.pluginName?.includes('相册');
         if (isPhotoAlbumPlugin) {
-          console.log('[ScenePluginContainer] 🔄 兜底逻辑：检测到相册插件，直接打开相册视图');
-          console.log('[ScenePluginContainer] 设置 showAlbumView = true (兜底逻辑)');
           setShowAlbumView(true);
           
           // 显示提示并自动关闭（1.5秒后）
@@ -521,8 +371,25 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
         }
       }}
     >
+      {/* Hide Button - 始终显示在插件上方 */}
+      {!isHidden && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggleHide();
+          }}
+          className="absolute -top-8 right-0 p-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-600 hover:border-slate-500 rounded-t-lg text-slate-400 hover:text-yellow-400 transition-all z-20"
+          title="隐藏插件"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m13.42 13.42l-3.29-3.29M3 3l13.42 13.42" />
+          </svg>
+        </button>
+      )}
+
       {/* Edit Mode Toolbar */}
-      {isEditMode && (
+      {isEditMode && !isHidden && (
         <div
           className="absolute -top-8 left-0 flex gap-1 bg-slate-900 border border-cyan-500 rounded-t-lg px-2 py-1 z-10"
           onMouseDown={(e) => e.stopPropagation()}
@@ -546,31 +413,16 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleHide();
-            }}
-            className="p-1 text-yellow-400 hover:text-yellow-300 transition-colors"
-            title={isHidden ? "显示插件" : "隐藏插件"}
-          >
-            {isHidden ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m13.42 13.42l-3.29-3.29M3 3l13.42 13.42" />
-              </svg>
-            )}
-          </button>
         </div>
       )}
 
-      {/* 隐藏时显示的小条提示 */}
+      {/* 隐藏时显示的小条提示 - 可点击恢复 */}
       {isHidden && (
-        <div className="w-full h-full flex items-center justify-center bg-slate-700/80 hover:bg-slate-600/90 transition-colors">
+        <div 
+          className="w-full h-full flex items-center justify-center bg-slate-700/80 hover:bg-slate-600/90 transition-colors cursor-pointer"
+          onClick={handleExpandFromHidden}
+          title={`点击恢复 ${plugin.pluginName || '插件'}`}
+        >
           <div className="transform -rotate-90 whitespace-nowrap text-xs text-slate-300 font-semibold flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -643,42 +495,8 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
             // 允许在编辑模式下也显示相册视图（用于预览）
             const shouldShowAlbumView = showAlbumView && isPhotoAlbumPlugin;
             
-            console.log('[ScenePluginContainer] ========== 渲染判断 ==========');
-            console.log('[ScenePluginContainer] 渲染条件检查:', {
-              pluginInstanceId: plugin.pluginInstanceId,
-              pluginId: plugin.pluginId,
-              pluginName: plugin.pluginName,
-              isEditMode,
-              showAlbumView,
-              isPhotoAlbumPlugin,
-              shouldShowAlbumView,
-            });
-            
-            logger.debug('[ScenePluginContainer] 渲染判断', {
-              pluginInstanceId: plugin.pluginInstanceId,
-              pluginId: plugin.pluginId,
-              pluginName: plugin.pluginName,
-              isEditMode,
-              showAlbumView,
-              isPhotoAlbumPlugin,
-              shouldShowAlbumView,
-            });
-            
             if (shouldShowAlbumView) {
-              console.log('[ScenePluginContainer] ✅ 条件满足，渲染相册视图');
               const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || undefined;
-              console.log('[ScenePluginContainer] 准备渲染 PhotoAlbumPlugin', {
-                pluginInstanceId: plugin.pluginInstanceId,
-                pluginId: plugin.pluginId,
-                pluginName: plugin.pluginName,
-                hasToken: !!token,
-              });
-              logger.debug('[ScenePluginContainer] 渲染 PhotoAlbumPlugin', {
-                pluginInstanceId: plugin.pluginInstanceId,
-                pluginId: plugin.pluginId,
-                pluginName: plugin.pluginName,
-                hasToken: !!token,
-              });
               
               return (
                 <div className="flex-1 overflow-hidden">
@@ -690,7 +508,6 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                       </h3>
                       <button
                         onClick={() => {
-                          console.log('[ScenePluginContainer] 点击返回按钮，设置 showAlbumView = false');
                           setShowAlbumView(false);
                         }}
                         className="p-1 text-slate-400 hover:text-white transition-colors"
@@ -711,13 +528,6 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                 </div>
               );
             }
-            
-            console.log('[ScenePluginContainer] ❌ 条件不满足，渲染默认视图', {
-              isEditMode,
-              showAlbumView,
-              isPhotoAlbumPlugin,
-              reason: isEditMode ? 'isEditMode=true' : !showAlbumView ? 'showAlbumView=false' : !isPhotoAlbumPlugin ? '不是相册插件' : '未知',
-            });
             
             return (
             <>
@@ -779,8 +589,6 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('[ScenePluginContainer] 编辑模式下点击预览相册按钮');
-                      console.log('[ScenePluginContainer] 设置 showAlbumView = true (编辑模式)');
                       setShowAlbumView(true);
                     }}
                     className="px-3 py-1.5 text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors border border-indigo-500/30"

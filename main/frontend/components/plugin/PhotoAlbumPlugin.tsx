@@ -18,12 +18,6 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   token,
   onClose,
 }) => {
-  console.log('[PhotoAlbumPlugin] ========== 组件渲染 ==========');
-  console.log('[PhotoAlbumPlugin] 渲染参数:', {
-    pluginInstanceId,
-    hasToken: !!token,
-    tokenPreview: token ? `${token.substring(0, 20)}...` : 'null',
-  });
   const [viewMode, setViewMode] = useState<ViewMode>('albums');
   const [albums, setAlbums] = useState<Album[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
@@ -34,13 +28,6 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
   // 调试日志：组件初始化
   useEffect(() => {
-    console.log('[PhotoAlbumPlugin] ========== 组件初始化 ==========');
-    console.log('[PhotoAlbumPlugin] 初始化参数:', {
-      pluginInstanceId,
-      hasToken: !!token,
-      viewMode,
-      tokenLength: token?.length || 0,
-    });
     logger.debug('[PhotoAlbumPlugin] 组件初始化', {
       pluginInstanceId,
       hasToken: !!token,
@@ -68,14 +55,6 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    console.log('[PhotoAlbumPlugin] ========== useEffect 触发 ==========');
-    console.log('[PhotoAlbumPlugin] useEffect 依赖变化:', {
-      pluginInstanceId,
-      viewMode,
-      hasSelectedAlbum: !!selectedAlbum,
-      selectedAlbumId: selectedAlbum?.id,
-      selectedAlbumName: selectedAlbum?.name,
-    });
     
     logger.debug('[PhotoAlbumPlugin] useEffect 触发', {
       pluginInstanceId,
@@ -84,24 +63,14 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
     });
     
     if (viewMode === 'albums') {
-      console.log('[PhotoAlbumPlugin] viewMode === "albums"，调用 loadAlbums');
       logger.debug('[PhotoAlbumPlugin] 加载相册列表');
       loadAlbums();
     } else if (viewMode === 'album-detail' && selectedAlbum) {
-      console.log('[PhotoAlbumPlugin] viewMode === "album-detail"，调用 loadPhotos', {
-        albumId: selectedAlbum.id,
-        albumName: selectedAlbum.name,
-      });
       logger.debug('[PhotoAlbumPlugin] 加载照片列表', {
         albumId: selectedAlbum.id,
         albumName: selectedAlbum.name,
       });
       loadPhotos();
-    } else {
-      console.log('[PhotoAlbumPlugin] 不满足加载条件', {
-        viewMode,
-        hasSelectedAlbum: !!selectedAlbum,
-      });
     }
   }, [viewMode, selectedAlbum]);
 
@@ -722,7 +691,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
       willRenderUpload: viewMode === 'photo-upload',
       willRenderPhotoViewer: !!selectedPhoto,
     });
-  });
+  }, [pluginInstanceId, viewMode, albums.length, photos.length, selectedAlbum, selectedPhoto, loading, uploading]);
 
   return (
     <div className="h-full w-full flex flex-col bg-slate-900 rounded-lg overflow-hidden">

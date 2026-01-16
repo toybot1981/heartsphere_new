@@ -146,7 +146,13 @@ export const SessionListPage: React.FC = () => {
       )}
 
       {/* 创建会话对话框 */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
+      <Dialog 
+        open={createDialogOpen} 
+        onClose={() => setCreateDialogOpen(false)}
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
+      >
         <DialogTitle>新建会话</DialogTitle>
         <DialogContent>
           <TextField

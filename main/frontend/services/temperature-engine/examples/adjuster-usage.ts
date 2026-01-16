@@ -51,13 +51,11 @@ async function example1() {
     original: '你好',
     targetTemperature: temperature.level,
   });
-  console.log('调节后的内容:', warmMessage);
 
   // 调节角色
   const characterConfig = await engine.adjustCharacter(temperature.level, {
     emotion: 'happy',
   });
-  console.log('角色配置:', characterConfig);
 }
 
 // ========== 示例2：UI调节 ==========
@@ -120,22 +118,18 @@ async function example4() {
       timeOfDay: 'morning',
     },
   });
-  console.log('温暖内容:', warmContent);
 
   // 生成问候语
   const greeting = contentAdjuster.generateGreeting('warm', {
     timeOfDay: 'morning',
   });
-  console.log('问候语:', greeting);
 
   // 生成鼓励语
   const encouragement = contentAdjuster.generateEncouragement('warm');
-  console.log('鼓励语:', encouragement);
 
   // 批量调节
   const contents = ['你好', '好的', '再见'];
   const adjusted = await contentAdjuster.adjustBatch(contents, 'warm');
-  console.log('批量调节:', adjusted);
 }
 
 // ========== 示例5：角色调节 ==========
@@ -147,15 +141,12 @@ async function example5() {
   const config = await characterAdjuster.adjust('warm', {
     emotion: 'happy',
   });
-  console.log('角色配置:', config);
 
   // 获取表情建议
   const expression = characterAdjuster.getExpressionSuggestion('warm', 'happy');
-  console.log('建议表情:', expression);
 
   // 获取动作建议
   const action = characterAdjuster.getActionSuggestion('warm', 'happy');
-  console.log('建议动作:', action);
 
   // 根据温度感评分调整
   const score = {
@@ -171,7 +162,6 @@ async function example5() {
     timestamp: Date.now(),
   };
   const characterConfig = await characterAdjuster.adjustByScore(score);
-  console.log('角色配置:', characterConfig);
 }
 
 // ========== 示例6：在React组件中使用 ==========

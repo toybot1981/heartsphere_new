@@ -304,11 +304,12 @@ export const PromptManagement: React.FC<PromptManagementProps> = ({ adminToken, 
             setPage(0);
           }}
           className="px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white"
+          style={{ fontFamily: 'inherit' }}
         >
           <option value="">全部分类</option>
           {categories.map((cat) => (
-            <option key={cat.code} value={cat.code}>
-              {cat.name}
+            <option key={cat.code} value={cat.code} style={{ fontFamily: 'inherit' }}>
+              {cat.name || cat.code}
             </option>
           ))}
         </select>
@@ -350,34 +351,34 @@ export const PromptManagement: React.FC<PromptManagementProps> = ({ adminToken, 
               {template.description && (
                 <p className="text-sm text-gray-300 mb-3 line-clamp-2">{template.description}</p>
               )}
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-wrap gap-1.5 mt-4">
                 <Button
                   onClick={() => handlePreview(template)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm py-1"
+                  className="flex-1 min-w-[60px] bg-blue-600 hover:bg-blue-700 text-xs py-1 px-2"
                 >
                   预览
                 </Button>
                 <Button
                   onClick={() => handleOpenGenerate(template)}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-sm py-1"
+                  className="flex-1 min-w-[60px] bg-purple-600 hover:bg-purple-700 text-xs py-1 px-2"
                 >
                   AI生成
                 </Button>
                 <Button
                   onClick={() => handleEdit(template)}
-                  className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-sm py-1"
+                  className="flex-1 min-w-[60px] bg-yellow-600 hover:bg-yellow-700 text-xs py-1 px-2"
                 >
                   编辑
                 </Button>
                 <Button
                   onClick={() => handleCopy(template)}
-                  className="bg-gray-600 hover:bg-gray-700 text-sm py-1"
+                  className="flex-1 min-w-[60px] bg-gray-600 hover:bg-gray-700 text-xs py-1 px-2"
                 >
                   复制
                 </Button>
                 <Button
                   onClick={() => handleDelete(template)}
-                  className="bg-red-600 hover:bg-red-700 text-sm py-1"
+                  className="flex-1 min-w-[60px] bg-red-600 hover:bg-red-700 text-xs py-1 px-2"
                 >
                   删除
                 </Button>
@@ -433,11 +434,12 @@ export const PromptManagement: React.FC<PromptManagementProps> = ({ adminToken, 
                   value={formData.categoryCode}
                   onChange={(e) => setFormData({ ...formData, categoryCode: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
+                  style={{ fontFamily: 'inherit' }}
                 >
                   <option value="">请选择分类</option>
                   {categories.map((cat) => (
-                    <option key={cat.code} value={cat.code}>
-                      {cat.name}
+                    <option key={cat.code} value={cat.code} style={{ fontFamily: 'inherit' }}>
+                      {cat.name || cat.code}
                     </option>
                   ))}
                 </select>

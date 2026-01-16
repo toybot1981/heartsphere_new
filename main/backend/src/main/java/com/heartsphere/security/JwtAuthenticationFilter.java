@@ -30,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             if (jwt != null) {
                 logger.debug("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
+                logger.debug("JWT token length: " + jwt.length() + ", contains dots: " + jwt.chars().filter(ch -> ch == '.').count());
                 
                 // 2. 验证令牌
                 if (jwtUtils.validateJwtToken(jwt)) {
@@ -78,8 +79,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
         
-        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7);
+        if (StringUtils.hasText(headerAuth)) {
+            logger.debug("Authorization header found: " + (headerAuth.length() > 30 ? headerAuth.substring(0, 30) + "..." : headerAuth));
+            
+            if (headerAuth.startsWith("Bearer ")) {
+                String jwt = headerAuth.substring(7);
+                logger.debug("Extracted JWT token length: " + jwt.length() + ", starts with: " + (jwt.length() > 10 ? jwt.substring(0, 10) : jwt));
+                return jwt;
+            } else {
+                logger.warn("Authorization header does not start with 'Bearer ': " + (headerAuth.length() > 50 ? headerAuth.substring(0, 50) + "..." : headerAuth));
+            }
+        } else {
+            logger.debug("No Authorization header found in request");
         }
         
         return null;

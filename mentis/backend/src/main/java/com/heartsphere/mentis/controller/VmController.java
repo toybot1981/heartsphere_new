@@ -140,15 +140,99 @@ public class VmController {
             @PathVariable String sessionId,
             Authentication authentication) {
         
-        // TODO: 实现截图获取逻辑
         // TODO: 权限验证 - 验证用户是否有权限访问该会话的虚拟机
         Long userId = getUserId(authentication);
         
-        Map<String, String> result = Map.of(
-            "screenshotUrl", "",
-            "timestamp", String.valueOf(System.currentTimeMillis())
-        );
+        // 通过会话ID获取虚拟机实例
+        com.heartsphere.mentis.vm.VmProvider.VmInstance vmInstance = vmManager.getVmForSession(sessionId);
+        if (vmInstance == null) {
+            return ResponseEntity.ok(ApiResponse.error(404, "该会话未关联虚拟机"));
+        }
+        
+        // 截图功能已禁用
+        // log.debug("截图功能已禁用: sessionId={}, vmId={}", sessionId, vmInstance.getVmId());
+        
+        Map<String, String> result = new java.util.HashMap<>();
+        result.put("screenshotUrl", "");
+        result.put("screenshot", "");
+        result.put("screenshotDisabled", "true");
+        result.put("message", "截图功能已禁用");
+        result.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        result.put("vmId", vmInstance.getVmId());
+        
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+    
+    /**
+     * 获取虚拟机 VNC 连接信息
+     */
+    @GetMapping("/{sessionId}/vnc")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getVncInfo(
+            @PathVariable String sessionId,
+            Authentication authentication) {
+        
+        // TODO: 权限验证 - 验证用户是否有权限访问该会话的虚拟机
+        Long userId = getUserId(authentication);
+        
+        // 通过会话ID获取虚拟机实例
+        com.heartsphere.mentis.vm.VmProvider.VmInstance vmInstance = vmManager.getVmForSession(sessionId);
+        if (vmInstance == null) {
+            return ResponseEntity.ok(ApiResponse.error(404, "该会话未关联虚拟机"));
+        }
+        
+        // 获取 VNC 连接信息
+        Map<String, Object> vncInfo = vmManager.getVncInfo(vmInstance.getVmId());
+        
+        if (vncInfo == null || vncInfo.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.error(404, "无法获取 VNC 连接信息，可能当前 Provider 不支持 VNC"));
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(vncInfo));
+    }
+    
+    /**
+     * 在虚拟机中执行命令
+     */
+    @PostMapping("/{sessionId}/execute")
+    public ResponseEntity<ApiResponse<MentisVmService.CommandResult>> executeCommand(
+            @PathVariable String sessionId,
+            @RequestBody Map<String, String> requestBody,
+            Authentication authentication) {
+        
+        // TODO: 权限验证 - 验证用户是否有权限访问该会话的虚拟机
+        Long userId = getUserId(authentication);
+        
+        // 获取命令
+        String command = requestBody.get("command");
+        if (command == null || command.trim().isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.error(400, "命令不能为空"));
+        }
+        
+        // 执行命令
+        MentisVmService.CommandResult result = vmManager.executeCommandForSession(sessionId, command);
+        
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+    
+    /**
+     * 删除虚拟机
+     */
+    @DeleteMapping("/{sessionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteVm(
+            @PathVariable String sessionId,
+            Authentication authentication) {
+        
+        // TODO: 权限验证 - 验证用户是否有权限删除该会话的虚拟机
+        Long userId = getUserId(authentication);
+        
+        // 通过会话ID删除虚拟机
+        com.heartsphere.mentis.vm.VmProvider.VmInstance vmInstance = vmManager.getVmForSession(sessionId);
+        if (vmInstance == null) {
+            return ResponseEntity.ok(ApiResponse.error(404, "该会话未关联虚拟机"));
+        }
+        
+        vmManager.deleteVmForSession(sessionId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
     
     /**

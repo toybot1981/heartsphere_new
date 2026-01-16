@@ -53,7 +53,6 @@ export const demoScenarios: DemoScenario[] = [
     name: 'JavaScript 脚本执行',
     category: '脚本执行',
     description: '执行一个简单的 JavaScript 脚本',
-    exampleMessage: '请帮我执行一个 JavaScript 脚本：\n```javascript\nconsole.log("Hello from JavaScript!");\nconst sum = [1, 2, 3, 4, 5].reduce((a, b) => a + b, 0);\nconsole.log("Sum:", sum);\n```',
     expectedResult: '应该输出 Hello from JavaScript! 和 Sum: 15'
   },
   {

@@ -22,7 +22,6 @@ export const initCustomSceneMappings = async (): Promise<void> => {
   try {
     const storedMappings = await storageService.getCustomSceneMappings();
     customSceneMappings = storedMappings || {};
-    console.log('[sceneMapping] 加载自定义场景映射:', customSceneMappings);
   } catch (error) {
     console.error('[sceneMapping] 加载自定义场景映射失败:', error);
     customSceneMappings = {};
@@ -57,7 +56,6 @@ export const getWorldIdForSceneId = (sceneId: string): number => {
 export const saveCustomSceneMapping = async (sceneId: string, worldId: number): Promise<void> => {
   customSceneMappings[sceneId] = worldId;
   await storageService.saveCustomSceneMappings(customSceneMappings);
-  console.log('[sceneMapping] 保存自定义场景映射:', { sceneId, worldId });
 };
 
 

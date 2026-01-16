@@ -99,10 +99,11 @@ void speechToTextStream(AudioRequest request,
 **Risk**: 实时语音识别 API 的具体格式可能与文档不一致
 
 **Mitigation**:
-- 查阅最新的火山引擎 API 文档
+- 严格按照官方文档 [https://www.volcengine.com/docs/6561/1594356?lang=zh](https://www.volcengine.com/docs/6561/1594356?lang=zh) 实现
 - 实现灵活的响应解析
 - 添加错误处理和日志记录
 - 提供配置项允许调整 API 参数
+- 在代码中引用官方文档链接，便于后续维护
 
 ### Risk 4: 性能影响
 **Risk**: 实时语音识别可能增加服务器负载

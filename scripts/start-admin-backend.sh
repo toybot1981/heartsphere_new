@@ -39,8 +39,13 @@ if ! command -v mvn &> /dev/null; then
     exit 1
 fi
 
+# 设置 Java 17
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+export PATH=$JAVA_HOME/bin:$PATH
+
 # 启动服务
 echo -e "${GREEN}启动 $PROJECT_NAME...${NC}"
+echo -e "${YELLOW}使用 Java: $(java -version 2>&1 | head -1)${NC}"
 nohup mvn spring-boot:run > "$PROJECT_ROOT/admin-backend.log" 2>&1 &
 
 PID=$!

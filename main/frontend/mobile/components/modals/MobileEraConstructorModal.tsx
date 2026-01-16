@@ -10,7 +10,8 @@ import { MobileFormField } from '../MobileFormField';
 import { MobileLoadingSpinner } from '../MobileLoadingSpinner';
 import { MobileStatusStyles, MobileColors, MobileTypography, MobileSpacing, MobileInputStyles, MobileCardStyles } from '../MobileStyleGuide';
 import { useEraConstructor } from '../../hooks/useEraConstructor';
-import type { WorldScene } from '../../../types';
+import type { WorldScene, WorldStyle } from '../../../types';
+import { WORLD_STYLE_DESCRIPTIONS } from '../../../types';
 
 interface MobileEraConstructorModalProps {
   initialScene?: WorldScene | null;
@@ -35,6 +36,7 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
     name,
     description,
     imageUrl,
+    style,
     imageMode,
     creationMode,
     selectedPresetEraId,
@@ -47,6 +49,7 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
     setName,
     setDescription,
     setImageUrl,
+    setStyle,
     setImageMode,
     setCreationMode,
     handleGetPrompt,
@@ -189,6 +192,26 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
                     disabled={isLoading}
                     aria-label="场景简介"
                   />
+                </MobileFormField>
+
+                {/* 场景风格选择 */}
+                <MobileFormField label="场景风格">
+                  <select
+                    value={style}
+                    onChange={(e) => setStyle(e.target.value as WorldStyle)}
+                    className={MobileInputStyles}
+                    disabled={isLoading}
+                    aria-label="场景风格"
+                  >
+                    {(Object.keys(WORLD_STYLE_DESCRIPTIONS) as WorldStyle[]).map((styleOption) => (
+                      <option key={styleOption} value={styleOption}>
+                        {WORLD_STYLE_DESCRIPTIONS[styleOption].name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className={`${MobileTypography.fontSize.xs} ${MobileColors.text.muted} mt-1`}>
+                    {WORLD_STYLE_DESCRIPTIONS[style].description}。风格将影响场景和角色图片的生成。
+                  </p>
                 </MobileFormField>
 
                 {/* 图片设置 */}

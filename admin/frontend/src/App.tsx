@@ -21,6 +21,7 @@ const LoadingFallback: React.FC = () => (
 );
 
 // 内部组件：处理认证和路由
+// 注意：此组件必须在 AdminAuthProvider 内部使用
 const AppContent: React.FC = () => {
   const { isAuthenticated, login, loginError, loading } = useAdminAuth();
 
@@ -63,5 +64,8 @@ const App: React.FC = () => {
     </BrowserRouter>
   );
 };
+
+// 确保 AppContent 在 Provider 内部
+// 如果出现 Context 错误，检查 Provider 的包裹顺序
 
 export default App;

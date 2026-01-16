@@ -63,7 +63,6 @@ export const useMainStoryHandlers = () => {
           secrets: mainStory.secrets,
           motivations: mainStory.motivations,
         }, token);
-        console.log(`[useMainStoryHandlers] 主线故事更新成功: ID=${mainStoryId}`);
       } else {
         // 创建新主线故事
         // 注意：CreateUserMainStoryDTO 只支持 systemMainStoryId, eraId, name
@@ -92,7 +91,6 @@ export const useMainStoryHandlers = () => {
             motivations: mainStory.motivations,
           }, token);
         }
-        console.log(`[useMainStoryHandlers] 主线故事创建成功: ID=${createdMainStory.id}`);
         
         // 更新本地状态中的主线故事ID
         const updatedUserWorldScenes = gameState.userWorldScenes.map(scene => {
@@ -158,7 +156,6 @@ export const useMainStoryHandlers = () => {
           try {
             const mainStoryId = parseInt(mainStory.id, 10);
             await userMainStoryApi.delete(mainStoryId, token);
-            console.log('Main story deleted from server:', mainStoryId);
             showAlert('主线故事已删除', '删除成功', 'success');
           } catch (error) {
             console.error('Failed to delete main story from server:', error);
@@ -173,19 +170,6 @@ export const useMainStoryHandlers = () => {
    * 编辑主线故事
    */
   const handleEditMainStory = useCallback(async (mainStory: Character, sceneId: string) => {
-    console.log('========== [useMainStoryHandlers] 编辑主线故事 ==========');
-    console.log('[useMainStoryHandlers] handleEditMainStory 调用:', {
-      mainStoryId: mainStory.id,
-      mainStoryName: mainStory.name,
-      sceneId: sceneId,
-      userProfile: gameState.userProfile ? {
-        id: gameState.userProfile.id,
-        nickname: gameState.userProfile.nickname,
-        isGuest: gameState.userProfile.isGuest
-      } : null,
-      timestamp: new Date().toISOString()
-    });
-    
     if (!gameState.userProfile || gameState.userProfile.isGuest) {
       console.warn('[useMainStoryHandlers] 编辑主线故事失败: 用户未登录或为游客');
       showAlert('请先登录才能编辑主线故事', '需要登录', 'warning');

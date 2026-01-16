@@ -119,6 +119,7 @@ export interface WorldScene {
   name: string;
   description: string;
   imageUrl: string;
+  style?: WorldStyle; // 场景风格
   characters: Character[];
   mainStory?: Character;
   scripts?: Array<{
@@ -288,7 +289,7 @@ export interface DebugLog {
 }
 
 export interface GameState {
-  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'mobileProfile' | 'profile' | 'sharedHeartSphere' | 'sharedCharacterSelection' | 'sharedChat';
+  currentScreen: 'profileSetup' | 'entryPoint' | 'realWorld' | 'sceneSelection' | 'characterSelection' | 'chat' | 'builder' | 'connectionSpace' | 'mobileProfile' | 'profile' | 'sharedHeartSphere' | 'sharedCharacterSelection' | 'sharedChat' | 'mailbox';
   userProfile: UserProfile | null;
   selectedSceneId: string | null;
   selectedCharacterId: string | null;

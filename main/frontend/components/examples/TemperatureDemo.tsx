@@ -134,8 +134,6 @@ export const TemperatureDemo: React.FC = () => {
               <div className="flex justify-center items-center space-x-12 py-8">
                 <Character
                   size={150}
-                  onExpressionChange={(exp) => console.log('Expression changed:', exp)}
-                  onActionComplete={(action) => console.log('Action completed:', action)}
                 />
                 
                 <div className="space-y-4">

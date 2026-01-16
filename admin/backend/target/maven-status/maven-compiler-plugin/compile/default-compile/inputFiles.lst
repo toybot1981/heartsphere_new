@@ -1,7 +1,6 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminBillingProviderController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ImageProcessingService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/edu/AdminEduStudentDTO.java
-/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/McpConfigDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/SystemEraDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/heartconnect/HeartSphereConnectionRequestRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/SystemWorldService.java
@@ -25,6 +24,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminHeartSphereConnectionController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/config/WebSecurityConfig.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/heartconnect/PortalTeleportationLogRepository.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/config/JdbcConfig.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/edu/AdminEduAnalyticsService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/PromptGenerateRequest.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/heartconnect/CreateConnectionRequestRequest.java
@@ -66,6 +66,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/graph/core/node/EndNode.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/util/heartconnect/ShareCodeGenerator.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/ai/AudioResponse.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/MentisToolConfigRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminEntityController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ChronosLetterService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminBillingResourcePoolController.java
@@ -84,6 +85,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/MentisAgentConfigDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/graph/ExecutionLogService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/AdminOperationLog.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ToolTestService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/billing/PricingService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/EraRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/billing/BillingAlertRepository.java
@@ -128,6 +130,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/heartconnect/ResponseConnectionRequestRequest.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/DashboardStatisticsDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/BaseAdminController.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/MentisToolController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/SystemScriptRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/graph/GraphNodeRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/AIRoutingStrategyRepository.java
@@ -148,6 +151,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/graph/core/node/SkillCheckNodeExample.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/graph/GraphDefinition.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/heartconnect/ShareConfigService.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminVideoController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/plugin/PluginListResponse.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/edu/AdminEduAnalyticsController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/impl/MentisAgentServiceImpl.java
@@ -184,6 +188,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/AdminApplication.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/heartconnect/PortalPermissionRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/InviteCode.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminImageController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/PromptVersionRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/UpdateSystemAdminDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/billing/BillingAlert.java
@@ -210,6 +215,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/SystemMainStoryDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminInviteCodeController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/MemoryStatisticsDTO.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/MentisMcpConfigRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/SystemWorldRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/SubscriptionPlan.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/DashboardStatisticsService.java
@@ -298,15 +304,16 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/SystemWorld.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/edu/AdminEduContentDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/billing/BillingAlertService.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/MentisMcpConfigDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/plugin/PluginRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/config/DataSource.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/ChronosLetter.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/billing/AICostDaily.java
-/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/McpConfigRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/heartconnect/PortalConfigRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/PresetScriptGeneratorService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/heartconnect/HeartSphereConnection.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ApiKeyService.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ThumbnailGenerationService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/ImageStorageService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/HeartSphereConnectionStatisticsDTO.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/ItemEventEraMatchingController.java
@@ -316,6 +323,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/PromptRenderRequest.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/billing/TokenPackage.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/AIModelConfigRepository.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/MentisToolConfigService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminScriptController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/controller/AdminSubscriptionPlanController.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/billing/AICostDailyRepository.java
@@ -326,6 +334,7 @@
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/dto/graph/GraphDefinitionCreateRequest.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/repository/ChronosLetterRepository.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/graph/GraphExecution.java
+/Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/VideoConversionService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/config/DataSourceConfig.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/service/SystemResourceService.java
 /Users/admin/Workspace/heartsphere_new/admin/backend/src/main/java/com/heartsphere/admin/entity/heartconnect/HeartSphereConnectionRequest.java

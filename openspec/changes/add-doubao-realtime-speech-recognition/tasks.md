@@ -1,14 +1,14 @@
 ## 1. 接口和 DTO 设计
 
-- [ ] 1.1 在 `ModelAdapter` 接口中添加 `speechToTextStream` 方法签名
-- [ ] 1.2 创建 `RealtimeAudioRequest` DTO 类，包含音频数据、格式、采样率等字段
-- [ ] 1.3 创建 `RealtimeAudioResponse` DTO 类，包含识别文本、是否部分结果、置信度等字段
-- [ ] 1.4 在 `AIService` 接口中添加 `speechToTextStream` 方法
-- [ ] 1.5 更新 `AudioRequest` 和 `AudioResponse`，添加实时识别相关字段（如 `isPartial`、`streamId` 等）
+- [x] 1.1 在 `ModelAdapter` 接口中添加 `speechToTextStream` 方法签名
+- [x] 1.2 创建 `RealtimeAudioRequest` DTO 类，包含音频数据、格式、采样率等字段（使用扩展的 AudioRequest）
+- [x] 1.3 创建 `RealtimeAudioResponse` DTO 类，包含识别文本、是否部分结果、置信度等字段（使用扩展的 AudioResponse）
+- [x] 1.4 在 `AIService` 接口中添加 `speechToTextStream` 方法
+- [x] 1.5 更新 `AudioRequest` 和 `AudioResponse`，添加实时识别相关字段（如 `isPartial`、`streamId` 等）
 
 ## 2. DoubaoAdapter 实时识别实现
 
-- [ ] 2.1 查阅火山引擎实时语音识别 API 文档，确认 WebSocket 协议格式
+- [ ] 2.1 查阅火山引擎实时语音识别 API 官方文档（https://www.volcengine.com/docs/6561/1594356?lang=zh），确认 WebSocket 协议格式、消息格式、认证方式等
 - [ ] 2.2 实现 WebSocket 客户端连接逻辑（使用 Spring WebSocket 或 Java-WebSocket 库）
 - [ ] 2.3 实现音频数据流发送逻辑（将 Base64 音频数据转换为二进制发送）
 - [ ] 2.4 实现识别结果接收和解析逻辑

@@ -160,3 +160,19 @@ class MemoryService:
     async def search_by_category(self, category_name: str) -> List[Dict[str, Any]]:
         """按分类搜索"""
         return await self.database.search_items_by_category(category_name)
+
+    async def get_all_items(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        获取所有记忆项
+        
+        Args:
+            user_id: 可选，按用户ID过滤
+        
+        Returns:
+            记忆项列表
+        """
+        return await self.database.get_all_items(user_id)
+
+    async def get_all_resources(self) -> List[Dict[str, Any]]:
+        """获取所有资源"""
+        return await self.database.get_all_resources()

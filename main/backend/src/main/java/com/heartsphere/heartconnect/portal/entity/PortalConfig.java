@@ -27,7 +27,7 @@ public class PortalConfig {
     @Column(name = "portal_name", nullable = false, length = 100)
     private String portalName;
     
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.heartsphere.heartconnect.portal.entity.converter.PortalTypeConverter.class)
     @Column(name = "portal_type", nullable = false)
     private PortalType portalType = PortalType.STARGATE;
     
@@ -49,7 +49,7 @@ public class PortalConfig {
     @Column(name = "size", columnDefinition = "DOUBLE(5,2) DEFAULT 3.0")
     private Double size = 3.0; // 默认3米
     
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.heartsphere.heartconnect.portal.entity.converter.PermissionTypeConverter.class)
     @Column(name = "permission_type", nullable = false)
     private PermissionType permissionType = PermissionType.APPROVAL;
     
@@ -82,7 +82,11 @@ public class PortalConfig {
     public enum PortalType {
         STARGATE,  // 星门传送门
         WORMHOLE,  // 虫洞传送门
-        QUANTUM    // 量子传送门
+        QUANTUM,   // 量子传送门
+        GARDEN,    // 花园传送门 - 典雅轻柔
+        SAKURA,    // 樱花传送门 - 典雅轻柔
+        BUTTERFLY, // 蝴蝶传送门 - 典雅轻柔
+        RAINBOW    // 彩虹传送门 - 典雅轻柔
     }
     
     /**

@@ -12,6 +12,9 @@ import com.heartsphere.repository.WorldRepository;
 import com.heartsphere.repository.EraRepository;
 import com.heartsphere.repository.CharacterRepository;
 import com.heartsphere.security.UserDetailsImpl;
+import com.heartsphere.service.MembershipService;
+import com.heartsphere.util.GuestAccessChecker;
+import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.utils.DTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +53,9 @@ public class JournalEntryController {
 
     @Autowired
     private com.heartsphere.shared.util.ImageUrlUtils imageUrlUtils;
+
+    @Autowired
+    private MembershipService membershipService;
 
     // 获取当前用户的所有记录（支持搜索和标签筛选）
     @GetMapping
@@ -122,7 +128,7 @@ public class JournalEntryController {
 
     // 创建新记录
     @PostMapping
-    public ResponseEntity<JournalEntryDTO> createJournalEntry(@RequestBody Map<String, Object> journalEntryMap) {
+    public ResponseEntity<?> createJournalEntry(@RequestBody Map<String, Object> journalEntryMap) {
         logger.fine("[JournalEntryController] 收到创建日志条目请求");
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -133,6 +139,13 @@ public class JournalEntryController {
             // 检查 principal 是否是 UserDetailsImpl 类型
             if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
                 return ResponseEntity.status(401).build();
+            }
+
+            // 检查是否为游客
+            if (GuestAccessChecker.isGuest(membershipService)) {
+                return ResponseEntity.status(403).body(
+                    ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+                );
             }
 
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -251,7 +264,7 @@ public class JournalEntryController {
 
     // 更新指定ID的记录
     @PutMapping("/{id}")
-    public ResponseEntity<JournalEntryDTO> updateJournalEntry(@PathVariable String id, @RequestBody JournalEntryDTO journalEntryDTO) {
+    public ResponseEntity<?> updateJournalEntry(@PathVariable String id, @RequestBody JournalEntryDTO journalEntryDTO) {
         logger.fine(String.format("[JournalEntryController] updateJournalEntry - 接收到更新请求, ID: %s", id));
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -262,6 +275,13 @@ public class JournalEntryController {
         // 检查 principal 是否是 UserDetailsImpl 类型
         if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).build();
+        }
+
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
         }
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -348,7 +368,7 @@ public class JournalEntryController {
 
     // 删除指定ID的记录
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteJournalEntry(@PathVariable String id) {
+    public ResponseEntity<?> deleteJournalEntry(@PathVariable String id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
@@ -358,7 +378,14 @@ public class JournalEntryController {
         if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).build();
         }
-        
+
+        // 检查是否为游客
+        if (GuestAccessChecker.isGuest(membershipService)) {
+            return ResponseEntity.status(403).body(
+                ApiResponse.error(403, GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE)
+            );
+        }
+
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         JournalEntry journalEntry = journalEntryRepository.findById(id)

@@ -1,12 +1,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { WorldScene } from '../types';
+import { WorldScene, WorldStyle, WORLD_STYLE_DESCRIPTIONS } from '../types';
 import { aiService } from '../services/ai';
 import { constructEraCoverPrompt } from '../utils/promptConstructors';
 import { imageApi, eraApi } from '../services/api';
 import { Button } from './Button';
 import { ResourcePicker } from './ResourcePicker';
 import { showAlert, showConfirm } from '../utils/dialog';
+import { PortalManagement } from './portal';
+import { LazyImage } from './LazyImage';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
 
 interface EraConstructorModalProps {
   initialScene?: WorldScene | null; // Optional: If provided, we are editing
@@ -14,17 +17,20 @@ interface EraConstructorModalProps {
   onDelete?: () => void;
   onClose: () => void;
   worldStyle?: string; // 当前世界风格
+  onOpenSceneCreationWizard?: () => void; // 可选：打开场景创建向导
 }
 
-export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initialScene, onSave, onDelete, onClose, worldStyle }) => {
+export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initialScene, onSave, onDelete, onClose, worldStyle, onOpenSceneCreationWizard }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [style, setStyle] = useState<WorldStyle>('realistic'); // 场景风格，默认写实风格
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState('');
   const [showResourcePicker, setShowResourcePicker] = useState(false);
+  const [showPortalManagement, setShowPortalManagement] = useState(false);
   
   // 预置场景相关状态
   const [systemEras, setSystemEras] = useState<Array<{
@@ -76,6 +82,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
           setName(initialScene.name);
           setDescription(initialScene.description);
           setImageUrl(initialScene.imageUrl);
+          setStyle(initialScene.style || 'realistic'); // 恢复场景风格，默认写实
           setSelectedPresetEraId(initialScene.systemEraId); // 恢复系统场景ID
           setCreationMode('custom'); // 编辑时默认为自定义模式
           // If it looks like a base64 upload (long string), default to upload mode, otherwise generate mode
@@ -87,6 +94,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
           setName('');
           setDescription('');
           setImageUrl(null);
+          setStyle('realistic'); // 新建时默认写实风格
           setSelectedPresetEraId(undefined);
           setCreationMode('preset');
       }
@@ -98,7 +106,9 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         setError('请先填写场景名称和简介。');
         return;
     }
-    const prompt = constructEraCoverPrompt(name, description, worldStyle);
+    // 使用场景的风格，如果没有则使用默认的写实风格
+    const sceneStyle = style || 'realistic';
+    const prompt = constructEraCoverPrompt(name, description, sceneStyle);
     try {
         await navigator.clipboard.writeText(prompt);
         showAlert('提示词已复制到剪贴板！请使用 Midjourney 或其他工具生成图片后上传。', '提示', 'success');
@@ -118,8 +128,9 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
     setError('');
 
     try {
-        // 构建提示词
-        const prompt = constructEraCoverPrompt(name, description, worldStyle);
+        // 构建提示词 - 使用场景的风格，如果没有则使用默认的写实风格
+        const sceneStyle = style || 'realistic';
+        const prompt = constructEraCoverPrompt(name, description, sceneStyle);
         
         // 调用AI生成图片（3:4比例，适合场景封面）
         const response = await aiService.generateImage({
@@ -217,7 +228,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
       if (result.success && result.url) {
         // 使用服务器返回的URL替换base64预览
         setImageUrl(result.url);
-        console.log('图片上传成功:', result.url);
+        // 图片上传成功
       } else {
         throw new Error(result.error || '上传失败');
       }
@@ -306,8 +317,9 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         imageUrl: finalImageUrl,
         characters: initialScene ? initialScene.characters : [], // Preserve characters if editing
         mainStory: initialScene ? initialScene.mainStory : undefined,
-        systemEraId: selectedPresetEraId // 保存系统场景ID映射
-    };
+        systemEraId: selectedPresetEraId, // 保存系统场景ID映射
+        style: style // 保存场景风格
+    } as WorldScene;
     onSave(newScene);
   };
 
@@ -321,6 +333,23 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
   };
 
   const isSaveDisabled = !name || !description || !imageUrl || isLoading || isUploading;
+
+  // 获取场景ID（用于传送门管理）
+  // 始终使用作为主键的ID，从 id 字段中解析数字
+  const getSceneId = (): number | null => {
+    if (!initialScene) return null;
+    
+    // 从 id 中解析数字（格式可能是 "era_123" 或 "custom_era_123"）
+    // 始终使用主键ID，不使用关联的 systemEraId
+    const idMatch = initialScene.id.match(/(\d+)$/);
+    if (idMatch) {
+      return parseInt(idMatch[1], 10);
+    }
+    
+    return null;
+  };
+
+  const sceneId = getSceneId();
 
   return (
     <div 
@@ -356,7 +385,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         {/* 预置场景选择界面 */}
         {!initialScene && creationMode === 'preset' && (
           <div className="space-y-4">
-            <div className="flex gap-3 border-b border-gray-700 pb-3">
+            <div className="flex gap-3 border-b border-gray-700 pb-3 items-center">
               <button
                 onClick={() => setCreationMode('preset')}
                 className="text-sm font-bold pb-2 transition-colors text-indigo-400 border-b-2 border-indigo-400"
@@ -369,6 +398,17 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
               >
                 ✨ 创建自定义场景
               </button>
+              {onOpenSceneCreationWizard && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenSceneCreationWizard();
+                  }}
+                  className="text-sm font-bold pb-2 transition-colors text-pink-500 hover:text-pink-400 ml-auto"
+                >
+                  📦 使用向导批量创建
+                </button>
+              )}
             </div>
 
             {loadingSystemEras ? (
@@ -387,7 +427,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                       className="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-700 hover:border-indigo-500/50 transition-all bg-gray-900/50"
                     >
                       {era.imageUrl ? (
-                        <img
+                        <PresetEraImage
                           src={era.imageUrl}
                           alt={era.name}
                           className="h-32 w-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -459,7 +499,7 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                     className={`w-1/3 h-48 rounded-lg bg-black/30 border border-dashed flex items-center justify-center overflow-hidden transition-all cursor-pointer hover:border-pink-500 border-gray-600`}
                 >
                    {imageUrl ? (
-                       <img src={imageUrl} alt="Cover" className="w-full h-full object-cover" />
+                       <SceneCoverImage src={imageUrl} alt="Cover" className="w-full h-full object-cover" />
                    ) : (
                        <div className="text-center p-2">
                            <div className="flex flex-col items-center text-gray-400">
@@ -527,6 +567,25 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                 placeholder={imageMode === 'upload' ? "描述这个瞬间给你的感觉，或让AI帮你解析..." : "描述这个世界的设定..."}
                 className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white placeholder-white/40 focus:border-pink-400 focus:ring-0 outline-none transition-colors resize-none h-24 scrollbar-hide"
               />
+              
+              {/* 场景风格选择器 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">场景风格</label>
+                <select
+                  value={style}
+                  onChange={(e) => setStyle(e.target.value as WorldStyle)}
+                  className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white focus:border-pink-400 focus:ring-0 outline-none transition-colors"
+                >
+                  {(Object.keys(WORLD_STYLE_DESCRIPTIONS) as WorldStyle[]).map((styleOption) => (
+                    <option key={styleOption} value={styleOption} className="bg-gray-900">
+                      {WORLD_STYLE_DESCRIPTIONS[styleOption].name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400">
+                  {WORLD_STYLE_DESCRIPTIONS[style].description}。风格将影响场景和角色图片的生成。
+                </p>
+              </div>
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
@@ -544,6 +603,16 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                     className="mr-auto text-red-400 hover:text-red-300 hover:bg-red-900/20"
                 >
                     删除场景
+                </Button>
+            )}
+            {initialScene && sceneId && (
+                <Button 
+                    variant="ghost" 
+                    onClick={() => setShowPortalManagement(true)}
+                    className="mr-auto text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20"
+                    title="管理该场景的传送门"
+                >
+                    🔮 管理传送门
                 </Button>
             )}
             <Button variant="ghost" onClick={onClose} disabled={isLoading || isUploading}>取消</Button>
@@ -566,6 +635,96 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
               token={localStorage.getItem('auth_token') || undefined}
           />
       )}
+      {showPortalManagement && sceneId && (
+        <div 
+          className="absolute inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPortalManagement(false);
+            }
+          }}
+        >
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setShowPortalManagement(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-700 z-10"
+              aria-label="关闭"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <PortalManagement
+              sceneId={sceneId}
+              onClose={() => setShowPortalManagement(false)}
+              onPortalCreated={(portal) => {
+                // 传送门已创建
+                showAlert('传送门创建成功！', '成功', 'success');
+              }}
+              onPortalUpdated={(portal) => {
+                // 传送门已更新
+                showAlert('传送门更新成功！', '成功', 'success');
+              }}
+              onPortalDeleted={(portalId) => {
+                // 传送门已删除
+                showAlert('传送门删除成功！', '成功', 'success');
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
+};
+
+/**
+ * 预置场景图片组件（使用缩略图）
+ */
+const PresetEraImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt={alt}
+            className={className || ''}
+            variants={imageVariants}
+            purpose="thumbnail"
+        />
+    );
+};
+
+/**
+ * 场景封面图片组件（使用中等像素）
+ */
+const SceneCoverImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt={alt}
+            className={className || ''}
+            variants={imageVariants}
+            purpose="detail"
+        />
+    );
 };

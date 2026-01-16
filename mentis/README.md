@@ -68,16 +68,35 @@ npm run dev
 
 ## 功能特性
 
-- 超级智能体对话
-- 任务执行和管理
-- 会话管理
-- VM（虚拟机）管理
-- GUI 自动化执行
-- 执行日志查看
+### 核心功能
+- ✅ 超级智能体对话
+- ✅ 任务执行和管理
+- ✅ 会话管理
+- ✅ VM（虚拟机）管理
+- ✅ GUI 自动化执行
+- ✅ 执行日志查看
+
+### 新增功能（Manus 风格增强）
+- ✅ **任务与对话关联**: 任务自动关联到生成它的用户消息，支持按对话查看任务
+- ✅ **实时任务展示**: 打对勾风格的任务列表，实时显示任务进度和状态
+- ✅ **虚拟机实时状态**: SSE 实时推送虚拟机状态变更
+- ✅ **工具系统**: 可扩展的工具系统，支持终端、浏览器、代码执行、系统工具等
+- ✅ **结果展示**: 支持文本、列表、表格、图表、图片等多种格式的结果展示
+- ✅ **E2B MCP 集成**: 集成 E2B MCP Gateway，支持动态发现和调用 MCP 工具
+- ✅ **MCP Inspector**: 提供 MCP Inspector 调试工具，方便测试和调试 MCP 工具
 
 ## API 路径前缀
 
 - `/api/mentis/` - Mentis API 端点
+
+## 文档
+
+- [快速启动指南](QUICK_START.md) - 5分钟快速启动教程 ⚡
+- [API 文档](API_DOCUMENTATION.md) - REST API 端点说明
+- [用户指南](USER_GUIDE.md) - 用户使用手册
+- [开发指南](DEVELOPER_GUIDE.md) - 开发者技术文档
+- [实施总结](../openspec/changes/enhance-mentis-manus-capabilities/IMPLEMENTATION_SUMMARY.md) - 功能实施总结
+- [最终报告](../openspec/changes/enhance-mentis-manus-capabilities/FINAL_REPORT.md) - 完整实施报告
 
 ## 状态
 
@@ -85,7 +104,11 @@ npm run dev
 - ✅ 依赖配置已更新（使用 shared 模块）
 - ✅ 主要路径问题已修复
 - ✅ 基础配置文件已创建
-- ⚠️  还有一些小的编译错误（不影响核心功能）
+- ✅ 任务与对话关联功能已实现
+- ✅ 工具系统已构建（4个核心工具）
+- ✅ 结果展示组件已实现（5种格式）
+- ✅ E2B MCP 集成已完成
+- ✅ 测试用例已编写（单元测试和集成测试）
 
 ## 下一步
 

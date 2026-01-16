@@ -67,6 +67,41 @@ public class MembershipService {
     }
 
     /**
+     * 获取或创建体验会员（用于游客模式）
+     */
+    @Transactional
+    public Membership getOrCreateTrialMembership(Long userId) {
+        Optional<Membership> existing = membershipRepository.findByUserId(userId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        // 获取体验会员计划
+        SubscriptionPlan trialPlan = planRepository.findByTypeAndIsActiveTrueOrderBySortOrderAsc("trial")
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("体验会员计划不存在"));
+
+        // 创建体验会员
+        Membership membership = new Membership();
+        membership.setUserId(userId);
+        membership.setPlanId(trialPlan.getId());
+        membership.setPlanType("trial");
+        membership.setBillingCycle("monthly");
+        membership.setStatus("active");
+        membership.setStartDate(LocalDateTime.now());
+        membership.setAutoRenew(false);
+        membership.setCurrentPoints(0);
+        membership.setTotalPointsEarned(0);
+        membership.setTotalPointsUsed(0);
+        membership.setTextTokenUsed(0L);
+        membership.setImageGenerationUsed(0);
+        membership.setVideoGenerationUsed(0);
+
+        return membershipRepository.save(membership);
+    }
+
+    /**
      * 激活会员（支付成功后调用）
      */
     @Transactional

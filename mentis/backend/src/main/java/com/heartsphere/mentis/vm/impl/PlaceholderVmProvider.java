@@ -75,4 +75,11 @@ public class PlaceholderVmProvider implements VmProvider {
         // 模拟恢复快照（不做实际操作）
         log.info("模拟快照恢复成功: vmId={}, snapshotId={}", vmId, snapshotId);
     }
+    
+    @Override
+    public String getScreenshot(String vmId) {
+        log.debug("PlaceholderVmProvider.getScreenshot 被调用，返回模拟截图: vmId={}", vmId);
+        // 返回占位符截图
+        return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    }
 }

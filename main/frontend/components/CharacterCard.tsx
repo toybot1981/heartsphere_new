@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Character } from '../types';
+import { LazyImage } from './LazyImage';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
 
 interface CharacterCardProps {
   character: Character;
@@ -24,6 +26,18 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   isUserCreated = false
 }) => {
   const displayImage = customAvatarUrl || character.avatarUrl;
+  
+  // 从 avatarUrl 生成多分辨率版本（根据命名规则）
+  const imageVariants: ImageVariants | undefined = useMemo(() => {
+    if (!displayImage || !displayImage.trim()) return undefined;
+    
+    return {
+      original: displayImage,
+      thumbnail: generateVariantUrl(displayImage, 200, 200),
+      medium: generateVariantUrl(displayImage, 800, 600),
+      highQuality: generateVariantUrl(displayImage, 1920, 1080),
+    };
+  }, [displayImage]);
 
   const handleGenerateClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card selection
@@ -53,21 +67,29 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       } as React.CSSProperties}
     >
       {/* Background Image with Gradient Overlay */}
-      <div className="absolute inset-0 bg-gray-900">
-        <img 
-          src={displayImage} 
-          alt={character.name}
-          className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 ${isGenerating ? 'opacity-50 blur-sm scale-105' : ''}`}
-        />
+      <div className="absolute inset-0 bg-gray-900 pointer-events-none">
+        {displayImage && displayImage.trim() ? (
+          <LazyImage
+            src={displayImage}
+            alt={character.name}
+            variants={imageVariants}
+            purpose="list"
+            className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none ${isGenerating ? 'opacity-50 blur-sm scale-105' : ''}`}
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center pointer-events-none">
+            <div className="text-6xl opacity-30">👤</div>
+          </div>
+        )}
         {isGenerating && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
              <div 
                className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin"
                style={{ borderColor: `${character.colorAccent} transparent transparent transparent` }}
              />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 transition-opacity group-hover:opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 transition-opacity group-hover:opacity-70 pointer-events-none" />
       </div>
 
       {/* Action Buttons (Top Right) */}
@@ -108,7 +130,7 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 w-full p-6 translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+      <div className="absolute bottom-0 left-0 w-full p-6 translate-y-2 transition-transform duration-300 group-hover:translate-y-0 pointer-events-none z-10">
         <div className="flex flex-wrap gap-2 mb-2">
           {/* 生活助手徽章 */}
           {character.tags && character.tags.includes('生活助手') && (
@@ -135,11 +157,19 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             {character.role}
           </div>
         </div>
-        <h3 className="mb-1 text-2xl font-bold text-white transition-colors"
-            style={{ textShadow: `0 0 20px ${character.colorAccent}40` }}>
+        <h3 className="mb-1 text-2xl font-black text-white transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+            style={{ 
+              textShadow: `0 2px 12px rgba(0,0,0,0.9), 0 0 20px ${character.colorAccent}40, 0 0 30px rgba(0,0,0,0.7)`,
+              WebkitTextStroke: '0.5px rgba(0,0,0,0.3)',
+              letterSpacing: '0.02em'
+            }}>
           {character.name}
         </h3>
-        <p className="text-sm text-white/70 line-clamp-2 mb-4 group-hover:text-white/90">
+        <p className="text-sm font-semibold text-white line-clamp-2 mb-4 group-hover:text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+           style={{ 
+             textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)',
+             letterSpacing: '0.01em'
+           }}>
           {character.bio}
         </p>
       </div>

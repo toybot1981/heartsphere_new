@@ -37,6 +37,7 @@ interface Message {
   content: string;
   timestamp: Date;
   taskId?: string;
+  executionId?: string; // 任务执行ID，用于查询任务进度
 }
 
 interface MentisChatWindowProps {
@@ -100,12 +101,25 @@ export const MentisChatWindow: React.FC<MentisChatWindowProps> = ({
    * 加载对话历史
    */
   const loadConversationHistory = async () => {
+    if (!sessionId) return;
+    
     try {
-      // 获取会话信息，会话中包含消息列表
-      // 或者可以添加单独的获取历史消息接口
-      // 这里暂时在发送消息时获取历史
+      setIsLoading(true);
+      const historyMessages = await MentisApiService.getChatHistory(sessionId);
+      
+      if (historyMessages && historyMessages.length > 0) {
+        const convertedMessages = historyMessages.map(convertToMessage);
+        setMessages(convertedMessages);
+        console.log(`已加载 ${convertedMessages.length} 条历史消息`);
+      } else {
+        setMessages([]);
+        console.log('没有历史消息');
+      }
     } catch (error) {
       console.error('加载对话历史失败:', error);
+      // 如果加载失败，不清空现有消息，保持当前状态
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -168,6 +182,9 @@ export const MentisChatWindow: React.FC<MentisChatWindowProps> = ({
                 if (chunk.taskId) {
                   lastMessage.taskId = chunk.taskId;
                 }
+                if (chunk.executionId) {
+                  lastMessage.executionId = chunk.executionId;
+                }
               }
               return updated;
             });
@@ -196,7 +213,8 @@ export const MentisChatWindow: React.FC<MentisChatWindowProps> = ({
           role: 'mentis',
           content: response.response || '无响应内容',
           timestamp: new Date(),
-          taskId: response.taskId
+          taskId: response.taskId,
+          executionId: response.executionId,
         };
         setMessages(prev => [...prev, mentisMessage]);
 
@@ -534,7 +552,13 @@ export const MentisChatWindow: React.FC<MentisChatWindowProps> = ({
       </Menu>
 
       {/* 导出对话框 */}
-      <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+      <Dialog 
+        open={exportDialogOpen} 
+        onClose={() => setExportDialogOpen(false)}
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
+      >
         <DialogTitle>导出消息</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { videoApi } from '../services/api';
+import { adminApi } from '../services/api/admin';
 import { InputGroup, TextInput } from './AdminUIComponents';
 import { showAlert } from "../utils/dialog";
 import type { VideoToAnimationRequest } from '../services/api/video/types';
@@ -37,6 +38,12 @@ export const VideoManagement: React.FC<VideoManagementProps> = ({
   const [useCustomFolder, setUseCustomFolder] = useState(false);
   const [customFolderName, setCustomFolderName] = useState('');
   const [availableCategories, setAvailableCategories] = useState<Set<string>>(new Set());
+  const [convertedAnimations, setConvertedAnimations] = useState<Array<{
+    url: string;
+    format: string;
+    relativePath: string;
+    createdAt: string;
+  }>>([]);
 
   // 预设视频分类选项
   const presetCategories = [
@@ -59,19 +66,20 @@ export const VideoManagement: React.FC<VideoManagementProps> = ({
     if (!adminToken) return;
     setLoading(true);
     try {
-      // 视频管理模块主要用于系统预置资源
-      const result = await videoApi.listVideos(
-        category === 'all' ? 'all' : category,
-        adminToken,
-        true  // isSystemResource = true，只获取系统预置资源
-      );
+      // 使用 adminApi.videos.getVideos() 获取系统预置资源
+      const result = await adminApi.videos.getVideos({
+        category: category === 'all' ? undefined : category,
+        isSystemResource: true,
+        page: 0,
+        size: 1000, // 获取所有视频
+      });
       
-      if (result.success && result.videos) {
-        const videoItems: VideoItem[] = result.videos.map((video) => ({
+      if (result && result.videos) {
+        const videoItems: VideoItem[] = result.videos.map((video: any) => ({
           url: video.url,
-          relativePath: video.relativePath,
-          name: video.name,
-          category: video.category,
+          relativePath: video.relativePath || video.url,
+          name: video.name || video.url.split('/').pop() || '未命名',
+          category: video.category || 'general',
           size: video.size,
           createdAt: video.createdAt ? new Date(video.createdAt).toISOString() : undefined,
         }));
@@ -87,9 +95,6 @@ export const VideoManagement: React.FC<VideoManagementProps> = ({
         setAvailableCategories(categoriesFromVideos);
       } else {
         setVideos([]);
-        if (result.error) {
-          showAlert('加载视频失败: ' + result.error, '加载失败', 'error');
-        }
       }
     } catch (error: any) {
       showAlert('加载视频失败: ' + (error.message || '未知错误'), '加载失败', 'error');
@@ -173,23 +178,26 @@ export const VideoManagement: React.FC<VideoManagementProps> = ({
 
     setProcessing(true);
     try {
-      // videoApi.convertToAnimation 期望 (videoUrl: string, options: {...}, token: string)
-      // options 中已经包含 url，所以直接使用
+      // 使用 adminApi.videos.convertToAnimation 转换视频
       const { url, ...convertOptions } = options;
       const videoUrl = url || selectedVideo.url;
-      const result = await videoApi.convertToAnimation(
-        videoUrl,
-        convertOptions,
-        adminToken
-      );
+      
+      const result = await adminApi.videos.convertToAnimation(videoUrl, convertOptions);
 
-      if (result.success) {
-        showAlert('视频转换成功', '处理成功', 'success');
-        setShowConvertModal(false);
-        await loadVideos();
-      } else {
-        showAlert(result.error || '视频转换失败', '处理失败', 'error');
+      // 将转换结果添加到展示列表
+      if (result && result.url) {
+        const newAnimation = {
+          url: result.url,
+          format: result.format || convertOptions.format || 'gif',
+          relativePath: result.relativePath || '',
+          createdAt: new Date().toISOString(),
+        };
+        setConvertedAnimations(prev => [newAnimation, ...prev]);
       }
+
+      showAlert('视频转换成功', '处理成功', 'success');
+      setShowConvertModal(false);
+      await loadVideos();
     } catch (error: any) {
       showAlert('视频转换失败: ' + (error.message || '未知错误'), '处理失败', 'error');
     } finally {
@@ -351,6 +359,92 @@ export const VideoManagement: React.FC<VideoManagementProps> = ({
                 🎬 转换为动画
               </button>
             </div>
+
+            {/* 转换后的动画展示区域 */}
+            {convertedAnimations.length > 0 && (
+              <div className="converted-animations-section">
+                <h4>转换后的动画</h4>
+                <div className="converted-animations-list">
+                  {convertedAnimations.map((animation, index) => (
+                    <div key={index} className="converted-animation-item">
+                      <div className="animation-preview">
+                        {animation.format === 'gif' && (
+                          <img 
+                            src={animation.url} 
+                            alt={`GIF动画 ${index + 1}`}
+                            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          />
+                        )}
+                        {animation.format === 'lottie' && (
+                          <div className="lottie-placeholder">
+                            <div className="lottie-icon">🎨</div>
+                            <p>Lottie 动画</p>
+                            <a 
+                              href={animation.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-secondary"
+                            >
+                              查看 JSON
+                            </a>
+                          </div>
+                        )}
+                        {animation.format === 'pag' && (
+                          <div className="pag-placeholder">
+                            <div className="pag-icon">🎬</div>
+                            <p>PAG 动画</p>
+                            <a 
+                              href={animation.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-secondary"
+                            >
+                              下载文件
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <div className="animation-info">
+                        <div className="animation-meta">
+                          <span className="animation-format">{animation.format.toUpperCase()}</span>
+                          <span className="animation-time">
+                            {new Date(animation.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="animation-actions">
+                          <a 
+                            href={animation.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-primary"
+                          >
+                            查看
+                          </a>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => {
+                              navigator.clipboard.writeText(animation.url);
+                              showAlert('URL已复制到剪贴板', '成功', 'success');
+                            }}
+                          >
+                            复制URL
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {convertedAnimations.length > 0 && (
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => setConvertedAnimations([])}
+                    style={{ marginTop: '10px', width: '100%' }}
+                  >
+                    清空列表
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -523,7 +617,7 @@ const AnimationConverterModal: React.FC<AnimationConverterModalProps> = ({
     if (checkingPag) return;
     setCheckingPag(true);
     try {
-      const result = await videoApi.checkPagAvailable(adminToken || undefined);
+      const result = await adminApi.videos.checkPagAvailable();
       setPagAvailable(result.available === true);
     } catch (error) {
       console.error('检查 PAG 可用性失败:', error);

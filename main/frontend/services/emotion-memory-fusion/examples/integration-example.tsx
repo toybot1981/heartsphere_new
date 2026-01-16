@@ -51,14 +51,12 @@ export const EmotionMemoryIntegration: React.FC<{ userId: number }> = ({ userId 
 
     // 1. 分析情绪
     const emotion = await emotionSystem.analyzeEmotion(message, 'conversation');
-    console.log('情绪分析:', emotion);
 
     // 2. 提取记忆
     const memories = await memorySystem.extractAndSave(
       message,
       MemorySource.CONVERSATION
     );
-    console.log('提取的记忆:', memories);
 
     // 3. 生成个性化回应
     if (fusion) {
@@ -70,7 +68,6 @@ export const EmotionMemoryIntegration: React.FC<{ userId: number }> = ({ userId 
           currentEmotion: emotion.primaryEmotion,
         }
       );
-      console.log('个性化回应:', response);
       return response;
     }
 
@@ -108,7 +105,6 @@ function ChatWindow() {
   useEffect(() => {
     // 生成个性化问候
     generateGreeting().then(greeting => {
-      console.log('问候语:', greeting);
     });
   }, []);
 

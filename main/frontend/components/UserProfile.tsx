@@ -93,7 +93,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         .then(count => {
           const total = count.totalUnread || count.total || 0;
           setNewSystemUnreadCount(total);
-          console.log('[UserProfile] 新系统未读数量:', total);
         })
         .catch(err => {
           console.error('[UserProfile] 获取新系统未读数量失败:', err);
@@ -111,7 +110,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     
     // 监听未读数量更新事件
     const handleUnreadUpdate = () => {
-      console.log('[UserProfile] 收到未读数量更新事件，立即刷新');
       loadUnreadCount();
     };
     
@@ -471,7 +469,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               {isUpdatingAvatar ? (
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
               ) : userProfile.avatarUrl ? (
-                <img src={userProfile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                <UserAvatarImage src={userProfile.avatarUrl} />
               ) : (
                 <span className="text-2xl font-semibold text-gray-600">{userProfile.nickname[0]?.toUpperCase()}</span>
               )}
@@ -670,7 +668,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                       >
                         <div className="flex items-center gap-3">
                           {character.avatarUrl && (
-                            <img src={character.avatarUrl} alt={character.name} className="w-10 h-10 rounded-full object-cover" />
+                            <CharacterAvatarSmallImage src={character.avatarUrl} alt={character.name} className="w-10 h-10 rounded-full object-cover" />
                           )}
                           <div>
                             <p className="text-sm font-medium text-gray-900">{character.name}</p>
@@ -855,3 +853,54 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   );
 };
 
+/**
+ * 用户头像图片组件（使用缩略图）
+ */
+const UserAvatarImage: React.FC<{ src: string }> = ({ src }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt="Avatar"
+            className="w-full h-full object-cover"
+            variants={imageVariants}
+            purpose="thumbnail"
+        />
+    );
+};
+
+/**
+ * 角色头像小图组件（使用缩略图）
+ */
+const CharacterAvatarSmallImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt={alt}
+            className={className || ''}
+            variants={imageVariants}
+            purpose="thumbnail"
+        />
+    );
+};

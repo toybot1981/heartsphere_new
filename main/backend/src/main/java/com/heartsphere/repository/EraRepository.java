@@ -37,4 +37,8 @@ public interface EraRepository extends JpaRepository<Era, Long> {
     @EntityGraph(attributePaths = {"world", "user"})
     @Query("SELECT e FROM Era e WHERE e.user.id = :userId")
     List<Era> findAllByUser_Id(@Param("userId") Long userId);
+    
+    // 检查是否存在相同的 systemEraId 和 worldId（用于防止重复添加预置场景）
+    @Query("SELECT COUNT(e) > 0 FROM Era e WHERE e.world.id = :worldId AND e.systemEraId = :systemEraId AND e.isDeleted = false")
+    boolean existsByWorldIdAndSystemEraId(@Param("worldId") Long worldId, @Param("systemEraId") Long systemEraId);
 }

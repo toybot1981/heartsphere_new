@@ -101,7 +101,6 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
         // 如果有conversationId，可以跳转到对话页面
         if (result.conversationId) {
           // TODO: 跳转到对话页面
-          console.log('对话ID:', result.conversationId);
         }
       }
     } catch (error) {

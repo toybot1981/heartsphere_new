@@ -110,7 +110,6 @@ export class TemperatureEngine {
     
     this.eventSystem.emit('engineStarted');
     
-    console.log('[TemperatureEngine] Engine started');
   }
 
   /**
@@ -128,7 +127,6 @@ export class TemperatureEngine {
     this.stateManager.setRunning(false);
     this.eventSystem.emit('engineStopped');
     
-    console.log('[TemperatureEngine] Engine stopped');
   }
 
   /**
@@ -237,7 +235,6 @@ export class TemperatureEngine {
     // 分发事件到插件
     await this.pluginManager.dispatchEvent('temperatureAdjusted', { target, options });
     
-    console.log(`[TemperatureEngine] Temperature adjusted to: ${target}`);
   }
 
   /**

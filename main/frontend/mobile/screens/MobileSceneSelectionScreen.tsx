@@ -1,9 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { WorldScene } from '../../types';
 import { MobileTouchableButton } from '../components/MobileTouchableButton';
 import { MobileEmptyState } from '../components/MobileEmptyState';
 import { MobileSmoothScroll } from '../components/MobileSmoothScroll';
 import { MobileLazyImage } from '../components/MobileLazyImage';
+import { generateVariantUrl, type ImageVariants } from '../../utils/imageResolution';
 
 interface MobileSceneSelectionProps {
     scenes: WorldScene[];
@@ -61,12 +62,24 @@ export const MobileSceneSelection: React.FC<MobileSceneSelectionProps> = memo(({
                                 }
                             }}
                         >
-                            <MobileLazyImage src={scene.imageUrl} alt={scene.name} className="w-full h-full object-cover" />
+                            <SceneCardImage scene={scene} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                             
                             <div className="absolute bottom-0 left-0 w-full p-5">
-                                <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">{scene.name}</h3>
-                                <p className="text-xs text-slate-300 line-clamp-2 opacity-90 leading-relaxed">{scene.description}</p>
+                                <h3 className="text-2xl font-black text-white mb-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+                                    style={{ 
+                                      textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 15px rgba(0,0,0,0.7)',
+                                      WebkitTextStroke: '0.5px rgba(0,0,0,0.3)',
+                                      letterSpacing: '0.02em'
+                                    }}>
+                                    {scene.name}
+                                </h3>
+                                <p className="text-xs font-semibold text-white line-clamp-2 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                                   style={{ 
+                                     textShadow: '0 1px 6px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.6)'
+                                   }}>
+                                    {scene.description}
+                                </p>
                             </div>
                             
                             <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[10px] text-white font-medium shadow-lg shadow-purple-500/20">
@@ -96,3 +109,32 @@ export const MobileSceneSelection: React.FC<MobileSceneSelectionProps> = memo(({
 });
 
 MobileSceneSelection.displayName = 'MobileSceneSelection';
+
+/**
+ * 场景卡片图片组件（内部组件，用于生成图片变体）
+ */
+const SceneCardImage: React.FC<{ scene: WorldScene }> = memo(({ scene }) => {
+    // 从 imageUrl 生成多分辨率版本（根据命名规则）
+    const imageVariants: ImageVariants | undefined = useMemo(() => {
+        if (!scene.imageUrl || !scene.imageUrl.trim()) return undefined;
+        
+        return {
+            original: scene.imageUrl,
+            thumbnail: generateVariantUrl(scene.imageUrl, 200, 200),
+            medium: generateVariantUrl(scene.imageUrl, 800, 600),
+            highQuality: generateVariantUrl(scene.imageUrl, 1920, 1080),
+        };
+    }, [scene.imageUrl]);
+
+    return (
+        <MobileLazyImage 
+            src={scene.imageUrl} 
+            alt={scene.name} 
+            className="w-full h-full object-cover" 
+            variants={imageVariants}
+            displayPurpose="list"
+        />
+    );
+});
+
+SceneCardImage.displayName = 'SceneCardImage';

@@ -90,11 +90,9 @@ export const useMailCheck = ({ isLoaded, showInitializationWizard }: UseMailChec
         }
 
         if (candidate) {
-          console.log('[useMailCheck] 开始生成时间信件，发件人:', candidate.name);
           try {
             const letter = await aiService.generateChronosLetter(candidate, gameState.userProfile!, gameState.journalEntries);
             if (letter) {
-              console.log('[useMailCheck] 信件生成成功:', letter.subject);
               // AI生成的信件只显示在界面上，不保存到数据库
               const newMail: Mail = {
                 id: `mail_ai_${Date.now()}`, // 使用ai_前缀标识AI生成的信件
@@ -109,7 +107,6 @@ export const useMailCheck = ({ isLoaded, showInitializationWizard }: UseMailChec
                 type: 'ai_generated' // 标记为AI生成
               };
               dispatch({ type: 'ADD_MAIL', payload: newMail });
-              console.log('[useMailCheck] AI生成的信件已添加到信箱（仅显示，不保存到数据库）');
             } else {
               console.warn('[useMailCheck] 信件生成返回null');
             }

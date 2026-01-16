@@ -22,7 +22,7 @@ import {
   Chip,
 } from '@mui/material';
 import { adminMemoryApi, UserMemory, UserSearchResult } from '../../services/api/admin/memory';
-import { hsmemApi, MemoryItem, RetrieveResponse } from '../../services/api/hsmem/hsmemApi';
+import { hsmemApi, MemoryItem, RetrieveResponse, Resource, Category } from '../../services/api/hsmem/hsmemApi';
 import { MUIProvider } from '../MUIProvider';
 
 /**
@@ -54,6 +54,19 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
   const [hsmemError, setHsmemError] = useState<string | null>(null);
   const [hsmemResultDetailOpen, setHsmemResultDetailOpen] = useState(false);
   const [selectedHsmemItem, setSelectedHsmemItem] = useState<MemoryItem | null>(null);
+
+  // 记忆提取追溯功能状态
+  const [traceUserId, setTraceUserId] = useState('');
+  const [traceResources, setTraceResources] = useState<Resource[]>([]);
+  const [traceItems, setTraceItems] = useState<MemoryItem[]>([]);
+  const [traceCategories, setTraceCategories] = useState<Category[]>([]);
+  const [traceStats, setTraceStats] = useState({ resourcesCount: 0, itemsCount: 0, categoriesCount: 0 });
+  const [traceLoading, setTraceLoading] = useState(false);
+  const [traceError, setTraceError] = useState<string | null>(null);
+  const [resourceDetailOpen, setResourceDetailOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [categoryDetailOpen, setCategoryDetailOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const handleSearch = async () => {
     if (!adminToken) return;
@@ -140,6 +153,85 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
     setHsmemResultDetailOpen(true);
   };
 
+  // 记忆提取追溯功能
+  const handleTraceQuery = async () => {
+    if (!traceUserId.trim()) {
+      setTraceError('请输入用户ID');
+      return;
+    }
+
+    try {
+      setTraceLoading(true);
+      setTraceError(null);
+
+      const userId = traceUserId.trim();
+
+      // 并行获取数据
+      const [itemsResponse, resourcesResponse, categoriesResponse] = await Promise.all([
+        hsmemApi.getAllItems(userId),
+        hsmemApi.getAllResources(),
+        hsmemApi.getCategories(),
+      ]);
+
+      const allItems = itemsResponse.data.items || [];
+      const allResources = resourcesResponse.data.resources || [];
+      const allCategories = categoriesResponse.data.categories || [];
+
+      // 过滤资源：通过记忆项的resource_id来关联
+      const itemResourceIds = new Set(allItems.map(item => item.resource_id).filter(Boolean));
+      const userResources = allResources.filter(resource => itemResourceIds.has(resource.id));
+
+      // 过滤分类：通过记忆项的categories来关联
+      const userCategoryNames = new Set<string>();
+      allItems.forEach(item => {
+        if (item.categories) {
+          item.categories.forEach(cat => userCategoryNames.add(cat));
+        }
+      });
+      const userCategories = allCategories.filter(cat => userCategoryNames.has(cat.name));
+
+      setTraceItems(allItems);
+      setTraceResources(userResources);
+      setTraceCategories(userCategories);
+      setTraceStats({
+        resourcesCount: userResources.length,
+        itemsCount: allItems.length,
+        categoriesCount: userCategories.length,
+      });
+    } catch (err: any) {
+      setTraceError(err.message || '查询失败');
+    } finally {
+      setTraceLoading(false);
+    }
+  };
+
+  const handleViewResourceDetail = async (resourceId: string) => {
+    try {
+      const response = await hsmemApi.getResource(resourceId);
+      setSelectedResource(response.data);
+      setResourceDetailOpen(true);
+    } catch (err: any) {
+      setTraceError(err.message || '加载资源详情失败');
+    }
+  };
+
+  const handleViewCategoryDetail = async (categoryName: string) => {
+    try {
+      const response = await hsmemApi.getCategoryItems(categoryName);
+      // 构造分类对象
+      const category = traceCategories.find(cat => cat.name === categoryName);
+      if (category) {
+        setSelectedCategory({
+          ...category,
+          item_ids: response.data.items.map(item => item.id),
+        });
+        setCategoryDetailOpen(true);
+      }
+    } catch (err: any) {
+      setTraceError(err.message || '加载分类详情失败');
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
@@ -155,11 +247,54 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
       >
         <Tab label="用户记忆（Admin API）" />
         <Tab label="HSMem查询" />
+        <Tab label="记忆提取追溯" />
       </Tabs>
 
       {/* 用户记忆管理（原有功能） */}
       {activeTab === 0 && (
         <Box>
+          {/* 快速检索：根据userid直接检索记忆 */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ mb: 1 }}>
+              快速检索：根据用户ID检索记忆
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <TextField
+                label="用户ID"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const userId = parseInt(searchKeyword.trim());
+                    if (!isNaN(userId) && userId > 0) {
+                      handleViewMemories(userId);
+                    } else if (searchKeyword.trim()) {
+                      handleSearch();
+                    }
+                  }
+                }}
+                placeholder="输入用户ID（纯数字）直接检索记忆，或输入用户名搜索用户"
+                sx={{ flex: 1 }}
+                helperText="输入纯数字作为用户ID，或输入文本作为用户名"
+              />
+              <Button 
+                variant="contained" 
+                onClick={() => {
+                  const userId = parseInt(searchKeyword.trim());
+                  if (!isNaN(userId) && userId > 0) {
+                    handleViewMemories(userId);
+                  } else if (searchKeyword.trim()) {
+                    handleSearch();
+                  }
+                }} 
+                disabled={loading || !searchKeyword.trim()}
+                sx={{ minWidth: 100 }}
+              >
+                {loading ? <CircularProgress size={20} /> : '检索'}
+              </Button>
+            </Box>
+          </Box>
+
           {/* 用户搜索 */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
         <TextField
@@ -169,8 +304,8 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
           sx={{ flex: 1 }}
         />
-        <Button variant="contained" onClick={handleSearch} disabled={loading}>
-          搜索
+        <Button variant="outlined" onClick={handleSearch} disabled={loading}>
+          搜索用户
         </Button>
       </Box>
 
@@ -243,7 +378,16 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
               </TableHead>
               <TableBody>
                 {memories.map((memory) => (
-                  <TableRow key={memory.id}>
+                  <TableRow 
+                    key={memory.id}
+                    onClick={() => handleViewMemoryDetail(memory.id)}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
                     <TableCell>{memory.id}</TableCell>
                     <TableCell>{memory.memoryType}</TableCell>
                     <TableCell>{memory.contentPreview}</TableCell>
@@ -251,7 +395,7 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
                     <TableCell>
                       {new Date(memory.createdAt).toLocaleString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="small"
                         onClick={() => handleViewMemoryDetail(memory.id)}
@@ -378,7 +522,16 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
                   </TableHead>
                   <TableBody>
                     {hsmemResults.map((item) => (
-                      <TableRow key={item.id}>
+                      <TableRow 
+                        key={item.id}
+                        onClick={() => handleViewHsmemItemDetail(item)}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'action.hover'
+                          }
+                        }}
+                      >
                         <TableCell>{item.id}</TableCell>
                         <TableCell>{item.summary || '-'}</TableCell>
                         <TableCell>{item.memory_type || '-'}</TableCell>
@@ -394,7 +547,7 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
                           )}
                         </TableCell>
                         <TableCell>{item.importance || '-'}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
                               size="small"
@@ -475,6 +628,310 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setHsmemResultDetailOpen(false)}>关闭</Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      )}
+
+      {/* 记忆提取追溯功能 */}
+      {activeTab === 2 && (
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            记忆提取追溯
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            查看用户记忆的三层架构：Resource Layer → Memory Item Layer → Memory Category Layer
+          </Typography>
+
+          {/* 用户ID输入 */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <TextField
+                label="用户ID"
+                value={traceUserId}
+                onChange={(e) => setTraceUserId(e.target.value)}
+                placeholder="user_123"
+                sx={{ flex: 1 }}
+                onKeyPress={(e) => e.key === 'Enter' && handleTraceQuery()}
+              />
+              <Button
+                variant="contained"
+                onClick={handleTraceQuery}
+                disabled={traceLoading || !traceUserId.trim()}
+              >
+                {traceLoading ? <CircularProgress size={20} /> : '查询'}
+              </Button>
+            </Box>
+            {traceError && <Alert severity="error" sx={{ mt: 2 }}>{traceError}</Alert>}
+          </Paper>
+
+          {/* 统计卡片 */}
+          {traceStats.itemsCount > 0 && (
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              <Paper sx={{ p: 2, flex: 1, textAlign: 'center' }}>
+                <Typography variant="h4" color="primary">{traceStats.resourcesCount}</Typography>
+                <Typography variant="body2" color="text.secondary">资源总数</Typography>
+              </Paper>
+              <Paper sx={{ p: 2, flex: 1, textAlign: 'center' }}>
+                <Typography variant="h4" color="primary">{traceStats.itemsCount}</Typography>
+                <Typography variant="body2" color="text.secondary">记忆项总数</Typography>
+              </Paper>
+              <Paper sx={{ p: 2, flex: 1, textAlign: 'center' }}>
+                <Typography variant="h4" color="primary">{traceStats.categoriesCount}</Typography>
+                <Typography variant="body2" color="text.secondary">分类总数</Typography>
+              </Paper>
+            </Box>
+          )}
+
+          {/* 资源列表 */}
+          {traceResources.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                资源列表 (Resource Layer)
+              </Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>资源ID</TableCell>
+                      <TableCell>模态类型</TableCell>
+                      <TableCell>创建时间</TableCell>
+                      <TableCell>操作</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {traceResources.map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell>{resource.id}</TableCell>
+                        <TableCell>{resource.modality}</TableCell>
+                        <TableCell>
+                          {new Date(resource.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            onClick={() => handleViewResourceDetail(resource.id)}
+                          >
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* 记忆项列表 */}
+          {traceItems.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                记忆项列表 (Memory Item Layer)
+              </Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>记忆项ID</TableCell>
+                      <TableCell>摘要</TableCell>
+                      <TableCell>类型</TableCell>
+                      <TableCell>分类</TableCell>
+                      <TableCell>重要性</TableCell>
+                      <TableCell>创建时间</TableCell>
+                      <TableCell>操作</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {traceItems.map((item) => (
+                      <TableRow 
+                        key={item.id}
+                        onClick={() => handleViewHsmemItemDetail(item)}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'action.hover'
+                          }
+                        }}
+                      >
+                        <TableCell>{item.id}</TableCell>
+                        <TableCell>{item.summary}</TableCell>
+                        <TableCell>{item.memory_type}</TableCell>
+                        <TableCell>
+                          {item.categories && item.categories.length > 0 ? (
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                              {item.categories.slice(0, 2).map((cat, idx) => (
+                                <Chip key={idx} label={cat} size="small" />
+                              ))}
+                              {item.categories.length > 2 && (
+                                <Chip label={`+${item.categories.length - 2}`} size="small" />
+                              )}
+                            </Box>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>{item.importance || '-'}</TableCell>
+                        <TableCell>
+                          {item.created_at ? new Date(item.created_at).toLocaleString() : '-'}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="small"
+                            onClick={() => handleViewHsmemItemDetail(item)}
+                          >
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* 分类列表 */}
+          {traceCategories.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                分类列表 (Memory Category Layer)
+              </Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>分类名称</TableCell>
+                      <TableCell>摘要</TableCell>
+                      <TableCell>记忆项数量</TableCell>
+                      <TableCell>创建时间</TableCell>
+                      <TableCell>操作</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {traceCategories.map((category) => (
+                      <TableRow key={category.id || category.name}>
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell>{category.summary || '-'}</TableCell>
+                        <TableCell>{category.item_count}</TableCell>
+                        <TableCell>
+                          {category.created_at ? new Date(category.created_at).toLocaleString() : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            onClick={() => handleViewCategoryDetail(category.name)}
+                          >
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* 空状态 */}
+          {!traceLoading && traceStats.itemsCount === 0 && traceUserId && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              该用户暂无记忆提取记录
+            </Alert>
+          )}
+
+          {/* 资源详情对话框 */}
+          <Dialog
+            open={resourceDetailOpen}
+            onClose={() => setResourceDetailOpen(false)}
+            maxWidth="md"
+            fullWidth
+          >
+            <DialogTitle>资源详情</DialogTitle>
+            <DialogContent>
+              {selectedResource && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>资源ID:</strong> {selectedResource.id}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>模态类型:</strong> {selectedResource.modality}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>创建时间:</strong> {new Date(selectedResource.created_at).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <strong>原始数据:</strong>
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: 'grey.50', maxHeight: 400, overflow: 'auto' }}>
+                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {JSON.stringify(selectedResource.data, null, 2)}
+                    </pre>
+                  </Paper>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setResourceDetailOpen(false)}>关闭</Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* 分类详情对话框 */}
+          <Dialog
+            open={categoryDetailOpen}
+            onClose={() => setCategoryDetailOpen(false)}
+            maxWidth="md"
+            fullWidth
+          >
+            <DialogTitle>分类详情: {selectedCategory?.name}</DialogTitle>
+            <DialogContent>
+              {selectedCategory && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>分类名称:</strong> {selectedCategory.name}
+                  </Typography>
+                  {selectedCategory.summary && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>摘要:</strong> {selectedCategory.summary}
+                    </Typography>
+                  )}
+                  {selectedCategory.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>描述:</strong> {selectedCategory.description}
+                    </Typography>
+                  )}
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>记忆项数量:</strong> {selectedCategory.item_count}
+                  </Typography>
+                  {selectedCategory.created_at && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      <strong>创建时间:</strong> {new Date(selectedCategory.created_at).toLocaleString()}
+                    </Typography>
+                  )}
+                  {selectedCategory.item_ids && selectedCategory.item_ids.length > 0 && (
+                    <>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>包含的记忆项ID:</strong>
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selectedCategory.item_ids.map((itemId) => {
+                          const item = traceItems.find(i => i.id === itemId);
+                          return (
+                            <Chip
+                              key={itemId}
+                              label={item ? item.summary : itemId}
+                              size="small"
+                              onClick={() => item && handleViewHsmemItemDetail(item)}
+                              sx={{ cursor: item ? 'pointer' : 'default' }}
+                            />
+                          );
+                        })}
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setCategoryDetailOpen(false)}>关闭</Button>
             </DialogActions>
           </Dialog>
         </Box>

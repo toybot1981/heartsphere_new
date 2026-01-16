@@ -17,7 +17,6 @@ export const initAccessSession = (characterId: number): void => {
   accessStartTime = Date.now();
   conversationRounds = 0;
   
-  console.log('[accessHistory] 初始化访问会话', { characterId, sessionId });
 };
 
 /**
@@ -46,7 +45,6 @@ export const recordAccessHistory = async (characterId: number): Promise<void> =>
       sessionId,
     });
     
-    console.log('[accessHistory] 访问历史记录成功', {
       characterId,
       accessDuration,
       conversationRounds,

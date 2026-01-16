@@ -382,6 +382,40 @@ public class AIServiceImpl implements AIService {
     }
     
     @Override
+    @RequiresTokenQuota(quotaType = "audio", usageType = "audio_stt")
+    public void speechToTextStream(Long userId, AudioRequest request, 
+                                   com.heartsphere.aiagent.util.StreamResponseHandler<AudioResponse> handler) {
+        try {
+            log.info("[AIServiceImpl] 实时语音识别请求，userId={}, provider={}, model={}", 
+                userId, request.getProvider(), request.getModel());
+            
+            // 确定provider
+            String provider = request.getProvider() != null ? 
+                request.getProvider() : "doubao"; // 实时识别默认使用 doubao
+            
+            // 获取适配器
+            ModelAdapter adapter = adapterManager.getAdapter(provider);
+            if (adapter == null) {
+                log.error("[AIServiceImpl] 适配器不存在 - provider={}, userId={}", provider, userId);
+                handler.handle(null, true);
+                throw new AIServiceException("适配器不存在: " + provider);
+            }
+            
+            log.info("[AIServiceImpl] 获取适配器成功 - provider={}, adapterClass={}", 
+                provider, adapter.getClass().getSimpleName());
+            
+            // 调用适配器流式语音转文本
+            adapter.speechToTextStream(request, handler);
+            
+        } catch (Exception e) {
+            log.error("[AIServiceImpl] 实时语音识别失败，userId={}, provider={}", 
+                userId, request.getProvider(), e);
+            handler.handle(null, true);
+            throw new AIServiceException("实时语音识别失败: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
     @RequiresTokenQuota(quotaType = "video", usageType = "video_generation")
     public VideoGenerationResponse generateVideo(Long userId, VideoGenerationRequest request) {
         try {

@@ -6,6 +6,12 @@ import { imageApi, characterApi } from '../services/api';
 import { Button } from './Button';
 import { ResourcePicker } from './ResourcePicker';
 import { showAlert } from '../utils/dialog';
+import { CharacterMemoryTab } from './character/CharacterMemoryTab';
+import { CharacterSkillTab } from './character/CharacterSkillTab';
+import { getToken } from '../services/api/base/tokenStorage';
+import { LazyImage } from './LazyImage';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
+import { constructCharacterAvatarPrompt, constructCharacterBackgroundPrompt } from '../utils/promptConstructors';
 
 interface CharacterConstructorModalProps {
   scene: WorldScene;
@@ -21,7 +27,46 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   const [error, setError] = useState('');
   const [generatedCharacter, setGeneratedCharacter] = useState<Character | null>(null);
   
-  // Edit Mode State - 移除Tab，改为直接显示所有字段
+  // 从token或localStorage获取用户ID
+  const getUserIdFromToken = (): number | null => {
+    try {
+      // 优先从localStorage的user_info获取
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        if (user.id) {
+          return user.id;
+        }
+      }
+      
+      // 如果localStorage中没有，尝试从token解析（如果token包含用户ID信息）
+      const token = getToken();
+      if (token) {
+        try {
+          // JWT token格式：header.payload.signature
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = parts[1];
+            // 替换base64url字符
+            const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+            // 添加padding
+            const paddedBase64 = base64 + '='.repeat((4 - base64.length % 4) % 4);
+            const decoded = JSON.parse(atob(paddedBase64));
+            // 尝试不同的字段名
+            return decoded.userId || decoded.id || decoded.sub || null;
+          }
+        } catch (e) {
+          // token解析失败，忽略
+        }
+      }
+    } catch (error) {
+      console.error('获取用户ID失败:', error);
+    }
+    return null;
+  };
+  
+  // Edit Mode State - Tab状态
+  const [activeTab, setActiveTab] = useState<'basic' | 'skills' | 'memory'>('basic');
   
   // Upload states
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -74,7 +119,6 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
     
     // 只有存在systemEraId时才加载预置角色
     if (!scene.systemEraId) {
-      console.log('[CharacterConstructorModal] 场景没有systemEraId，直接进入手动创建模式');
       setSystemCharacters([]);
       setLoadingSystemCharacters(false);
       setCreationMode('custom'); // 没有systemEraId时直接使用自定义模式
@@ -83,20 +127,16 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
     
     // 有systemEraId时，先尝试加载预置角色
     setLoadingSystemCharacters(true);
-    console.log('[CharacterConstructorModal] 加载预置角色，systemEraId:', scene.systemEraId, 'scene:', { id: scene.id, name: scene.name, systemEraId: scene.systemEraId });
     characterApi.getSystemCharacters(scene.systemEraId)
       .then(chars => {
         const activeChars = chars.filter(char => char.isActive).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-        console.log('[CharacterConstructorModal] 加载到预置角色数量:', activeChars.length);
         setSystemCharacters(activeChars);
         
         // 如果没有预置角色，直接进入自定义创建模式
         if (activeChars.length === 0) {
-          console.log('[CharacterConstructorModal] 没有预置角色，直接进入手动创建模式');
           setCreationMode('custom');
         } else {
           // 有预置角色，显示选择界面
-          console.log('[CharacterConstructorModal] 有预置角色，显示选择界面');
           setCreationMode('preset');
         }
       })
@@ -259,16 +299,9 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       reader.onloadend = async () => {
           const base64Url = reader.result as string;
           
-          // 对于头像，如果是手动上传的，缓存到本地
+          // 直接使用 base64 URL，不使用缓存
           if (type === 'avatar') {
-              try {
-                  const { imageCacheService } = await import('../utils/imageCache');
-                  const cachedUrl = await imageCacheService.cacheImage(base64Url, generatedCharacter.id);
-                  updateCharacter('avatarUrl', cachedUrl);
-              } catch (error) {
-                  console.error('缓存头像失败，使用base64:', error);
-                  updateCharacter('avatarUrl', base64Url);
-              }
+              updateCharacter('avatarUrl', base64Url);
           } else {
               updateCharacter('backgroundUrl', base64Url);
           }
@@ -290,28 +323,12 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
           const result = await imageApi.uploadImage(file, category, token || undefined);
           
           if (result.success && result.url) {
-              // 对于头像，如果是手动上传的，也要缓存本地URL（blob URL），优先使用本地缓存
+              // 直接使用服务器URL，不使用缓存
               if (type === 'avatar') {
-                  // 如果当前使用的是blob URL（本地缓存），保留它；否则使用服务器URL
-                  const currentUrl = generatedCharacter?.avatarUrl;
-                  if (currentUrl && currentUrl.startsWith('blob:')) {
-                      // 已缓存，保留blob URL
-                      console.log('头像已缓存到本地，保留本地URL:', currentUrl);
-                  } else {
-                      // 使用服务器URL，但也缓存到本地
-                      try {
-                          const { imageCacheService } = await import('../utils/imageCache');
-                          const cachedUrl = await imageCacheService.cacheImage(result.url, generatedCharacter.id);
-                          updateCharacter('avatarUrl', cachedUrl);
-                      } catch (error) {
-                          console.error('缓存服务器头像失败，使用服务器URL:', error);
                   updateCharacter('avatarUrl', result.url);
-                      }
-                  }
               } else {
                   updateCharacter('backgroundUrl', result.url);
               }
-              console.log('图片上传成功:', result.url);
           } else {
               throw new Error(result.error || '上传失败');
           }
@@ -347,10 +364,60 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       const characterToEdit = generatedCharacter || initialCharacter;
       if (!characterToEdit) return null;
 
+      // 获取角色 ID（如果是字符串 ID，需要转换为数字）
+      const characterId = typeof characterToEdit.id === 'string' 
+        ? (characterToEdit.id.startsWith('preset_') || characterToEdit.id.startsWith('temp_') 
+            ? null 
+            : parseInt(characterToEdit.id) || null)
+        : characterToEdit.id;
+
+      const token = getToken();
+      const userId = getUserIdFromToken();
+
       return (
           <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
-             {/* 与管理后台一致的布局：两列网格，增加间距 */}
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 标签页导航 */}
+            <div className="flex gap-2 border-b border-gray-700 mb-6">
+              <button
+                onClick={() => setActiveTab('basic')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'basic'
+                    ? 'text-indigo-400 border-b-2 border-indigo-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                基本信息
+              </button>
+              {characterId && (
+                <>
+                  <button
+                    onClick={() => setActiveTab('skills')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'skills'
+                        ? 'text-indigo-400 border-b-2 border-indigo-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    技能
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('memory')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'memory'
+                        ? 'text-indigo-400 border-b-2 border-indigo-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    记忆
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* 标签页内容 */}
+            {activeTab === 'basic' && (
+              <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  {/* 左列：基础信息 */}
                  <div className="space-y-5">
                      <h4 className="text-base font-bold text-indigo-400 border-b border-indigo-900/30 pb-2">基础信息</h4>
@@ -489,33 +556,22 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                      worldStyle
                                                  );
                                                  if (avatarUrl) {
-                                                     // 缓存到本地
-                                                     const { imageCacheService } = await import('../utils/imageCache');
-                                                     const cachedUrl = await imageCacheService.cacheImage(avatarUrl, characterToEdit.id);
-                                                     
                                                      // 上传到服务器（使用character/user分类）
                                                      try {
                                                          let blob: Blob;
                                                          
-                                                         // 如果缓存URL是blob URL，直接使用
-                                                         if (cachedUrl.startsWith('blob:')) {
-                                                             const response = await fetch(cachedUrl);
-                                                             blob = await response.blob();
-                                                         } else if (cachedUrl.startsWith('data:')) {
+                                                         if (avatarUrl.startsWith('data:')) {
                                                              // Base64 URL
-                                                             const response = await fetch(cachedUrl);
+                                                             const response = await fetch(avatarUrl);
                                                              blob = await response.blob();
-                                                         } else {
-                                                             // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
-                                                             // 通过后端代理下载，然后上传到服务器
-                                                             console.log('[CharacterConstructorModal] 缓存失败，通过后端代理下载并上传:', cachedUrl);
-                                                             const proxyResult = await imageApi.proxyDownload(cachedUrl);
-                                                             
-                                                             if (proxyResult.success && proxyResult.dataUrl) {
-                                                                 // 将 data URL 转换为 blob
-                                                                 const response = await fetch(proxyResult.dataUrl);
-                                                                 blob = await response.blob();
-                                                                 console.log('[CharacterConstructorModal] 通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
+                                                        } else {
+                                                            // 通过后端代理下载，然后上传到服务器
+                                                            const proxyResult = await imageApi.proxyDownload(avatarUrl);
+                                                            
+                                                            if (proxyResult.success && proxyResult.dataUrl) {
+                                                                // 将 data URL 转换为 blob
+                                                                const response = await fetch(proxyResult.dataUrl);
+                                                                blob = await response.blob();
                                                              } else {
                                                                  throw new Error(proxyResult.error || '后端代理下载失败');
                                                              }
@@ -527,19 +583,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                          const result = await imageApi.uploadImage(file, 'character/user', token || undefined);
                                                          
                                                          if (result.success && result.url) {
-                                                             // 使用服务器URL，但也保留本地缓存
+                                                             // 使用服务器URL
                                                              updateCharacter('avatarUrl', result.url);
                                                              showAlert('头像生成并上传成功', '成功', 'success');
                                                          } else {
-                                                             // 上传失败，使用本地缓存
-                                                             updateCharacter('avatarUrl', cachedUrl);
-                                                             showAlert('头像生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                             // 上传失败，使用原始URL
+                                                             updateCharacter('avatarUrl', avatarUrl);
+                                                             showAlert('头像生成成功，但上传失败，已使用原始URL', '提示', 'warning');
                                                          }
                                                      } catch (uploadError) {
                                                          console.error('上传生成的头像失败:', uploadError);
-                                                         // 上传失败，使用本地缓存
-                                                         updateCharacter('avatarUrl', cachedUrl);
-                                                         showAlert('头像生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                         // 上传失败，使用原始URL
+                                                         updateCharacter('avatarUrl', avatarUrl);
+                                                         showAlert('头像生成成功，但上传失败，已使用原始URL', '提示', 'warning');
                                                      }
                                                  } else {
                                                      showAlert('头像生成失败，请重试', '错误', 'error');
@@ -576,10 +632,10 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                              />
                              {characterToEdit.avatarUrl && !characterToEdit.avatarUrl.includes('picsum.photos') && (
                                  <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-700">
-                                     <img src={characterToEdit.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                     <AvatarPreviewImage src={characterToEdit.avatarUrl} />
                                      <button 
                                          onClick={() => updateCharacter('avatarUrl', '')} 
-                                         className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
+                                         className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs z-10"
                                      >
                                          ×
                                      </button>
@@ -642,33 +698,22 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                  const backgroundUrl = await aiService.generateImageFromPrompt(prompt, '16:9');
                                                  
                                                  if (backgroundUrl) {
-                                                     // 缓存到本地
-                                                     const { imageCacheService } = await import('../utils/imageCache');
-                                                     const cachedUrl = await imageCacheService.cacheImage(backgroundUrl, characterToEdit.id);
-                                                     
                                                      // 上传到服务器（使用character/user分类）
                                                      try {
                                                          let blob: Blob;
                                                          
-                                                         // 如果缓存URL是blob URL，直接使用
-                                                         if (cachedUrl.startsWith('blob:')) {
-                                                             const response = await fetch(cachedUrl);
-                                                             blob = await response.blob();
-                                                         } else if (cachedUrl.startsWith('data:')) {
+                                                         if (backgroundUrl.startsWith('data:')) {
                                                              // Base64 URL
-                                                             const response = await fetch(cachedUrl);
+                                                             const response = await fetch(backgroundUrl);
                                                              blob = await response.blob();
-                                                         } else {
-                                                             // 如果返回的是原始URL（非blob URL），说明无法缓存（通常是CORS限制）
-                                                             // 通过后端代理下载，然后上传到服务器
-                                                             console.log('[CharacterConstructorModal] 背景缓存失败，通过后端代理下载并上传:', cachedUrl);
-                                                             const proxyResult = await imageApi.proxyDownload(cachedUrl);
-                                                             
-                                                             if (proxyResult.success && proxyResult.dataUrl) {
-                                                                 // 将 data URL 转换为 blob
-                                                                 const response = await fetch(proxyResult.dataUrl);
-                                                                 blob = await response.blob();
-                                                                 console.log('[CharacterConstructorModal] 背景通过后端代理下载成功，大小:', proxyResult.size, 'bytes');
+                                                        } else {
+                                                            // 通过后端代理下载，然后上传到服务器
+                                                            const proxyResult = await imageApi.proxyDownload(backgroundUrl);
+                                                            
+                                                            if (proxyResult.success && proxyResult.dataUrl) {
+                                                                // 将 data URL 转换为 blob
+                                                                const response = await fetch(proxyResult.dataUrl);
+                                                                blob = await response.blob();
                                                              } else {
                                                                  throw new Error(proxyResult.error || '后端代理下载失败');
                                                              }
@@ -680,19 +725,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                                          const result = await imageApi.uploadImage(file, 'character/user', token || undefined);
                                                          
                                                          if (result.success && result.url) {
-                                                             // 使用服务器URL，但也保留本地缓存
+                                                             // 使用服务器URL
                                                              updateCharacter('backgroundUrl', result.url);
                                                              showAlert('背景生成并上传成功', '成功', 'success');
                                                          } else {
-                                                             // 上传失败，使用本地缓存
-                                                             updateCharacter('backgroundUrl', cachedUrl);
-                                                             showAlert('背景生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                             // 上传失败，使用原始URL
+                                                             updateCharacter('backgroundUrl', backgroundUrl);
+                                                             showAlert('背景生成成功，但上传失败，已使用原始URL', '提示', 'warning');
                                                          }
                                                      } catch (uploadError) {
                                                          console.error('上传生成的背景失败:', uploadError);
-                                                         // 上传失败，使用本地缓存
-                                                         updateCharacter('backgroundUrl', cachedUrl);
-                                                         showAlert('背景生成成功，但上传失败，已使用本地缓存', '提示', 'warning');
+                                                         // 上传失败，使用原始URL
+                                                         updateCharacter('backgroundUrl', backgroundUrl);
+                                                         showAlert('背景生成成功，但上传失败，已使用原始URL', '提示', 'warning');
                                                      }
                                                  } else {
                                                      showAlert('背景生成失败，请重试', '错误', 'error');
@@ -729,10 +774,10 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                              />
                              {characterToEdit.backgroundUrl && (
                                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-700">
-                                     <img src={characterToEdit.backgroundUrl} alt="Background" className="w-full h-full object-cover" />
+                                     <BackgroundPreviewImage src={characterToEdit.backgroundUrl} />
                                      <button 
                                          onClick={() => updateCharacter('backgroundUrl', '')} 
-                                         className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors"
+                                         className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
                                      >
                                          ×
                                      </button>
@@ -754,7 +799,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                          />
                      </div>
                  </div>
-             </div>
+                 </div>
 
              {/* 系统指令 - 独立大区域 */}
              <div className="mt-10">
@@ -769,6 +814,29 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      />
                  </div>
              </div>
+              </>
+            )}
+
+            {activeTab === 'skills' && characterId && (
+              <div className="character-skills-tab">
+                <CharacterSkillTab
+                  characterId={characterId}
+                  characterName={characterToEdit.name}
+                  token={token}
+                />
+              </div>
+            )}
+
+            {activeTab === 'memory' && characterId && userId && (
+              <div className="character-memory-tab">
+                <CharacterMemoryTab
+                  characterId={characterId}
+                  characterName={characterToEdit.name}
+                  userId={userId}
+                  token={token}
+                />
+              </div>
+            )}
           </div>
       );
   };
@@ -998,4 +1066,57 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       )}
     </div>
   );
+};
+
+/**
+ * 头像预览图片组件（使用缩略图）
+ */
+const AvatarPreviewImage: React.FC<{ src: string }> = ({ src }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt="Avatar Preview"
+            className="w-full h-full object-cover"
+            variants={imageVariants}
+            purpose="thumbnail"
+        />
+    );
+};
+
+/**
+ * 背景预览图片组件（使用高像素）
+ */
+const BackgroundPreviewImage: React.FC<{ src: string }> = ({ src }) => {
+    const imageVariants: ImageVariants | undefined = React.useMemo(() => {
+        if (!src || !src.trim()) return undefined;
+        
+        return {
+            original: src,
+            thumbnail: generateVariantUrl(src, 200, 200),
+            medium: generateVariantUrl(src, 800, 600),
+            highQuality: generateVariantUrl(src, 1920, 1080),
+        };
+    }, [src]);
+
+    return (
+        <LazyImage
+            src={src}
+            alt="Background Preview"
+            className="w-full h-full object-cover"
+            variants={imageVariants}
+            purpose="chatBackground"
+            isMobile={false}
+        />
+    );
 };

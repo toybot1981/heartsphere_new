@@ -37,4 +37,26 @@ public interface MentisTaskRepository extends JpaRepository<MentisTask, Long> {
      * 根据任务类型查找
      */
     List<MentisTask> findByTaskTypeAndStatusOrderByCreatedAtDesc(String taskType, String status);
+    
+    /**
+     * 根据会话ID和执行ID查找任务
+     */
+    List<MentisTask> findBySession_IdAndExecutionIdOrderByCreatedAtAsc(Long sessionId, String executionId);
+    
+    /**
+     * 查找会话中最新任务的执行ID
+     */
+    @Query("SELECT t.executionId FROM MentisTask t WHERE t.session.id = :sessionId AND t.executionId IS NOT NULL ORDER BY t.createdAt DESC")
+    List<String> findLatestExecutionIdsBySessionId(@Param("sessionId") Long sessionId);
+    
+    /**
+     * 根据消息ID查找任务，按创建时间正序排列
+     */
+    List<MentisTask> findByMessageIdOrderByCreatedAtAsc(String messageId);
+    
+    /**
+     * 查找会话中最新用户消息的 messageId
+     */
+    @Query("SELECT m.messageId FROM MentisMessage m WHERE m.session.id = :sessionId AND m.role = 'USER' ORDER BY m.createdAt DESC LIMIT 1")
+    Optional<String> findLatestUserMessageIdBySessionId(@Param("sessionId") Long sessionId);
 }

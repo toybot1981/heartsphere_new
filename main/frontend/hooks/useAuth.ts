@@ -20,7 +20,6 @@ export const useAuth = () => {
     initializationData?: { token: string; userId: number; worldId: number };
   }> => {
     const token = localStorage.getItem('auth_token');
-    console.log('登录成功:', method, identifier, '首次登录:', isFirstLogin);
     
     if (!token) {
       return {

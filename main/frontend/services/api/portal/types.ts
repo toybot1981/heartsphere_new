@@ -10,7 +10,7 @@ export interface PortalConfig {
   userId: number;
   sceneId: number;
   portalName: string;
-  portalType: 'stargate' | 'wormhole' | 'quantum';
+  portalType: 'stargate' | 'wormhole' | 'quantum' | 'garden' | 'sakura' | 'butterfly' | 'rainbow';
   targetHeartsphereId?: number;
   targetShareCode?: string;
   positionX?: number;
@@ -34,7 +34,7 @@ export interface PortalConfig {
 export interface CreatePortalRequest {
   sceneId: number;
   portalName: string;
-  portalType: 'stargate' | 'wormhole' | 'quantum';
+  portalType: 'stargate' | 'wormhole' | 'quantum' | 'garden' | 'sakura' | 'butterfly' | 'rainbow';
   targetHeartsphereId?: number;
   targetShareCode?: string;
   positionX?: number;

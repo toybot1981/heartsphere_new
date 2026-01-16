@@ -52,10 +52,6 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
   };
 
   const handleSelect = (plugin: Plugin) => {
-    console.log('[PluginSelectorModal] handleSelect 被调用', { 
-      pluginId: plugin.pluginId, 
-      pluginName: plugin.name 
-    });
     onSelect(plugin);
     onClose();
   };
@@ -196,7 +192,6 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('[PluginSelectorModal] 点击添加到场景按钮', { pluginId: plugin.pluginId, pluginName: plugin.name });
                       handleSelect(plugin);
                     }}
                     className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"

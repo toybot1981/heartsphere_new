@@ -6,7 +6,7 @@ Resource Layer - 资源层
 
 import json
 import uuid
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime
 
@@ -62,6 +62,18 @@ class ResourceLayer:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         return json.load(f)
         return None
+
+    async def get_all(self) -> List[Dict[str, Any]]:
+        """获取所有资源"""
+        results = []
+        # 遍历所有模态目录
+        for modality_dir in self.base_path.iterdir():
+            if modality_dir.is_dir():
+                for resource_file in modality_dir.glob("*.json"):
+                    with open(resource_file, 'r', encoding='utf-8') as f:
+                        resource = json.load(f)
+                        results.append(resource)
+        return results
 
     def count(self) -> int:
         """统计资源数量"""

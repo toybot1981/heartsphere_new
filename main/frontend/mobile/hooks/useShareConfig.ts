@@ -80,14 +80,12 @@ export const useShareConfig = (options: UseShareConfigOptions): UseShareConfigRe
   const loadExistingConfig = async () => {
     try {
       const config = await heartConnectApi.getMyShareConfig();
-      console.log('[useShareConfig] 加载现有共享配置:', config);
       setExistingConfig(config);
       setShareType(config.shareType);
       setAccessPermission(config.accessPermission);
       setDescription(config.description || '');
       setCoverImageUrl(config.coverImageUrl || '');
       setSelectedScopes(config.scopes?.map(s => ({ scopeType: s.scopeType, scopeId: s.scopeId })) || []);
-      console.log('[useShareConfig] 共享配置已加载，准备编辑');
     } catch (err: any) {
       const errorMessage = err?.message || '';
       const isNotFound =
@@ -98,7 +96,7 @@ export const useShareConfig = (options: UseShareConfigOptions): UseShareConfigRe
         console.error('[useShareConfig] 加载共享配置失败:', err);
         setError('加载共享配置失败，请刷新后重试');
       } else {
-        console.debug('[useShareConfig] 共享配置不存在（正常情况），将创建新配置');
+        // 共享配置不存在（正常情况），将创建新配置
         setExistingConfig(null);
         setShareType('all');
         setAccessPermission('approval');

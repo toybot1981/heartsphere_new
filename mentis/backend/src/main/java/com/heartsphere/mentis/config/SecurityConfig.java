@@ -29,6 +29,16 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // 禁用 CSRF（使用 JWT，无状态）
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .cors(cors -> cors.configurationSource(request -> {
+                // 配置 CORS，允许前端访问 SSE 端点
+                org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+                config.setAllowedOriginPatterns(java.util.Arrays.asList("*"));
+                config.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(java.util.Arrays.asList("*"));
+                config.setAllowCredentials(true);
+                config.setExposedHeaders(java.util.Arrays.asList("Content-Type", "Cache-Control", "X-Requested-With"));
+                return config;
+            }))
             .authorizeHttpRequests(auth -> auth
                 // 允许 Swagger 和 Actuator 匿名访问
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

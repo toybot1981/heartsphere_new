@@ -68,12 +68,10 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
       const loadDailyGreeting = async () => {
           setIsLoadingGreeting(true);
           try {
-              console.log("[MobileRealWorld] 开始生成每日问候");
               const recentEntries = entries.slice(-3);
               const greeting = await aiService.generateDailyGreeting(recentEntries, userName);
               if (greeting) {
                   setDailyGreeting(greeting);
-                  console.log("[MobileRealWorld] 每日问候生成成功");
               } else {
                   // 兜底：如果返回 null 或 undefined，使用默认问候
                   setDailyGreeting({

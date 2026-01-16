@@ -110,7 +110,6 @@ export class PortalRenderer {
     this.isInitialized = true;
     this.startRenderLoop();
 
-    console.log('[PortalRenderer] 渲染器初始化完成');
   }
 
   /**
@@ -249,7 +248,6 @@ export class PortalRenderer {
     this.container = null;
     this.isInitialized = false;
 
-    console.log('[PortalRenderer] 渲染器已销毁');
   }
 }
 
@@ -319,7 +317,6 @@ class StargatePortalRenderer implements PortalRenderInstance {
       this.createParticleSystem();
     }
 
-    console.log(`[StargatePortalRenderer] 传送门 ${this.portalId} 初始化完成`);
   }
 
   private createParticleSystem(): void {
@@ -511,7 +508,6 @@ class WormholePortalRenderer implements PortalRenderInstance {
     );
     this.scene.add(this.mesh);
 
-    console.log(`[WormholePortalRenderer] 传送门 ${this.portalId} 初始化完成`);
   }
 
   update(deltaTime: number): void {
@@ -610,7 +606,6 @@ class QuantumPortalRenderer implements PortalRenderInstance {
     );
     this.scene.add(this.mesh);
 
-    console.log(`[QuantumPortalRenderer] 传送门 ${this.portalId} 初始化完成`);
   }
 
   update(deltaTime: number): void {

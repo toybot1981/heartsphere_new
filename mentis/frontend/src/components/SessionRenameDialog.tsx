@@ -40,7 +40,15 @@ export const SessionRenameDialog: React.FC<SessionRenameDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={false}
+    >
       <DialogTitle>重命名会话</DialogTitle>
       <DialogContent>
         <TextField

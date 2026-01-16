@@ -12,7 +12,7 @@ echo ""
 
 # 启动所有后端服务
 echo "启动后端服务..."
-"$SCRIPT_DIR/start-backend.sh"
+"$SCRIPT_DIR/start-main-backend.sh"
 sleep 2
 "$SCRIPT_DIR/start-edu-backend.sh"
 sleep 2
@@ -25,7 +25,7 @@ sleep 2
 
 echo ""
 echo "启动前端服务..."
-"$SCRIPT_DIR/start-frontend.sh"
+"$SCRIPT_DIR/start-main-frontend.sh"
 sleep 2
 "$SCRIPT_DIR/start-edu-frontend.sh"
 sleep 2

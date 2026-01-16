@@ -19,7 +19,7 @@ import { useUIState } from '../chat/hooks/useUIState';
 import { showAlert } from '../../utils/dialog';
 import { AIConfigManager } from '../../services/ai/config';
 import { logger } from '../../utils/logger';
-import { TeleportationManager, PortalLayer } from '../portal';
+import { TeleportationManager } from '../portal';
 import { usePortal } from '../../hooks/usePortal';
 
 interface SharedChatWindowProps {
@@ -43,6 +43,9 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const lastHistoryLengthRef = useRef(0);
   const safeHistory = Array.isArray(history) ? history : [];
   const uiState = useUIState();
 
@@ -53,26 +56,106 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   const sceneId = character.eraId ? parseInt(character.eraId) : null;
   
   // 传送门系统：加载传送门列表用于显示
+  // usePortal hook 会在 sceneId 变化时自动加载，不需要手动调用 loadPortals
   const { portals, loadPortals, loading: portalsLoading } = usePortal(sceneId || undefined);
 
-  // 加载传送门列表
+  // 调试：手动触发加载（用于测试 loading 状态）
+  // 注意：usePortal 内部已经自动加载，这里只是为了调试
   useEffect(() => {
     if (sceneId) {
-      logger.debug(`[SharedChatWindow] 🔮 加载传送门列表: sceneId=${sceneId}`);
-      loadPortals(sceneId);
     } else {
       logger.warn('[SharedChatWindow] ⚠️ 场景ID为空，无法加载传送门');
     }
-  }, [sceneId, loadPortals]);
+  }, [sceneId, portalsLoading, portals.length]);
 
-  // 滚动到底部
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // 检查用户是否在底部附近（距离底部小于 100px 视为在底部）
+  const isNearBottom = useCallback((): boolean => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    return distanceFromBottom < 100;
   }, []);
 
+  // 滚动到底部（使用 scrollTop 而不是 scrollIntoView，更精确控制）
+  const scrollToBottom = useCallback((force: boolean = false) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    // 如果用户正在手动滚动，不自动滚动
+    if (!force && isUserScrollingRef.current) {
+      return;
+    }
+    
+    // 如果不在底部且不是强制滚动，不自动滚动
+    if (!force && !isNearBottom()) {
+      return;
+    }
+    
+    // 使用 requestAnimationFrame 确保 DOM 已更新
+    requestAnimationFrame(() => {
+      if (!container) return;
+      const { scrollHeight } = container;
+      // 直接设置 scrollTop，避免 scrollIntoView 的副作用
+      container.scrollTop = scrollHeight;
+    });
+  }, [isNearBottom]);
+
+  // 监听滚动事件，检测用户是否在查看历史消息
   useEffect(() => {
-    scrollToBottom();
-  }, [safeHistory.length, scrollToBottom]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    let scrollTimeout: NodeJS.Timeout;
+    let isScrolling = false;
+
+    const handleScroll = () => {
+      // 标记用户正在滚动
+      isUserScrollingRef.current = true;
+      isScrolling = true;
+      
+      // 清除之前的定时器
+      clearTimeout(scrollTimeout);
+      
+      // 如果用户停止滚动超过 500ms，才允许自动滚动
+      scrollTimeout = setTimeout(() => {
+        isScrolling = false;
+        // 检查是否在底部，如果在底部则允许自动滚动
+        if (isNearBottom()) {
+          isUserScrollingRef.current = false;
+        }
+      }, 500);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [isNearBottom]);
+
+  // 当消息列表更新时，智能滚动
+  useEffect(() => {
+    const historyLength = safeHistory.length;
+    const prevLength = lastHistoryLengthRef.current;
+    
+    // 只在消息数量增加时考虑滚动（新消息到达）
+    if (historyLength > prevLength) {
+      // 延迟检查，确保 DOM 已更新
+      setTimeout(() => {
+        // 只有在用户在底部附近且没有手动滚动时才滚动
+        if (!isUserScrollingRef.current && isNearBottom()) {
+          scrollToBottom(false);
+        }
+      }, 50);
+    } else if (historyLength < prevLength) {
+      // 消息被清空，重置滚动位置
+      scrollToBottom(true);
+    }
+    
+    lastHistoryLengthRef.current = historyLength;
+  }, [safeHistory.length, scrollToBottom, isNearBottom]);
 
   // 加载消息历史（独立的权限控制和数据加载）
   const historyLoadedRef = useRef<string | null>(null);
@@ -110,8 +193,21 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
             timestamp: msg.timestamp || Date.now(),
           }));
 
+          // 加载历史消息时，标记为用户滚动，避免自动滚动
+          isUserScrollingRef.current = true;
           onUpdateHistory(messages);
           historyLoadedRef.current = sessionId;
+          
+          // 加载完成后，滚动到底部（首次加载）
+          setTimeout(() => {
+            if (messages.length > 0) {
+              scrollToBottom(true);
+              // 重置滚动标志，允许后续自动滚动
+              setTimeout(() => {
+                isUserScrollingRef.current = false;
+              }, 500);
+            }
+          }, 100);
         }
       } catch (err) {
         logger.error('[SharedChatWindow] 加载消息历史失败:', err);
@@ -140,6 +236,13 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
     onUpdateHistory((prev: Message[]) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    
+    // 发送消息后，强制滚动到底部（用户主动发送，应该滚动）
+    // 延迟一点确保 DOM 更新
+    setTimeout(() => {
+      isUserScrollingRef.current = false; // 重置滚动标志
+      scrollToBottom(true);
+    }, 150);
 
     try {
       const token = getToken();
@@ -185,6 +288,12 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               undefined,
               0.5
             );
+            // AI 回复完成后，只有在用户在底部时才滚动
+            setTimeout(() => {
+              if (isNearBottom() && !isUserScrollingRef.current) {
+                scrollToBottom(false);
+              }
+            }, 200);
           } catch (saveError) {
             logger.error('[SharedChatWindow] 保存助手消息失败:', saveError);
           }
@@ -242,10 +351,51 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
   }
 
   // 处理传送完成
-  const handleTeleportationComplete = useCallback((targetHeartsphereId: number, targetShareCode?: string) => {
-    logger.debug('[SharedChatWindow] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
-    if (targetShareCode) {
-      // 通过共享码传送到另一个心域
+  const handleTeleportationComplete = useCallback(async (targetHeartsphereId: number, targetShareCode?: string) => {
+    
+    if (!targetShareCode) {
+      logger.warn('[SharedChatWindow] ⚠️ 传送完成但 targetShareCode 为空，无法跳转', { targetHeartsphereId });
+      alert('传送完成，但目标共享码不存在，无法跳转到目标心域');
+      return;
+    }
+    
+    // 通过共享码传送到另一个心域
+    try {
+      // 先尝试通过 API 获取共享配置
+      const { heartConnectApi } = await import('../../services/api/heartconnect');
+      const { getToken } = await import('../../services/api/base/tokenStorage');
+      const { authApi } = await import('../../services/api');
+      
+      const token = getToken();
+      if (!token) {
+        // 如果没有 token，直接跳转到分享页面
+        window.location.href = `/share/${targetShareCode}`;
+        return;
+      }
+      
+      try {
+        const shareConfig = await heartConnectApi.getShareConfigByCode(targetShareCode);
+        const currentUser = await authApi.getCurrentUser(token);
+        
+        if (currentUser && currentUser.id) {
+          // 触发导航事件，让应用内部处理导航（不重新加载页面）
+          window.dispatchEvent(new CustomEvent('navigateToShared', { 
+            detail: { shareConfigId: shareConfig.id, visitorId: currentUser.id, shareConfig: shareConfig } 
+          }));
+          // 使用 history API 更新 URL，但不重新加载页面
+          window.history.pushState({}, '', `/share/${targetShareCode}`);
+        } else {
+          // 无法获取用户信息，跳转到分享页面
+          window.location.href = `/share/${targetShareCode}`;
+        }
+      } catch (err) {
+        logger.warn('[SharedChatWindow] 获取共享配置失败，跳转到分享页面:', err);
+        // 如果获取失败，跳转到分享页面让用户手动进入
+        window.location.href = `/share/${targetShareCode}`;
+      }
+    } catch (error) {
+      logger.error('[SharedChatWindow] ❌ 跳转失败:', error);
+      // 如果所有方法都失败，直接跳转
       window.location.href = `/share/${targetShareCode}`;
     }
   }, []);
@@ -337,11 +487,37 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         </div>
       )}
 
+      {/* 沉浸模式下的退出按钮和返回按钮 */}
+      {uiState.isCinematic && (
+        <div className="absolute top-0 left-0 right-0 p-4 z-50 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent">
+          <Button 
+            variant="ghost" 
+            onClick={onBack} 
+            className="!p-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg backdrop-blur-sm"
+            title="返回"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Button>
+          <button 
+            onClick={() => uiState.setIsCinematic(false)}
+            className="p-2 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white/70 hover:text-white transition-all backdrop-blur-sm"
+            title="退出沉浸模式"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-3.65-3.65m3.65 3.65L5.183 2.16 20.632 17.608M14.25 12a2.25 2.25 0 0 1-2.25 2.25" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Main Chat Area - 与ChatWindow保持一致，确保输入框固定在底部 */}
       <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-24 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
         
         {/* Messages - 使用公共组件，flex-1 确保占据可用空间 */}
         <div
+          ref={messagesContainerRef}
           className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide min-h-0"
           style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%)' }}
         >
@@ -391,38 +567,61 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         </div>
       </div>
 
-        {/* 传送门渲染层 - TeleportationManager会处理点击事件 */}
-        {sceneId && (
-          <PortalLayer
-            portals={portals || []}
-            sceneId={sceneId}
-          onPortalClick={(portalId) => {
-            // 通过自定义事件触发传送，TeleportationManager会监听
-            logger.debug(`[SharedChatWindow] 🔮 点击传送门: portalId=${portalId}`);
-            window.dispatchEvent(new CustomEvent('portal-click', { 
-              detail: { portalId, sceneId } 
-            }));
-          }}
-          className="z-30"
-        />
-      )}
+        {/* 传送门不再在场景中显示，改为通过共享心域页面的传送按钮访问 */}
+        {/* PortalLayer 已移除，保留传送门数据用于其他用途 */}
 
-      {/* 传送门调试信息（开发环境） */}
-      {process.env.NODE_ENV === 'development' && sceneId && (
-        <div className="absolute top-20 right-4 bg-slate-900/80 p-3 rounded-lg text-xs text-white z-50 max-w-xs">
-          <div className="font-bold mb-1">🔮 传送门调试</div>
-          <div>场景ID: {sceneId}</div>
-          <div>传送门数: {(portals || []).length}</div>
-          <div>加载中: {portalsLoading ? '是' : '否'}</div>
-          {(portals || []).length > 0 && (
-            <div className="mt-2">
-              {portals.map(p => (
-                <div key={p.id} className="text-xs">
-                  • {p.portalName} ({p.portalType})
-                </div>
-              ))}
+      {/* 传送门调试信息（开发环境或手动启用） */}
+      {(process.env.NODE_ENV === 'development' || localStorage.getItem('portal_debug') === 'true') && sceneId && (
+        <div className="absolute top-20 right-4 bg-slate-900/90 p-3 rounded-lg text-xs text-white z-50 max-w-xs border border-indigo-500/50 shadow-lg">
+          <div className="font-bold mb-2 flex items-center gap-2">
+            <span>🔮</span>
+            <span>传送门调试</span>
+          </div>
+          <div className="space-y-1">
+            <div>场景ID: <span className="text-indigo-400 font-mono">{sceneId}</span></div>
+            <div>传送门数: <span className={portalsLoading ? 'text-yellow-400' : 'text-green-400'}>{portals.length}</span></div>
+            <div className="flex items-center gap-2">
+              <span>加载中:</span>
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                portalsLoading 
+                  ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' 
+                  : 'bg-green-500/20 text-green-400'
+              }`}>
+                {portalsLoading ? '是' : '否'}
+              </span>
             </div>
-          )}
+            {portals.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-slate-700">
+                <div className="text-xs font-semibold mb-1">传送门列表:</div>
+                {portals.map(p => (
+                  <div key={p.id} className="text-xs text-slate-300 pl-2 mb-1 flex items-center justify-between">
+                    <span>• {p.portalName} ({p.portalType})</span>
+                    <button
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('portal-click', { 
+                          detail: { portalId: p.id, sceneId } 
+                        }));
+                      }}
+                      className="ml-2 px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded transition-colors"
+                      title="激活传送门"
+                    >
+                      传送
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {portals.length === 0 && !portalsLoading && (
+              <div className="mt-2 pt-2 border-t border-slate-700">
+                <div className="text-xs text-slate-400 mb-1">该场景暂无传送门</div>
+                <div className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  传送门需要由心域主人在场景中创建，用于连接到其他心域。
+                  <br />
+                  创建方式：心域主人可以在场景编辑页面或通过API创建传送门。
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
       </div>

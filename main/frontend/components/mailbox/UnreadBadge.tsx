@@ -29,7 +29,6 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
       
       // 监听未读数量更新事件
       const handleUnreadUpdate = () => {
-        console.log('[UnreadBadge] 收到未读数量更新事件，立即刷新');
         loadUnreadCount();
       };
       
@@ -46,7 +45,6 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
     try {
       setLoading(true);
       const count = await mailboxApi.getUnreadCount(token);
-      console.log('[UnreadBadge] 收到未读数量:', count);
       setUnreadCount(count);
     } catch (error) {
       console.error('[UnreadBadge] 加载未读数量失败:', error);
@@ -58,16 +56,6 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
   };
 
   const total = unreadCount?.totalUnread || unreadCount?.total || 0;
-  
-  // 调试日志
-  if (unreadCount) {
-    console.log('[UnreadBadge] 未读数量详情:', {
-      totalUnread: unreadCount.totalUnread,
-      total: unreadCount.total,
-      categoryUnread: unreadCount.categoryUnread,
-      calculatedTotal: total
-    });
-  }
 
   if (total === 0) {
     return null;

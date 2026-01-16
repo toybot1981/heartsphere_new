@@ -18,6 +18,7 @@ public class ChatResponseDTO {
     private String messageId;
     private String response;
     private String taskId; // 如果有任务被创建
+    private String executionId; // 任务执行ID，用于查询任务进度
     private String taskStatus; // 任务状态
     private Map<String, Object> result; // 任务执行结果
     private List<MentisMessageDTO> conversationHistory; // 对话历史

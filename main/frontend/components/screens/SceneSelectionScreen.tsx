@@ -19,6 +19,7 @@ interface SceneSelectionScreenProps {
   onOpenMemoryModal: (e: React.MouseEvent<HTMLButtonElement>, scene: WorldScene) => void;
   onOpenMailbox: () => void;
   onOpenEraCreator: () => void;
+  onOpenSceneCreationWizard?: () => void;
   requireAuth: (callback: () => void) => void;
   dispatch: (action: any) => void;
 }
@@ -33,6 +34,7 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
   onOpenMemoryModal,
   onOpenMailbox,
   onOpenEraCreator,
+  onOpenSceneCreationWizard,
   requireAuth,
   dispatch,
 }) => {
@@ -75,16 +77,18 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
               <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-bounce" />
             )}
           </button>
-          <Button
-            onClick={() => {
-              requireAuth(() => {
-                onOpenEraCreator();
-              });
-            }}
-            className="text-sm bg-pink-600 hover:bg-pink-500"
-          >
-            + 创造新场景
-          </Button>
+          {onOpenSceneCreationWizard && (
+            <Button
+              onClick={() => {
+                requireAuth(() => {
+                  onOpenSceneCreationWizard();
+                });
+              }}
+              className="text-sm bg-indigo-600 hover:bg-indigo-500"
+            >
+              ➕ 创建场景
+            </Button>
+          )}
         </div>
       </div>
 

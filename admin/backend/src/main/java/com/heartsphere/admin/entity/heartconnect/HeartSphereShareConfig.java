@@ -1,7 +1,10 @@
 package com.heartsphere.admin.entity.heartconnect;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +13,10 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "heartsphere_share_config")
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 public class HeartSphereShareConfig {
     
     @Id

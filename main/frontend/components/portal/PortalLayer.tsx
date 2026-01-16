@@ -40,12 +40,8 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
 
   // 异步检查功能是否启用（首次加载时）
   useEffect(() => {
-    console.log('[PortalLayer] 🚀 组件挂载，开始检查功能状态');
     const checkEnabled = async () => {
-      console.log('[PortalLayer] 调用 checkPortalEnabled()');
       const enabled = await checkPortalEnabled();
-      console.log(`[PortalLayer] ${enabled ? '✅' : '❌'} 功能状态检查完成: ${enabled ? '已启用' : '未启用'}`);
-      logger.info(`[PortalLayer] 功能状态检查完成: ${enabled ? '已启用' : '未启用'}`);
       setIsEnabled(enabled);
     };
     checkEnabled();
@@ -55,31 +51,15 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
   const enabledSync = isPortalEnabledSync();
   const finalEnabled = isEnabled || enabledSync;
   
-  // 添加调试日志
   useEffect(() => {
-    console.log('[PortalLayer] 📊 组件渲染状态', {
-      isEnabled: finalEnabled,
-      enabledSync,
-      portalsCount: portals.length,
-      sceneId,
-      activePortalsCount: portals.filter(p => p.isActive).length,
-    });
-    logger.debug('[PortalLayer] 组件渲染', {
-      isEnabled: finalEnabled,
-      enabledSync,
-      portalsCount: portals.length,
-      sceneId,
-      activePortalsCount: portals.filter(p => p.isActive).length,
-    });
+    // 组件渲染状态检查
+    if (finalEnabled && portals.length > 0 && sceneId) {
+      // 组件已就绪
+    }
   }, [finalEnabled, enabledSync, portals.length, sceneId]);
 
   // 初始化渲染器
   useEffect(() => {
-    logger.debug('[PortalLayer] 初始化效果执行', {
-      isEnabled: finalEnabled,
-      hasContainer: !!containerRef.current,
-      portalsCount: portals.length,
-    });
     
     if (!finalEnabled) {
       logger.warn('[PortalLayer] 功能未启用，跳过初始化。提示：请检查后端配置 heartconnect.portal.enabled=true');

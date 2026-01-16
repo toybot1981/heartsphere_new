@@ -36,7 +36,6 @@ export class ExpressionPlugin implements TemperaturePlugin {
    */
   async onInit(engine: TemperatureEngine): Promise<void> {
     this.engine = engine;
-    console.log('[ExpressionPlugin] Initialized');
   }
 
   /**
@@ -51,7 +50,6 @@ export class ExpressionPlugin implements TemperaturePlugin {
       await this.updateExpression('neutral');
     }
     
-    console.log('[ExpressionPlugin] Started');
   }
 
   /**

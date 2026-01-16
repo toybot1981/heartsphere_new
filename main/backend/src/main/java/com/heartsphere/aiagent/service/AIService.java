@@ -55,6 +55,15 @@ public interface AIService {
     AudioResponse speechToText(Long userId, AudioRequest request);
     
     /**
+     * 流式语音转文本（实时语音识别）
+     * @param userId 用户ID
+     * @param request 音频请求
+     * @param handler 流式响应处理器
+     */
+    void speechToTextStream(Long userId, AudioRequest request, 
+                           com.heartsphere.aiagent.util.StreamResponseHandler<AudioResponse> handler);
+    
+    /**
      * 生成视频
      * @param userId 用户ID
      * @param request 视频生成请求

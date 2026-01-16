@@ -16,6 +16,10 @@ import { MobileEmptyState } from '../components/MobileEmptyState';
 import { MobileLazyImage } from '../components/MobileLazyImage';
 import { MobileTouchableButton } from '../components/MobileTouchableButton';
 import { MobileColors, MobileCardStyles } from '../components/MobileStyleGuide';
+import { PortalSelectionModal } from '../../components/portal/PortalSelectionModal';
+import { TeleportationAnimation } from '../../components/portal/TeleportationAnimation';
+import type { PortalType } from '../../services/api/portal/types';
+import { setSharedModeState } from '../../services/api/base/sharedModeState';
 
 interface MobileSharedHeartSphereScreenProps {
   onSelectScene: (sceneId: string) => void;
@@ -37,7 +41,11 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWarmMessageModal, setShowWarmMessageModal] = useState(false);
+  const [showPortalSelection, setShowPortalSelection] = useState(false);
   const [ownerName, setOwnerName] = useState<string>('');
+  const [isTeleporting, setIsTeleporting] = useState(false);
+  const [teleportEffect, setTeleportEffect] = useState<PortalType>('stargate');
+  const [pendingTeleport, setPendingTeleport] = useState<{ targetShareCode: string; targetSphere: any } | null>(null);
 
   // 加载共享心域的场景数据
   useEffect(() => {
@@ -61,13 +69,11 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
           return;
         }
 
-        console.log('[MobileSharedHeartSphereScreen] 加载共享场景，shareConfigId:', shareConfig.shareConfigId);
         
         // 使用共享模式API加载数据
         const worlds = await sharedApi.getSharedWorlds(token);
         const eras = await sharedApi.getSharedEras(token);
         
-        console.log('[MobileSharedHeartSphereScreen] 加载成功，世界数量:', worlds.length, '场景数量:', eras.length);
         
         // 转换为前端 WorldScene 格式（共享模式下直接展示所有场景，不按世界分组）
         const convertedScenes = convertErasToWorldScenes(
@@ -88,6 +94,13 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
           } catch (err) {
             console.warn('[MobileSharedHeartSphereScreen] 获取主人信息失败:', err);
           }
+        }
+
+        // 确保 sharedModeState 已设置（供 request.ts 使用）
+        if (shareConfig && shareConfig.id) {
+          const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}');
+          const visitorId = currentUser.id || null;
+          setSharedModeState(shareConfig.id, visitorId);
         }
       } catch (err: any) {
         console.error('[MobileSharedHeartSphereScreen] 加载失败:', err);
@@ -145,6 +158,73 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
     }
   };
 
+  // 处理传送门选择
+  const handleTeleport = async (targetShareCode: string, effect: PortalType) => {
+    try {
+      // 获取目标心域信息
+      const sharedSpheres = await heartConnectApi.getPublicSharedHeartSpheres();
+      const targetSphere = sharedSpheres.find(s => s.shareCode === targetShareCode);
+      
+      if (!targetSphere) {
+        alert('目标心域不存在或已失效');
+        return;
+      }
+
+      // 保存待传送的目标信息，先显示动画
+      setPendingTeleport({ targetShareCode, targetSphere });
+      setTeleportEffect(effect);
+      
+      // 开始传送动画
+      setTimeout(() => {
+        setIsTeleporting(true);
+      }, 10);
+    } catch (err: any) {
+      console.error('[MobileSharedHeartSphereScreen] 传送失败:', err);
+      alert(err.message || '传送失败，请稍后重试');
+    }
+  };
+
+  // 传送动画完成后的回调
+  const handleTeleportationComplete = () => {
+    if (!pendingTeleport) return;
+
+    const { targetShareCode, targetSphere } = pendingTeleport;
+    const token = getToken();
+    const visitorId = token ? JSON.parse(atob(token.split('.')[1])).userId : null;
+
+    const heartSphereName = targetSphere.ownerName 
+      ? `${targetSphere.ownerName}的心域`
+      : (targetSphere.heartSphereName || '未命名心域');
+
+    window.dispatchEvent(new CustomEvent('navigateToShared', {
+      detail: {
+        shareConfigId: targetSphere.shareConfigId,
+        visitorId: visitorId,
+        shareConfig: {
+          id: targetSphere.shareConfigId,
+          shareCode: targetShareCode,
+          name: heartSphereName,
+          userId: targetSphere.ownerId,
+          ownerName: targetSphere.ownerName,
+          shareType: targetSphere.shareType,
+          shareStatus: 'active' as const,
+          accessPermission: targetSphere.accessPermission,
+          viewCount: targetSphere.viewCount,
+          requestCount: targetSphere.requestCount,
+          approvedCount: targetSphere.approvedCount,
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      }
+    }));
+    window.history.pushState({}, '', `/share/${targetShareCode}`);
+    
+    setTimeout(() => {
+      setIsTeleporting(false);
+      setPendingTeleport(null);
+    }, 100);
+  };
+
   // 如果不在共享模式，直接返回 null，让导航逻辑处理
   if (!isActive || !shareConfig) {
     return null;
@@ -175,15 +255,30 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
   }
 
   return (
-    <div className="h-full bg-black flex flex-col overflow-hidden">
-      {/* 共享模式标识栏 */}
-      {shareConfig && (
-        <MobileSharedModeBanner
-          heartSphereName={shareConfig.heartSphereName || '共享心域'}
-          ownerName={ownerName}
-          onLeave={() => setShowWarmMessageModal(true)}
-        />
-      )}
+    <>
+      <div className="h-full bg-black flex flex-col overflow-hidden">
+        {/* 共享模式标识栏 */}
+        {shareConfig && (
+          <MobileSharedModeBanner
+            heartSphereName={shareConfig.heartSphereName || (ownerName ? `${ownerName}的心域` : '共享心域')}
+            ownerName={ownerName}
+            onLeave={() => setShowWarmMessageModal(true)}
+          />
+        )}
+
+        {/* 传送按钮 - 固定在右上角 */}
+        {shareConfig && (
+          <button
+            onClick={() => setShowPortalSelection(true)}
+            className="fixed top-20 right-4 z-30 p-3 bg-indigo-600/90 hover:bg-indigo-500 rounded-full shadow-lg backdrop-blur-sm transition-all"
+            aria-label="传送"
+            title="传送到其他共享心域"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-white">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </button>
+        )}
 
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto pt-20 pb-[calc(4rem+env(safe-area-inset-bottom))] px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -230,16 +325,34 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
         )}
       </div>
 
-      {/* 暖心留言模态框 */}
-      {showWarmMessageModal && shareConfig && (
-        <MobileWarmMessageModal
-          isOpen={showWarmMessageModal}
-          onClose={handleSkipWarmMessage}
-          onSubmit={handleWarmMessageSubmit}
-          ownerName={ownerName}
+        {/* 暖心留言模态框 */}
+        {showWarmMessageModal && shareConfig && (
+          <MobileWarmMessageModal
+            isOpen={showWarmMessageModal}
+            onClose={handleSkipWarmMessage}
+            onSubmit={handleWarmMessageSubmit}
+            ownerName={ownerName}
+          />
+        )}
+      </div>
+
+      {/* 传送门选择模态框 */}
+      {showPortalSelection && (
+        <PortalSelectionModal
+          isOpen={showPortalSelection}
+          onClose={() => setShowPortalSelection(false)}
+          onTeleport={handleTeleport}
         />
       )}
-    </div>
+
+      {/* 传送动画 */}
+      <TeleportationAnimation
+        isActive={isTeleporting}
+        portalType={teleportEffect}
+        duration={4000}
+        onFadeOutComplete={handleTeleportationComplete}
+      />
+    </>
   );
 });
 

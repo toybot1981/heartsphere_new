@@ -30,7 +30,6 @@ async function example1() {
     conversationHistory: [],
   });
 
-  console.log('检测到的情绪:', emotion.type, emotion.confidence);
 
   // 2. 计算温度感
   const temperature = await engine.calculateTemperature({
@@ -51,14 +50,9 @@ async function example1() {
     history: [],
   });
 
-  console.log('温度感评分:', temperature.score, temperature.level);
-  console.log('各因子得分:', temperature.factors);
-  console.log('建议:', temperature.suggestions);
 
   // 3. 预测未来温度感
   const prediction = engine.predictTemperature(60000); // 预测1分钟后
-  console.log('预测温度感:', prediction.predictedLevel, prediction.predictedScore);
-  console.log('趋势:', prediction.trend, prediction.trendStrength);
 }
 
 // ========== 示例2：单独使用情绪分析器 ==========
@@ -87,10 +81,6 @@ async function example2() {
     ],
   });
 
-  console.log('情绪类型:', emotion.type);
-  console.log('置信度:', emotion.confidence);
-  console.log('强度:', emotion.intensity);
-  console.log('建议:', emotion.suggestions);
 }
 
 // ========== 示例3：使用上下文感知 ==========
@@ -113,11 +103,9 @@ function example3() {
     },
   });
 
-  console.log('完整上下文:', context);
 
   // 分析上下文
   const analysis = awareness.analyzeContext(context);
-  console.log('上下文分析:', {
     warmth: analysis.warmth,
     activity: analysis.activity,
     engagement: analysis.engagement,
@@ -125,11 +113,9 @@ function example3() {
 
   // 判断是否需要调整
   const shouldAdjust = awareness.shouldAdjustTemperature(context);
-  console.log('是否需要调整:', shouldAdjust);
 
   // 获取建议
   const suggestions = awareness.getContextSuggestions(context);
-  console.log('上下文建议:', suggestions);
 }
 
 // ========== 示例4：使用温度感评分器 ==========
@@ -159,10 +145,6 @@ async function example4() {
     ],
   });
 
-  console.log('温度感评分:', score.score);
-  console.log('温度感级别:', score.level);
-  console.log('各因子:', score.factors);
-  console.log('建议:', score.suggestions);
 }
 
 // ========== 示例5：使用温度感预测器 ==========
@@ -195,7 +177,6 @@ async function example5() {
 
   // 预测未来温度感
   const prediction = predictor.predict(60000); // 预测1分钟后
-  console.log('预测结果:', {
     score: prediction.predictedScore,
     level: prediction.predictedLevel,
     trend: prediction.trend,

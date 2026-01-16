@@ -3,11 +3,12 @@
  * 显示场景的角色列表、主线故事和剧本分支
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { WorldScene, GameState, Character, CustomScenario } from '../../types';
 import { Button } from '../Button';
 import { CharacterCard } from '../CharacterCard';
 import { showAlert } from '../../utils/dialog';
+import { LazyImage } from '../LazyImage';
 
 interface CharacterSelectionScreenProps {
   gameState: GameState;
@@ -67,6 +68,73 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
     }
     return sceneCharacters;
   }, [sceneCharacters, characterTypeFilter]);
+
+  // 打印场景详情页面图片信息（详细日志）
+  useEffect(() => {
+    // 打印场景信息
+    console.log('[CharacterSelectionScreen] 场景详情页面 - 场景信息', {
+      componentName: 'CharacterSelectionScreen',
+      pageType: '场景详情页面',
+      sceneObject: {
+        id: currentScene.id,
+        name: currentScene.name,
+        description: currentScene.description,
+        imageUrl: currentScene.imageUrl,
+        style: currentScene.style,
+        charactersCount: currentScene.characters?.length || 0,
+        hasMainStory: !!currentScene.mainStory,
+        scriptsCount: currentScene.scripts?.length || 0,
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    // 打印主线故事图片信息
+    if (currentScene.mainStory) {
+      if (currentScene.mainStory.backgroundUrl && currentScene.mainStory.backgroundUrl.trim()) {
+        console.log('[CharacterSelectionScreen] 场景详情页面 - 主线故事背景图', {
+          componentName: 'CharacterSelectionScreen',
+          pageType: '场景详情页面',
+          imageType: '主线故事背景图',
+          imageUrl: currentScene.mainStory.backgroundUrl,
+          sceneObject: {
+            id: currentScene.id,
+            name: currentScene.name,
+          },
+          mainStoryObject: {
+            id: currentScene.mainStory.id,
+            name: currentScene.mainStory.name,
+            bio: currentScene.mainStory.bio,
+            backgroundUrl: currentScene.mainStory.backgroundUrl,
+            avatarUrl: currentScene.mainStory.avatarUrl,
+          },
+          displayPurpose: 'background',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (currentScene.mainStory.avatarUrl && currentScene.mainStory.avatarUrl.trim()) {
+        console.log('[CharacterSelectionScreen] 场景详情页面 - 主线故事头像', {
+          componentName: 'CharacterSelectionScreen',
+          pageType: '场景详情页面',
+          imageType: '主线故事头像',
+          imageUrl: currentScene.mainStory.avatarUrl,
+          sceneObject: {
+            id: currentScene.id,
+            name: currentScene.name,
+          },
+          mainStoryObject: {
+            id: currentScene.mainStory.id,
+            name: currentScene.mainStory.name,
+            bio: currentScene.mainStory.bio,
+            backgroundUrl: currentScene.mainStory.backgroundUrl,
+            avatarUrl: currentScene.mainStory.avatarUrl,
+          },
+          displayPurpose: 'detail',
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+  }, [currentScene.id, currentScene.name, currentScene.mainStory?.id, currentScene.mainStory?.backgroundUrl, currentScene.mainStory?.avatarUrl]);
 
   return (
     <div className="h-full flex flex-col p-8 bg-gray-900">
@@ -131,24 +199,15 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
           const isNumericId = /^\d+$/.test(currentScene.mainStory.id);
           const isUserOwned = isNumericId; // 如果是数字ID，说明是从后端获取的用户数据
 
-          console.log('[CharacterSelectionScreen] 渲染主线故事卡片:', {
-            mainStoryId: currentScene.mainStory.id,
-            mainStoryName: currentScene.mainStory.name,
-            isNumericId,
-            isUserOwned,
-            hasEditButton: isUserOwned,
-            hasDeleteButton: isUserOwned,
-            sceneId: currentScene.id,
-            mainStoryObject: currentScene.mainStory
-          });
-
           return (
             <div key={`main-story-${currentScene.mainStory.id}-${currentScene.id}`} className="mb-10 p-1 rounded-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
               <div className="bg-gray-900 rounded-[22px] overflow-hidden relative group">
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 group-hover:scale-105"
-                  style={{ backgroundImage: `url(${currentScene.mainStory.backgroundUrl})` }}
-                />
+                {currentScene.mainStory.backgroundUrl && currentScene.mainStory.backgroundUrl.trim() ? (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 group-hover:scale-105"
+                    style={{ backgroundImage: `url(${currentScene.mainStory.backgroundUrl})` }}
+                  />
+                ) : null}
                 <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
                   <div className="flex-1 space-y-4">
                     <div className="flex items-center gap-2">
@@ -158,11 +217,6 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              console.log('[CharacterSelectionScreen] 点击主线故事编辑按钮:', {
-                                mainStory: currentScene.mainStory,
-                                sceneId: currentScene.id,
-                                timestamp: new Date().toISOString()
-                              });
                               requireAuth(() => onEditMainStory(currentScene.mainStory!, currentScene.id));
                             }}
                             className="p-1.5 hover:bg-white/10 rounded text-white"
@@ -175,11 +229,6 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              console.log('[CharacterSelectionScreen] 点击主线故事删除按钮:', {
-                                mainStory: currentScene.mainStory,
-                                sceneId: currentScene.id,
-                                timestamp: new Date().toISOString()
-                              });
                               requireAuth(() => onDeleteMainStory(currentScene.mainStory!, currentScene.id));
                             }}
                             className="p-1.5 hover:bg-red-900/50 rounded text-white hover:text-red-400"
@@ -196,11 +245,6 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                     <p className="text-gray-300 leading-relaxed">{currentScene.mainStory.bio}</p>
                     <Button
                       onClick={() => {
-                        console.log('[CharacterSelectionScreen] 点击"开始故事"按钮:', {
-                          mainStory: currentScene.mainStory,
-                          sceneId: currentScene.id,
-                          timestamp: new Date().toISOString()
-                        });
                         onCharacterSelect(currentScene.mainStory!);
                       }}
                       className="bg-white text-black hover:bg-gray-200 mt-4 px-8"
@@ -210,7 +254,12 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                   </div>
                   <div className="w-48 h-64 shrink-0 rounded-xl overflow-hidden shadow-2xl border-4 border-white/10 rotate-3 transition-transform group-hover:rotate-0">
                     {currentScene.mainStory.avatarUrl && currentScene.mainStory.avatarUrl.trim() ? (
-                      <img src={currentScene.mainStory.avatarUrl} className="w-full h-full object-cover" alt="Story Cover" />
+                      <LazyImage
+                        src={currentScene.mainStory.avatarUrl}
+                        alt={`${currentScene.mainStory.name} - 故事封面`}
+                        purpose="detail"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-indigo-500/20 flex items-center justify-center">
                         <div className="text-4xl opacity-50">📖</div>
@@ -233,16 +282,6 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
             const isInCustomChars = customCharsForScene.some(c => c.id === char.id);
             const isUserOwned = isNumericId || isInCustomChars;
 
-            console.log('[CharacterSelectionScreen] 渲染角色卡片:', {
-              characterId: char.id,
-              characterName: char.name,
-              isNumericId,
-              isInCustomChars,
-              isUserOwned,
-              hasEditButton: isUserOwned,
-              hasDeleteButton: isUserOwned
-            });
-
             return (
               <CharacterCard
                 key={char.id}
@@ -250,38 +289,15 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                 customAvatarUrl={gameState.customAvatars[char.id]}
                 isGenerating={gameState.generatingAvatarId === char.id}
                 onSelect={(c) => {
-                  console.log('[CharacterSelectionScreen] 点击角色卡片选择:', {
-                    characterId: c.id,
-                    characterName: c.name,
-                    sceneId: currentScene.id,
-                    timestamp: new Date().toISOString()
-                  });
                   onCharacterSelect(c);
                 }}
                 onGenerate={(c) => {
-                  console.log('[CharacterSelectionScreen] 点击生成角色头像:', {
-                    characterId: c.id,
-                    characterName: c.name,
-                    timestamp: new Date().toISOString()
-                  });
                   requireAuth(() => onGenerateAvatar(c));
                 }}
                 onEdit={isUserOwned ? (c) => {
-                  console.log('[CharacterSelectionScreen] 点击角色编辑按钮:', {
-                    characterId: c.id,
-                    characterName: c.name,
-                    sceneId: currentScene.id,
-                    timestamp: new Date().toISOString()
-                  });
                   requireAuth(() => onEditCharacter(c));
                 } : undefined}
                 onDelete={isUserOwned ? (c) => {
-                  console.log('[CharacterSelectionScreen] 点击角色删除按钮:', {
-                    characterId: c.id,
-                    characterName: c.name,
-                    sceneId: currentScene.id,
-                    timestamp: new Date().toISOString()
-                  });
                   requireAuth(() => onDeleteCharacter(c));
                 } : undefined}
                 isUserCreated={isUserOwned}

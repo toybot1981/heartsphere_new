@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { McpConfigManagement } from './McpConfigManagement';
 import { AgentRoleManagement } from './AgentRoleManagement';
+import { MentisToolManagement } from './MentisToolManagement';
 
 export const MentisManagementPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'mcp' | 'agents'>('mcp');
+    const [activeTab, setActiveTab] = useState<'mcp' | 'agents' | 'tools'>('mcp');
 
     return (
         <div className="space-y-6">
@@ -34,6 +35,16 @@ export const MentisManagementPage: React.FC = () => {
                     >
                         Agent 角色
                     </button>
+                    <button
+                        onClick={() => setActiveTab('tools')}
+                        className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'tools'
+                                ? 'border-blue-500 text-blue-400'
+                                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-300'
+                        }`}
+                    >
+                        Mentis 工具管理
+                    </button>
                 </nav>
             </div>
 
@@ -41,6 +52,7 @@ export const MentisManagementPage: React.FC = () => {
             <div className="mt-6">
                 {activeTab === 'mcp' && <McpConfigManagement />}
                 {activeTab === 'agents' && <AgentRoleManagement />}
+                {activeTab === 'tools' && <MentisToolManagement />}
             </div>
         </div>
     );

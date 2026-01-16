@@ -57,10 +57,11 @@ public class SharedModeInterceptor implements HandlerInterceptor {
             // 检查查询参数中是否有共享模式标识
             String shareConfigIdStr = request.getParameter(SHARE_CONFIG_ID_PARAM);
             
-            // 只在DEBUG级别记录详细日志，减少生产环境日志量
-            log.debug("========== [SharedModeInterceptor] 处理请求 ==========");
-            log.debug("请求路径: {}", request.getRequestURI());
-            log.debug("查询参数 shareConfigId: {}", shareConfigIdStr);
+            // 记录请求信息（包括所有查询参数）
+            log.info("========== [SharedModeInterceptor] 处理请求 ==========");
+            log.info("请求路径: {}", request.getRequestURI());
+            log.info("查询字符串: {}", request.getQueryString());
+            log.info("查询参数 shareConfigId: {}", shareConfigIdStr);
             
             if (shareConfigIdStr != null && !shareConfigIdStr.trim().isEmpty()) {
                 log.debug("检测到共享模式查询参数，开始处理: shareConfigId={}", shareConfigIdStr);

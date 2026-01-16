@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Button } from './Button';
-import { WorldStyle, WORLD_STYLE_DESCRIPTIONS } from '../types';
 import { LoginModal } from './LoginModal';
 import { Footer } from './Footer';
 
@@ -11,8 +10,6 @@ interface EntryPointProps {
   nickname: string;
   avatarUrl?: string; // 添加头像URL
   onSwitchToMobile: () => void;
-  currentStyle: WorldStyle;
-  onStyleChange: (style: WorldStyle) => void;
   onLoginSuccess?: (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => void;
   isGuest?: boolean;
   onGuestEnter?: (nickname: string) => void;
@@ -24,18 +21,13 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
   nickname,
   avatarUrl,
   onSwitchToMobile,
-  currentStyle,
-  onStyleChange,
   onLoginSuccess,
   isGuest = false,
   onGuestEnter
 }) => {
-  const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showGuestInput, setShowGuestInput] = useState(false);
   const [guestNickname, setGuestNickname] = useState('');
-  
-  const styles: WorldStyle[] = ['anime', 'realistic', 'cyberpunk', 'fantasy', 'steampunk', 'minimalist', 'watercolor', 'oil-painting'];
 
   const handleGuestSubmit = () => {
     if (!guestNickname.trim()) return;
@@ -70,64 +62,6 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
 
       {/* Top Right Buttons Container */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-3">
-        {/* Style Selector Button */}
-        <div className="relative">
-          <button
-            onClick={() => setShowStyleSelector(!showStyleSelector)}
-            className="p-3 text-slate-200 hover:text-white bg-slate-800/50 hover:bg-slate-700/60 backdrop-blur-md rounded-full transition-all border border-white/20 hover:border-white/40 shadow-lg hover:scale-105 flex items-center gap-2 px-4"
-            title="世界风格 World Style"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
-            </svg>
-            <span className="text-sm font-bold hidden sm:inline">{WORLD_STYLE_DESCRIPTIONS[currentStyle].name}</span>
-          </button>
-          
-          {/* Style Selector Dropdown */}
-          {showStyleSelector && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-4 z-30 animate-fade-in">
-              <div className="text-xs text-slate-400 mb-3 font-bold uppercase tracking-wider">选择世界风格</div>
-              <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto custom-scrollbar">
-                {styles.map((style) => {
-                  const styleInfo = WORLD_STYLE_DESCRIPTIONS[style];
-                  const isSelected = currentStyle === style;
-                  return (
-                    <button
-                      key={style}
-                      onClick={() => {
-                        onStyleChange(style);
-                        setShowStyleSelector(false);
-                      }}
-                      className={`p-3 rounded-xl border-2 transition-all text-left group ${
-                        isSelected
-                          ? 'border-indigo-500 bg-indigo-500/20 shadow-lg shadow-indigo-500/20'
-                          : 'border-slate-700 hover:border-slate-600 bg-slate-800/50 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`font-bold text-sm ${isSelected ? 'text-indigo-300' : 'text-white'}`}>
-                          {styleInfo.name}
-                        </span>
-                        {isSelected && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-indigo-400">
-                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
-                        {styleInfo.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-700 text-xs text-slate-500 text-center">
-                风格将影响所有AI生成的内容
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Mobile Switch Button */}
         <button
           onClick={onSwitchToMobile}

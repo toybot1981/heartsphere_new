@@ -11,6 +11,13 @@ spring:
     name: heartsphere-admin-service
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  main:
+    allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:52428800}  # 50MB (默认值，与 app.image.storage.max-size 保持一致)
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:52428800}  # 50MB
+      enabled: true
   # 多数据源配置
   datasource:
     # Admin主数据源（默认数据源）
@@ -26,9 +33,9 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
-    # Mentis数据源（与admin使用同一个数据库heartsphere）
+    # Mentis数据源（使用独立的heartsphere_mentis数据库）
     mentis:
-      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${MENTIS_DB_NAME:heartsphere}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${MENTIS_DB_NAME:heartsphere_mentis}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
       username: ${DB_USER:root}
       password: ${DB_PASSWORD:123456}
       driver-class-name: com.mysql.cj.jdbc.Driver
@@ -99,7 +106,7 @@ app:
       base-url: ${IMAGE_BASE_URL:http://localhost:8081/images}
       local:
         path: ${IMAGE_STORAGE_PATH:../../uploads/images}
-      max-size: ${IMAGE_MAX_SIZE:10485760}  # 10MB
+      max-size: ${IMAGE_MAX_SIZE:52428800}  # 50MB
     processing:
       variants:
         auto-generate: ${IMAGE_AUTO_GENERATE_VARIANTS:true}
@@ -111,6 +118,13 @@ app:
         path: ${VIDEO_STORAGE_PATH:../../uploads/videos}
       max-size: ${VIDEO_MAX_SIZE:104857600}  # 100MB
       supported-formats: ${VIDEO_SUPPORTED_FORMATS:mp4,mov,avi,webm}
+    # 视频转换工具路径配置（可选，如果未配置则使用默认相对路径）
+    # 默认路径相对于项目根目录（heartsphere_new/）
+    tools:
+      ffmpeg:
+        path: ${FFMPEG_PATH:admin/backend/tools/bin/ffmpeg}  # 相对于项目根目录的路径，或绝对路径（例如: /usr/local/bin/ffmpeg）
+      pag:
+        path: ${PAG_CONVERTOR_PATH:admin/backend/tools/bin/PAGConvertor}  # 相对于项目根目录的路径，或绝对路径（例如: /usr/local/bin/PAGConvertor）
 
 # 日志配置
 logging:

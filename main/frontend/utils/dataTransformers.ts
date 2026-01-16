@@ -241,10 +241,6 @@ export function convertErasToWorldScenes(
   mainStories?: UserMainStory[],
   isSharedMode: boolean = false
 ): WorldScene[] {
-  console.log('[convertErasToWorldScenes] ========== 开始转换数据 ==========');
-  console.log('[convertErasToWorldScenes] 输入参数: worlds数量=', worlds?.length || 0, ', eras数量=', eras?.length || 0, ', characters数量=', characters?.length || 0);
-  console.log('[convertErasToWorldScenes] 共享模式:', isSharedMode);
-  
   // 添加空值检查
   const safeWorlds = Array.isArray(worlds) ? worlds : [];
   const safeEras = Array.isArray(eras) ? eras : [];
@@ -261,7 +257,6 @@ export function convertErasToWorldScenes(
 
   if (isSharedMode) {
     // 共享模式：直接展示所有场景，不按世界分组
-    console.log('[convertErasToWorldScenes] 共享模式：直接展示所有场景');
     safeEras.forEach(era => {
       const eraCharacters = charactersByEraId.get(era.id) || [];
       const eraScripts = scriptsByEraId.get(era.id) || [];
@@ -280,12 +275,10 @@ export function convertErasToWorldScenes(
         worldId: era.worldId || undefined
       };
 
-      console.log(`[convertErasToWorldScenes] 添加场景: id=${scene.id}, name=${scene.name}, characters数量=${scene.characters.length}`);
       userWorldScenes.push(scene);
     });
   } else {
     // 正常模式：按世界分组
-    console.log('[convertErasToWorldScenes] 正常模式：按世界分组');
     safeWorlds.forEach(world => {
       const worldEras = erasByWorldId.get(world.id) || [];
 
@@ -312,11 +305,6 @@ export function convertErasToWorldScenes(
     });
   }
 
-  console.log('[convertErasToWorldScenes] ✅ 转换完成，返回场景数量:', userWorldScenes.length);
-  userWorldScenes.forEach((scene, index) => {
-    console.log(`[convertErasToWorldScenes]   场景[${index}]: id=${scene.id}, name=${scene.name}, characters数量=${scene.characters.length}`);
-  });
-  
   return userWorldScenes;
 }
 

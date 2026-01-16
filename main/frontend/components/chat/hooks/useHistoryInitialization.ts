@@ -42,14 +42,7 @@ export const useHistoryInitialization = ({
     const scenarioChanged = prevScenarioIdRef.current !== customScenario?.id;
 
     if (characterChanged || scenarioChanged) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[useHistoryInitialization] character或scenario切换，重置初始化标记:', {
-          prevCharacterId: prevCharacterIdRef.current,
-          newCharacterId: character?.id,
-          prevScenarioId: prevScenarioIdRef.current,
-          newScenarioId: customScenario?.id,
-        });
-      }
+      // Character or scenario changed
       hasInitializedRef.current = false;
       prevCharacterIdRef.current = character?.id;
       prevScenarioIdRef.current = customScenario?.id;
@@ -68,7 +61,6 @@ export const useHistoryInitialization = ({
 
     if (shouldInitialize) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[useHistoryInitialization] ========== 开始初始化history ==========');
       }
       hasInitializedRef.current = true; // 立即标记为已初始化，防止重复执行
 
@@ -89,7 +81,6 @@ export const useHistoryInitialization = ({
         const startNode = customScenario.nodes[targetNodeId];
         if (startNode) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[useHistoryInitialization] Scenario Mode: 调用handleScenarioTransition');
           }
           handleScenarioTransition(startNode, null).catch((error) => {
             console.error('[useHistoryInitialization] Scenario初始化失败:', error);
@@ -103,7 +94,6 @@ export const useHistoryInitialization = ({
       } else if (!isStoryMode) {
         // Normal Mode
         if (process.env.NODE_ENV === 'development') {
-          console.log('[useHistoryInitialization] Normal Mode: 初始化firstMessage');
         }
         const initMsg: Message = {
           id: 'init',
@@ -115,7 +105,6 @@ export const useHistoryInitialization = ({
       } else if (isStoryMode && !customScenario) {
         // Main Story Mode
         if (process.env.NODE_ENV === 'development') {
-          console.log('[useHistoryInitialization] Main Story Mode: 初始化firstMessage');
         }
         const initMsg: Message = {
           id: 'init_story',
@@ -127,15 +116,9 @@ export const useHistoryInitialization = ({
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[useHistoryInitialization] ========== history初始化完成 ==========');
       }
     } else if (!hasInitializedRef.current && safeHistory.length > 0) {
       // history已经有内容（可能是从外部加载的），标记为已初始化（防止后续被重置）
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[useHistoryInitialization] history已有内容，标记为已初始化，防止被重置:', {
-          historyLength: safeHistory.length,
-        });
-      }
       hasInitializedRef.current = true;
     }
   }, [

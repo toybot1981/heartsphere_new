@@ -6,13 +6,12 @@
 import { useCallback } from 'react';
 import { CustomScenario, Character } from '../types';
 import { useGameState } from '../contexts/GameStateContext';
-import { scriptApi } from '../services/api';
-import { syncService } from '../services/sync/SyncService';
+import { scriptApi, eraApi, worldApi, characterApi, userMainStoryApi } from '../services/api';
 import { getWorldIdForSceneId } from '../utils/sceneMapping';
 import { aiService } from '../services/ai/AIService';
 import { showAlert, showConfirm } from '../utils/dialog';
-import { showSyncErrorToast } from '../utils/toast';
 import { WORLD_SCENES } from '../constants';
+import { convertErasToWorldScenes } from '../utils/dataTransformers';
 
 /**
  * 剧本操作 Hook
@@ -22,6 +21,7 @@ export const useScriptHandlers = () => {
 
   /**
    * 保存剧本
+   * 直接保存到服务器，不进行本地缓存
    */
   const handleSaveScenario = useCallback(async (scenario: CustomScenario) => {
     if (!gameState.selectedSceneId && !gameState.editingScenarioId) return;
@@ -29,88 +29,166 @@ export const useScriptHandlers = () => {
     const sceneId = gameState.selectedSceneId || gameState.customScenarios.find(s => s.id === scenario.id)?.sceneId;
     if (!sceneId) return;
 
-    // 获取当前场景信息，以便获取 worldId
-    const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
-      ? [...gameState.userWorldScenes, ...gameState.customScenes]
-      : [...WORLD_SCENES, ...gameState.customScenes];
-    const currentScene = allScenes.find(s => s.id === sceneId);
-    const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
-
-    const completeScenario = { 
-      ...scenario, 
-      sceneId,
-      worldId: worldId 
-    } as CustomScenario & { worldId: number };
-    
-    // Update local state immediately for UI responsiveness
-    const exists = gameState.customScenarios.some(s => s.id === scenario.id);
-    let newScenarios = [...gameState.customScenarios];
-    if (exists) {
-      newScenarios = newScenarios.map(s => s.id === scenario.id ? completeScenario : s);
-    } else {
-      newScenarios.push(completeScenario);
-    }
-    dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: newScenarios });
-    const newScreen = gameState.currentScreen === 'builder' ? 'characterSelection' : gameState.currentScreen;
-    if (newScreen !== gameState.currentScreen) {
-      dispatch({ type: 'SET_CURRENT_SCREEN', payload: newScreen });
-    }
-    dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: null });
-
-    // 异步同步到服务器（如果已登录）
     const token = localStorage.getItem('auth_token');
-    if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
-      (async () => {
-        try {
-          await syncService.handleLocalDataChange('scenario', completeScenario);
-          console.log('Scenario synced with server:', completeScenario.id);
-        } catch (error) {
-          console.error('Error syncing scenario:', error);
-          showSyncErrorToast('剧本');
-        }
-      })();
+    const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
+    
+    if (!token || isGuest) {
+      showAlert('请先登录才能保存剧本', '需要登录', 'warning');
+      return;
+    }
+
+    try {
+      // 获取当前场景信息，以便获取 worldId 和 eraId
+      const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+        ? [...gameState.userWorldScenes, ...gameState.customScenes]
+        : [...WORLD_SCENES, ...gameState.customScenes];
+      const currentScene = allScenes.find(s => s.id === sceneId);
+      const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
+      
+      // 提取 eraId（场景ID中的数字部分）
+      const numericMatch = sceneId.match(/\d+$/);
+      const eraId = numericMatch ? parseInt(numericMatch[0], 10) : null;
+
+      // 将 CustomScenario 转换为 CreateScriptDTO 或 UpdateScriptDTO
+      const scriptContent = JSON.stringify(scenario);
+      const isNumericId = /^\d+$/.test(scenario.id);
+      
+      if (isNumericId) {
+        // 更新现有剧本
+        const scriptId = parseInt(scenario.id, 10);
+        await scriptApi.updateScript(scriptId, {
+          title: scenario.title,
+          description: scenario.description || null,
+          content: scriptContent,
+          sceneCount: Object.keys(scenario.nodes || {}).length,
+          characterIds: null, // 可以从 scenario 中提取角色ID
+          tags: null,
+          worldId: worldId,
+          eraId: eraId || undefined,
+        }, token);
+      } else {
+        // 创建新剧本
+        const createdScript = await scriptApi.createScript({
+          title: scenario.title,
+          description: scenario.description || null,
+          content: scriptContent,
+          sceneCount: Object.keys(scenario.nodes || {}).length,
+          characterIds: null,
+          tags: null,
+          worldId: worldId,
+          eraId: eraId || undefined,
+        }, token);
+      }
+
+      // 刷新场景列表，从服务器获取最新数据
+      const worlds = await worldApi.getAllWorlds(token);
+      const eras = await eraApi.getAllEras(token);
+      const characters = await characterApi.getAllCharacters(token);
+      const scripts = await scriptApi.getAllScripts(token);
+      const userMainStories = await userMainStoryApi.getAll(token);
+      
+      const updatedUserWorldScenes = convertErasToWorldScenes(
+        worlds,
+        eras,
+        characters,
+        scripts,
+        userMainStories
+      );
+
+      // 保留原有的 memories
+      const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+        const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+        return {
+          ...scene,
+          memories: existingScene?.memories
+        };
+      });
+
+      dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+      dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [] }); // 清空本地缓存
+      
+      const newScreen = gameState.currentScreen === 'builder' ? 'characterSelection' : gameState.currentScreen;
+      if (newScreen !== gameState.currentScreen) {
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: newScreen });
+      }
+      dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: null });
+    } catch (error: any) {
+      console.error('[useScriptHandlers] 剧本保存失败:', error);
+      const errorMessage = error.message || '未知错误';
+      showAlert(`剧本保存失败: ${errorMessage}`, '保存失败', 'error');
+      throw error;
     }
   }, [gameState, dispatch]);
 
   /**
    * 删除剧本
+   * 直接从服务器删除，不进行本地缓存操作
    */
   const handleDeleteScenario = useCallback(async (scenarioId: string, e: React.MouseEvent) => {
     e.stopPropagation(); 
     e.preventDefault();
+    
+    const token = localStorage.getItem('auth_token');
+    const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
+    
+    if (!token || isGuest) {
+      showAlert('请先登录才能删除剧本', '需要登录', 'warning');
+      return;
+    }
+
     const confirmed = await showConfirm("确定要删除这个剧本吗？删除后将移至回收站，可以随时恢复。", '删除剧本', 'warning');
     if (confirmed) {
-      // Update local state immediately for UI responsiveness
-      // 使用字符串比较确保ID类型一致，删除所有匹配的scenario（防止有重复的相同ID）
-      const scenarioIdStr = String(scenarioId);
-      const remainingScenarios = gameState.customScenarios.filter(s => String(s.id) !== scenarioIdStr);
-      
-      console.log('[useScriptHandlers] handleDeleteScenario - 删除scenario:', {
-        scenarioId,
-        scenarioIdStr,
-        beforeCount: gameState.customScenarios.length,
-        afterCount: remainingScenarios.length,
-        deletedCount: gameState.customScenarios.length - remainingScenarios.length
-      });
-      
-      dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: remainingScenarios });
-      const newEditingScenarioId = String(gameState.editingScenarioId) === scenarioIdStr ? null : gameState.editingScenarioId;
-      if (newEditingScenarioId !== gameState.editingScenarioId) {
-        dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: newEditingScenarioId });
-      }
-      const newSelectedScenarioId = String(gameState.selectedScenarioId) === scenarioIdStr ? null : gameState.selectedScenarioId;
-      if (newSelectedScenarioId !== gameState.selectedScenarioId) {
-        dispatch({ type: 'SET_SELECTED_SCENARIO_ID', payload: newSelectedScenarioId });
-      }
-
-      // Sync with server
       try {
-        await scriptApi.deleteScript(parseInt(scenarioId), localStorage.getItem('auth_token') || '');
-        console.log('Scenario deleted from server:', scenarioId);
-      } catch (error) {
-        console.error('Error deleting scenario from server:', error);
-        // Show error message to user
-        showAlert('剧本删除同步失败，请检查网络连接或稍后重试。', '同步失败', 'error');
+        const isNumericId = /^\d+$/.test(scenarioId);
+        if (!isNumericId) {
+          showAlert('无效的剧本ID', '错误', 'error');
+          return;
+        }
+
+        // 直接从服务器删除
+        await scriptApi.deleteScript(parseInt(scenarioId, 10), token);
+
+        // 刷新场景列表，从服务器获取最新数据
+        const worlds = await worldApi.getAllWorlds(token);
+        const eras = await eraApi.getAllEras(token);
+        const characters = await characterApi.getAllCharacters(token);
+        const scripts = await scriptApi.getAllScripts(token);
+        const userMainStories = await userMainStoryApi.getAll(token);
+        
+        const updatedUserWorldScenes = convertErasToWorldScenes(
+          worlds,
+          eras,
+          characters,
+          scripts,
+          userMainStories
+        );
+
+        // 保留原有的 memories
+        const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+          const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+          return {
+            ...scene,
+            memories: existingScene?.memories
+          };
+        });
+
+        dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+        dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [] }); // 清空本地缓存
+        
+        // 更新编辑和选中状态
+        const scenarioIdStr = String(scenarioId);
+        const newEditingScenarioId = String(gameState.editingScenarioId) === scenarioIdStr ? null : gameState.editingScenarioId;
+        if (newEditingScenarioId !== gameState.editingScenarioId) {
+          dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: newEditingScenarioId });
+        }
+        const newSelectedScenarioId = String(gameState.selectedScenarioId) === scenarioIdStr ? null : gameState.selectedScenarioId;
+        if (newSelectedScenarioId !== gameState.selectedScenarioId) {
+          dispatch({ type: 'SET_SELECTED_SCENARIO_ID', payload: newSelectedScenarioId });
+        }
+      } catch (error: any) {
+        console.error('[useScriptHandlers] 剧本删除失败:', error);
+        const errorMessage = error.message || '未知错误';
+        showAlert(`剧本删除失败: ${errorMessage}`, '删除失败', 'error');
       }
     }
   }, [gameState, dispatch]);
@@ -174,17 +252,6 @@ export const useScriptHandlers = () => {
       return String(s.id) === String(scenario.id);
     });
     
-    // 详细调试日志
-    console.log('[useScriptHandlers] handlePlayScenario - 查找 existingScenario:', {
-      scenarioId: scenario.id,
-      scenarioIdType: typeof scenario.id,
-      customScenariosCount: gameState.customScenarios.length,
-      customScenariosIds: gameState.customScenarios.map(s => ({ id: s.id, idType: typeof s.id, title: s.title })),
-      foundExistingScenario: !!existingScenario,
-      existingScenarioId: existingScenario?.id,
-      existingScenarioNodesCount: existingScenario ? Object.keys(existingScenario.nodes || {}).length : 0
-    });
-    
     // 使用已存在的scenario（如果存在），否则使用传入的scenario
     const scenarioToUse = existingScenario || scenario;
     
@@ -234,7 +301,6 @@ export const useScriptHandlers = () => {
       updatedCustomScenarios = updatedCustomScenarios.filter(s => {
         const id = String(s.id);
         if (seenIds.has(id)) {
-          console.log('[useScriptHandlers] 移除重复的scenario:', { id, title: s.title });
           return false; // 重复的，移除
         }
         seenIds.add(id);
@@ -274,22 +340,6 @@ export const useScriptHandlers = () => {
       }
     }
     
-    console.log('[useScriptHandlers] handlePlayScenario - scenario处理:', {
-      scenarioId: scenarioToUse.id,
-      scenarioTitle: scenarioToUse.title,
-      isFromBackendScript,
-      existsInCustomScenarios: !!existingScenario,
-      usingExistingScenario: !!existingScenario,
-      willUpdateCustomScenarios: isFromBackendScript || (!existingScenario && !isFromBackendScript),
-      customScenariosCount: gameState.customScenarios.length,
-      updatedCustomScenariosCount: updatedCustomScenarios.length,
-      hasExistingHistory,
-      historyLength: existingHistory.length,
-      currentNodeId,
-      restoredFromHistory: hasExistingHistory && currentNodeId !== actualStartNodeId,
-      nodesCount: Object.keys(scenarioToUse.nodes || {}).length
-    });
-    
     dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: updatedCustomScenarios });
     dispatch({ type: 'SET_SELECTED_CHARACTER_ID', payload: narrator.id });
     dispatch({ type: 'SET_TEMP_STORY_CHARACTER', payload: narrator });
@@ -306,20 +356,6 @@ export const useScriptHandlers = () => {
    * 编辑后端剧本
    */
   const handleEditScript = useCallback(async (script: any, e: React.MouseEvent) => {
-    console.log('========== [useScriptHandlers] 编辑后端剧本 ==========');
-    console.log('[useScriptHandlers] handleEditScript 调用:', {
-      script: script,
-      scriptId: script?.id,
-      scriptTitle: script?.title,
-      sceneId: gameState.selectedSceneId,
-      userProfile: gameState.userProfile ? {
-        id: gameState.userProfile.id,
-        nickname: gameState.userProfile.nickname,
-        isGuest: gameState.userProfile.isGuest
-      } : null,
-      timestamp: new Date().toISOString()
-    });
-    
     e.stopPropagation();
     e.preventDefault();
     
@@ -342,17 +378,8 @@ export const useScriptHandlers = () => {
     }
     
     // 直接设置 editingScript，使用 UserScriptEditor 组件
-    console.log('[useScriptHandlers] 准备打开 UserScriptEditor 编辑剧本:', {
-      scriptId: script.id,
-      scriptTitle: script.title,
-      eraId: script.eraId,
-      worldId: script.worldId
-    });
-    
     dispatch({ type: 'SET_EDITING_SCRIPT', payload: script });
     
-    console.log('[useScriptHandlers] 已打开 UserScriptEditor 编辑页面');
-    console.log('========== [useScriptHandlers] 编辑后端剧本完成 ==========');
   }, [gameState, dispatch]);
 
   /**
@@ -399,7 +426,6 @@ export const useScriptHandlers = () => {
             throw new Error('无效的剧本ID');
           }
           await scriptApi.deleteScript(scriptId, token);
-          console.log('Script deleted from server:', scriptId);
           showAlert('剧本已删除', '删除成功', 'success');
         } catch (error) {
           console.error('Error deleting script from server:', error);

@@ -4,14 +4,16 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Message, AppSettings } from '../../../types';
+import { Message, AppSettings, WorldStyle } from '../../../types';
 import { aiService } from '../../../services/ai';
+import { WORLD_STYLE_DESCRIPTIONS } from '../../../types';
 
 interface UseSceneGenerationProps {
   isStoryMode: boolean;
   autoGenerate: boolean;
   lastMessage: Message | undefined;
   defaultBackgroundUrl: string | null;
+  sceneStyle?: WorldStyle; // 场景风格，用于生成场景图片
 }
 
 /**
@@ -23,6 +25,7 @@ export const useSceneGeneration = ({
   autoGenerate,
   lastMessage,
   defaultBackgroundUrl,
+  sceneStyle = 'realistic', // 默认写实风格
 }: UseSceneGenerationProps) => {
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(defaultBackgroundUrl);
   const [isGeneratingScene, setIsGeneratingScene] = useState(false);
@@ -47,7 +50,9 @@ export const useSceneGeneration = ({
       try {
         const desc = await aiService.generateSceneDescription([lastMessage]);
         if (desc) {
-          const prompt = `${desc}. Style: Modern Chinese Anime (Manhua), High Quality, Cinematic Lighting, Vibrant Colors. Aspect Ratio: 16:9.`;
+          // 使用场景风格生成图片
+          const stylePrompt = WORLD_STYLE_DESCRIPTIONS[sceneStyle]?.promptSuffix || WORLD_STYLE_DESCRIPTIONS.realistic.promptSuffix;
+          const prompt = `${desc}. ${stylePrompt} High Quality, Cinematic Lighting, Vibrant Colors. Aspect Ratio: 16:9.`;
           const img = await aiService.generateImageFromPrompt(prompt, '16:9');
           if (img) {
             setSceneImageUrl(img);
@@ -61,7 +66,7 @@ export const useSceneGeneration = ({
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [lastMessage?.id, isStoryMode, autoGenerate, isGeneratingScene]);
+  }, [lastMessage?.id, isStoryMode, autoGenerate, isGeneratingScene, sceneStyle]);
 
   const resetSceneImage = useCallback(() => {
     setSceneImageUrl(defaultBackgroundUrl);

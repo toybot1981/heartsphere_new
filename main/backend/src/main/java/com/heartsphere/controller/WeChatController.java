@@ -62,22 +62,34 @@ public class WeChatController {
     @GetMapping("/status/{state}")
     public ResponseEntity<?> checkStatus(@PathVariable String state) {
         try {
+            logger.debug("检查微信登录状态，state: {}", state);
             Map<String, Object> status = weChatAuthService.checkLoginStatus(state);
+            
+            // 记录状态信息用于调试
+            logger.debug("微信登录状态检查结果: state={}, status={}, hasToken={}, hasError={}", 
+                state, 
+                status.get("status"),
+                status.containsKey("token"),
+                status.containsKey("error"));
             
             // 如果是登录操作且登录成功，添加世界列表
             String type = (String) status.get("type");
             if ("confirmed".equals(status.get("status")) && !"bind".equals(type)) {
                 Long userId = (Long) status.get("userId");
-                List<World> userWorlds = worldRepository.findByUserId(userId);
-                boolean isFirstLogin = userWorlds.isEmpty();
-                status.put("isFirstLogin", isFirstLogin);
-                status.put("worlds", userWorlds.stream()
-                    .map(DTOMapper::toWorldDTO)
-                    .collect(Collectors.toList()));
+                if (userId != null) {
+                    List<World> userWorlds = worldRepository.findByUserId(userId);
+                    boolean isFirstLogin = userWorlds.isEmpty();
+                    status.put("isFirstLogin", isFirstLogin);
+                    status.put("worlds", userWorlds.stream()
+                        .map(DTOMapper::toWorldDTO)
+                        .collect(Collectors.toList()));
+                    logger.info("微信登录成功，用户ID: {}, 是否首次登录: {}, 世界数量: {}", userId, isFirstLogin, userWorlds.size());
+                }
             }
             
             return ResponseEntity.ok(status);
         } catch (Exception e) {
+            logger.error("检查微信登录状态失败，state: " + state, e);
             return ResponseEntity.status(500).body(Map.of("error", "检查状态失败: " + e.getMessage()));
         }
     }

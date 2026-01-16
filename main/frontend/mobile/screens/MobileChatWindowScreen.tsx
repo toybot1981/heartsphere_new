@@ -47,6 +47,7 @@ import { MobileSmoothScroll } from '../components/MobileSmoothScroll';
 import { MobileEmptyState } from '../components/MobileEmptyState';
 import { MobileLoadingSpinner } from '../components/MobileLoadingSpinner';
 import { MobileSafeAreaView } from '../components/MobileSafeAreaView';
+import { useGameState } from '../../contexts/GameStateContext';
 
 interface MobileChatWindowScreenProps extends ChatWindowProps {
   onBack: () => void;
@@ -198,12 +199,44 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
   const isStoryMode = !!customScenario || (character?.id?.startsWith('story_') ?? false);
   const isScenarioMode = !!customScenario; // Specifically for Node-based scenarios
 
+  // 获取当前场景信息（用于回退到场景背景图和角色头像）
+  const { state: gameState } = useGameState();
+  const currentScene = React.useMemo(() => {
+    if (!gameState.selectedSceneId) return null;
+    const allScenes = [...(gameState.userWorldScenes || []), ...(gameState.customScenes || [])];
+    return allScenes.find(scene => scene.id === gameState.selectedSceneId) || null;
+  }, [gameState.selectedSceneId, gameState.userWorldScenes, gameState.customScenes]);
+
+  // 主线剧情模式下，如果没有旁白者图片，使用第一位角色的头像
+  const displayCharacter = React.useMemo(() => {
+    // 判断是否是主线剧情模式（旁白者）
+    const isMainStoryNarrator = 
+      isStoryMode && (
+        character?.role === '叙事者' ||
+        character?.id?.startsWith('story_') ||
+        (currentScene?.mainStory && character?.id === currentScene.mainStory.id.toString())
+      );
+    
+    // 如果是主线剧情模式且没有头像，尝试使用第一位角色的头像
+    if (isMainStoryNarrator && (!character.avatarUrl || !character.avatarUrl.trim())) {
+      const firstCharacter = currentScene?.characters?.[0];
+      if (firstCharacter?.avatarUrl && firstCharacter.avatarUrl.trim()) {
+        return {
+          ...character,
+          avatarUrl: firstCharacter.avatarUrl,
+        };
+      }
+    }
+    
+    return character;
+  }, [character, isStoryMode, currentScene]);
+
   // 场景生成状态管理（复用PC版本的Hook）
   const sceneGeneration = useSceneGeneration({
     isStoryMode,
     autoGenerate: settings.autoGenerateStoryScenes || false,
     lastMessage: safeHistory[safeHistory.length - 1],
-    defaultBackgroundUrl: character?.backgroundUrl || null,
+    defaultBackgroundUrl: displayCharacter?.backgroundUrl || null,
   });
 
   // 流式响应处理（复用PC版本的Hook）
@@ -698,8 +731,8 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
     <MobileSafeAreaView className="h-full w-full bg-black relative overflow-hidden">
       {/* 背景层 */}
       <BackgroundLayer
-        backgroundImage={sceneGeneration.currentBackgroundUrl || character?.backgroundUrl || null}
-        character={character}
+        backgroundImage={sceneGeneration.currentBackgroundUrl || displayCharacter?.backgroundUrl || null}
+        character={displayCharacter}
         isStoryMode={isStoryMode}
         isCinematic={uiState.isCinematic}
       />
@@ -708,7 +741,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
       {uiState.isCinematic && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <CharacterAvatar
-            character={character}
+            character={displayCharacter}
             size="large"
             isCinematic={true}
           />
@@ -718,7 +751,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
       {/* 角色头像（背景显示，非影院模式） */}
       {!uiState.isCinematic && !isStoryMode && (
         <CharacterAvatar
-          character={character}
+          character={displayCharacter}
           size="medium"
           isStoryMode={isStoryMode}
           isCinematic={false}
@@ -741,12 +774,12 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
           
           <div className="flex items-center gap-2 flex-1 justify-center">
             <CharacterAvatar
-              character={character}
+              character={displayCharacter}
               size="small"
               isCinematic={false}
             />
             <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1.5">
-              <h2 className="text-white font-bold text-base drop-shadow-lg">{character.name}</h2>
+              <h2 className="text-white font-bold text-base drop-shadow-lg">{displayCharacter.name}</h2>
               {customScenario && (
                 <p className="text-white/80 text-xs drop-shadow-md">{customScenario.title}</p>
               )}
@@ -809,7 +842,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
             <MobileEmptyState
               icon="💬"
               title="暂无消息"
-              description={`开始和${character.name}聊天吧`}
+              description={`开始和${displayCharacter.name}聊天吧`}
             />
           )}
           
@@ -964,11 +997,9 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
         <CardMaker
           userId={typeof userProfile?.id === 'number' ? userProfile.id : 0}
           onSave={(card) => {
-            console.log('保存的卡片:', card);
             uiState.setShowCardMaker(false);
           }}
           onSend={(card, recipientId) => {
-            console.log('发送卡片:', card, '给用户:', recipientId);
             uiState.setShowCardMaker(false);
           }}
           onClose={() => uiState.setShowCardMaker(false)}

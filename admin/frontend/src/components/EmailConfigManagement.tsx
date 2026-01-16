@@ -14,7 +14,7 @@ export const EmailConfigManagement: React.FC<EmailConfigManagementProps> = ({
     adminToken,
     onReload,
 }) => {
-    const { emailVerificationRequired, loadSystemData } = useAdminData(adminToken);
+    const { emailVerificationRequired, loadEmailVerificationConfig } = useAdminData(adminToken);
     
     // 邮箱配置状态
     const [emailConfig, setEmailConfig] = useState<{ type: string; host: string; port: string; username: string; password: string; from: string }>({
@@ -97,7 +97,8 @@ export const EmailConfigManagement: React.FC<EmailConfigManagementProps> = ({
         if (!adminToken) return;
         try {
             await adminApi.config.setEmailVerificationRequired(checked, adminToken);
-            await loadSystemData(adminToken);
+            // 重新加载邮箱验证配置以更新UI状态
+            await loadEmailVerificationConfig(adminToken);
             showAlert('设置成功', '成功', 'success');
         } catch (error: any) {
             showAlert('设置失败: ' + (error.message || '未知错误'), '设置失败', 'error');

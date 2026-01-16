@@ -23,6 +23,8 @@ public class McpConfigController {
 
     private final McpConfigService mcpConfigService;
     private final McpClientService mcpClientService;
+    private final com.heartsphere.mentis.service.McpHealthMonitor mcpHealthMonitor;
+    private final com.heartsphere.mentis.service.McpToolDiscoveryService mcpToolDiscoveryService;
 
     /**
      * 创建 MCP 服务器配置
@@ -170,6 +172,166 @@ public class McpConfigController {
             return ResponseEntity.ok(createSuccessResponse(result));
         } catch (Exception e) {
             log.error("Failed to call tool {} for MCP config: {}", toolName, id, e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 从模板创建配置
+     */
+    @PostMapping("/configs/from-template/{templateId}")
+    public ResponseEntity<Map<String, Object>> createConfigFromTemplate(
+            @PathVariable Long templateId,
+            @RequestBody Map<String, String> parameters) {
+        try {
+            McpServerConfig config = mcpConfigService.createConfigFromTemplate(templateId, parameters);
+            return ResponseEntity.ok(createSuccessResponse(config));
+        } catch (Exception e) {
+            log.error("Failed to create config from template: {}", templateId, e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 检查单个服务的健康状态
+     */
+    @PostMapping("/configs/{id}/health")
+    public ResponseEntity<Map<String, Object>> checkHealth(@PathVariable Long id) {
+        try {
+            McpServerConfig config = mcpConfigService.getConfig(id);
+            com.heartsphere.mentis.service.McpHealthMonitor.HealthStatus status = 
+                    mcpHealthMonitor.checkHealth(config).get();
+            return ResponseEntity.ok(createSuccessResponse(status));
+        } catch (Exception e) {
+            log.error("Failed to check health for MCP config: {}", id, e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 获取所有服务的健康状态
+     */
+    @GetMapping("/configs/health")
+    public ResponseEntity<Map<String, Object>> getAllHealthStatus() {
+        try {
+            List<McpServerConfig> configs = mcpConfigService.getEnabledConfigs();
+            List<com.heartsphere.mentis.service.McpHealthMonitor.HealthStatus> statuses = 
+                    configs.stream()
+                            .map(config -> {
+                                try {
+                                    return mcpHealthMonitor.checkHealth(config).get();
+                                } catch (Exception e) {
+                                    log.error("Failed to check health for config: {}", config.getId(), e);
+                                    com.heartsphere.mentis.service.McpHealthMonitor.HealthStatus status = 
+                                            new com.heartsphere.mentis.service.McpHealthMonitor.HealthStatus();
+                                    status.setConfigId(config.getId());
+                                    status.setConfigName(config.getName());
+                                    status.setStatus("ERROR");
+                                    status.setHealthy(false);
+                                    status.setMessage("健康检查失败");
+                                    status.setError(e.getMessage());
+                                    return status;
+                                }
+                            })
+                            .collect(java.util.stream.Collectors.toList());
+            return ResponseEntity.ok(createSuccessResponse(statuses));
+        } catch (Exception e) {
+            log.error("Failed to get all health status", e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 手动触发所有服务的健康检查
+     */
+    @PostMapping("/configs/health/check-all")
+    public ResponseEntity<Map<String, Object>> checkAllHealth() {
+        try {
+            mcpHealthMonitor.checkAllEnabledServicesNow();
+            Map<String, Object> result = new HashMap<>();
+            result.put("message", "健康检查已触发");
+            return ResponseEntity.ok(createSuccessResponse(result));
+        } catch (Exception e) {
+            log.error("Failed to trigger health check", e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 发现并注册所有 MCP 工具
+     */
+    @PostMapping("/tools/discover")
+    public ResponseEntity<Map<String, Object>> discoverAndRegisterTools() {
+        try {
+            List<com.heartsphere.mentis.tool.Tool> tools = mcpToolDiscoveryService.discoverAndRegisterAllMcpTools();
+            Map<String, Object> result = new HashMap<>();
+            result.put("discoveredCount", tools.size());
+            result.put("tools", tools.stream()
+                    .map(t -> {
+                        Map<String, Object> toolInfo = new HashMap<>();
+                        toolInfo.put("name", t.getName());
+                        toolInfo.put("description", t.getDescription());
+                        return toolInfo;
+                    })
+                    .collect(java.util.stream.Collectors.toList()));
+            return ResponseEntity.ok(createSuccessResponse(result));
+        } catch (Exception e) {
+            log.error("Failed to discover and register tools", e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 为特定配置发现并注册工具
+     */
+    @PostMapping("/configs/{id}/tools/discover")
+    public ResponseEntity<Map<String, Object>> discoverToolsForConfig(@PathVariable Long id) {
+        try {
+            McpServerConfig config = mcpConfigService.getConfig(id);
+            List<com.heartsphere.mentis.tool.Tool> tools = mcpToolDiscoveryService.discoverAndRegisterToolsForConfig(config);
+            Map<String, Object> result = new HashMap<>();
+            result.put("discoveredCount", tools.size());
+            result.put("tools", tools.stream()
+                    .map(t -> {
+                        Map<String, Object> toolInfo = new HashMap<>();
+                        toolInfo.put("name", t.getName());
+                        toolInfo.put("description", t.getDescription());
+                        return toolInfo;
+                    })
+                    .collect(java.util.stream.Collectors.toList()));
+            return ResponseEntity.ok(createSuccessResponse(result));
+        } catch (Exception e) {
+            log.error("Failed to discover tools for config: {}", id, e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 获取工具元数据
+     */
+    @GetMapping("/tools/metadata")
+    public ResponseEntity<Map<String, Object>> getAllToolMetadata() {
+        try {
+            List<com.heartsphere.mentis.service.McpToolDiscoveryService.ToolMetadata> metadata = 
+                    mcpToolDiscoveryService.getAllToolMetadata();
+            return ResponseEntity.ok(createSuccessResponse(metadata));
+        } catch (Exception e) {
+            log.error("Failed to get tool metadata", e);
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+    
+    /**
+     * 根据配置ID获取工具元数据
+     */
+    @GetMapping("/configs/{id}/tools/metadata")
+    public ResponseEntity<Map<String, Object>> getToolMetadataByConfig(@PathVariable Long id) {
+        try {
+            List<com.heartsphere.mentis.service.McpToolDiscoveryService.ToolMetadata> metadata = 
+                    mcpToolDiscoveryService.getToolMetadataByConfigId(id);
+            return ResponseEntity.ok(createSuccessResponse(metadata));
+        } catch (Exception e) {
+            log.error("Failed to get tool metadata for config: {}", id, e);
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         }
     }

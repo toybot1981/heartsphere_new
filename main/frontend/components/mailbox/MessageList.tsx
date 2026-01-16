@@ -30,7 +30,6 @@ export const MessageList: React.FC<MessageListProps> = ({
   // 监听消息更新事件（删除、标记等）
   useEffect(() => {
     const handleMessageUpdate = () => {
-      console.log('[MessageList] 收到消息更新事件，刷新列表');
       setPage(0); // 重置到第一页
       // 使用setTimeout确保在下一个事件循环中执行，避免状态更新冲突
       setTimeout(() => {
@@ -50,7 +49,6 @@ export const MessageList: React.FC<MessageListProps> = ({
   const loadMessages = async () => {
     setLoading(true);
     try {
-      console.log('[MessageList] 加载消息，参数:', { category, filter, page });
       
       // 构建查询参数
       const queryParams: any = {
@@ -72,15 +70,8 @@ export const MessageList: React.FC<MessageListProps> = ({
         queryParams.isStarred = true;
       }
       
-      console.log('[MessageList] 实际查询参数:', queryParams);
       
       const result = await mailboxApi.getMessages(queryParams, token);
-
-      console.log('[MessageList] 收到消息结果:', { 
-        total: result.totalElements, 
-        count: result.content?.length || 0,
-        messages: result.content 
-      });
 
       if (page === 0) {
         setMessages(result.content || []);

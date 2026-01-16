@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../services/api';
 import { showAlert } from "../utils/dialog";
 
@@ -16,9 +17,12 @@ interface AdminAuthContextType {
     logout: () => void;
 }
 
+// 创建 Context，初始值为 undefined
+// 使用 undefined 作为默认值，这样可以在 useAdminAuth 中检查是否在 Provider 内部
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -40,20 +44,34 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     }, []);
 
+    const logout = useCallback(() => {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_role');
+        setAdminToken(null);
+        setAdminRole(null);
+        setIsAuthenticated(false);
+        setUsername('');
+        setPassword('');
+        setLoginError('');
+    }, []);
+
     // 监听token过期事件
     useEffect(() => {
         const handleTokenExpired = () => {
-            console.log('[AdminAuthContext] Token已过期，清除认证状态');
-            setAdminToken(null);
-            setIsAuthenticated(false);
-            localStorage.removeItem('admin_token');
+            console.log('[AdminAuthContext] Token已过期，清除认证状态并跳转到登录页面');
+            // 清除所有认证状态
+            logout();
+            // 显示提示信息
+            showAlert('登录已过期，请重新登录', '提示', 'warning');
+            // 跳转到根路径，AppContent 会根据 isAuthenticated 自动显示登录页面
+            navigate('/', { replace: true });
         };
 
         window.addEventListener('admin-token-expired', handleTokenExpired);
         return () => {
             window.removeEventListener('admin-token-expired', handleTokenExpired);
         };
-    }, []);
+    }, [logout, navigate]);
 
     const login = useCallback(async (user?: string, pass?: string) => {
         const finalUsername = user || username;
@@ -95,33 +113,23 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     }, [username, password]);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_role');
-        setAdminToken(null);
-        setAdminRole(null);
-        setIsAuthenticated(false);
-        setUsername('');
-        setPassword('');
-        setLoginError('');
-    }, []);
+    // 使用 useMemo 稳定 context 值，避免不必要的重新渲染
+    const contextValue = useMemo(() => ({
+        isAuthenticated,
+        adminToken,
+        adminRole,
+        username,
+        password,
+        loginError,
+        loading,
+        setUsername,
+        setPassword,
+        login,
+        logout,
+    }), [isAuthenticated, adminToken, adminRole, username, password, loginError, loading, login, logout]);
 
     return (
-        <AdminAuthContext.Provider
-            value={{
-                isAuthenticated,
-                adminToken,
-                adminRole,
-                username,
-                password,
-                loginError,
-                loading,
-                setUsername,
-                setPassword,
-                login,
-                logout,
-            }}
-        >
+        <AdminAuthContext.Provider value={contextValue}>
             {children}
         </AdminAuthContext.Provider>
     );

@@ -6,6 +6,8 @@
 import { useCallback } from 'react';
 import { logger } from '../../../utils/logger';
 import { MemorySource } from '../../../services/memory-system/types/MemoryTypes';
+import { memoryApi } from '../../../services/api/memory/memory';
+import { getToken } from '../../../services/api/base/tokenStorage';
 
 interface SystemIntegrationProps {
   engine: any | null;
@@ -97,6 +99,41 @@ export const useSystemIntegration = ({
         logger.error('[useSystemIntegration] 记忆提取失败:', error);
       }
     }
+
+    // 3.5 HSMem记忆提取：从对话中提取记忆到hsmem系统（通过 backend API）
+    // 获取最近几条消息构建对话上下文
+    const recentMessages = safeHistory.slice(-5); // 最近5条消息
+    if (recentMessages.length > 0 && userProfile?.id) {
+      try {
+        const token = getToken();
+        if (!token) {
+          logger.warn('[useSystemIntegration] 未登录，跳过 HSMem 记忆提取');
+          return { emotionAnalysisResult };
+        }
+
+        // 构建对话消息列表
+        const conversationMessages = recentMessages.map(msg => ({
+          role: msg.role === 'model' ? 'assistant' : 'user',
+          content: typeof msg.text === 'string' ? msg.text : msg.text || '',
+        }));
+
+        // 调用 backend API 进行记忆化（后端会自动添加 user_id）
+        const hsmemResult = await memoryApi.memorizeConversation({
+          messages: conversationMessages,
+          user_id: undefined, // 由后端自动从认证信息中提取
+          agent_id: character?.id ? `character_${character.id}` : undefined,
+        }, token);
+
+        logger.debug('[useSystemIntegration] HSMem记忆提取成功', {
+          resourceId: hsmemResult.resource_id,
+          itemsCount: hsmemResult.items_count,
+          categories: hsmemResult.categories,
+        });
+      } catch (error) {
+        // HSMem记忆提取失败不影响主流程，只记录错误
+        logger.error('[useSystemIntegration] HSMem记忆提取失败:', error);
+      }
+    }
     
     // 4. 更新最后互动时间（陪伴系统）
     if (companionSystem.isReady) {
@@ -185,7 +222,7 @@ export const useSystemIntegration = ({
       
       return temperature;
     } catch (error) {
-      // 如果引擎未运行，静默失败，不记录错误
+      // 如果引擎未运行，静默失败，跳过计算
       if (error instanceof Error && error.message.includes('Engine is not running')) {
         logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
         return null;

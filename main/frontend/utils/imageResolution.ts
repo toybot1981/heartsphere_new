@@ -26,6 +26,7 @@ export interface ImageVariants {
 
 /**
  * 根据展示场景选择合适的分辨率版本
+ * 遵循统一的映射规则和回退策略
  * @param imageUrl 原图URL或已选择的URL
  * @param variants 多分辨率版本URL（可选）
  * @param purpose 展示场景
@@ -40,41 +41,95 @@ export function selectImageResolution(
 ): string {
   // 如果没有多分辨率版本，直接返回原图
   if (!variants) {
+    console.log('[ImageResolution] 无多分辨率版本，使用原图', { imageUrl, purpose, isMobile });
     return imageUrl;
   }
 
-  // 根据场景选择合适的分辨率
+  // 根据场景选择合适的分辨率，遵循统一的映射规则和回退策略
+  let selectedUrl: string;
+  let resolutionType: string;
+  
   switch (purpose) {
     case 'thumbnail':
+      // 缩略图场景：优先使用 200×200 小缩略图
+      // 回退策略：小缩略图不存在 → 原图
+      selectedUrl = variants.thumbnail || imageUrl;
+      resolutionType = variants.thumbnail ? 'thumbnail (200×200)' : 'original (fallback)';
+      break;
     case 'list':
-      // 缩略图/列表：优先使用缩略图
-      return variants.thumbnail || imageUrl;
+      // 列表场景：优先使用 800×600 中等质量图（以获得更好的清晰度）
+      // 回退策略：中等质量图不存在 → 小缩略图 → 原图
+      selectedUrl = variants.medium || variants.thumbnail || imageUrl;
+      resolutionType = variants.medium ? 'medium (800×600)' : 
+                       variants.thumbnail ? 'thumbnail (200×200, fallback)' : 
+                       'original (fallback)';
+      break;
     
     case 'detail':
-      // 详情页/对话框：优先使用中等质量图
-      return variants.medium || imageUrl;
+      // 详情页/对话框场景：优先使用 800×600 中等质量图
+      // 回退策略：中等质量图不存在 → 小缩略图 → 原图
+      selectedUrl = variants.medium || variants.thumbnail || imageUrl;
+      resolutionType = variants.medium ? 'medium (800×600)' : 
+                       variants.thumbnail ? 'thumbnail (200×200, fallback)' : 
+                       'original (fallback)';
+      break;
     
     case 'background':
-      // 移动端背景：使用中等质量图
-      return variants.medium || imageUrl;
+      // 移动端背景场景：使用 800×600 中等质量图
+      // 回退策略：中等质量图不存在 → 小缩略图 → 原图
+      selectedUrl = variants.medium || variants.thumbnail || imageUrl;
+      resolutionType = variants.medium ? 'medium (800×600)' : 
+                       variants.thumbnail ? 'thumbnail (200×200, fallback)' : 
+                       'original (fallback)';
+      break;
     
     case 'chatBackground':
-      // PC ChatWindow背景：优先使用高质量背景图，其次中等质量图
+      // ChatWindow背景场景：
+      // - PC端：优先使用 1920×1080 高质量图
+      // - 移动端：使用 800×600 中等质量图
+      // 回退策略（PC）：高质量图不存在 → 原图（不尝试中间分辨率，避免加载不存在的图片）
+      // 回退策略（移动端）：中等质量图不存在 → 原图（不尝试缩略图，避免加载不存在的图片）
       if (!isMobile) {
-        return variants.highQuality || variants.medium || imageUrl;
+        selectedUrl = variants.highQuality || imageUrl;
+        resolutionType = variants.highQuality ? 'highQuality (1920×1080)' : 
+                         'original (fallback)';
       } else {
-        // 移动端ChatWindow背景使用中等质量图
-        return variants.medium || imageUrl;
+        selectedUrl = variants.medium || imageUrl;
+        resolutionType = variants.medium ? 'medium (800×600)' : 
+                         'original (fallback)';
       }
+      break;
     
     case 'original':
-      // 特殊需求：使用原图
-      return variants.original || imageUrl;
+      // 特殊需求场景：使用原图（不推荐，仅在特殊需求时使用）
+      selectedUrl = variants.original || imageUrl;
+      resolutionType = variants.original ? 'original (from variants)' : 'original (fallback)';
+      break;
     
     default:
-      // 默认使用中等质量图
-      return variants.medium || imageUrl;
+      // 默认场景：使用中等质量图
+      // 回退策略：中等质量图不存在 → 小缩略图 → 原图
+      selectedUrl = variants.medium || variants.thumbnail || imageUrl;
+      resolutionType = variants.medium ? 'medium (800×600)' : 
+                       variants.thumbnail ? 'thumbnail (200×200, fallback)' : 
+                       'original (fallback)';
   }
+  
+  console.log('[ImageResolution] 选择图片分辨率', {
+    purpose,
+    isMobile,
+    resolutionType,
+    selectedUrl,
+    availableVariants: {
+      thumbnail: !!variants.thumbnail,
+      medium: !!variants.medium,
+      highQuality: !!variants.highQuality,
+      original: !!variants.original
+    },
+    originalUrl: imageUrl
+  });
+  
+  return selectedUrl;
 }
 
 /**

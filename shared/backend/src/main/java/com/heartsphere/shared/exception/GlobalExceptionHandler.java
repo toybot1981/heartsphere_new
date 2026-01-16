@@ -10,8 +10,12 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -142,13 +146,59 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理异步请求超时异常（SSE 连接超时是正常行为）
+     */
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException e) {
+        // SSE 连接超时是正常行为，不需要记录为错误
+        log.debug("异步请求超时（SSE 连接超时）: {}", e.getMessage());
+        // 返回 204 No Content，表示请求已处理但无内容返回
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
+    }
+
+    /**
      * 处理所有其他未捕获的异常
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception e) {
+    public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception e, WebRequest request) {
+        // 检查是否是 SSE 连接（通过检查响应 Content-Type 或请求路径）
+        if (isSseRequest(request)) {
+            // SSE 连接中的异常不应该返回 JSON，因为响应头已经设置为 text/event-stream
+            // 这些异常通常已经在 SessionRealtimeService 中处理了
+            log.debug("SSE 连接中的异常（已由 SessionRealtimeService 处理）: {}", e.getMessage());
+            // 返回空响应，避免序列化错误
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
+        }
+        
         log.error("未处理的异常", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(500, "服务器内部错误: " + e.getMessage()));
+    }
+    
+    /**
+     * 检查是否是 SSE 请求
+     */
+    private boolean isSseRequest(WebRequest request) {
+        if (request instanceof ServletWebRequest) {
+            ServletWebRequest servletRequest = (ServletWebRequest) request;
+            HttpServletResponse response = servletRequest.getResponse();
+            if (response != null) {
+                String contentType = response.getContentType();
+                if (contentType != null && contentType.contains("text/event-stream")) {
+                    return true;
+                }
+            }
+            // 也可以通过请求路径判断
+            String requestPath = servletRequest.getRequest().getRequestURI();
+            if (requestPath != null && (requestPath.contains("/sse") || requestPath.contains("/stream"))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

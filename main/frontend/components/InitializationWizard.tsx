@@ -4,6 +4,9 @@ import { eraApi, characterApi, scriptApi, worldApi, presetScriptApi, presetMainS
 import { aiService } from '../services/ai';
 import { Button } from './Button';
 import { showAlert } from '../utils/dialog';
+import { LazyImage } from './LazyImage';
+import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
+import { CharacterAvatarImage } from './scene-wizard/CharacterAvatarImage';
 
 interface PresetEra {
   id: number;
@@ -93,7 +96,6 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
   onComplete,
   onCancel
 }) => {
-  console.log('[InitializationWizard] 组件初始化', { token: !!token, userId, worldId });
   
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [loading, setLoading] = useState(false);
@@ -117,12 +119,9 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
   // 加载预置场景（只加载系统预置，不包含游客预置）
   useEffect(() => {
     const loadPresetEras = async () => {
-      console.log('[InitializationWizard] 开始加载预置场景');
       try {
         setLoading(true);
         const eras = await eraApi.getSystemEras();
-        console.log('[InitializationWizard] 加载预置场景成功，数量:', eras.length);
-        console.log('[InitializationWizard] 预置场景列表:', eras.map(e => ({ id: e.id, name: e.name })));
         // 确保只显示系统预置场景，不包含游客预置场景
         setPresetEras(eras);
       } catch (error) {
@@ -196,49 +195,19 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
           // eraId 是系统预置场景的ID，直接作为 systemEraId 使用
           for (const [eraId, eraItem] of selectedEras) {
             try {
-              console.log(`[InitializationWizard] 加载场景 ${eraId} (systemEraId) 的主线剧情...`);
               const mainStory = await presetMainStoryApi.getByEraId(eraId);
-              console.log(`[InitializationWizard] 场景 ${eraId} 的主线剧情响应:`, mainStory);
               
               // 检查响应是否为 null 或 undefined
               if (mainStory && mainStory.id) {
                 // 验证 systemEraId 是否匹配
                 if (mainStory.systemEraId === eraId) {
-                  // ========== 记录预设主线剧情数据 ==========
-                  console.log(`[InitializationWizard] ========== 预设主线剧情数据记录 ==========`);
-                  console.log(`[InitializationWizard] 场景ID: ${eraId}, 主线剧情ID: ${mainStory.id}`);
-                  console.log(`[InitializationWizard] 字段详情:`, {
-                    name: mainStory.name,
-                    age: mainStory.age,
-                    ageType: typeof mainStory.age,
-                    role: mainStory.role,
-                    bio: mainStory.bio,
-                    bioType: typeof mainStory.bio,
-                    bioLength: mainStory.bio ? mainStory.bio.length : 0,
-                    description: mainStory.description,
-                    descriptionType: typeof mainStory.description,
-                    avatarUrl: mainStory.avatarUrl,
-                    backgroundUrl: mainStory.backgroundUrl,
-                    themeColor: mainStory.themeColor,
-                    colorAccent: mainStory.colorAccent,
-                    voiceName: mainStory.voiceName,
-                    tags: mainStory.tags,
-                    speechStyle: mainStory.speechStyle,
-                    catchphrases: mainStory.catchphrases,
-                    secrets: mainStory.secrets,
-                    motivations: mainStory.motivations
-                  });
-                  console.log(`[InitializationWizard] ========== 预设主线剧情数据记录完成 ==========`);
-                  
+                  // 记录预设主线剧情数据
                   mainStoriesMap.set(eraId, mainStory);
-                  console.log(`[InitializationWizard] ✓ 成功加载场景 ${eraId} 的主线剧情: "${mainStory.name}" (ID: ${mainStory.id}, systemEraId: ${mainStory.systemEraId})`);
                 } else {
                   console.warn(`[InitializationWizard] 主线剧情的 systemEraId (${mainStory.systemEraId}) 与场景ID (${eraId}) 不匹配`);
                 }
               } else {
-                console.log(`[InitializationWizard] 场景 ${eraId} 没有预置主线剧情 (响应为 null 或无效)`);
                 if (mainStory) {
-                  console.log(`[InitializationWizard] 响应数据:`, mainStory);
                 }
               }
             } catch (error: any) {
@@ -246,7 +215,6 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
               const status = error?.response?.status || error?.status;
               const message = error?.message || '';
               if (status === 404 || message.includes('404') || message.includes('not found')) {
-                console.log(`[InitializationWizard] 场景 ${eraId} 没有预置主线剧情（404 - 这是正常的）`);
               } else {
                 console.error(`[InitializationWizard] ✗ 加载场景 ${eraId} 的主线剧情失败:`, error);
                 console.error(`[InitializationWizard] 错误详情:`, {
@@ -259,7 +227,6 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             }
           }
           
-          console.log(`[InitializationWizard] 总共加载了 ${mainStoriesMap.size} 个主线剧情`);
           setPresetMainStories(mainStoriesMap);
         } catch (error) {
           console.error('[InitializationWizard] 加载预置主线剧情失败:', error);
@@ -286,26 +253,19 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
           // eraId 是系统预置场景的ID，直接作为 systemEraId 使用
           for (const [eraId, eraItem] of selectedEras) {
             try {
-              console.log(`[InitializationWizard] 加载场景 ${eraId} (systemEraId) 的剧本...`);
               const scripts = await presetScriptApi.getByEraId(eraId);
-              console.log(`[InitializationWizard] 场景 ${eraId} 的剧本响应:`, scripts);
               
               if (scripts && Array.isArray(scripts) && scripts.length > 0) {
                 // 过滤出匹配当前场景的剧本（通过 systemEraId）
                 const matchingScripts = scripts.filter(script => script.systemEraId === eraId);
                 if (matchingScripts.length > 0) {
                   scriptsMap.set(eraId, matchingScripts);
-                  console.log(`[InitializationWizard] ✓ 成功加载场景 ${eraId} 的剧本，数量: ${matchingScripts.length}`);
                   matchingScripts.forEach(script => {
-                    console.log(`[InitializationWizard]   - 剧本: "${script.title}" (ID: ${script.id}, systemEraId: ${script.systemEraId})`);
                   });
                 } else {
-                  console.log(`[InitializationWizard] 场景 ${eraId} 没有匹配的预置剧本 (systemEraId 不匹配)`);
-                  console.log(`[InitializationWizard] 所有剧本的 systemEraId:`, scripts.map(s => s.systemEraId));
                   scriptsMap.set(eraId, []); // 设置为空数组，避免后续检查出错
                 }
               } else {
-                console.log(`[InitializationWizard] 场景 ${eraId} 没有预置剧本 (空数组或 null)`);
                 scriptsMap.set(eraId, []); // 设置为空数组，避免后续检查出错
               }
             } catch (error: any) {
@@ -530,25 +490,12 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
 
       const updateProgress = (step: number) => {
         currentStep = step;
-        console.log(`[初始化进度] ${progressSteps[step]}`);
       };
 
       // ========== 初始化开始 ==========
-      console.log(`\n\n[初始化] ========================================`);
-      console.log(`[初始化] 🚀 开始初始化用户数据`);
-      console.log(`[初始化] ========================================`);
-      console.log(`[初始化] 统计信息:`, {
-        场景数量: selectedEras.size,
-        角色数量: selectedCharacters.size,
-        主线剧情数量: selectedMainStories.size,
-        剧本数量: selectedScripts.size,
-        世界ID: worldId,
-      });
-      console.log(`[初始化] ========================================\n`);
 
       // 1. 创建所有选中的场景
       updateProgress(0);
-      console.log(`[初始化-场景] ========== 开始创建场景 ==========`);
       const createdEraIds = new Map<number, number>(); // 原eraId -> 新创建的eraId
       
       for (const [eraId, eraItem] of selectedEras) {
@@ -556,19 +503,16 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         const eraResponse = await eraApi.createEra({
           name: eraItem.customName || era.name,
           description: era.description,
-          imageUrl: era.imageUrl || null,
+          imageUrl: era.imageUrl || undefined,
           worldId: worldId,
           systemEraId: era.id
         }, token);
         
         createdEraIds.set(eraId, eraResponse.id);
-        console.log(`[初始化-场景] ✅ 创建场景成功: ${eraResponse.name} (预置ID: ${eraId} -> 用户ID: ${eraResponse.id})`);
       }
-      console.log(`[初始化-场景] ========== 场景创建完成，共 ${createdEraIds.size} 个场景 ==========\n`);
 
       // 2. 创建选中的角色（需要映射到新创建的场景ID）
       updateProgress(1);
-      console.log(`[初始化-角色] ========== 开始创建角色，共 ${selectedCharacters.size} 个 ==========\n`);
       for (const [characterId, item] of selectedCharacters) {
         const char = item.data as PresetCharacter;
         // 找到角色所属的场景ID
@@ -587,7 +531,7 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             if (typeof char.tags === 'string') {
               tagsString = char.tags;
             } else if (Array.isArray(char.tags)) {
-              tagsString = char.tags.join(', ');
+              tagsString = (char.tags as string[]).join(', ');
             }
           }
           
@@ -596,7 +540,7 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             if (typeof char.catchphrases === 'string') {
               catchphrasesString = char.catchphrases;
             } else if (Array.isArray(char.catchphrases)) {
-              catchphrasesString = char.catchphrases.join(', ');
+              catchphrasesString = (char.catchphrases as string[]).join(', ');
             }
           }
           
@@ -625,42 +569,12 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             eraId: targetEraId,
           };
           
-          console.log(`[初始化-角色] ========== 开始创建角色: ${characterData.name} ==========`);
-          console.log(`[初始化-角色] 预置数据源:`, {
-            id: char.id,
-            name: char.name,
-            bio: char.bio,
-            description: char.description,
-            age: char.age,
-            role: char.role,
-            firstMessage: char.firstMessage ? char.firstMessage.substring(0, 50) + '...' : null,
-            systemInstruction: char.systemInstruction ? char.systemInstruction.substring(0, 50) + '...' : null,
-          });
-          console.log(`[初始化-角色] 赋值映射:`, {
-            name: `${char.name} -> ${characterData.name}${item.customName ? ' (已自定义)' : ''}`,
-            bio: `${char.bio || char.description || '无'} -> ${characterData.bio || '无'}`,
-            description: `${char.bio || char.description || '无'} -> ${characterData.description || '无'}`,
-            age: `${char.age || '无'} -> ${characterData.age || '无'}`,
-            role: `${char.role || '无'} -> ${characterData.role || '无'}`,
-            avatarUrl: `${char.avatarUrl ? '有' : '无'} -> ${characterData.avatarUrl ? '有' : '无'}`,
-            backgroundUrl: `${char.backgroundUrl ? '有' : '无'} -> ${characterData.backgroundUrl ? '有' : '无'}`,
-            firstMessage: `${char.firstMessage ? '有(' + char.firstMessage.length + '字符)' : '无'} -> ${characterData.firstMessage ? '有' : '无'}`,
-            systemInstruction: `${char.systemInstruction ? '有(' + char.systemInstruction.length + '字符)' : '无'} -> ${characterData.systemInstruction ? '有' : '无'}`,
-            tags: `${char.tags ? (typeof char.tags === 'string' ? char.tags : char.tags.join(',')) : '无'} -> ${characterData.tags || '无'}`,
-            mbti: `${char.mbti || '无'} -> ${characterData.mbti || '无'}`,
-            voiceName: `${char.voiceName || '无'} -> ${characterData.voiceName || '无'}`,
-          });
-          console.log(`[初始化-角色] 目标场景ID: ${targetEraId}, 世界ID: ${worldId}`);
-          
           await characterApi.createCharacter(characterData, token);
-          console.log(`[初始化-角色] ✅ 创建角色成功: ${characterData.name}`);
-          console.log(`[初始化-角色] ========== 角色创建完成 ==========\n`);
         }
       }
 
       // 3. 创建选中的主线剧情（使用专门的用户主线剧情表）
       updateProgress(2);
-      console.log(`[初始化-主线剧情] ========== 开始创建主线剧情，共 ${selectedMainStories.size} 个 ==========\n`);
       for (const [eraId, mainStoryItem] of selectedMainStories) {
         const mainStory = mainStoryItem.data as PresetMainStory;
         const targetEraId = createdEraIds.get(eraId);
@@ -681,23 +595,13 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             mainStoryData.name = mainStoryItem.customName;
           }
           
-          console.log(`[初始化-主线剧情] ========== 开始创建主线剧情 ==========`);
-          console.log(`[初始化-主线剧情] 系统预置主线剧情ID: ${mainStory.id}`);
-          console.log(`[初始化-主线剧情] 系统预置主线剧情名称: ${mainStory.name}`);
-          console.log(`[初始化-主线剧情] 用户场景ID: ${targetEraId}`);
-          console.log(`[初始化-主线剧情] 自定义名称: ${mainStoryItem.customName || '无'}`);
-          console.log(`[初始化-主线剧情] 发送的数据（仅ID）:`, mainStoryData);
-          console.log(`[初始化-主线剧情] 后端将从 system_main_stories 表查询完整数据并创建`);
           
           await userMainStoryApi.create(mainStoryData, token);
-          console.log(`[初始化-主线剧情] ✅ 创建主线剧情成功: ${mainStoryItem.customName || mainStory.name}`);
-          console.log(`[初始化-主线剧情] ========== 主线剧情创建完成 ==========\n`);
         }
       }
 
       // 4. 创建选中的剧本（如果有）
       updateProgress(3);
-      console.log(`[初始化-剧本] ========== 开始创建剧本，共 ${selectedScripts.size} 个 ==========\n`);
       for (const [scriptId, item] of selectedScripts) {
         const script = item.data as PresetScript;
         // 找到剧本所属的场景ID
@@ -727,17 +631,8 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             scriptData.title = item.customName;
           }
           
-          console.log(`[初始化-剧本] ========== 开始创建剧本 ==========`);
-          console.log(`[初始化-剧本] 系统预置剧本ID: ${script.id}`);
-          console.log(`[初始化-剧本] 系统预置剧本名称: ${script.title}`);
-          console.log(`[初始化-剧本] 用户场景ID: ${targetEraId}`);
-          console.log(`[初始化-剧本] 自定义标题: ${item.customName || '无'}`);
-          console.log(`[初始化-剧本] 发送的数据（仅ID）:`, scriptData);
-          console.log(`[初始化-剧本] 后端将从 system_scripts 表查询完整数据并创建`);
           
           await scriptApi.createScript(scriptData, token);
-          console.log(`[初始化-剧本] ✅ 创建剧本成功: ${item.customName || script.title}`);
-          console.log(`[初始化-剧本] ========== 剧本创建完成 ==========\n`);
         }
       }
 
@@ -746,16 +641,6 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // ========== 初始化完成 ==========
-      console.log(`\n[初始化] ========================================`);
-      console.log(`[初始化] ✅ 所有数据创建完成`);
-      console.log(`[初始化] 最终统计:`, {
-        场景: `${selectedEras.size} 个`,
-        角色: `${selectedCharacters.size} 个`,
-        主线剧情: `${selectedMainStories.size} 个`,
-        剧本: `${selectedScripts.size} 个`,
-      });
-      console.log(`[初始化] 准备同步数据...`);
-      console.log(`[初始化] ========================================\n`);
       
       // 调用 onComplete，让父组件处理数据同步和页面刷新
       onComplete();
@@ -766,11 +651,6 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
     }
   };
 
-  console.log('[InitializationWizard] ========== 渲染组件 ==========');
-  console.log('[InitializationWizard] step:', step);
-  console.log('[InitializationWizard] loading:', loading);
-  console.log('[InitializationWizard] selectedErasCount:', selectedEras.size);
-  console.log('[InitializationWizard] presetErasCount:', presetEras.length);
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
@@ -834,10 +714,27 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                       />
                       <div className="flex-1">
                         {era.imageUrl && (
-                          <img src={era.imageUrl} alt={era.name} className="w-full h-32 object-cover rounded mb-2" />
+                          <div className="w-full h-32 rounded mb-2 overflow-hidden">
+                            {(() => {
+                              const variants: ImageVariants = {
+                                thumbnail: generateVariantUrl(era.imageUrl, 200, 200),                                                                              
+                                medium: generateVariantUrl(era.imageUrl, 800, 600),
+                                highQuality: generateVariantUrl(era.imageUrl, 1920, 1080),                                                                          
+                              };
+                              return (
+                                <LazyImage
+                                  src={era.imageUrl}
+                                  alt={era.name}
+                                  className="w-full h-full object-cover"
+                                  variants={variants}
+                                  purpose="thumbnail"
+                                />
+                              );
+                            })()}
+                          </div>
                         )}
-                        <h4 className="font-bold text-white mb-1">{era.name}</h4>
-                        <p className="text-xs text-gray-400 line-clamp-2 mb-2">{era.description}</p>
+                        <h4 className="font-bold text-white mb-1">{era.name}</h4>                                                                               
+                        <p className="text-xs text-gray-400 line-clamp-2 mb-2">{era.description}</p>                                                            
                       </div>
                     </div>
                     
@@ -927,9 +824,15 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                         >
                           <div className="flex items-start gap-3 mb-2">
                             {character.avatarUrl && (
-                              <img src={character.avatarUrl} alt={character.name} className="w-12 h-12 rounded-full object-cover" />
+                              <div className="w-12 h-12 flex-shrink-0">
+                                <CharacterAvatarImage
+                                  src={character.avatarUrl}
+                                  alt={character.name}
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              </div>
                             )}
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <h4 className="font-bold text-white">{character.name}</h4>
                               {character.role && (
                                 <p className="text-xs text-gray-400">{character.role}</p>
@@ -939,7 +842,7 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleCharacterToggle(character)}
-                              className="w-5 h-5"
+                              className="w-5 h-5 flex-shrink-0"
                             />
                           </div>
                           
@@ -1027,9 +930,26 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                   >
                     <div className="flex items-start gap-3 mb-2">
                       {mainStory.avatarUrl && (
-                        <img src={mainStory.avatarUrl} alt={mainStory.name} className="w-16 h-16 rounded-full object-cover" />
+                        <div className="w-16 h-16 flex-shrink-0">
+                          {(() => {
+                            const variants: ImageVariants = {
+                              thumbnail: generateVariantUrl(mainStory.avatarUrl, 200, 200),
+                              medium: generateVariantUrl(mainStory.avatarUrl, 800, 600),
+                              highQuality: generateVariantUrl(mainStory.avatarUrl, 1920, 1080),
+                            };
+                            return (
+                              <LazyImage
+                                src={mainStory.avatarUrl}
+                                alt={mainStory.name}
+                                className="w-16 h-16 rounded-full"
+                                variants={variants}
+                                purpose="thumbnail"
+                              />
+                            );
+                          })()}
+                        </div>
                       )}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-white">{mainStory.name}</h4>
                         {mainStory.description && (
                           <p className="text-xs text-gray-400 mt-1 line-clamp-2">{mainStory.description}</p>
@@ -1039,7 +959,7 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleMainStoryToggle(eraId, mainStory)}
-                        className="w-5 h-5"
+                        className="w-5 h-5 flex-shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>

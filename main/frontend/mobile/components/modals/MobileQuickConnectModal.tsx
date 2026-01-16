@@ -60,47 +60,31 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
 
   // 加载共享心域列表
   useEffect(() => {
-    console.log('[MobileQuickConnectModal] ========== 页面打开/数据加载开始 ==========');
-    console.log('[MobileQuickConnectModal] isOpen:', isOpen);
     
     if (!isOpen) {
-      console.log('[MobileQuickConnectModal] Modal未打开，跳过数据加载');
       return;
     }
     
-    console.log('[MobileQuickConnectModal] Modal已打开，开始加载共享心域列表...');
     
     const loadSharedHeartSpheres = async () => {
-      console.log('[MobileQuickConnectModal] loadSharedHeartSpheres函数开始执行');
       setLoadingSharedSpheres(true);
-      console.log('[MobileQuickConnectModal] loadingSharedSpheres状态已设置为true');
       
       try {
-        console.log('[MobileQuickConnectModal] 调用heartConnectApi.getPublicSharedHeartSpheres()...');
         const data = await heartConnectApi.getPublicSharedHeartSpheres();
-        console.log('[MobileQuickConnectModal] getPublicSharedHeartSpheres返回:', data);
-        console.log('[MobileQuickConnectModal] 返回数据数量:', data?.length || 0);
         
         if (data && data.length > 0) {
-          console.log('[MobileQuickConnectModal] 有共享心域数据，开始处理...');
           // 移动端最多显示3个，按随机选择
           const selectedData = data.length > 3 
             ? [...data].sort(() => Math.random() - 0.5).slice(0, 3)
             : data;
-          console.log('[MobileQuickConnectModal] 筛选后的数据数量:', selectedData.length);
-          console.log('[MobileQuickConnectModal] 筛选后的数据:', selectedData);
           setSharedHeartSpheres(selectedData);
-          console.log('[MobileQuickConnectModal] sharedHeartSpheres状态已更新');
           
           // 默认选中第一个
           if (selectedData.length > 0 && !selectedShareCode) {
-            console.log('[MobileQuickConnectModal] 默认选中第一个共享心域:', selectedData[0].shareCode);
             handleSelectHeartSphere(selectedData[0].shareCode, selectedData[0]);
           } else {
-            console.log('[MobileQuickConnectModal] 不自动选择（已选择或数据为空）');
           }
         } else {
-          console.log('[MobileQuickConnectModal] 没有共享心域数据，设置为空数组');
           setSharedHeartSpheres([]);
         }
       } catch (err: any) {
@@ -109,10 +93,7 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
         console.error('[MobileQuickConnectModal] 错误堆栈:', err.stack);
         setSharedHeartSpheres([]);
       } finally {
-        console.log('[MobileQuickConnectModal] loadSharedHeartSpheres函数执行完成');
         setLoadingSharedSpheres(false);
-        console.log('[MobileQuickConnectModal] loadingSharedSpheres状态已设置为false');
-        console.log('[MobileQuickConnectModal] ========== 共享心域列表加载完成 ==========');
       }
     };
     
@@ -121,58 +102,38 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
 
   // 当打开时，检查共享模式状态
   useEffect(() => {
-    console.log('[MobileQuickConnectModal] ========== 共享模式状态检查 ==========');
-    console.log('[MobileQuickConnectModal] isOpen:', isOpen);
-    console.log('[MobileQuickConnectModal] isSharedMode:', isSharedMode);
     
     if (!isOpen) {
-      console.log('[MobileQuickConnectModal] Modal未打开，跳过共享模式检查');
       return;
     }
     
     if (isSharedMode) {
-      console.log('[MobileQuickConnectModal] ✅ 已在共享模式下，开始加载角色...');
       // 已在共享模式下，加载角色
       loadCharacters();
-      console.log('[MobileQuickConnectModal] loadCharacters调用完成');
     } else {
-      console.log('[MobileQuickConnectModal] ❌ 不在共享模式下，清除旧状态...');
       // 不在共享模式下，清除旧状态
       leaveSharedMode();
       setSelectedShareCode(null);
       setSelectedSharedHeartSphere(null);
-      console.log('[MobileQuickConnectModal] 旧状态已清除');
     }
-    console.log('[MobileQuickConnectModal] ========== 共享模式状态检查完成 ==========');
   }, [isOpen, isSharedMode]);
 
   // 选择共享心域
   const handleSelectHeartSphere = async (shareCode: string, sharedHeartSphere: SharedHeartSphere) => {
-    console.log('[MobileQuickConnectModal] ========== 选择共享心域 ==========');
-    console.log('[MobileQuickConnectModal] shareCode:', shareCode);
-    console.log('[MobileQuickConnectModal] sharedHeartSphere:', sharedHeartSphere);
-    console.log('[MobileQuickConnectModal] shareConfigId:', sharedHeartSphere.shareConfigId);
-    console.log('[MobileQuickConnectModal] ownerId:', sharedHeartSphere.ownerId);
-    console.log('[MobileQuickConnectModal] characterCount:', sharedHeartSphere.characterCount);
     
     setSelectedShareCode(shareCode);
     setSelectedSharedHeartSphere(sharedHeartSphere);
-    console.log('[MobileQuickConnectModal] selectedShareCode和selectedSharedHeartSphere状态已更新');
     
     // 清除缓存
-    console.log('[MobileQuickConnectModal] 清除缓存...');
     clearCache();
-    console.log('[MobileQuickConnectModal] 缓存已清除');
     
     // 进入共享模式
     try {
-      console.log('[MobileQuickConnectModal] 获取token...');
       const token = getToken();
       if (!token) {
         console.error('[MobileQuickConnectModal] ❌ 未找到token');
         return;
       }
-      console.log('[MobileQuickConnectModal] ✅ token已获取，长度:', token.length);
       
       // 构造shareConfig
       const shareConfig: ShareConfig = {
@@ -193,43 +154,28 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
         eraCount: sharedHeartSphere.eraCount,
         characterCount: sharedHeartSphere.characterCount,
       };
-      console.log('[MobileQuickConnectModal] shareConfig已构造:', shareConfig);
       
       // 获取visitorId
-      console.log('[MobileQuickConnectModal] 获取visitorId，当前currentVisitorId:', currentVisitorId);
       let visitorId: number | null = currentVisitorId;
       if (!visitorId) {
-        console.log('[MobileQuickConnectModal] currentVisitorId为空，调用getCurrentUser获取用户ID...');
         const currentUser = await authApi.getCurrentUser(token);
-        console.log('[MobileQuickConnectModal] getCurrentUser返回:', currentUser);
         if (currentUser && currentUser.id) {
           visitorId = currentUser.id;
-          console.log('[MobileQuickConnectModal] ✅ visitorId已获取:', visitorId);
         } else {
           console.error('[MobileQuickConnectModal] ❌ 无法获取用户ID');
           return;
         }
       } else {
-        console.log('[MobileQuickConnectModal] ✅ 使用已有的visitorId:', visitorId);
       }
       
       // 进入共享模式
-      console.log('[MobileQuickConnectModal] 调用enterSharedMode...');
-      console.log('[MobileQuickConnectModal] enterSharedMode参数 - shareConfig.id:', shareConfig.id, 'visitorId:', visitorId);
       enterSharedMode(shareConfig, visitorId);
-      console.log('[MobileQuickConnectModal] enterSharedMode调用完成');
       
       // 等待一下确保共享模式上下文已设置
-      console.log('[MobileQuickConnectModal] 等待300ms确保共享模式上下文已设置...');
       await new Promise(resolve => setTimeout(resolve, 300));
-      console.log('[MobileQuickConnectModal] 等待完成');
       
       // 加载角色
-      console.log('[MobileQuickConnectModal] 开始加载角色列表...');
-      console.log('[MobileQuickConnectModal] loadCharacters参数: { filter: "all" }');
       await loadCharacters({ filter: 'all' });
-      console.log('[MobileQuickConnectModal] ✅ 角色列表加载完成');
-      console.log('[MobileQuickConnectModal] ========== 选择共享心域完成 ==========');
     } catch (err: any) {
       console.error('[MobileQuickConnectModal] ❌ 进入共享模式失败:', err);
       console.error('[MobileQuickConnectModal] 错误详情:', err.message || err);
@@ -247,26 +193,12 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
 
   // 处理角色选择
   const handleSelectCharacter = (character: any) => {
-    console.log('[MobileQuickConnectModal] ========== 角色点击事件 ==========');
-    console.log('[MobileQuickConnectModal] handleSelectCharacter被调用');
-    console.log('[MobileQuickConnectModal] 角色对象:', character);
-    console.log('[MobileQuickConnectModal] 角色ID:', character?.characterId);
-    console.log('[MobileQuickConnectModal] 角色名称:', character?.characterName || character?.name);
-    console.log('[MobileQuickConnectModal] 角色完整数据:', JSON.stringify(character, null, 2));
-    console.log('[MobileQuickConnectModal] onSelectCharacter回调存在:', !!onSelectCharacter);
-    console.log('[MobileQuickConnectModal] onSelectCharacter回调类型:', typeof onSelectCharacter);
     
     if (onSelectCharacter) {
-      console.log('[MobileQuickConnectModal] ✅ onSelectCharacter回调存在，准备调用...');
-      console.log('[MobileQuickConnectModal] 传递角色对象给回调:', character);
       // 传递完整的角色对象，而不仅仅是ID
       try {
         onSelectCharacter(character);
-        console.log('[MobileQuickConnectModal] ✅ onSelectCharacter回调调用成功');
-        console.log('[MobileQuickConnectModal] 关闭Modal...');
         onClose();
-        console.log('[MobileQuickConnectModal] ✅ Modal已关闭');
-        console.log('[MobileQuickConnectModal] ========== 角色点击事件处理完成 ==========');
       } catch (err: any) {
         console.error('[MobileQuickConnectModal] ❌ onSelectCharacter回调执行失败:', err);
         console.error('[MobileQuickConnectModal] 错误详情:', err.message || err);
@@ -280,9 +212,7 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
 
   // 同步搜索查询
   useEffect(() => {
-    console.log('[MobileQuickConnectModal] 搜索查询变化:', searchQuery);
     setQuickConnectSearchQuery(searchQuery);
-    console.log('[MobileQuickConnectModal] 搜索查询已同步到useQuickConnect');
   }, [searchQuery, setQuickConnectSearchQuery]);
 
   // ESC键关闭
@@ -304,28 +234,11 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
   }, [isOpen, onClose]);
 
   // 组件渲染日志
-  console.log('[MobileQuickConnectModal] ========== 组件渲染 ==========');
-  console.log('[MobileQuickConnectModal] isOpen:', isOpen);
-  console.log('[MobileQuickConnectModal] isSharedMode:', isSharedMode);
-  console.log('[MobileQuickConnectModal] selectedShareCode:', selectedShareCode);
-  console.log('[MobileQuickConnectModal] selectedSharedHeartSphere:', selectedSharedHeartSphere);
-  console.log('[MobileQuickConnectModal] sharedHeartSpheres数量:', sharedHeartSpheres.length);
-  console.log('[MobileQuickConnectModal] loadingSharedSpheres:', loadingSharedSpheres);
-  console.log('[MobileQuickConnectModal] filteredCharacters数量:', filteredCharacters.length);
-  console.log('[MobileQuickConnectModal] isLoading:', isLoading);
-  console.log('[MobileQuickConnectModal] isSearching:', isSearching);
-  console.log('[MobileQuickConnectModal] error:', error);
-  console.log('[MobileQuickConnectModal] filterType:', filterType);
-  console.log('[MobileQuickConnectModal] totalCount:', totalCount);
-  console.log('[MobileQuickConnectModal] favoriteCount:', favoriteCount);
-  console.log('[MobileQuickConnectModal] recentCount:', recentCount);
 
   if (!isOpen) {
-    console.log('[MobileQuickConnectModal] Modal未打开，不渲染内容');
     return null;
   }
   
-  console.log('[MobileQuickConnectModal] Modal已打开，开始渲染内容');
 
   return (
     <MobileErrorBoundary>
@@ -400,10 +313,6 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('[MobileQuickConnectModal] ========== 共享心域卡片点击 ==========');
-                        console.log('[MobileQuickConnectModal] 点击的共享心域:', shared.shareCode);
-                        console.log('[MobileQuickConnectModal] shareConfigId:', shared.shareConfigId);
-                        console.log('[MobileQuickConnectModal] 完整数据:', shared);
                         handleSelectHeartSphere(shared.shareCode, shared);
                       }}
                       onKeyPress={(e) => {
@@ -425,9 +334,6 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                           handleSelectHeartSphere(shared.shareCode, shared);
                         }
                       }}
-                      aria-label={`选择共享心域: ${shared.description || shared.shareCode}`}
-                      aria-pressed={selectedShareCode === shared.shareCode}
-                      tabIndex={0}
                       aria-label={`选择共享心域: ${shared.description || shared.shareCode}`}
                       aria-pressed={selectedShareCode === shared.shareCode}
                     >
@@ -563,15 +469,6 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('[MobileQuickConnectModal] ========== 角色卡片DOM点击事件 ==========');
-                          console.log('[MobileQuickConnectModal] 事件对象:', e);
-                          console.log('[MobileQuickConnectModal] 事件类型:', e.type);
-                          console.log('[MobileQuickConnectModal] 目标元素:', e.target);
-                          console.log('[MobileQuickConnectModal] 当前元素:', e.currentTarget);
-                          console.log('[MobileQuickConnectModal] 角色数据:', character);
-                          console.log('[MobileQuickConnectModal] 角色ID:', character?.characterId);
-                          console.log('[MobileQuickConnectModal] 角色名称:', character?.characterName || character?.name);
-                          console.log('[MobileQuickConnectModal] 调用handleSelectCharacter...');
                           handleSelectCharacter(character);
                         }}
                       className="p-4 bg-slate-800/80 backdrop-blur-md rounded-xl border border-white/10 hover:border-purple-500/50 active:bg-slate-700/80 active:scale-[0.97] transition-all cursor-pointer touch-manipulation"

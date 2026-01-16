@@ -151,7 +151,7 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
   }
 
   return (
-    <div className="p-6">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">技能管理</h2>
         <Button onClick={handleCreate} variant="primary">
@@ -190,19 +190,19 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
       </div>
 
       {/* 技能列表 */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="bg-slate-900 rounded-lg border border-slate-800 w-full">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-slate-800">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">ID</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">名称</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">分类</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">类型</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">执行类型</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">版本</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">系统技能</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">操作</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[200px]">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[180px]">名称</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[120px]">分类</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[100px]">类型</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[120px]">执行类型</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[80px]">版本</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[100px]">系统技能</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 whitespace-nowrap min-w-[120px]">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -215,20 +215,20 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
               ) : (
                 filteredSkills.map((skill) => (
                   <tr key={skill.id} className="hover:bg-slate-800/50">
-                    <td className="px-4 py-3 text-sm text-slate-300 font-mono">{skill.skillId}</td>
-                    <td className="px-4 py-3 text-sm text-white">{skill.name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{skill.category || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{skill.skillType || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{skill.executionType || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{skill.version || '-'}</td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-slate-300 font-mono whitespace-nowrap min-w-[200px]">{skill.skillId}</td>
+                    <td className="px-4 py-3 text-sm text-white min-w-[180px]">{skill.name}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap min-w-[120px]">{skill.category || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap min-w-[100px]">{skill.skillType || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap min-w-[120px]">{skill.executionType || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap min-w-[80px]">{skill.version || '-'}</td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap min-w-[100px]">
                       {skill.isSystemSkill ? (
                         <span className="px-2 py-1 bg-blue-900/30 text-blue-400 rounded text-xs">系统</span>
                       ) : (
                         <span className="px-2 py-1 bg-slate-700 text-slate-400 rounded text-xs">自定义</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap min-w-[120px]">
                       <div className="flex gap-2">
                         <Button
                           onClick={() => handleEdit(skill)}

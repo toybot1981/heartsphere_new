@@ -4,19 +4,18 @@ import { GameState, Character, Message, WorldScene, JournalEntry, AppSettings, C
 import { aiService } from '../services/ai/AIService';
 import { storageService } from '../services/storage';
 import { WORLD_SCENES } from '../constants';
-import { authApi, journalApi, worldApi, eraApi, characterApi, scriptApi, presetScriptApi } from '../services/api';
+import { authApi, journalApi, worldApi, eraApi, characterApi, scriptApi, presetScriptApi, userMainStoryApi } from '../services/api';
 import { getWorldIdForSceneId, initCustomSceneMappings } from '../utils/sceneMapping';
 import { useJournalHandlers } from '../hooks/useJournalHandlers';
 import { useGameState } from '../contexts/GameStateContext';
 import { useSharedMode } from '../hooks/useSharedMode';
-import { syncService } from '../services/sync/SyncService';
+// 不再使用 syncService，直接调用 API
 import { initSyncConfigs } from '../services/sync/syncConfig';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileErrorBoundary } from './components/MobileErrorBoundary';
 import { showAlert, showConfirm } from '../utils/dialog';
 import { MobileLoginScreen } from './screens/MobileLoginScreen';
 import { MobileSettingsModal } from './components/modals/MobileSettingsModal';
-import { MobileUnifiedMailboxModal } from './components/modals/MobileUnifiedMailboxModal';
 import type { ShareConfig } from '../services/api/heartconnect/types';
 
 // Phase 5优化: 使用懒加载导入Screen组件（除了ProfileSetup需要在初始化时使用）
@@ -103,7 +102,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 );
                 
                 setSharedScenes(scenes);
-                console.log('[MobileApp] 共享场景数据已加载，数量:', scenes.length);
             } catch (err) {
                 console.error('[MobileApp] 加载共享场景失败:', err);
                 setSharedScenes([]);
@@ -119,7 +117,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     
     // UI States
     const [showSettings, setShowSettings] = useState(false);
-    const [showMailbox, setShowMailbox] = useState(false);
     const [showEraCreator, setShowEraCreator] = useState(false);
     const [showCharacterCreator, setShowCharacterCreator] = useState(false);
     const [showScenarioBuilder, setShowScenarioBuilder] = useState(false);
@@ -147,14 +144,10 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('auth_token');
-            console.log('[MobileApp] 检查本地存储中的token:', !!token);
-            console.log('[MobileApp] 当前userProfile:', gameState.userProfile);
             // 只在有token但没有用户信息时执行自动登录
             if (token && (!gameState.userProfile || gameState.userProfile.isGuest)) {
                 try {
-                    console.log('[MobileApp] 尝试自动登录...');
                     const userInfo = await authApi.getCurrentUser(token);
-                    console.log('[MobileApp] 自动登录成功:', userInfo);
                     
                     // 获取日记列表
                     const journalEntries = await journalApi.getAllJournalEntries(token);
@@ -264,7 +257,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                         dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: userWorldScenes[0].id });
                     }
                     
-                    console.log('[MobileApp] 自动登录完成，用户信息已加载');
                 } catch (err: any) {
                     console.error('[MobileApp] 自动登录失败:', err.message || err);
                     // token无效，清除
@@ -283,7 +275,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             const { shareConfig, visitorId } = customEvent.detail || {};
             
             if (shareConfig && visitorId) {
-                console.log('[MobileApp] 收到navigateToShared事件:', shareConfig, visitorId);
                 try {
                     enterSharedMode(shareConfig, visitorId);
                     dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sharedHeartSphere' });
@@ -319,11 +310,9 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
         // 如果已经有数据，不重复加载（避免频繁请求）
         if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
-            console.log('[Mobile DataLoader] 已有数据，跳过加载');
             return;
         }
 
-        console.log('[Mobile DataLoader] 开始加载场景数据...');
         const loadData = async () => {
             try {
                 // 检查是否处于共享模式（通过全局状态）
@@ -430,7 +419,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 // 更新游戏状态
                 dispatch({ type: 'SET_USER_WORLD_SCENES', payload: userWorldScenes });
                 
-                console.log('[Mobile DataLoader] 数据加载完成，共', userWorldScenes.length, '个场景');
             } catch (error) {
                 console.error('[Mobile DataLoader] 数据加载失败:', error);
             }
@@ -487,7 +475,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     const handleLoginSuccess = async (method: 'password' | 'wechat', identifier: string, isFirstLogin?: boolean, worlds?: any[]) => {
         // 从localStorage获取token
         const token = localStorage.getItem('auth_token');
-        console.log('手机版登录成功:', method, identifier, '首次登录:', isFirstLogin);
         
         // 初始化场景映射
         if (token) {
@@ -687,16 +674,14 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     // --- SCENE & CHAR LOGIC ---
 
-    // 与PC版本保持一致：登录用户使用userWorldScenes + customScenes（排除重复），游客使用WORLD_SCENES + customScenes
+    // 与PC版本保持一致：登录用户只使用userWorldScenes，游客使用WORLD_SCENES（不再使用本地缓存的 customScenes）
     const getCurrentScenes = () => {
         if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes) {
-            // 登录用户：使用从后端获取的用户专属场景 + 自定义场景（排除已在userWorldScenes中的）
-            const userWorldSceneIds = new Set(gameState.userWorldScenes.map(s => s.id));
-            const customScenesOnly = gameState.customScenes.filter(s => !userWorldSceneIds.has(s.id));
-            return [...gameState.userWorldScenes, ...customScenesOnly];
+            // 登录用户：只使用从后端获取的用户专属场景
+            return gameState.userWorldScenes;
         } else {
-            // 游客：使用本地预置场景 + 自定义场景
-            return [...WORLD_SCENES, ...gameState.customScenes];
+            // 游客：使用本地预置场景
+            return WORLD_SCENES;
         }
     };
 
@@ -707,9 +692,9 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         currentScene = sharedScenes.find(s => s.id === gameState.selectedSceneId);
     }
     
-    // Get Characters for current scene
+    // Get Characters for current scene（不再使用本地缓存的 customCharacters）
     const currentSceneChars = currentScene 
-        ? [...currentScene.characters, ...(gameState.customCharacters[currentScene.id] || [])]
+        ? currentScene.characters
         : [];
         
     // Get Scenarios for current scene
@@ -755,51 +740,48 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         }
     }, [currentScene?.id]);
 
+    // 从当前场景的 scripts 获取剧本（不再使用本地缓存的 customScenarios）
     const currentSceneScenarios = currentScene
         ? [
-            ...gameState.customScenarios.filter(s => s.sceneId === currentScene.id),
+            ...(currentScene.scripts || []).map(script => ({
+                id: script.id.toString(),
+                title: script.title,
+                description: script.description || null,
+                sceneId: currentScene.id,
+                nodes: script.content ? JSON.parse(script.content) : {},
+                startNodeId: '',
+                participatingCharacters: script.characterIds ? JSON.parse(script.characterIds) : []
+            })),
             ...systemScripts
           ]
         : [];
 
     let activeCharacter = null;
     if (gameState.selectedCharacterId) {
-        console.log('[MobileApp] 计算 activeCharacter，selectedCharacterId:', gameState.selectedCharacterId);
-        console.log('[MobileApp] tempStoryCharacter:', gameState.tempStoryCharacter);
-        console.log('[MobileApp] currentScene:', currentScene?.id, currentScene?.name);
-        console.log('[MobileApp] currentSceneChars 数量:', currentSceneChars.length);
-        console.log('[MobileApp] isSharedModeActive:', isSharedModeActive);
-        console.log('[MobileApp] sharedScenes 数量:', sharedScenes.length);
         
         // Also check if it's the narrator for a scenario
         if (gameState.tempStoryCharacter && gameState.tempStoryCharacter.id === gameState.selectedCharacterId) {
              activeCharacter = gameState.tempStoryCharacter;
-             console.log('[MobileApp] 从 tempStoryCharacter 找到角色');
         } else if (currentScene) {
              activeCharacter = currentSceneChars.find(c => c.id === gameState.selectedCharacterId);
              // Fallback to main story if id matches
              if (!activeCharacter && currentScene.mainStory?.id === gameState.selectedCharacterId) {
                  activeCharacter = currentScene.mainStory;
-                 console.log('[MobileApp] 从 currentScene.mainStory 找到角色');
              } else if (activeCharacter) {
-                 console.log('[MobileApp] 从 currentSceneChars 找到角色');
              }
         }
         
         // 在共享模式下，如果 currentScene 中找不到，从 sharedScenes 中查找
         if (!activeCharacter && isSharedModeActive && gameState.selectedCharacterId) {
-            console.log('[MobileApp] 在 sharedScenes 中查找角色...');
             for (const scene of sharedScenes) {
                 const char = scene.characters.find(c => c.id === gameState.selectedCharacterId);
                 if (char) {
                     activeCharacter = char;
-                    console.log('[MobileApp] 从 sharedScenes 中找到角色，场景:', scene.name);
                     break;
                 }
                 // 也检查 mainStory
                 if (scene.mainStory?.id === gameState.selectedCharacterId) {
                     activeCharacter = scene.mainStory;
-                    console.log('[MobileApp] 从 sharedScenes 中找到 mainStory，场景:', scene.name);
                     break;
                 }
             }
@@ -812,7 +794,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         if (!activeCharacter) {
             console.error('[MobileApp] ❌ 无法找到 activeCharacter，selectedCharacterId:', gameState.selectedCharacterId);
         } else {
-            console.log('[MobileApp] ✅ 找到 activeCharacter:', activeCharacter.name, activeCharacter.id);
         }
     }
 
@@ -828,8 +809,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     };
 
     const handleSelectCharacter = (char: Character) => {
-        console.log('[MobileApp] handleSelectCharacter 被调用，角色:', char.name, char.id);
-        console.log('[MobileApp] isSharedModeActive:', isSharedModeActive);
         // 在共享模式下，导航到 sharedChat，并保存角色数据到 tempStoryCharacter
         const targetScreen = isSharedModeActive ? 'sharedChat' : 'chat';
         setGameState(prev => ({
@@ -909,19 +888,9 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     userWorldScenes: (prev.userWorldScenes || []).map(s => s.id === newScene.id ? newScene : s)
                 };
             } else {
-                // 新建模式：只添加到customScenes（临时ID），同步成功后会移到userWorldScenes
-                const existsInCustomScenes = prev.customScenes.some(s => s.id === newScene.id);
-                if (existsInCustomScenes) {
-                    return {
-                        ...prev,
-                        customScenes: prev.customScenes.map(s => s.id === newScene.id ? newScene : s)
-                    };
-                } else {
-                    return {
-            ...prev,
-            customScenes: [...prev.customScenes, newScene]
-                    };
-                }
+                // 新建模式：不保存到本地，直接提交到服务器
+                // 临时更新 UI，但会在服务器同步后刷新
+                return prev;
             }
         });
 
@@ -959,7 +928,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 let savedEra: any;
                 if (eraId && isEditing) {
                     // 更新现有场景
-                    console.log(`[Mobile] 同步更新场景: eraId=${eraId}, worldId=${worldId}`);
                     savedEra = await eraApi.updateEra(eraId, {
                         name: newScene.name,
                         description: newScene.description,
@@ -971,7 +939,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     }, token);
                 } else {
                     // 创建新场景
-                    console.log(`[Mobile] 同步创建场景: worldId=${worldId}`);
                     savedEra = await eraApi.createEra({
                         name: newScene.name,
                         description: newScene.description,
@@ -983,7 +950,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     }, token);
                 }
 
-                console.log(`[Mobile] 后端同步成功:`, savedEra);
 
                 // 将后端返回的场景转换为WorldScene格式并更新本地状态
                 const updatedScene: WorldScene = {
@@ -997,24 +963,33 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     systemEraId: newScene.systemEraId // 保留系统场景ID映射
                 };
 
-                // 更新本地状态（使用服务器返回的ID）
-                setGameState(prev => {
-                    // 移除临时ID的场景（从customScenes和userWorldScenes中）
-                    const updatedUserWorldScenes = (prev.userWorldScenes || [])
-                        .filter(s => s.id !== newScene.id) // 移除临时ID
-                        .filter(s => s.id !== updatedScene.id.toString()) // 避免重复
-                        .concat([updatedScene]); // 添加服务器返回的场景
+                // 刷新场景列表，从服务器获取最新数据
+                const worlds = await worldApi.getAllWorlds(token);
+                const eras = await eraApi.getAllEras(token);
+                const characters = await characterApi.getAllCharacters(token);
+                const scripts = await scriptApi.getAllScripts(token);
+                const userMainStories = await userMainStoryApi.getAll(token);
+                
+                const { convertErasToWorldScenes } = await import('../utils/dataTransformers');
+                const updatedUserWorldScenes = convertErasToWorldScenes(
+                    worlds,
+                    eras,
+                    characters,
+                    scripts,
+                    userMainStories
+                );
 
-                    const updatedCustomScenes = prev.customScenes
-                        .filter(s => s.id !== newScene.id) // 移除临时ID
-                        .filter(s => s.id !== updatedScene.id.toString()); // 避免重复，服务器场景不应该在customScenes中
-
+                // 保留原有的 memories
+                const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+                    const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
                     return {
-                        ...prev,
-                        userWorldScenes: updatedUserWorldScenes,
-                        customScenes: updatedCustomScenes
+                        ...scene,
+                        memories: existingScene?.memories
                     };
                 });
+
+                dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+                dispatch({ type: 'SET_CUSTOM_SCENES', payload: [] }); // 清空本地缓存
             } catch (error) {
                 console.error('[Mobile] 同步场景失败:', error);
             }
@@ -1029,103 +1004,207 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         }
         
         // 检查角色ID的来源
-        const allScenes = [...WORLD_SCENES, ...gameState.customScenes, ...(gameState.userWorldScenes || [])];
-        let currentScene = allScenes.find(s => s.id === sceneId);
-        const existingCharInScene = currentScene?.characters.find(c => c.id === newCharacter.id);
-        const existingCharInCustom = (gameState.customCharacters[sceneId] || []).find(c => c.id === newCharacter.id);
-        const isEditing = !!(existingCharInScene || existingCharInCustom);
-        
-        // 1. 先保存到本地（立即更新UI）
-        setGameState(prev => {
-            const existingCustomChars = prev.customCharacters[sceneId] || [];
-            
-            let newChars: Character[] = [];
-            if (isEditing) {
-                // 更新现有角色
-                newChars = existingCustomChars.map(c => c.id === newCharacter.id ? newCharacter : c);
-            } else {
-                // 添加新角色
-                newChars = [...existingCustomChars, newCharacter];
-            }
-
-            return {
-            ...prev,
-            customCharacters: {
-                ...prev.customCharacters,
-                    [sceneId]: newChars
-            }
-            };
-        });
-        
-        setShowCharacterCreator(false);
-
-        // 2. 异步同步到服务器（如果已登录）
+        // 直接调用 useCharacterHandlers 的 handleSaveCharacter（不再使用本地缓存）
+        const { useCharacterHandlers } = await import('../hooks/useCharacterHandlers');
+        // 注意：这里需要直接调用 API，而不是通过 hook
+        // 由于 hook 只能在组件中使用，我们需要直接调用 API
         const token = localStorage.getItem('auth_token');
-        if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
-            (async () => {
-                try {
-                    // 获取场景的eraId和worldId
-                    const eraId = currentScene ? (parseInt(currentScene.id) || null) : null;
-                    const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
-                    
-                    // 准备角色数据
-                    const characterData = {
-                        ...newCharacter,
-                        worldId: worldId,
-                        eraId: eraId
-                    };
-                    
-                    await syncService.handleLocalDataChange('character', characterData);
-                    console.log('[Mobile] 角色同步成功:', newCharacter.id);
-                } catch (error: any) {
-                    console.error(`[Mobile] 角色同步失败: ID=${newCharacter.id}`, error);
-                }
-            })();
+        const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
+        
+        if (!token || isGuest) {
+            showAlert('请先登录才能保存角色', '需要登录', 'warning');
+            return;
+        }
+
+        try {
+            // 使用 useCharacterHandlers 的逻辑，但直接调用 API
+            // 这里简化处理，直接调用 characterApi
+            const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+                ? gameState.userWorldScenes
+                : WORLD_SCENES;
+            const currentScene = allScenes.find(s => s.id === sceneId);
+            const worldId = currentScene?.worldId || getWorldIdForSceneId(sceneId);
+            
+            // 提取 eraId
+            const numericMatch = sceneId.match(/\d+$/);
+            const eraId = numericMatch ? parseInt(numericMatch[0], 10) : null;
+
+            const isNumericId = /^\d+$/.test(newCharacter.id);
+            
+            if (isNumericId) {
+                // 更新现有角色
+                const characterId = parseInt(newCharacter.id, 10);
+                await characterApi.updateCharacter(characterId, {
+                    name: newCharacter.name,
+                    description: newCharacter.bio || newCharacter.description || '',
+                    age: newCharacter.age,
+                    gender: newCharacter.role || newCharacter.gender || '',
+                    worldId: worldId,
+                    eraId: eraId || null,
+                    role: newCharacter.role,
+                    bio: newCharacter.bio,
+                    avatarUrl: newCharacter.avatarUrl,
+                    backgroundUrl: newCharacter.backgroundUrl,
+                    themeColor: newCharacter.themeColor,
+                    colorAccent: newCharacter.colorAccent,
+                    firstMessage: newCharacter.firstMessage,
+                    systemInstruction: newCharacter.systemInstruction,
+                    voiceName: newCharacter.voiceName,
+                    mbti: newCharacter.mbti,
+                    tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
+                    speechStyle: newCharacter.speechStyle,
+                    catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
+                    secrets: newCharacter.secrets,
+                    motivations: newCharacter.motivations,
+                    relationships: newCharacter.relationships,
+                }, token);
+            } else {
+                // 创建新角色
+                await characterApi.createCharacter({
+                    name: newCharacter.name,
+                    description: newCharacter.bio || newCharacter.description || '',
+                    age: newCharacter.age,
+                    gender: newCharacter.role || newCharacter.gender || '',
+                    worldId: worldId,
+                    eraId: eraId || null,
+                    role: newCharacter.role,
+                    bio: newCharacter.bio,
+                    avatarUrl: newCharacter.avatarUrl,
+                    backgroundUrl: newCharacter.backgroundUrl,
+                    themeColor: newCharacter.themeColor,
+                    colorAccent: newCharacter.colorAccent,
+                    firstMessage: newCharacter.firstMessage,
+                    systemInstruction: newCharacter.systemInstruction,
+                    voiceName: newCharacter.voiceName,
+                    mbti: newCharacter.mbti,
+                    tags: Array.isArray(newCharacter.tags) ? newCharacter.tags.join(',') : newCharacter.tags,
+                    speechStyle: newCharacter.speechStyle,
+                    catchphrases: Array.isArray(newCharacter.catchphrases) ? newCharacter.catchphrases.join(',') : newCharacter.catchphrases,
+                    secrets: newCharacter.secrets,
+                    motivations: newCharacter.motivations,
+                    relationships: newCharacter.relationships,
+                }, token);
+            }
+
+            // 刷新场景列表，从服务器获取最新数据
+            const worlds = await worldApi.getAllWorlds(token);
+            const eras = await eraApi.getAllEras(token);
+            const characters = await characterApi.getAllCharacters(token);
+            const scripts = await scriptApi.getAllScripts(token);
+            const userMainStories = await userMainStoryApi.getAll(token);
+            
+            const { convertErasToWorldScenes } = await import('../utils/dataTransformers');
+            const updatedUserWorldScenes = convertErasToWorldScenes(
+                worlds,
+                eras,
+                characters,
+                scripts,
+                userMainStories
+            );
+
+            // 保留原有的 memories
+            const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+                const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+                return {
+                    ...scene,
+                    memories: existingScene?.memories
+                };
+            });
+
+            dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+            dispatch({ type: 'SET_CUSTOM_CHARACTERS', payload: {} }); // 清空本地缓存
+            setShowCharacterCreator(false);
+        } catch (error: any) {
+            console.error('[Mobile] 角色保存失败:', error);
+            const errorMessage = error.message || '未知错误';
+            showAlert(`角色保存失败: ${errorMessage}`, '保存失败', 'error');
         }
     };
 
     const handleSaveScenario = async (scenario: CustomScenario) => {
         if (!gameState.selectedSceneId) return;
         
-        // 获取当前场景信息，以便获取 worldId
-        const currentScene = allScenes.find(s => s.id === gameState.selectedSceneId);
-        const worldId = currentScene?.worldId || getWorldIdForSceneId(gameState.selectedSceneId);
-        
-        const completeScenario = { 
-            ...scenario, 
-            sceneId: gameState.selectedSceneId,
-            worldId: worldId 
-        } as CustomScenario & { worldId: number };
-        
-        // Update local state immediately for UI responsiveness
-        setGameState(prev => {
-            const exists = prev.customScenarios.some(s => s.id === scenario.id);
-            let newScenarios = [...prev.customScenarios];
-            if (exists) {
-                newScenarios = newScenarios.map(s => s.id === scenario.id ? completeScenario : s);
-            } else {
-                newScenarios.push(completeScenario);
-            }
-            return {
-            ...prev,
-                customScenarios: newScenarios,
-                editingScenarioId: null
-            };
-        });
-
-        setShowScenarioBuilder(false);
-
-        // 异步同步到服务器（如果已登录）
         const token = localStorage.getItem('auth_token');
-        if (token && gameState.userProfile && !gameState.userProfile.isGuest) {
-            (async () => {
-                try {
-                    await syncService.handleLocalDataChange('scenario', completeScenario);
-                    console.log('[Mobile] 剧本同步成功:', completeScenario.id);
-                } catch (error) {
-                    console.error('[Mobile] 剧本同步失败:', error);
-                }
-            })();
+        const isGuest = !gameState.userProfile || gameState.userProfile.isGuest;
+        
+        if (!token || isGuest) {
+            showAlert('请先登录才能保存剧本', '需要登录', 'warning');
+            return;
+        }
+
+        try {
+            // 获取当前场景信息，以便获取 worldId 和 eraId
+            const currentScene = allScenes.find(s => s.id === gameState.selectedSceneId);
+            const worldId = currentScene?.worldId || getWorldIdForSceneId(gameState.selectedSceneId);
+            
+            // 提取 eraId（场景ID中的数字部分）
+            const numericMatch = gameState.selectedSceneId.match(/\d+$/);
+            const eraId = numericMatch ? parseInt(numericMatch[0], 10) : null;
+
+            // 将 CustomScenario 转换为 CreateScriptDTO 或 UpdateScriptDTO
+            const scriptContent = JSON.stringify(scenario);
+            const isNumericId = /^\d+$/.test(scenario.id);
+            
+            if (isNumericId) {
+                // 更新现有剧本
+                const scriptId = parseInt(scenario.id, 10);
+                await scriptApi.updateScript(scriptId, {
+                    title: scenario.title,
+                    description: scenario.description || null,
+                    content: scriptContent,
+                    sceneCount: Object.keys(scenario.nodes || {}).length,
+                    characterIds: null,
+                    tags: null,
+                    worldId: worldId,
+                    eraId: eraId || undefined,
+                }, token);
+            } else {
+                // 创建新剧本
+                const createdScript = await scriptApi.createScript({
+                    title: scenario.title,
+                    description: scenario.description || null,
+                    content: scriptContent,
+                    sceneCount: Object.keys(scenario.nodes || {}).length,
+                    characterIds: null,
+                    tags: null,
+                    worldId: worldId,
+                    eraId: eraId || undefined,
+                }, token);
+            }
+
+            // 刷新场景列表，从服务器获取最新数据
+            const worlds = await worldApi.getAllWorlds(token);
+            const eras = await eraApi.getAllEras(token);
+            const characters = await characterApi.getAllCharacters(token);
+            const scripts = await scriptApi.getAllScripts(token);
+            const userMainStories = await userMainStoryApi.getAll(token);
+            
+            const { convertErasToWorldScenes } = await import('../utils/dataTransformers');
+            const updatedUserWorldScenes = convertErasToWorldScenes(
+                worlds,
+                eras,
+                characters,
+                scripts,
+                userMainStories
+            );
+
+            // 保留原有的 memories
+            const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+                const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+                return {
+                    ...scene,
+                    memories: existingScene?.memories
+                };
+            });
+
+            dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+            dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [] }); // 清空本地缓存
+            dispatch({ type: 'SET_EDITING_SCENARIO_ID', payload: null });
+            setShowScenarioBuilder(false);
+        } catch (error: any) {
+            console.error('[Mobile] 剧本保存失败:', error);
+            const errorMessage = error.message || '未知错误';
+            showAlert(`剧本保存失败: ${errorMessage}`, '保存失败', 'error');
         }
     };
 
@@ -1200,27 +1279,39 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                                 }));
                                 
                 setGameState(prev => ({ ...prev, journalEntries: mappedEntries }));
-                                console.log('[Mobile] 日记创建成功，已从服务器重新加载');
                             } catch (error) {
                                 console.error('[Mobile] 日记创建失败:', error);
                                 showAlert('日记创建失败，请重试', '错误', 'error');
                             }
         },
         handleUpdateEntry: async (entry: JournalEntry) => {
+            // 验证 entry.id 是否存在且有效
+            if (!entry.id) {
+                showAlert('日记ID无效，无法更新', '提示', 'warning');
+                return;
+            }
+
             const isTemporaryId = entry.id.startsWith('entry_') || entry.id.startsWith('e_');
-                            if (isTemporaryId) {
+            if (isTemporaryId) {
                 showAlert('临时日记无法更新', '提示', 'warning');
-                                return;
-                            }
+                return;
+            }
 
-                            const token = localStorage.getItem('auth_token');
+            // 验证 ID 是否为非空字符串（后端接受String类型的ID，包括UUID）
+            if (!entry.id || entry.id.trim() === '') {
+                console.error('[Mobile] 无效的日记ID: 空字符串');
+                showAlert('日记ID无效，无法更新', '提示', 'warning');
+                return;
+            }
+
+            const token = localStorage.getItem('auth_token');
             if (!token) {
-                                showAlert('请先登录', '提示', 'warning');
-                                return;
-                            }
+                showAlert('请先登录', '提示', 'warning');
+                return;
+            }
 
-                            try {
-                await journalApi.updateJournalEntry(parseInt(entry.id), {
+            try {
+                await journalApi.updateJournalEntry(entry.id, {
                                     title: entry.title,
                                     content: entry.content,
                                     imageUrl: entry.imageUrl || undefined,
@@ -1246,14 +1337,27 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                             }
         },
         handleDeleteEntry: async (id: string) => {
-                            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                                showAlert('请先登录', '提示', 'warning');
-                                return;
-                            }
+            // 验证 ID 是否存在且有效
+            if (!id || id.trim() === '') {
+                showAlert('日记ID无效，无法删除', '提示', 'warning');
+                return;
+            }
 
-                            try {
-                await journalApi.deleteJournalEntry(parseInt(id), token);
+            // 验证是否为临时ID
+            const isTemporaryId = id.startsWith('entry_') || id.startsWith('e_');
+            if (isTemporaryId) {
+                showAlert('临时日记无法删除', '提示', 'warning');
+                return;
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                showAlert('请先登录', '提示', 'warning');
+                return;
+            }
+
+            try {
+                await journalApi.deleteJournalEntry(id, token);
                                 const allEntries = await journalApi.getAllJournalEntries(token);
                                 const mappedEntries = allEntries.map(entry => ({
                                     id: entry.id.toString(),
@@ -1282,7 +1386,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         handleOpenCharacterCreator: () => setShowCharacterCreator(true),
         handleOpenScenarioBuilder: () => setShowScenarioBuilder(true),
         handleOpenQuickConnect: () => {
-            console.log('[MobileApp] handleOpenQuickConnect被调用，打开快速连接Modal');
             setShowQuickConnect(true);
         },
         handleLogout: handleLogout,
@@ -1325,7 +1428,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                         <MobileProfileSetupScreen
                             onGuestEnter={handleProfileSubmit}
                             onLogin={() => {
-                                console.log('[MobileApp] 登录按钮被点击，显示登录模态框');
                                 setShowLoginModal(true);
                             }}
                         />
@@ -1357,7 +1459,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     <MobileLoginScreen
                         onLoginSuccess={handleLoginSuccess}
                         onCancel={() => {
-                            console.log('[MobileApp] 关闭登录页面');
                             setShowLoginModal(false);
                         }}
                         initialNickname={
@@ -1380,7 +1481,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     }}
                     onSelectCharacter={(quickConnectCharacter) => {
                         // 在共享模式下，选择角色后导航到共享聊天窗口
-                        console.log('[MobileApp] 选择共享角色:', quickConnectCharacter);
                         
                         // 将QuickConnectCharacter转换为Character对象
                         const character: Character = {
@@ -1413,22 +1513,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                 />
             )}
             
-            {showMailbox && (() => {
-                const token = localStorage.getItem('auth_token');
-                const currentUserId = gameState.userProfile?.id ? parseInt(String(gameState.userProfile.id)) : 0;
-                if (!token || !currentUserId) {
-                    showAlert('请先登录', '提示', 'warning');
-                    setShowMailbox(false);
-                    return null;
-                }
-                return (
-                    <MobileUnifiedMailboxModal 
-                        token={token}
-                        currentUserId={currentUserId}
-                        onClose={() => setShowMailbox(false)}
-                    />
-                );
-            })()}
 
             {/* CREATOR MODALS */}
             {showEraCreator && (
@@ -1460,7 +1544,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                                     try {
                                         const eraId = parseInt(sceneId, 10);
                                         await eraApi.deleteEra(eraId, token);
-                                        console.log('[Mobile] 场景删除同步成功:', eraId);
                                     } catch (error) {
                                         console.error('[Mobile] 场景删除同步失败:', error);
                                     }
@@ -1495,7 +1578,15 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                     currentScreen={gameState.currentScreen}
                     onNavigate={(s) => setGameState(prev => ({...prev, currentScreen: s}))}
                     hasUnreadMail={gameState.mailbox.some(m => !m.isRead)}
-                    onOpenMail={() => setShowMailbox(true)}
+                    onOpenMail={() => {
+                        const token = localStorage.getItem('auth_token');
+                        const currentUserId = gameState.userProfile?.id ? parseInt(String(gameState.userProfile.id)) : 0;
+                        if (!token || !currentUserId) {
+                            showAlert('请先登录', '提示', 'warning');
+                            return;
+                        }
+                        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'mailbox' });
+                    }}
                 />
             )}
         </div>

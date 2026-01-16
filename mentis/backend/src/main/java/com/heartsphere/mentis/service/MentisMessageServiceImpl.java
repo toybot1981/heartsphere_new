@@ -73,7 +73,13 @@ public class MentisMessageServiceImpl implements MentisMessageService {
         MentisSession session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
         
-        return messageRepository.findBySession_IdOrderByCreatedAtAsc(session.getId());
+        try {
+            return messageRepository.findBySession_IdOrderByCreatedAtAsc(session.getId());
+        } catch (Exception e) {
+            log.error("查询会话消息失败: sessionId={}, sessionDbId={}", sessionId, session.getId(), e);
+            // 如果查询失败，返回空列表
+            return new java.util.ArrayList<>();
+        }
     }
     
     @Override
