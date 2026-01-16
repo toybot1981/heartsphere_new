@@ -480,15 +480,97 @@ const AppContent: React.FC = () => {
   // --- HANDLERS ---
   // handleSwitchToMobile 和 handleSwitchToPC 已移至 useDeviceMode Hook
 
-  const handleGuestEnter = (nickname: string): void => {
-    const profile = { 
-        nickname: nickname, 
-        avatarUrl: '',
-        isGuest: true, 
-        id: `guest_${Date.now()}`
-    }; 
-    dispatch({ type: 'SET_USER_PROFILE', payload: profile });
-    dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+  const handleGuestEnter = async (nickname: string): Promise<void> => {
+    console.log('[App] handleGuestEnter 被调用');
+    console.log('[App] 昵称:', nickname);
+    console.log('[App] ========== 开始游客登录流程 ==========');
+    
+    try {
+      console.log('[App] 步骤1: 调用游客登录API...');
+      // 调用游客登录API（request.ts会自动提取ApiResponse的data部分）
+      const responseData = await authApi.guestLogin(nickname);
+      console.log('[App] 步骤1完成: 收到登录响应', responseData);
+      
+      if (!responseData || !responseData.token) {
+        console.error('[App] 错误: 未获取到token', responseData);
+        return;
+      }
+      
+      console.log('[App] 步骤2: 保存token到localStorage...');
+      // 保存token
+      localStorage.setItem('auth_token', responseData.token);
+      console.log('[App] 步骤2完成: token已保存', responseData.token.substring(0, 20) + '...');
+      
+      console.log('[App] 步骤3: 获取用户信息...');
+      // 获取用户信息
+      const userInfo = await authApi.getCurrentUser(responseData.token);
+      console.log('[App] 步骤3完成: 用户信息', userInfo);
+      
+      console.log('[App] 步骤4: 更新用户信息到state...');
+      // 更新用户信息
+      dispatch({ type: 'SET_USER_PROFILE', payload: {
+        id: String(userInfo.id),
+        nickname: userInfo.nickname || nickname || '游客',
+        avatarUrl: userInfo.avatar || '',
+        isGuest: true,
+      }});
+      console.log('[App] 步骤4完成: 用户信息已更新到state');
+      
+      // 游客登录后，调用标准API获取场景和角色
+      // 后端会根据游客身份自动返回预置场景（ID: 50）和角色（ID: 315-320）
+      try {
+        const token = responseData.token;
+        
+        console.log('[App] 步骤5: 调用场景API获取预置场景...');
+        // 调用标准API，后端会自动返回游客预置内容
+        const eras = await eraApi.getAllEras(token);
+        console.log('[App] 步骤5完成: 获取到场景', eras?.length || 0, '个', eras);
+        
+        console.log('[App] 步骤6: 调用角色API获取预置角色...');
+        const characters = await characterApi.getAllCharacters(token);
+        console.log('[App] 步骤6完成: 获取到角色', characters?.length || 0, '个', characters);
+        
+        console.log('[App] 步骤7: 转换场景和角色数据...');
+        // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
+        const { convertErasToWorldScenes } = await import('./utils/dataTransformers');
+        const guestWorldScenes = convertErasToWorldScenes(
+          [], // 游客没有worlds
+          eras,
+          characters,
+          undefined, // scripts
+          undefined, // mainStories
+          false // isSharedMode
+        );
+        console.log('[App] 步骤7完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
+        
+        console.log('[App] 步骤8: 更新场景列表到state...');
+        // 更新场景列表（只包含预置场景）
+        dispatch({ type: 'SET_USER_WORLD_SCENES', payload: guestWorldScenes });
+        
+        // 设置选中的场景（如果有场景，选择第一个）
+        if (guestWorldScenes.length > 0) {
+          console.log('[App] 步骤9: 设置选中场景', guestWorldScenes[0].id);
+          dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestWorldScenes[0].id });
+        }
+        
+        console.log('[App] 步骤10: 跳转到entryPoint页面...');
+        // 跳转到 entryPoint
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+        dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
+        console.log('[App] ========== 游客登录流程完成 ==========');
+      } catch (error) {
+        console.error('[App] 错误: 加载场景和角色失败', error);
+        // 即使加载失败，也要跳转到 entryPoint
+        dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+        dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
+      }
+    } catch (err: any) {
+      console.error('[App] ========== 游客登录流程失败 ==========');
+      console.error('[App] 错误详情:', err);
+      console.error('[App] 错误堆栈:', err?.stack);
+      // 显示错误提示
+      alert(err.message || '游客登录失败，请稍后重试');
+    }
   };
 
   // 导航 Handlers 已移至 useNavigationHandlers Hook
@@ -747,26 +829,31 @@ const AppContent: React.FC = () => {
             onLoginSuccess={handleLoginSuccess}
             isGuest={gameState.userProfile?.isGuest || !gameState.userProfile}
             onGuestEnter={async (nickname) => {
+              console.log('[游客登录] ========== 开始游客登录流程 ==========');
+              console.log('[游客登录] 昵称:', nickname);
+              
               try {
-                // 调用游客登录API
-                const response = await authApi.guestLogin(nickname);
-                
-                // 检查响应格式
-                const responseData = (response && typeof response === 'object' && 'data' in response) 
-                  ? response.data 
-                  : response;
+                console.log('[游客登录] 步骤1: 调用游客登录API...');
+                // 调用游客登录API（request.ts会自动提取ApiResponse的data部分）
+                const responseData = await authApi.guestLogin(nickname);
+                console.log('[游客登录] 步骤1完成: 收到登录响应', responseData);
                 
                 if (!responseData || !responseData.token) {
-                  console.error('游客登录失败：未获取到token');
+                  console.error('[游客登录] 错误: 未获取到token', responseData);
                   return;
                 }
                 
+                console.log('[游客登录] 步骤2: 保存token到localStorage...');
                 // 保存token
                 localStorage.setItem('auth_token', responseData.token);
+                console.log('[游客登录] 步骤2完成: token已保存', responseData.token.substring(0, 20) + '...');
                 
+                console.log('[游客登录] 步骤3: 获取用户信息...');
                 // 获取用户信息
                 const userInfo = await authApi.getCurrentUser(responseData.token);
+                console.log('[游客登录] 步骤3完成: 用户信息', userInfo);
                 
+                console.log('[游客登录] 步骤4: 更新用户信息到state...');
                 // 更新用户信息
                 dispatch({ type: 'SET_USER_PROFILE', payload: {
                   id: String(userInfo.id),
@@ -774,70 +861,60 @@ const AppContent: React.FC = () => {
                   avatarUrl: userInfo.avatar || '',
                   isGuest: true,
                 }});
+                console.log('[游客登录] 步骤4完成: 用户信息已更新到state');
                 
-                // 游客使用硬编码的预置场景和角色
-                // 场景ID: 50 (日常生活助手)
-                // 角色ID: 315-320 (6个预置角色)
-                const presetEraId = responseData.presetEraId || 50;
-                const presetCharacterIds = responseData.presetCharacterIds || [315, 316, 317, 318, 319, 320];
-                
-                // 获取预置场景和角色数据
+                // 游客登录后，调用标准API获取场景和角色
+                // 后端会根据游客身份自动返回预置场景（ID: 50）和角色（ID: 315-320）
                 try {
-                  const presetEras = await eraApi.getSystemEras();
-                  const presetCharacters = await characterApi.getSystemCharacters();
+                  const token = responseData.token;
                   
-                  // 找到预置场景
-                  const presetEra = presetEras.find((e: any) => e.id === presetEraId);
-                  // 找到预置角色
-                  const presetChars = presetCharacters.filter((c: any) => presetCharacterIds.includes(c.id));
+                  console.log('[游客登录] 步骤5: 调用场景API获取预置场景...');
+                  // 调用标准API，后端会自动返回游客预置内容
+                  const eras = await eraApi.getAllEras(token);
+                  console.log('[游客登录] 步骤5完成: 获取到场景', eras?.length || 0, '个', eras);
                   
-                  if (presetEra && presetChars.length > 0) {
-                    // 构建游客的场景数据（使用预置内容）
-                    const guestScene = {
-                      id: presetEra.id.toString(),
-                      name: presetEra.name,
-                      description: presetEra.description,
-                      imageUrl: presetEra.imageUrl || '',
-                      systemEraId: presetEra.id,
-                      characters: presetChars.map((char: any) => ({
-                        id: char.id.toString(),
-                        name: char.name,
-                        age: char.age,
-                        role: char.role,
-                        bio: char.bio,
-                        avatarUrl: char.avatarUrl || '',
-                        backgroundUrl: char.backgroundUrl || '',
-                        themeColor: char.themeColor || 'blue-500',
-                        colorAccent: char.colorAccent || '#3b82f6',
-                        firstMessage: char.firstMessage || '',
-                        systemInstruction: char.systemInstruction || '',
-                        voiceName: char.voiceName || 'Aoede',
-                        mbti: char.mbti || 'INFJ',
-                        tags: char.tags || [],
-                        speechStyle: char.speechStyle || '',
-                        catchphrases: char.catchphrases || [],
-                        secrets: char.secrets || '',
-                        motivations: char.motivations || '',
-                        relationships: char.relationships || ''
-                      })),
-                      scenes: [],
-                      worldId: null, // 游客没有世界
-                    };
-                    
-                    // 更新场景列表（只包含预置场景）
-                    dispatch({ type: 'SET_USER_WORLD_SCENES', payload: [guestScene] });
-                    dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestScene.id });
+                  console.log('[游客登录] 步骤6: 调用角色API获取预置角色...');
+                  const characters = await characterApi.getAllCharacters(token);
+                  console.log('[游客登录] 步骤6完成: 获取到角色', characters?.length || 0, '个', characters);
+                  
+                  console.log('[游客登录] 步骤7: 转换场景和角色数据...');
+                  // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
+                  const { convertErasToWorldScenes } = await import('./utils/dataTransformers');
+                  const guestWorldScenes = convertErasToWorldScenes(
+                    [], // 游客没有worlds
+                    eras,
+                    characters,
+                    undefined, // scripts
+                    undefined, // mainStories
+                    false // isSharedMode
+                  );
+                  console.log('[游客登录] 步骤7完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
+                  
+                  console.log('[游客登录] 步骤8: 更新场景列表到state...');
+                  // 更新场景列表（只包含预置场景）
+                  dispatch({ type: 'SET_USER_WORLD_SCENES', payload: guestWorldScenes });
+                  
+                  // 设置选中的场景（如果有场景，选择第一个）
+                  if (guestWorldScenes.length > 0) {
+                    console.log('[游客登录] 步骤9: 设置选中场景', guestWorldScenes[0].id);
+                    dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestWorldScenes[0].id });
                   }
-                } catch (err) {
-                  console.error('加载预置场景和角色失败:', err);
-                  // 即使加载失败，也继续设置用户信息
+                  
+                  console.log('[游客登录] 步骤10: 跳转到entryPoint页面...');
+                  // 跳转到 entryPoint
+                  dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+                  dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
+                  console.log('[游客登录] ========== 游客登录流程完成 ==========');
+                } catch (error) {
+                  console.error('[游客登录] 错误: 加载场景和角色失败', error);
+                  // 即使加载失败，也要跳转到 entryPoint
+                  dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
+                  dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
                 }
-                
-                // 跳转到入口页面
-                dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
-                dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
               } catch (err: any) {
-                console.error('游客登录失败:', err);
+                console.error('[游客登录] ========== 游客登录流程失败 ==========');
+                console.error('[游客登录] 错误详情:', err);
+                console.error('[游客登录] 错误堆栈:', err?.stack);
                 // 显示错误提示
                 alert(err.message || '游客登录失败，请稍后重试');
               }

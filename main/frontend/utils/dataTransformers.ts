@@ -279,10 +279,9 @@ export function convertErasToWorldScenes(
     });
   } else {
     // 正常模式：按世界分组
-    safeWorlds.forEach(world => {
-      const worldEras = erasByWorldId.get(world.id) || [];
-
-      worldEras.forEach(era => {
+    if (safeWorlds.length === 0) {
+      // 如果没有世界（如游客模式），直接展示所有场景
+      safeEras.forEach(era => {
         const eraCharacters = charactersByEraId.get(era.id) || [];
         const eraScripts = scriptsByEraId.get(era.id) || [];
         const eraMainStory = mainStoriesByEraId.get(era.id);
@@ -297,12 +296,38 @@ export function convertErasToWorldScenes(
           mainStory: eraMainStory ? convertBackendMainStoryToCharacter(eraMainStory) : undefined,
           scripts: eraScripts.map(script => convertBackendScriptToFrontend(script)),
           scenes: [],
-          worldId: world.id
+          worldId: era.worldId || undefined
         };
 
         userWorldScenes.push(scene);
       });
-    });
+    } else {
+      // 有世界时，按世界分组
+      safeWorlds.forEach(world => {
+        const worldEras = erasByWorldId.get(world.id) || [];
+
+        worldEras.forEach(era => {
+          const eraCharacters = charactersByEraId.get(era.id) || [];
+          const eraScripts = scriptsByEraId.get(era.id) || [];
+          const eraMainStory = mainStoriesByEraId.get(era.id);
+
+          const scene: WorldScene = {
+            id: `era_${era.id}`, // 使用 era_ 前缀标识
+            name: era.name,
+            description: era.description || '',
+            imageUrl: era.imageUrl || '',
+            systemEraId: era.systemEraId || undefined,
+            characters: eraCharacters.map(char => convertBackendCharacterToFrontend(char)),
+            mainStory: eraMainStory ? convertBackendMainStoryToCharacter(eraMainStory) : undefined,
+            scripts: eraScripts.map(script => convertBackendScriptToFrontend(script)),
+            scenes: [],
+            worldId: world.id
+          };
+
+          userWorldScenes.push(scene);
+        });
+      });
+    }
   }
 
   return userWorldScenes;

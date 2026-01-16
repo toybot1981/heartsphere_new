@@ -45,11 +45,14 @@ export default defineConfig(({ mode }) => {
           '@emotion/cache',
           '@emotion/utils',
           'framer-motion', // 添加 framer-motion 到预构建列表
+          'react-fast-compare', // 修复 ESM/CommonJS 兼容性问题
         ],
         // 强制重新构建这些依赖，确保使用正确的 React 版本
         force: true,
         esbuildOptions: {
           jsx: 'automatic',
+          // 处理 CommonJS 模块的默认导出问题
+          mainFields: ['module', 'main'],
         },
       },
       define: {
@@ -102,6 +105,7 @@ export default defineConfig(({ mode }) => {
           '@emotion/styled',
           '@emotion/cache',
           '@emotion/utils',
+          'react-fast-compare',
         ],
       },
       build: {

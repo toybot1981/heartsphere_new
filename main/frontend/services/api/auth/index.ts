@@ -16,6 +16,8 @@ export const authApi = {
   // 基础认证方法
   login: baseAuthApi.login,
   register: baseAuthApi.register,
+  guestLogin: baseAuthApi.guestLogin,
+  guestRegister: baseAuthApi.guestRegister,
   getCurrentUser: baseAuthApi.getCurrentUser,
   // 邮箱验证方法（保持旧接口名称）
   sendEmailVerificationCode: emailApi.sendVerificationCode,

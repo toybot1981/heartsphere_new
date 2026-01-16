@@ -27,7 +27,9 @@
     "cap:run:android": "npx cap run android",
     "cap:run:ios": "npx cap run ios",
     "cap:add:android": "npx cap add android",
-    "cap:add:ios": "npx cap add ios"
+    "cap:add:ios": "npx cap add ios",
+    "android:debug": "bash scripts/android-debug.sh",
+    "android:logcat": "adb logcat | grep -iE 'heartsphere|capacitor|chromium'"
   },
   "dependencies": {
     "@antv/x6": "^3.1.4",

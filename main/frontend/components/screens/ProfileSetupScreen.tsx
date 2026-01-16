@@ -8,7 +8,7 @@ import { Button } from '../Button';
 import { APP_TITLE } from '../../constants';
 
 interface ProfileSetupScreenProps {
-  onGuestEnter: (nickname: string) => void;
+  onGuestEnter: (nickname: string) => void | Promise<void>;
   onLogin: () => void;
 }
 
@@ -19,11 +19,25 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
   const [profileNickname, setProfileNickname] = useState('');
   const [showGuestNicknameModal, setShowGuestNicknameModal] = useState(false);
 
-  const handleGuestSubmit = () => {
-    if (profileNickname.trim()) {
-      onGuestEnter(profileNickname.trim());
+  const handleGuestSubmit = async () => {
+    const trimmedNickname = profileNickname.trim();
+    console.log('[ProfileSetupScreen] handleGuestSubmit 被调用');
+    console.log('[ProfileSetupScreen] 昵称:', trimmedNickname);
+    console.log('[ProfileSetupScreen] 昵称是否有效:', !!trimmedNickname);
+    
+    if (trimmedNickname) {
+      console.log('[ProfileSetupScreen] 调用 onGuestEnter 回调，昵称:', trimmedNickname);
       setShowGuestNicknameModal(false);
       setProfileNickname('');
+      
+      // 调用 onGuestEnter（可能是异步的）
+      const result = onGuestEnter(trimmedNickname);
+      if (result instanceof Promise) {
+        await result;
+      }
+      console.log('[ProfileSetupScreen] onGuestEnter 调用完成，模态框已关闭');
+    } else {
+      console.warn('[ProfileSetupScreen] 昵称为空，不调用 onGuestEnter');
     }
   };
 
