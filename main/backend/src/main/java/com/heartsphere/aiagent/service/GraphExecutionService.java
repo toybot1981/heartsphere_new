@@ -223,10 +223,10 @@ public class GraphExecutionService {
                                 if (edgeDTO.getSourceNodeId().equals(nodeDTO.getNodeId())) {
                                     if ("true".equals(edgeDTO.getEdgeType()) && conditionNode.getTrueNodeId() == null) {
                                         conditionNode.setTrueNodeId(edgeDTO.getTargetNodeId());
-                                        log.debug("从边推断ConditionNode {} 的trueNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
+                                        log.info("从边推断ConditionNode {} 的trueNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
                                     } else if ("false".equals(edgeDTO.getEdgeType()) && conditionNode.getFalseNodeId() == null) {
                                         conditionNode.setFalseNodeId(edgeDTO.getTargetNodeId());
-                                        log.debug("从边推断ConditionNode {} 的falseNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
+                                        log.info("从边推断ConditionNode {} 的falseNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
                                     }
                                 }
                             }
@@ -455,7 +455,7 @@ public class GraphExecutionService {
      * 查询执行历史
      */
     public GraphExecutionListResponse queryExecutions(GraphExecutionQueryRequest request) {
-        log.debug("查询执行历史: {}", request);
+        log.info("查询执行历史: {}", request);
         
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(request.getPage(), request.getSize());
         

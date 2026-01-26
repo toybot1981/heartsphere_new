@@ -119,6 +119,7 @@ export default defineConfig(({ mode }) => {
             main: path.resolve(__dirname, 'index.html'),
             admin: path.resolve(__dirname, 'admin.html'),
             mobile: path.resolve(__dirname, 'mobile.html'),
+            panorama: path.resolve(__dirname, 'panorama-test.html'),
           },
           output: {
             manualChunks: (id) => {

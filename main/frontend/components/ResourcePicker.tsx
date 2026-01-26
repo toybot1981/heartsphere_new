@@ -46,16 +46,35 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="bg-slate-900 border border-indigo-500/30 rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-md p-4"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+    >
+      <div 
+        className="rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col shadow-2xl"
+        style={{
+          backgroundColor: 'var(--bg-card, #0f172a)',
+          borderColor: 'var(--color-primary, rgba(99, 102, 241, 0.3))',
+        }}
+      >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div 
+          className="p-6 border-b flex items-center justify-between"
+          style={{ borderColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))' }}
+        >
           <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400">
             选择预置资源
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -67,10 +86,18 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
+              <div 
+                className="w-8 h-8 border-4 rounded-full animate-spin"
+                style={{
+                  borderColor: 'var(--bg-overlay, rgba(226, 232, 240, 1)) var(--bg-overlay, rgba(226, 232, 240, 1)) var(--bg-overlay, rgba(226, 232, 240, 1)) var(--color-primary, #6366f1)',
+                }}
+              />
             </div>
           ) : resources.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
+            <div 
+              className="text-center py-12"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               <p>暂无预置资源</p>
               <p className="text-sm mt-2">请在管理后台上传资源</p>
             </div>
@@ -82,11 +109,32 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
                   onClick={() => handleSelect(resource.url)}
                   className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                     selectedUrl === resource.url
-                      ? 'border-indigo-500 ring-2 ring-indigo-500/50'
-                      : 'border-slate-700 hover:border-indigo-400'
+                      ? 'ring-2'
+                      : ''
                   }`}
+                  style={{
+                    borderColor: selectedUrl === resource.url
+                      ? 'var(--color-primary, #6366f1)'
+                      : 'var(--bg-overlay, rgba(51, 65, 85, 1))',
+                    boxShadow: selectedUrl === resource.url
+                      ? '0 0 0 2px var(--color-primary, rgba(99, 102, 241, 0.5))'
+                      : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedUrl !== resource.url) {
+                      e.currentTarget.style.borderColor = 'var(--color-primary-light, #818cf8)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedUrl !== resource.url) {
+                      e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(51, 65, 85, 1))';
+                    }
+                  }}
                 >
-                  <div className="aspect-square bg-slate-800 flex items-center justify-center">
+                  <div 
+                    className="aspect-square flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary, #1e293b)' }}
+                  >
                     <LazyImage
                       src={resource.url}
                       alt={resource.name}
@@ -95,16 +143,39 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
                     />
                   </div>
                   {selectedUrl === resource.url && (
-                    <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center">
-                      <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ backgroundColor: 'rgba(99, 102, 241, 0.2)' }}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--color-primary, #6366f1)' }}
+                      >
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <p className="text-xs text-white font-medium truncate">{resource.name}</p>
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t p-2"
+                    style={{
+                      background: 'linear-gradient(to top, var(--bg-overlay, rgba(0, 0, 0, 0.8)), transparent)',
+                    }}
+                  >
+                    <p 
+                      className="text-xs font-medium truncate"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {resource.name}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -113,10 +184,23 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 flex justify-end">
+        <div 
+          className="p-4 border-t flex justify-end"
+          style={{ borderColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #475569)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(71, 85, 105, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #475569)';
+            }}
           >
             取消
           </button>

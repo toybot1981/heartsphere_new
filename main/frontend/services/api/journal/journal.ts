@@ -16,14 +16,14 @@ export const journalApi = {
    * @param token - 用户token
    */
   getAllJournalEntries: (token: string): Promise<JournalEntry[]> => {
-    logger.debug('[journalApi] 获取日志列表');
+    logger.info('[journalApi] 获取日志列表');
     try {
       const result = request<JournalEntry[]>('/journal-entries', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      logger.debug('[journalApi] 获取日志列表请求已发送');
+      logger.info('[journalApi] 获取日志列表请求已发送');
       return result;
     } catch (error) {
       logger.error('[journalApi] 获取日志列表失败', error);
@@ -37,14 +37,14 @@ export const journalApi = {
    * @param token - 用户token
    */
   getJournalEntryById: (id: string, token: string): Promise<JournalEntry> => {
-    logger.debug(`[journalApi] 获取日志记录: ${id}`);
+    logger.info(`[journalApi] 获取日志记录: ${id}`);
     try {
       const result = request<JournalEntry>(`/journal-entries/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      logger.debug(`[journalApi] 获取日志记录请求已发送: ${id}`);
+      logger.info(`[journalApi] 获取日志记录请求已发送: ${id}`);
       return result;
     } catch (error) {
       logger.error(`[journalApi] 获取日志记录失败: ${id}`, error);
@@ -61,7 +61,7 @@ export const journalApi = {
     data: CreateJournalEntryRequest,
     token: string
   ): Promise<JournalEntry> => {
-    logger.debug('[journalApi] 创建新日志');
+    logger.info('[journalApi] 创建新日志');
     
     try {
       // 确保data是一个有效的对象
@@ -84,14 +84,14 @@ export const journalApi = {
         },
       };
 
-      logger.debug('[journalApi] 创建日志条目');
+      logger.info('[journalApi] 创建日志条目');
 
       const result = await request<JournalEntry>(
         '/journal-entries',
         requestOptions
       );
 
-      logger.debug(`[journalApi] 创建日志成功: ${result.id}`);
+      logger.info(`[journalApi] 创建日志成功: ${result.id}`);
       return result;
     } catch (error) {
       logger.error('[journalApi] 创建日志失败', error);
@@ -110,7 +110,7 @@ export const journalApi = {
     data: UpdateJournalEntryRequest,
     token: string
   ): Promise<JournalEntry> => {
-    logger.debug(`[journalApi] 更新日志: ${id}`, {
+    logger.info(`[journalApi] 更新日志: ${id}`, {
       id: id,
       title: data.title,
       contentLength: data.content.length,
@@ -126,7 +126,7 @@ export const journalApi = {
           Authorization: `Bearer ${token}`,
         },
       });
-      logger.debug(`[journalApi] 更新日志成功: ${id}`);
+      logger.info(`[journalApi] 更新日志成功: ${id}`);
       return result;
     } catch (error) {
       logger.error(`[journalApi] 更新日志失败: ${id}`, error);
@@ -143,7 +143,7 @@ export const journalApi = {
     id: string,
     token: string
   ): Promise<void> => {
-    logger.debug(`[journalApi] 删除日志条目: ${id}`);
+    logger.info(`[journalApi] 删除日志条目: ${id}`);
 
     try {
       const result = await request<void>(`/journal-entries/${id}`, {
@@ -153,7 +153,7 @@ export const journalApi = {
         },
       });
 
-      logger.debug(`[journalApi] 删除日志条目成功: ${id}`);
+      logger.info(`[journalApi] 删除日志条目成功: ${id}`);
       return result;
     } catch (error) {
       logger.error(`[journalApi] 删除日志条目失败: ${id}`, error);

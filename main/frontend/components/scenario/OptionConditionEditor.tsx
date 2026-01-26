@@ -32,12 +32,30 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
   const condition = conditions[conditionIndex];
 
   return (
-    <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
+    <div 
+      className="p-3 rounded-lg border"
+      style={{
+        backgroundColor: 'var(--bg-overlay, rgba(17, 24, 39, 0.5))',
+        borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 0.5))',
+      }}
+    >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">条件 #{conditionIndex + 1}</span>
+        <span 
+          className="text-xs"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          条件 #{conditionIndex + 1}
+        </span>
         <button
           onClick={() => onDeleteCondition(conditionIndex)}
-          className="text-gray-500 hover:text-red-500 text-xs px-2"
+          className="text-xs px-2 transition-colors"
+          style={{ color: 'var(--text-disabled)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--color-error, #ef4444)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-disabled)';
+          }}
           title="删除条件"
         >
           删除
@@ -45,11 +63,27 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-xs text-gray-500 block mb-1">条件类型</label>
+          <label 
+            className="text-xs block mb-1"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            条件类型
+          </label>
           <select
             value={condition.type}
             onChange={(e) => onUpdateCondition(conditionIndex, 'type', e.target.value)}
-            className="w-full text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+            className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1f2937)',
+              borderColor: 'var(--bg-overlay, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+            }}
           >
             <option value="favorability">💕 好感度</option>
             <option value="event">📌 事件</option>
@@ -58,14 +92,28 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
           </select>
         </div>
         <div>
-          <label className="text-xs text-gray-500 block mb-1">
+          <label 
+            className="text-xs block mb-1"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             {condition.type === 'favorability' ? '角色' : condition.type === 'event' ? '事件ID' : condition.type === 'item' ? '物品ID' : '时间ID'}
           </label>
           {condition.type === 'favorability' ? (
             <select
               value={condition.target}
               onChange={(e) => onUpdateCondition(conditionIndex, 'target', e.target.value)}
-              className="w-full text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+              className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+              }}
             >
               <option value="">选择角色</option>
               {availableCharacters.map(char => (
@@ -83,13 +131,34 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
                   value={condition.target}
                   onChange={(e) => onUpdateCondition(conditionIndex, 'target', e.target.value)}
                   placeholder={`选择已有或输入新的${condition.type === 'event' ? '事件' : '物品'}ID`}
-                  className="flex-1 text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+                  className="flex-1 text-xs rounded px-2 py-1.5 border outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary, #1f2937)',
+                    borderColor: 'var(--bg-overlay, #374151)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                  }}
                 />
                 {condition.type === 'event' && onCreateEvent && (
                   <button
                     type="button"
                     onClick={onCreateEvent}
-                    className="px-2 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs font-bold"
+                    className="px-2 py-1.5 rounded text-xs font-bold transition-colors"
+                    style={{
+                      backgroundColor: 'var(--color-primary, #db2777)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #be185d)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                    }}
                     title="创建新事件"
                   >
                     +
@@ -99,7 +168,17 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
                   <button
                     type="button"
                     onClick={onCreateItem}
-                    className="px-2 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs font-bold"
+                    className="px-2 py-1.5 rounded text-xs font-bold transition-colors"
+                    style={{
+                      backgroundColor: 'var(--color-primary, #db2777)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #be185d)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                    }}
                     title="创建新物品"
                   >
                     +
@@ -112,7 +191,12 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
                 ))}
               </datalist>
               {(condition.type === 'event' ? usedEventIds : usedItemIds).length > 0 && (
-                <p className="text-[10px] text-gray-500 mt-0.5">💡 下拉选择已有ID，或直接输入新ID</p>
+                <p 
+                  className="text-[10px] mt-0.5"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  💡 下拉选择已有ID，或直接输入新ID
+                </p>
               )}
             </>
           ) : (
@@ -121,18 +205,45 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
               value={condition.target}
               onChange={(e) => onUpdateCondition(conditionIndex, 'target', e.target.value)}
               placeholder="输入时间ID"
-              className="w-full text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+              className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+              }}
             />
           )}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 mt-2">
         <div>
-          <label className="text-xs text-gray-500 block mb-1">比较方式</label>
+          <label 
+            className="text-xs block mb-1"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            比较方式
+          </label>
           <select
             value={condition.operator}
             onChange={(e) => onUpdateCondition(conditionIndex, 'operator', e.target.value)}
-            className="w-full text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+            className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1f2937)',
+              borderColor: 'var(--bg-overlay, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+            }}
           >
             {(condition.type === 'favorability' || condition.type === 'time') && (
               <>
@@ -154,13 +265,29 @@ export const OptionConditionEditor: React.FC<OptionConditionEditorProps> = ({
         </div>
         {(condition.type === 'favorability' || condition.type === 'time') && (
           <div>
-            <label className="text-xs text-gray-500 block mb-1">比较值</label>
+            <label 
+              className="text-xs block mb-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              比较值
+            </label>
             <input
               type="number"
               value={condition.value ?? 0}
               onChange={(e) => onUpdateCondition(conditionIndex, 'value', parseFloat(e.target.value) || 0)}
               placeholder="数值"
-              className="w-full text-xs bg-gray-800 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-blue-500 outline-none"
+              className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #3b82f6)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+              }}
             />
           </div>
         )}

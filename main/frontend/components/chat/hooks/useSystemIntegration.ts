@@ -51,7 +51,7 @@ export const useSystemIntegration = ({
     if (engine && engineReady) {
       try {
         const emotion = await engine.analyzeEmotion({ text: userText });
-        logger.debug('[useSystemIntegration] 温度感引擎情绪分析:', emotion);
+        logger.info('[useSystemIntegration] 温度感引擎情绪分析:', emotion);
       } catch (error) {
         logger.error('[useSystemIntegration] 温度感引擎情绪分析失败:', error);
       }
@@ -62,7 +62,7 @@ export const useSystemIntegration = ({
     if (emotionSystem.isReady) {
       try {
         emotionAnalysisResult = await emotionSystem.analyzeEmotion(userText, 'conversation');
-        logger.debug('[useSystemIntegration] 情绪感知系统分析:', emotionAnalysisResult);
+        logger.info('[useSystemIntegration] 情绪感知系统分析:', emotionAnalysisResult);
         
         // 记录情绪记忆
         if (companionMemorySystem.isReady && emotionAnalysisResult) {
@@ -87,7 +87,7 @@ export const useSystemIntegration = ({
           MemorySource.CONVERSATION,
           userMsgId
         );
-        logger.debug('[useSystemIntegration] 提取的记忆:', memories);
+        logger.info('[useSystemIntegration] 提取的记忆:', memories);
         
         // 记录成长数据（记忆数量）
         if (growthSystem.isReady && memories.length > 0) {
@@ -100,40 +100,8 @@ export const useSystemIntegration = ({
       }
     }
 
-    // 3.5 HSMem记忆提取：从对话中提取记忆到hsmem系统（通过 backend API）
-    // 获取最近几条消息构建对话上下文
-    const recentMessages = safeHistory.slice(-5); // 最近5条消息
-    if (recentMessages.length > 0 && userProfile?.id) {
-      try {
-        const token = getToken();
-        if (!token) {
-          logger.warn('[useSystemIntegration] 未登录，跳过 HSMem 记忆提取');
-          return { emotionAnalysisResult };
-        }
-
-        // 构建对话消息列表
-        const conversationMessages = recentMessages.map(msg => ({
-          role: msg.role === 'model' ? 'assistant' : 'user',
-          content: typeof msg.text === 'string' ? msg.text : msg.text || '',
-        }));
-
-        // 调用 backend API 进行记忆化（后端会自动添加 user_id）
-        const hsmemResult = await memoryApi.memorizeConversation({
-          messages: conversationMessages,
-          user_id: undefined, // 由后端自动从认证信息中提取
-          agent_id: character?.id ? `character_${character.id}` : undefined,
-        }, token);
-
-        logger.debug('[useSystemIntegration] HSMem记忆提取成功', {
-          resourceId: hsmemResult.resource_id,
-          itemsCount: hsmemResult.items_count,
-          categories: hsmemResult.categories,
-        });
-      } catch (error) {
-        // HSMem记忆提取失败不影响主流程，只记录错误
-        logger.error('[useSystemIntegration] HSMem记忆提取失败:', error);
-      }
-    }
+    // 注意：HSMem记忆提取已移至 generateAIResponse 中，在对话完成后统一处理
+    // 这里不再重复提取，避免重复调用
     
     // 4. 更新最后互动时间（陪伴系统）
     if (companionSystem.isReady) {
@@ -146,6 +114,10 @@ export const useSystemIntegration = ({
         logger.error('[useSystemIntegration] 记录成长数据失败:', error);
       });
     }
+
+    // 🆕 6. 角色成长系统集成（异步，不阻塞）
+    // 检测学习机会和情感共鸣（需要characterId，从context中获取）
+    // 注意：这里只做基础记录，详细的成长分析在 generateAIResponse 的 onComplete 中处理
 
     return { emotionAnalysisResult };
   }, [
@@ -164,13 +136,13 @@ export const useSystemIntegration = ({
   const calculateTemperature = useCallback(async (userText: string) => {
     // 检查引擎是否就绪和运行
     if (!engine || !engineReady) {
-      logger.debug('[useSystemIntegration] 温度感引擎未就绪，跳过计算');
+      logger.info('[useSystemIntegration] 温度感引擎未就绪，跳过计算');
       return null;
     }
 
     // 如果提供了 engineRunning 状态，优先使用它
     if (engineRunning !== undefined && !engineRunning) {
-      logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+      logger.info('[useSystemIntegration] 温度感引擎未运行，跳过计算');
       return null;
     }
 
@@ -178,11 +150,11 @@ export const useSystemIntegration = ({
     try {
       const engineState = engine.getState?.();
       if (engineState && !engineState.isRunning) {
-        logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+        logger.info('[useSystemIntegration] 温度感引擎未运行，跳过计算');
         return null;
       }
     } catch (error) {
-      logger.debug('[useSystemIntegration] 无法获取引擎状态，跳过计算:', error);
+      logger.info('[useSystemIntegration] 无法获取引擎状态，跳过计算:', error);
       return null;
     }
 
@@ -210,7 +182,7 @@ export const useSystemIntegration = ({
         },
       });
       
-      logger.debug('[useSystemIntegration] 温度感计算:', temperature);
+      logger.info('[useSystemIntegration] 温度感计算:', temperature);
       
       // 根据温度感调整UI
       if (temperature) {
@@ -224,7 +196,7 @@ export const useSystemIntegration = ({
     } catch (error) {
       // 如果引擎未运行，静默失败，跳过计算
       if (error instanceof Error && error.message.includes('Engine is not running')) {
-        logger.debug('[useSystemIntegration] 温度感引擎未运行，跳过计算');
+        logger.info('[useSystemIntegration] 温度感引擎未运行，跳过计算');
         return null;
       }
       logger.error('[useSystemIntegration] 温度感计算失败:', error);
@@ -233,17 +205,159 @@ export const useSystemIntegration = ({
   }, [engine, engineReady, engineRunning, scenarioState, safeHistory]);
 
   /**
-   * 获取相关记忆
+   * 获取相关记忆（从 hsmem 检索长期记忆）
    */
-  const getRelevantMemories = useCallback(async (userText: string, limit: number = 3) => {
-    if (!memorySystem.isReady || !emotionMemoryFusion) return [];
-
+  const getRelevantMemories = useCallback(async (
+    userText: string,
+    limit: number = 5,
+    characterId?: number,
+    onDebugInfo?: (info: any) => void
+  ) => {
+    const startTime = Date.now();
+    
     try {
-      const memories = await memorySystem.getRelevantMemories(userText, limit);
-      logger.debug('[useSystemIntegration] 相关记忆:', memories);
-      return memories;
+      const token = getToken();
+      if (!token) {
+        logger.warn('[useSystemIntegration] 未登录，跳过记忆检索');
+        return [];
+      }
+
+      // 1. 检索用户专属记忆（P0，个体长期记忆）
+      let userMemories: any[] = [];
+      try {
+        const retrieveResult = await memoryApi.retrieve(
+          {
+            queries: [
+              {
+                role: 'user',
+                content: { text: userText },
+              },
+            ],
+            limit: Math.ceil(limit * 0.5),  // 用户记忆占一半
+          },
+          token
+        );
+        
+        userMemories = (retrieveResult.items || []).map((item: any) => ({
+          id: item.id || `item_${Date.now()}_${Math.random()}`,
+          type: item.memory_type || 'general',
+          content: item.content || '',
+          summary: item.summary || item.content?.substring(0, 100),
+          importance: item.importance || 0.5,
+          categories: item.categories || [],
+          source: 'user_memory',  // 标记来源
+          priority: 0,  // P0
+          weight: 1.0,
+        }));
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn('[useSystemIntegration] 用户记忆检索失败，继续执行', {
+          error: errorMessage,
+        });
+      }
+
+      // 2. 检索角色通用资产（P1+P2，如果 characterId 存在）
+      let characterAssets: any[] = [];
+      if (characterId) {
+        try {
+          // 注意：使用 request 函数而不是直接 fetch，以便统一处理 API_BASE_URL
+          const { request } = await import('../../../services/api/base/request');
+          const assets = await request<any[]>(
+            `/memory/v1/character/${characterId}/related-assets?query=${encodeURIComponent(userText)}&limit=${Math.ceil(limit * 0.5)}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ).catch((error) => {
+            // 静默处理404错误（端点可能尚未实现）
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('404') || errorMessage.includes('未找到') || errorMessage.includes('Not Found')) {
+              logger.info('[useSystemIntegration] 角色资产端点不存在，跳过', { characterId });
+              return [];
+            }
+            logger.warn('[useSystemIntegration] 检索角色资产失败', { characterId, error: errorMessage });
+            return [];
+          });
+          
+          // 兼容旧的响应格式（如果后端返回 ApiResponse 格式，request 函数已经提取了 data）
+          const assetList = Array.isArray(assets) ? assets : [];
+          
+          if (assetList.length > 0) {
+            characterAssets = assetList.map((asset: any, index: number) => ({
+              id: asset.id,
+              type: asset.assetType,
+              content: asset.content,
+              summary: asset.summary,
+              importance: (asset.trustScore || 50) / 100,  // 转换为 0-1
+              categories: [asset.assetType],
+              source: 'character_asset',
+              priority: index < Math.ceil(assetList.length / 2) ? 1 : 2,  // P1 或 P2
+              weight: (asset.trustScore || 50) / 100,  // 按信任度加权
+            }));
+          }
+        } catch (error) {
+          logger.warn('[useSystemIntegration] 角色资产检索失败，继续执行', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      
+      // 3. 合并并排序：P0 > P1 > P2
+      const allMemories = [...userMemories, ...characterAssets]
+        .sort((a, b) => {
+          // 优先级排序
+          if (a.priority !== b.priority) {
+            return a.priority - b.priority;
+          }
+          // 相同优先级按重要性/权重排序
+          return (b.importance * b.weight) - (a.importance * a.weight);
+        })
+        .slice(0, limit);
+
+      // 4. 记录调试信息
+      if (onDebugInfo) {
+        onDebugInfo({
+          retrieval: {
+            query: userText,
+            userMemories: userMemories.length,
+            characterAssets: characterAssets.length,
+            results: allMemories,
+            timestamp: Date.now(),
+            duration,
+            layers: {
+              p0_user: userMemories.length,
+              p1_p2_assets: characterAssets.length,
+            },
+          },
+        });
+      }
+
+      logger.info('[useSystemIntegration] 从多层记忆检索到结果:', {
+        userMemories: userMemories.length,
+        characterAssets: characterAssets.length,
+        total: allMemories.length,
+        duration: `${duration}ms`,
+      });
+
+      return allMemories;
     } catch (error) {
+      const duration = Date.now() - startTime;
       logger.error('[useSystemIntegration] 获取相关记忆失败:', error);
+      
+      // 记录调试信息（错误情况）
+      if (onDebugInfo) {
+        onDebugInfo({
+          retrieval: {
+            query: userText,
+            results: [],
+            timestamp: Date.now(),
+            duration,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+      
       return [];
     }
   }, [memorySystem, emotionMemoryFusion]);

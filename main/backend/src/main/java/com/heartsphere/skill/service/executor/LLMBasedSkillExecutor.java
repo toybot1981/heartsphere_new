@@ -243,7 +243,7 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
         
         for (int i = 0; i < steps.size(); i++) {
             String step = steps.get(i);
-            log.debug("执行步骤 {}/{}: {}", i + 1, steps.size(), step);
+            log.info("执行步骤 {}/{}: {}", i + 1, steps.size(), step);
             
             // 构建步骤提示
             String stepPrompt = String.format(
@@ -348,7 +348,7 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
             // 调用AI服务
             TextGenerationResponse response = aiService.generateText(userId, request);
             
-            log.debug("大模型执行技能成功: skillId={}, responseLength={}", 
+            log.info("大模型执行技能成功: skillId={}, responseLength={}", 
                 skill.getSkillId(), 
                 response.getContent() != null ? response.getContent().length() : 0);
             

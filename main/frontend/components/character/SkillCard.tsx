@@ -51,40 +51,86 @@ export const SkillCard: React.FC<SkillCardProps> = ({
   if (viewMode === 'list') {
     return (
       <div 
-        className={`bg-slate-800/50 rounded-lg border transition-all hover:border-indigo-500/50 cursor-pointer ${
-          isEquipped ? 'border-green-500/50' : 'border-slate-700'
-        } ${binding && !binding.isEnabled ? 'opacity-60' : ''}`}
+        className="rounded-lg border transition-all cursor-pointer"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+          borderColor: isEquipped 
+            ? 'var(--color-success, rgba(34, 197, 94, 0.5))' 
+            : 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+          opacity: binding && !binding.isEnabled ? 0.6 : 1,
+        }}
+        onMouseEnter={(e) => {
+          if (!isEquipped) {
+            e.currentTarget.style.borderColor = 'var(--color-primary, rgba(79, 70, 229, 0.5))';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isEquipped) {
+            e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+          }
+        }}
         onClick={handleViewDetails}
       >
         <div className="p-4 flex items-center justify-between">
           <div className="flex-1 flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-white font-semibold">{skill.name}</h3>
+                <h3 
+                  className="font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {skill.name}
+                </h3>
                 {isEquipped && (
-                  <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded border"
+                    style={{
+                      backgroundColor: 'var(--color-success, rgba(34, 197, 94, 0.2))',
+                      color: 'var(--color-success, #86efac)',
+                      borderColor: 'var(--color-success, rgba(34, 197, 94, 0.3))',
+                    }}
+                  >
                     已装备
                   </span>
                 )}
                 {skill.isSystemSkill && (
-                  <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded border"
+                    style={{
+                      backgroundColor: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+                      color: 'var(--color-info, #93c5fd)',
+                      borderColor: 'var(--color-info, rgba(59, 130, 246, 0.3))',
+                    }}
+                  >
                     系统
                   </span>
                 )}
                 {binding && !binding.isEnabled && (
-                  <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded border border-red-500/30">
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded border"
+                    style={{
+                      backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+                      color: 'var(--color-error, #fca5a5)',
+                      borderColor: 'var(--color-error, rgba(239, 68, 68, 0.3))',
+                    }}
+                  >
                     已禁用
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-400 line-clamp-1">{skill.description || '暂无描述'}</p>
+              <p 
+                className="text-sm line-clamp-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {skill.description || '暂无描述'}
+              </p>
             </div>
             <div className="flex items-center gap-4 text-sm">
               {skill.category && (
-                <span className="text-slate-500">{skill.category}</span>
+                <span style={{ color: 'var(--text-disabled)' }}>{skill.category}</span>
               )}
               {binding && (
-                <span className="text-slate-500">使用 {binding.usageCount || 0} 次</span>
+                <span style={{ color: 'var(--text-disabled)' }}>使用 {binding.usageCount || 0} 次</span>
               )}
             </div>
           </div>
@@ -92,7 +138,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
             {onViewDetails && (
               <button
                 onClick={handleViewDetails}
-                className="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+                className="px-3 py-1.5 text-sm rounded transition-colors"
+                style={{
+                  backgroundColor: 'var(--bg-secondary, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+                }}
               >
                 详情
               </button>
@@ -102,11 +158,23 @@ export const SkillCard: React.FC<SkillCardProps> = ({
                 {onToggle && binding && (
                   <button
                     onClick={handleToggle}
-                    className={`px-3 py-1.5 text-sm rounded transition-colors ${
-                      binding.isEnabled
-                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                    className="px-3 py-1.5 text-sm rounded transition-colors"
+                    style={{
+                      backgroundColor: binding.isEnabled 
+                        ? 'var(--color-warning, #ca8a04)' 
+                        : 'var(--color-success, #16a34a)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = binding.isEnabled 
+                        ? 'var(--color-warning-light, #a16207)' 
+                        : 'var(--color-success-light, #15803d)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = binding.isEnabled 
+                        ? 'var(--color-warning, #ca8a04)' 
+                        : 'var(--color-success, #16a34a)';
+                    }}
                   >
                     {binding.isEnabled ? '禁用' : '启用'}
                   </button>
@@ -114,7 +182,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
                 {onUnequip && (
                   <button
                     onClick={handleEquip}
-                    className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                    className="px-3 py-1.5 text-sm rounded transition-colors"
+                    style={{
+                      backgroundColor: 'var(--color-error, #dc2626)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-error-light, #b91c1c)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+                    }}
                   >
                     卸载
                   </button>
@@ -124,7 +202,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
               onEquip && (
                 <button
                   onClick={handleEquip}
-                  className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm rounded transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #4f46e5)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                  }}
                 >
                   装备
                 </button>
@@ -138,30 +226,63 @@ export const SkillCard: React.FC<SkillCardProps> = ({
 
   // 网格视图
   return (
-    <div 
-      className={`bg-slate-800/50 rounded-lg border transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 cursor-pointer ${
-        isEquipped ? 'border-green-500/50' : 'border-slate-700'
-      } ${binding && !binding.isEnabled ? 'opacity-60' : ''}`}
+    <div
+      className={`rounded-lg border transition-all hover:shadow-lg cursor-pointer ${
+        binding && !binding.isEnabled ? 'opacity-60' : ''
+      }`}
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        borderColor: isEquipped ? 'var(--border-success-alpha)' : 'var(--border-color-overlay)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border-info-alpha)';
+        e.currentTarget.style.boxShadow = '0 0 0 1px var(--border-info-alpha)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = isEquipped ? 'var(--border-success-alpha)' : 'var(--border-color-overlay)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
       onClick={handleViewDetails}
     >
       <div className="p-4 space-y-3">
         {/* 头部 */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="text-white font-semibold mb-1 line-clamp-1">{skill.name}</h3>
+            <h3 className="font-semibold mb-1 line-clamp-1" style={{ color: 'var(--text-primary)' }}>{skill.name}</h3>
             <div className="flex flex-wrap items-center gap-2">
               {isEquipped && (
-                <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                <span
+                  className="px-2 py-0.5 text-xs rounded border"
+                  style={{
+                    backgroundColor: 'var(--bg-success-alpha)',
+                    color: 'var(--color-success)',
+                    borderColor: 'var(--border-success-alpha)',
+                  }}
+                >
                   已装备
                 </span>
               )}
               {skill.isSystemSkill && (
-                <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                <span
+                  className="px-2 py-0.5 text-xs rounded border"
+                  style={{
+                    backgroundColor: 'var(--bg-info-alpha)',
+                    color: 'var(--color-info)',
+                    borderColor: 'var(--border-info-alpha)',
+                  }}
+                >
                   系统
                 </span>
               )}
               {binding && !binding.isEnabled && (
-                <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded border border-red-500/30">
+                <span
+                  className="px-2 py-0.5 text-xs rounded border"
+                  style={{
+                    backgroundColor: 'var(--bg-error-alpha)',
+                    color: 'var(--color-error)',
+                    borderColor: 'var(--border-error-alpha)',
+                  }}
+                >
                   已禁用
                 </span>
               )}
@@ -170,12 +291,18 @@ export const SkillCard: React.FC<SkillCardProps> = ({
         </div>
 
         {/* 描述 */}
-        <p className="text-sm text-slate-400 line-clamp-2 min-h-[2.5rem]">
+        <p 
+          className="text-sm line-clamp-2 min-h-[2.5rem]"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           {skill.description || '暂无描述'}
         </p>
 
         {/* 元数据 */}
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div 
+          className="flex items-center justify-between text-xs"
+          style={{ color: 'var(--text-disabled)' }}
+        >
           <div className="flex items-center gap-3">
             {skill.category && (
               <span className="flex items-center gap-1">
@@ -188,7 +315,7 @@ export const SkillCard: React.FC<SkillCardProps> = ({
             )}
           </div>
           {binding && (
-            <span className="text-indigo-400">
+            <span style={{ color: 'var(--color-primary, #818cf8)' }}>
               {binding.usageCount || 0} 次使用
             </span>
           )}
@@ -196,15 +323,30 @@ export const SkillCard: React.FC<SkillCardProps> = ({
 
         {/* 统计信息 */}
         {binding && (
-          <div className="pt-2 border-t border-slate-700">
+          <div 
+            className="pt-2 border-t"
+            style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+          >
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-slate-500">优先级:</span>
-                <span className="text-white ml-1">{binding.priority}</span>
+                <span style={{ color: 'var(--text-disabled)' }}>优先级:</span>
+                <span 
+                  className="ml-1"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {binding.priority}
+                </span>
               </div>
               <div>
-                <span className="text-slate-500">自动触发:</span>
-                <span className={`ml-1 ${binding.autoTrigger ? 'text-yellow-400' : 'text-slate-500'}`}>
+                <span style={{ color: 'var(--text-disabled)' }}>自动触发:</span>
+                <span 
+                  className="ml-1"
+                  style={{ 
+                    color: binding.autoTrigger 
+                      ? 'var(--color-warning, #fcd34d)' 
+                      : 'var(--text-disabled)' 
+                  }}
+                >
                   {binding.autoTrigger ? '是' : '否'}
                 </span>
               </div>
@@ -213,11 +355,25 @@ export const SkillCard: React.FC<SkillCardProps> = ({
         )}
 
         {/* 操作按钮 */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-700" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="flex items-center gap-2 pt-2 border-t"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {onViewDetails && (
             <button
               onClick={handleViewDetails}
-              className="flex-1 px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+              className="flex-1 px-3 py-1.5 text-xs rounded transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+              }}
             >
               详情
             </button>
@@ -227,11 +383,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
               {onToggle && binding && (
                 <button
                   onClick={handleToggle}
-                  className={`px-3 py-1.5 text-xs rounded transition-colors ${
-                    binding.isEnabled
-                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  }`}
+                  className="px-3 py-1.5 text-xs rounded transition-colors"
+                  style={{
+                    backgroundColor: binding.isEnabled ? 'var(--color-warning)' : 'var(--color-success)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = binding.isEnabled ? 'var(--color-warning-light)' : 'var(--color-success-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = binding.isEnabled ? 'var(--color-warning)' : 'var(--color-success)';
+                  }}
                 >
                   {binding.isEnabled ? '禁用' : '启用'}
                 </button>
@@ -239,7 +401,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
               {onUnequip && (
                 <button
                   onClick={handleEquip}
-                  className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-xs rounded transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-error)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-error-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-error)';
+                  }}
                 >
                   卸载
                 </button>
@@ -249,7 +421,17 @@ export const SkillCard: React.FC<SkillCardProps> = ({
             onEquip && (
               <button
                 onClick={handleEquip}
-                className="flex-1 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                className="flex-1 px-3 py-1.5 text-xs rounded transition-colors"
+                style={{
+                  backgroundColor: 'var(--color-info)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
               >
                 装备
               </button>

@@ -255,7 +255,11 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
         aria-labelledby="modal-title"
       >
         <div
-          className="bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-in"
+          className="backdrop-blur-xl rounded-2xl shadow-2xl border max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-in"
+          style={{
+            backgroundColor: 'var(--bg-overlay-alpha)',
+            borderColor: 'var(--border-color-overlay)',
+          }}
           onClick={(e) => e.stopPropagation()}
           style={{
             animationDuration: '200ms',
@@ -288,7 +292,10 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                 </div>
                 {loadingSharedSpheres && (
                   <div 
-                    className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" 
+                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{
+                      borderColor: 'var(--color-primary)',
+                    }} 
                     role="status"
                     aria-label="加载中"
                   />
@@ -321,11 +328,15 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                           handleSelectHeartSphere(shared.shareCode, shared);
                         }
                       }}
-                      className={`p-4 rounded-xl border-2 transition-all active:scale-[0.97] touch-manipulation cursor-pointer ${
-                        selectedShareCode === shared.shareCode
-                          ? 'border-purple-500/50 bg-purple-500/20 backdrop-blur-sm'
-                          : 'border-slate-700/50 bg-slate-800/80 backdrop-blur-md'
-                      }`}
+                      className="p-4 rounded-xl border-2 transition-all active:scale-[0.97] touch-manipulation cursor-pointer backdrop-blur-sm"
+                      style={{
+                        borderColor: selectedShareCode === shared.shareCode
+                          ? 'var(--border-color-primary-alpha)'
+                          : 'var(--border-color-overlay)',
+                        backgroundColor: selectedShareCode === shared.shareCode
+                          ? 'var(--bg-primary-alpha)'
+                          : 'var(--bg-card)',
+                      }}
                       role="button"
                       tabIndex={0}
                       onKeyPress={(e) => {
@@ -351,17 +362,31 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                               {shared.description || `共享码: ${shared.shareCode}`}
                             </h4>
                             {selectedShareCode === shared.shareCode && (
-                              <span className="text-purple-400 text-xs">已选择</span>
+                              <span 
+                                className="text-xs"
+                                style={{ color: 'var(--color-primary)' }}
+                              >
+                                已选择
+                              </span>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                          <p 
+                            className="text-sm mb-2 line-clamp-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
                             {shared.characterCount || 0} 个角色 · {shared.eraCount || 0} 个场景
                           </p>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">
+                            <span 
+                              className="text-xs"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                               {shared.accessPermission === 'free' ? '🔓 自由访问' : '🔒 需要请求'}
                             </span>
-                            <span className="text-xs text-gray-500">
+                            <span 
+                              className="text-xs"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                               👁 {shared.viewCount || 0}
                             </span>
                           </div>
@@ -398,13 +423,35 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="搜索角色名称..."
-                      className="w-full min-h-[44px] px-4 py-3 bg-slate-800/80 backdrop-blur-sm border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 touch-manipulation"
+                      className="w-full min-h-[44px] px-4 py-3 backdrop-blur-sm border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 touch-manipulation"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-color-overlay)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }}
                       aria-label="搜索角色"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-white active:opacity-70 transition-opacity duration-200 touch-manipulation rounded-lg hover:bg-white/5"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center active:opacity-70 transition-opacity duration-200 touch-manipulation rounded-lg"
+                        style={{
+                          color: 'var(--text-tertiary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--text-primary)';
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--text-tertiary)';
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                         aria-label="清除搜索"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -443,7 +490,12 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                 {/* 角色列表 */}
                 {error && (
                   <div 
-                    className="mb-4 p-3 bg-red-500/20 backdrop-blur-sm border border-red-500/50 rounded-lg text-red-400 text-sm"
+                    className="mb-4 p-3 backdrop-blur-sm border rounded-lg text-sm"
+                    style={{
+                      backgroundColor: 'var(--bg-error-alpha)',
+                      borderColor: 'var(--border-error-alpha)',
+                      color: 'var(--color-error)',
+                    }}
                     role="alert"
                     aria-live="assertive"
                   >
@@ -471,7 +523,23 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                           e.stopPropagation();
                           handleSelectCharacter(character);
                         }}
-                      className="p-4 bg-slate-800/80 backdrop-blur-md rounded-xl border border-white/10 hover:border-purple-500/50 active:bg-slate-700/80 active:scale-[0.97] transition-all cursor-pointer touch-manipulation"
+                      className="p-4 backdrop-blur-md rounded-xl border active:scale-[0.97] transition-all cursor-pointer touch-manipulation"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-color-overlay)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-primary-alpha)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }}
+                      onMouseDown={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                      }}
+                      onMouseUp={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                      }}
                       role="button"
                       tabIndex={0}
                       onKeyPress={(e) => {
@@ -495,7 +563,12 @@ export const MobileQuickConnectModal: React.FC<MobileQuickConnectModalProps> = m
                               {character.characterName || character.name}
                             </h4>
                             {character.sceneName && (
-                              <p className="text-gray-400 text-sm truncate">{character.sceneName}</p>
+                              <p 
+                                className="text-sm truncate"
+                                style={{ color: 'var(--text-secondary)' }}
+                              >
+                                {character.sceneName}
+                              </p>
                             )}
                           </div>
                         </div>

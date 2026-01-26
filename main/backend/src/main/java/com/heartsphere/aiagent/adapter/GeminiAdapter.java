@@ -79,7 +79,7 @@ public class GeminiAdapter implements ModelAdapter {
     @Override
     public TextGenerationResponse generateText(TextGenerationRequest request) {
         try {
-            log.debug("Gemini文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
+            log.info("Gemini文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
             
             // 获取 API key（优先从请求中获取，否则使用默认配置）
             String apiKey = getApiKey(request);
@@ -119,7 +119,7 @@ public class GeminiAdapter implements ModelAdapter {
     public void generateTextStream(TextGenerationRequest request, 
                                    StreamResponseHandler<TextGenerationResponse> handler) {
         try {
-            log.debug("Gemini流式文本生成请求: model={}", request.getModel());
+            log.info("Gemini流式文本生成请求: model={}", request.getModel());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -162,7 +162,7 @@ public class GeminiAdapter implements ModelAdapter {
     @Override
     public ImageGenerationResponse generateImage(ImageGenerationRequest request) {
         try {
-            log.debug("Gemini图片生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
+            log.info("Gemini图片生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -216,7 +216,7 @@ public class GeminiAdapter implements ModelAdapter {
     @Override
     public VideoGenerationResponse generateVideo(VideoGenerationRequest request) {
         try {
-            log.debug("Gemini视频生成请求: prompt={}", request.getPrompt());
+            log.info("Gemini视频生成请求: prompt={}", request.getPrompt());
             
             // 获取 API key
             String apiKey = getApiKey(request);

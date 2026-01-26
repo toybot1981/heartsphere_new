@@ -37,18 +37,34 @@ export const UserUsageStatistics: React.FC = () => {
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-slate-400">加载中...</div>
+        <div style={{ color: 'var(--text-tertiary)' }}>加载中...</div>
       </div>
     );
   }
 
   if (error && !stats) {
     return (
-      <div className="p-4 bg-red-900/20 border border-red-500/50 rounded-lg">
-        <div className="text-red-400">错误: {error}</div>
+      <div 
+        className="p-4 border rounded-lg"
+        style={{
+          backgroundColor: 'var(--bg-error-alpha, rgba(239, 68, 68, 0.2))',
+          borderColor: 'var(--border-error-alpha, rgba(239, 68, 68, 0.5))',
+        }}
+      >
+        <div style={{ color: 'var(--color-error, #f87171)' }}>错误: {error}</div>
         <button
           onClick={loadStatistics}
-          className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
+          className="mt-2 px-4 py-2 rounded-md text-sm transition-colors"
+          style={{
+            backgroundColor: 'var(--color-error, #dc2626)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-error-hover, #b91c1c)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+          }}
         >
           重试
         </button>
@@ -64,18 +80,49 @@ export const UserUsageStatistics: React.FC = () => {
     <div className="space-y-6">
       {/* 会员信息 */}
       {stats.planName && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+        <div 
+          className="border rounded-lg p-4"
+          style={{
+            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 0.5))',
+            borderColor: 'var(--border-color-overlay, #475569)',
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-slate-400">当前会员</div>
-              <div className="text-lg font-semibold text-white">{stats.planName}</div>
+              <div 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                当前会员
+              </div>
+              <div 
+                className="text-lg font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {stats.planName}
+              </div>
               {stats.planType && (
-                <div className="text-xs text-slate-500 mt-1">类型: {stats.planType}</div>
+                <div 
+                  className="text-xs mt-1"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  类型: {stats.planType}
+                </div>
               )}
             </div>
             <div className="text-right">
-              <div className="text-sm text-slate-400">统计月份</div>
-              <div className="text-lg font-semibold text-indigo-400">{stats.currentMonth}</div>
+              <div 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                统计月份
+              </div>
+              <div 
+                className="text-lg font-semibold"
+                style={{ color: 'var(--color-primary, #818cf8)' }}
+              >
+                {stats.currentMonth}
+              </div>
             </div>
           </div>
         </div>
@@ -127,7 +174,21 @@ export const UserUsageStatistics: React.FC = () => {
         <button
           onClick={loadStatistics}
           disabled={loading}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md text-sm disabled:opacity-50"
+          className="px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
+          style={{
+            backgroundColor: 'var(--bg-secondary-button, #475569)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-button-hover, #64748b)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-button, #475569)';
+            }
+          }}
         >
           {loading ? '刷新中...' : '🔄 刷新'}
         </button>
@@ -159,43 +220,75 @@ const StatCard: React.FC<StatCardProps> = ({
   const totalUsageRate = stats.totalUsageRate || 0;
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+    <div 
+      className="border rounded-lg p-6"
+      style={{
+        backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 0.5))',
+        borderColor: 'var(--border-color-overlay, #475569)',
+      }}
+    >
       <div className="flex items-center gap-3 mb-4">
         <span className="text-2xl">{icon}</span>
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <h3 
+          className="text-lg font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {title}
+        </h3>
       </div>
 
       <div className="space-y-4">
         {/* 月度配额 */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-slate-400">月度配额</span>
-            <span className="text-sm text-slate-300">
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              月度配额
+            </span>
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {formatValue(stats.monthlyUsed)} / {formatValue(stats.monthlyQuota)} {unit}
             </span>
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-2.5">
+          <div 
+            className="w-full rounded-full h-2.5"
+            style={{ backgroundColor: 'var(--bg-secondary, #475569)' }}
+          >
             <div
-              className={`h-2.5 rounded-full transition-all ${
-                monthlyUsageRate >= 90
-                  ? 'bg-red-500'
+              className="h-2.5 rounded-full transition-all"
+              style={{
+                width: `${Math.min(monthlyUsageRate, 100)}%`,
+                backgroundColor: monthlyUsageRate >= 90
+                  ? 'var(--color-error, #ef4444)'
                   : monthlyUsageRate >= 70
-                  ? 'bg-yellow-500'
-                  : 'bg-indigo-500'
-              }`}
-              style={{ width: `${Math.min(monthlyUsageRate, 100)}%` }}
+                  ? 'var(--color-warning, #fbbf24)'
+                  : 'var(--color-primary, #6366f1)',
+              }}
             />
           </div>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-slate-500">
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
               可用: {formatValue(stats.monthlyAvailable)} {unit}
             </span>
-            <span className="text-xs text-slate-500">
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
               实际使用: {formatValue(stats.monthlyActualUsage)} {unit}
             </span>
           </div>
           {planQuota !== undefined && planQuota !== null && (
-            <div className="text-xs text-indigo-400 mt-1">
+            <div 
+              className="text-xs mt-1"
+              style={{ color: 'var(--color-primary, #818cf8)' }}
+            >
               会员配额: {formatValue(planQuota)} {unit}/月
             </div>
           )}
@@ -205,30 +298,48 @@ const StatCard: React.FC<StatCardProps> = ({
         {stats.totalQuota > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">总配额</span>
-              <span className="text-sm text-slate-300">
+              <span 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                总配额
+              </span>
+              <span 
+                className="text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {formatValue(stats.totalUsed)} / {formatValue(stats.totalQuota)} {unit}
               </span>
             </div>
-            <div className="w-full bg-slate-700 rounded-full h-2.5">
+            <div 
+              className="w-full rounded-full h-2.5"
+              style={{ backgroundColor: 'var(--bg-secondary, #475569)' }}
+            >
               <div
-                className={`h-2.5 rounded-full transition-all ${
-                  totalUsageRate >= 90
-                    ? 'bg-red-500'
+                className="h-2.5 rounded-full transition-all"
+                style={{
+                  width: `${Math.min(totalUsageRate, 100)}%`,
+                  backgroundColor: totalUsageRate >= 90
+                    ? 'var(--color-error, #ef4444)'
                     : totalUsageRate >= 70
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }`}
-                style={{ width: `${Math.min(totalUsageRate, 100)}%` }}
+                    ? 'var(--color-warning, #fbbf24)'
+                    : 'var(--color-success, #22c55e)',
+                }}
               />
             </div>
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-slate-500">
+              <span 
+                className="text-xs"
+                style={{ color: 'var(--text-disabled)' }}
+              >
                 可用: {formatValue(stats.totalAvailable)} {unit}
               </span>
             </div>
             {permanentQuota !== undefined && permanentQuota !== null && (
-              <div className="text-xs text-purple-400 mt-1">
+              <div 
+                className="text-xs mt-1"
+                style={{ color: 'var(--color-primary, #a855f7)' }}
+              >
                 永久配额: {formatValue(permanentQuota)} {unit}
               </div>
             )}

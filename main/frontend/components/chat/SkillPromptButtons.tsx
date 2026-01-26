@@ -63,11 +63,17 @@ export const SkillPromptButtons: React.FC<SkillPromptButtonsProps> = ({
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center space-x-2">
-          <span className="text-xs text-white/60 font-medium">
+          <span 
+            className="text-xs font-medium"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             💡 技能测试话术
           </span>
           {prompts.length > 0 && (
-            <span className="text-xs text-white/40">
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
               ({displayedPrompts.length}/{filteredPrompts.length})
             </span>
           )}
@@ -78,8 +84,21 @@ export const SkillPromptButtons: React.FC<SkillPromptButtonsProps> = ({
             <select
               value={selectedCategory || ''}
               onChange={(e) => setSelectedCategory(e.target.value || null)}
-              className="text-xs bg-white/10 text-white/70 rounded-md px-2 py-1 border border-white/10 hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all"
+              className="text-xs rounded-md px-2 py-1 border transition-all focus:outline-none"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                color: 'var(--text-secondary)',
+                borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+              }}
               disabled={disabled}
+              onFocus={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                e.currentTarget.style.outline = '1px solid var(--border-color-overlay, rgba(255, 255, 255, 0.3))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.outline = 'none';
+              }}
             >
               <option value="">全部技能</option>
               {categories.map(cat => (
@@ -94,8 +113,21 @@ export const SkillPromptButtons: React.FC<SkillPromptButtonsProps> = ({
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               disabled={disabled}
-              className="text-xs text-white/60 hover:text-white/90 px-2 py-1 rounded hover:bg-white/10 transition-all disabled:opacity-50"
+              className="text-xs px-2 py-1 rounded transition-all disabled:opacity-50"
+              style={{ color: 'var(--text-tertiary)' }}
               title={isExpanded ? '收起' : '展开全部'}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.1))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
             >
               {isExpanded ? '收起 ↑' : '展开 ↓'}
             </button>
@@ -110,14 +142,40 @@ export const SkillPromptButtons: React.FC<SkillPromptButtonsProps> = ({
             key={prompt.id}
             onClick={() => handlePromptClick(prompt)}
             disabled={disabled}
-            className="group relative text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 hover:border-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative text-xs px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+              borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+              color: 'var(--text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.3))';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             title={prompt.skillName ? `点击测试: ${prompt.skillName}` : prompt.text}
           >
             <span className="block truncate max-w-[200px]">
               {prompt.text}
             </span>
             {prompt.skillName && (
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-black/90 text-white/80 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-10 border border-white/20">
+              <span 
+                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-10 border"
+                style={{
+                  backgroundColor: 'var(--bg-card, rgba(0, 0, 0, 0.9))',
+                  borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+                  color: 'var(--text-secondary)',
+                }}
+              >
                 {prompt.skillName}
               </span>
             )}
@@ -127,7 +185,10 @@ export const SkillPromptButtons: React.FC<SkillPromptButtonsProps> = ({
 
       {/* 提示信息 */}
       {!isExpanded && filteredPrompts.length > 4 && (
-        <div className="text-xs text-white/40 mt-2 px-1">
+        <div 
+          className="text-xs mt-2 px-1"
+          style={{ color: 'var(--text-disabled)' }}
+        >
           还有 {filteredPrompts.length - 4} 个话术，点击"展开"查看全部
         </div>
       )}

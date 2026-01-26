@@ -353,7 +353,8 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
 
   return (
     <div 
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+      className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4 animate-fade-in"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
       onClick={(e) => {
         // 点击背景关闭模态框
         if (e.target === e.currentTarget) {
@@ -361,13 +362,28 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         }
       }}
     >
-      <div className={`bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl space-y-6 relative ${
+      <div 
+        className={`rounded-2xl p-6 shadow-2xl space-y-6 relative ${
         showPresetEras ? 'w-full max-w-5xl max-h-[90vh] overflow-y-auto' : 'w-full max-w-lg'
-      }`}>
+      }`}
+        style={{
+          backgroundColor: 'var(--bg-card, #1e293b)',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-700 z-10"
+          className="absolute top-4 right-4 transition-colors p-1 rounded-lg z-10"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(55, 65, 81, 1))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
           aria-label="关闭"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -376,25 +392,47 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
         </button>
         
         <div>
-            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400">
+            <h3 
+              className="text-xl font-bold text-transparent bg-clip-text"
+              style={{ backgroundImage: 'var(--gradient-text)' }}
+            >
             {initialScene ? '编辑场景' : '场景构造器'}
             </h3>
-            <p className="text-sm text-gray-400">{initialScene ? '修改这个世界的设定。' : '创造、回忆或重返任何一个时空。'}</p>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {initialScene ? '修改这个世界的设定。' : '创造、回忆或重返任何一个时空。'}
+            </p>
         </div>
 
         {/* 预置场景选择界面 */}
         {!initialScene && creationMode === 'preset' && (
           <div className="space-y-4">
-            <div className="flex gap-3 border-b border-gray-700 pb-3 items-center">
+            <div 
+              className="flex gap-3 border-b pb-3 items-center"
+              style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+            >
               <button
                 onClick={() => setCreationMode('preset')}
-                className="text-sm font-bold pb-2 transition-colors text-indigo-400 border-b-2 border-indigo-400"
+                className="text-sm font-bold pb-2 transition-colors"
+                style={{
+                  color: 'var(--color-primary-light, #818cf8)',
+                  borderBottom: '2px solid var(--color-primary-light, #818cf8)',
+                }}
               >
                 📚 选择预置场景
               </button>
               <button
                 onClick={() => setCreationMode('custom')}
-                className="text-sm font-bold pb-2 transition-colors text-gray-500 hover:text-white"
+                className="text-sm font-bold pb-2 transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                }}
               >
                 ✨ 创建自定义场景
               </button>
@@ -404,7 +442,14 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                     onClose();
                     onOpenSceneCreationWizard();
                   }}
-                  className="text-sm font-bold pb-2 transition-colors text-pink-500 hover:text-pink-400 ml-auto"
+                  className="text-sm font-bold pb-2 transition-colors ml-auto"
+                  style={{ color: 'var(--color-pink)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--text-pink)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--color-pink)';
+                  }}
                 >
                   📦 使用向导批量创建
                 </button>
@@ -413,18 +458,44 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
 
             {loadingSystemEras ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                <span className="ml-3 text-gray-400">加载预置场景...</span>
+                <div 
+                  className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+                  style={{
+                    borderColor: 'var(--color-info)',
+                    borderTopColor: 'var(--color-info)',
+                  }}
+                ></div>
+                <span 
+                  className="ml-3"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  加载预置场景...
+                </span>
               </div>
             ) : systemEras.length > 0 ? (
               <div>
-                <p className="text-sm text-gray-400 mb-4">从预置场景中选择，或创建自定义场景</p>
+                <p 
+                  className="text-sm mb-4"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  从预置场景中选择，或创建自定义场景
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                   {systemEras.map((era) => (
                     <div
                       key={era.id}
                       onClick={() => handleSelectPresetEra(era)}
-                      className="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-700 hover:border-indigo-500/50 transition-all bg-gray-900/50"
+                      className="group relative cursor-pointer overflow-hidden rounded-xl border transition-all"
+                      style={{
+                        borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                        backgroundColor: 'var(--bg-secondary, rgba(17, 24, 39, 0.5))',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+                      }}
                     >
                       {era.imageUrl ? (
                         <PresetEraImage
@@ -433,16 +504,35 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                           className="h-32 w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="h-32 w-full bg-gradient-to-br from-indigo-900/30 to-pink-900/30 flex items-center justify-center">
+                        <div 
+                          className="h-32 w-full flex items-center justify-center"
+                          style={{ background: 'var(--gradient-card)' }}
+                        >
                           <span className="text-4xl">📅</span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                      <div 
+                        className="absolute inset-0"
+                        style={{
+                          background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+                        }}
+                      />
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 p-3"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         <h4 className="font-bold text-sm mb-1 truncate">{era.name}</h4>
-                        <p className="text-xs text-gray-300 line-clamp-2">{era.description}</p>
+                        <p 
+                          className="text-xs line-clamp-2"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {era.description}
+                        </p>
                         {(era.startYear || era.endYear) && (
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div 
+                            className="text-xs mt-1"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
                             {era.startYear && era.endYear
                               ? `${era.startYear} - ${era.endYear}`
                               : era.startYear
@@ -456,10 +546,17 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-700">
+                <div 
+                  className="mt-4 pt-4 border-t"
+                  style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+                >
                   <Button
                     onClick={() => setCreationMode('custom')}
-                    className="w-full bg-gray-700 hover:bg-gray-600"
+                    className="w-full"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary, #374151)',
+                      color: 'var(--text-primary)',
+                    }}
                   >
                     创建自定义场景
                   </Button>
@@ -467,10 +564,24 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-400 mb-4">暂无预置场景</p>
+                <p 
+                  className="mb-4"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  暂无预置场景
+                </p>
                 <Button
                   onClick={() => setCreationMode('custom')}
-                  className="bg-indigo-600 hover:bg-indigo-500"
+                  style={{
+                    backgroundColor: 'var(--color-info)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                  }}
                 >
                   创建自定义场景
                 </Button>
@@ -484,10 +595,27 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
           <>
         {/* Image Section First (To drive the context) */}
         <div className="space-y-3">
-             <div className="flex gap-4 border-b border-gray-700 pb-2">
+             <div 
+               className="flex gap-4 border-b pb-2"
+               style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+             >
                 <button 
                   onClick={() => setImageMode('upload')}
-                  className={`text-sm font-bold pb-2 transition-colors ${imageMode === 'upload' ? 'text-pink-400 border-b-2 border-pink-400' : 'text-gray-500 hover:text-white'}`}
+                  className="text-sm font-bold pb-2 transition-colors"
+                  style={{
+                    color: imageMode === 'upload' ? '#f472b6' : 'var(--text-tertiary)',
+                    borderBottom: imageMode === 'upload' ? '2px solid #f472b6' : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (imageMode !== 'upload') {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (imageMode !== 'upload') {
+                      e.currentTarget.style.color = 'var(--text-tertiary)';
+                    }
+                  }}
                 >
                     封面设置
                 </button>
@@ -496,13 +624,26 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
              <div className="flex items-start gap-4">
                 <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-1/3 h-48 rounded-lg bg-black/30 border border-dashed flex items-center justify-center overflow-hidden transition-all cursor-pointer hover:border-pink-500 border-gray-600`}
+                    className="w-1/3 h-48 rounded-lg border border-dashed flex items-center justify-center overflow-hidden transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.3))',
+                      borderColor: 'var(--bg-overlay, rgba(75, 85, 99, 1))',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#f472b6';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(75, 85, 99, 1))';
+                    }}
                 >
                    {imageUrl ? (
                        <SceneCoverImage src={imageUrl} alt="Cover" className="w-full h-full object-cover" />
                    ) : (
                        <div className="text-center p-2">
-                           <div className="flex flex-col items-center text-gray-400">
+                           <div 
+                             className="flex flex-col items-center"
+                             style={{ color: 'var(--text-tertiary)' }}
+                           >
                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mb-2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                                </svg>
@@ -514,7 +655,12 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                 
                 <div className="flex-1 space-y-3 flex flex-col justify-center h-48">
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-                    <p className="text-xs text-gray-400">手动上传图片，或获取 AI 提示词去其他平台生成。</p>
+                    <p 
+                      className="text-xs"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      手动上传图片，或获取 AI 提示词去其他平台生成。
+                    </p>
                     
                     <div className="flex gap-2 flex-wrap">
                         <Button 
@@ -534,7 +680,11 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                         <Button 
                             onClick={handleGenerateImage} 
                             disabled={!name || !description || isGeneratingImage || isUploading} 
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-xs disabled:opacity-50"
+                            className="text-xs disabled:opacity-50"
+                            style={{
+                              background: 'var(--gradient-button)',
+                              color: 'var(--text-primary)',
+                            }}
                         >
                             {isGeneratingImage ? '生成中...' : '🤖 AI 生成图片'}
                         </Button>
@@ -542,13 +692,35 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                             📋 获取提示词
                         </Button>
                         {imageUrl && (
-                            <Button onClick={handleAnalyzeImage} disabled={isLoading || isUploading} className="bg-gradient-to-r from-pink-600 to-purple-600 text-xs">
+                            <Button 
+                              onClick={handleAnalyzeImage} 
+                              disabled={isLoading || isUploading} 
+                              className="text-xs"
+                              style={{
+                                background: 'var(--gradient-button)',
+                                color: 'var(--text-primary)',
+                              }}
+                            >
                                 {isLoading ? '解析中...' : '🧠 解析影像记忆'}
                             </Button>
                         )}
                     </div>
-                    {isUploading && <p className="text-xs text-blue-400">正在上传图片到服务器...</p>}
-                    {!imageUrl && !isUploading && <p className="text-xs text-gray-600">请上传图片...</p>}
+                    {isUploading && (
+                      <p 
+                        className="text-xs"
+                        style={{ color: 'var(--color-info, #60a5fa)' }}
+                      >
+                        正在上传图片到服务器...
+                      </p>
+                    )}
+                    {!imageUrl && !isUploading && (
+                      <p 
+                        className="text-xs"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        请上传图片...
+                      </p>
+                    )}
                 </div>
             </div>
         </div>
@@ -559,38 +731,96 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={imageMode === 'upload' ? "场景/事件名称 (例如：98年法兰西之夏)" : "场景名称 (例如：我的赛博梦境)"}
-                className="w-full text-lg font-bold bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white placeholder-white/40 focus:border-pink-400 focus:ring-0 outline-none transition-colors"
+                className="w-full text-lg font-bold border-2 rounded-lg py-2 px-4 focus:ring-0 outline-none transition-colors"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
+                  borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#f472b6';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                }}
               />
                <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={imageMode === 'upload' ? "描述这个瞬间给你的感觉，或让AI帮你解析..." : "描述这个世界的设定..."}
-                className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white placeholder-white/40 focus:border-pink-400 focus:ring-0 outline-none transition-colors resize-none h-24 scrollbar-hide"
+                className="w-full border-2 rounded-lg py-2 px-4 focus:ring-0 outline-none transition-colors resize-none h-24 scrollbar-hide"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
+                  borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#f472b6';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                }}
               />
               
               {/* 场景风格选择器 */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">场景风格</label>
+                <label 
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  场景风格
+                </label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value as WorldStyle)}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white focus:border-pink-400 focus:ring-0 outline-none transition-colors"
+                  className="w-full border-2 rounded-lg py-2 px-4 focus:ring-0 outline-none transition-colors"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
+                    borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#f472b6';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                  }}
                 >
                   {(Object.keys(WORLD_STYLE_DESCRIPTIONS) as WorldStyle[]).map((styleOption) => (
-                    <option key={styleOption} value={styleOption} className="bg-gray-900">
+                    <option 
+                      key={styleOption} 
+                      value={styleOption}
+                      style={{
+                        backgroundColor: 'var(--bg-primary, #111827)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       {WORLD_STYLE_DESCRIPTIONS[styleOption].name}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400">
+                <p 
+                  className="text-xs"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   {WORLD_STYLE_DESCRIPTIONS[style].description}。风格将影响场景和角色图片的生成。
                 </p>
               </div>
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--color-error, #f87171)' }}
+          >
+            {error}
+          </p>
+        )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+        <div 
+          className="flex justify-end gap-3 pt-4 border-t"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 0.5))' }}
+        >
             {initialScene && onDelete && (
                 <Button 
                     variant="ghost" 
@@ -600,7 +830,16 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                             onDelete();
                         }
                     }} 
-                    className="mr-auto text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                    className="mr-auto"
+                    style={{ color: 'var(--color-error)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-error)';
+                      e.currentTarget.style.backgroundColor = 'var(--bg-error-alpha)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--color-error)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                 >
                     删除场景
                 </Button>
@@ -609,7 +848,16 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
                 <Button 
                     variant="ghost" 
                     onClick={() => setShowPortalManagement(true)}
-                    className="mr-auto text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20"
+                    className="mr-auto"
+                    style={{ color: 'var(--color-info)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-info)';
+                      e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--color-info)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                     title="管理该场景的传送门"
                 >
                     🔮 管理传送门
@@ -636,18 +884,34 @@ export const EraConstructorModal: React.FC<EraConstructorModalProps> = ({ initia
           />
       )}
       {showPortalManagement && sceneId && (
-        <div 
-          className="absolute inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        <div
+          className="absolute inset-0 z-[60] flex items-center justify-center backdrop-blur-sm p-4"
+          style={{ backgroundColor: 'var(--bg-overlay-dark)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowPortalManagement(false);
             }
           }}
         >
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto relative">
+          <div
+            className="border rounded-2xl p-6 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto relative"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
             <button
               onClick={() => setShowPortalManagement(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-700 z-10"
+              className="absolute top-4 right-4 transition-colors p-1 rounded-lg z-10"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               aria-label="关闭"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

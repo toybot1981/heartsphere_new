@@ -80,7 +80,7 @@ public class OpenAIAdapter implements ModelAdapter {
     @Override
     public TextGenerationResponse generateText(TextGenerationRequest request) {
         try {
-            log.debug("OpenAI文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
+            log.info("OpenAI文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -120,7 +120,7 @@ public class OpenAIAdapter implements ModelAdapter {
     public void generateTextStream(TextGenerationRequest request, 
                                    StreamResponseHandler<TextGenerationResponse> handler) {
         try {
-            log.debug("OpenAI流式文本生成请求: model={}", request.getModel());
+            log.info("OpenAI流式文本生成请求: model={}", request.getModel());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -163,7 +163,7 @@ public class OpenAIAdapter implements ModelAdapter {
     @Override
     public ImageGenerationResponse generateImage(ImageGenerationRequest request) {
         try {
-            log.debug("OpenAI图片生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
+            log.info("OpenAI图片生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -207,7 +207,7 @@ public class OpenAIAdapter implements ModelAdapter {
     @Override
     public AudioResponse textToSpeech(AudioRequest request) {
         try {
-            log.debug("OpenAI文本转语音请求: text={}", request.getText());
+            log.info("OpenAI文本转语音请求: text={}", request.getText());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -253,7 +253,7 @@ public class OpenAIAdapter implements ModelAdapter {
     @Override
     public AudioResponse speechToText(AudioRequest request) {
         try {
-            log.debug("OpenAI语音转文本请求");
+            log.info("OpenAI语音转文本请求");
             
             // 获取 API key
             String apiKey = getApiKey(request);

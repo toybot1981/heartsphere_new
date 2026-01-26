@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.heartsphere.mobile',
   appName: '心域',
   webDir: 'dist',
-  bundledWebRuntime: false,
   // 配置服务器URL（开发环境）
   server: {
     // 开发时可以连接到本地开发服务器

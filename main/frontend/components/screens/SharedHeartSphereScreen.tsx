@@ -274,10 +274,18 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ background: 'var(--gradient-bg)' }}
+      >
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-red-400 mb-4">{error}</p>
+          <p 
+            className="mb-4"
+            style={{ color: 'var(--color-error)' }}
+          >
+            {error}
+          </p>
           <div className="flex gap-3 justify-center">
             <Button onClick={onBack} variant="ghost">返回</Button>
             <Button onClick={() => window.location.reload()}>重试</Button>
@@ -289,7 +297,10 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
 
   return (
     <>
-      <div className="h-full flex flex-col p-8 bg-gradient-to-br from-gray-900 to-black">
+      <div 
+        className="h-full flex flex-col p-8"
+        style={{ background: 'var(--gradient-bg)' }}
+      >
         {/* 头部 */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
@@ -299,13 +310,27 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
               </svg>
             </Button>
             <div>
-              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-pink-400 to-purple-400">
+              <h2 
+                className="text-3xl font-bold text-transparent bg-clip-text"
+                style={{ backgroundImage: 'var(--gradient-text)' }}
+              >
                 ✨ 欢迎来到 {ownerName || '心域主人'} 的心域 ✨
               </h2>
-              <p className="text-amber-200 text-sm flex items-center gap-2 mt-2">
+              <p 
+                className="text-sm flex items-center gap-2 mt-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 <span className="text-lg">💝</span>
                 <span>这里充满了温暖与故事，愿你在这里找到心灵的共鸣</span>
-                <span className="text-[10px] bg-blue-700 px-2 py-0.5 rounded text-blue-200 ml-2">共享模式</span>
+                <span 
+                  className="text-[10px] px-2 py-0.5 rounded ml-2"
+                  style={{
+                    backgroundColor: 'var(--bg-info-alpha)',
+                    color: 'var(--color-info)',
+                  }}
+                >
+                  共享模式
+                </span>
               </p>
             </div>
           </div>
@@ -313,7 +338,17 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowPortalSelection(true)}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-purple-600 text-white hover:from-cyan-500 hover:to-purple-500 transition-all shadow-lg flex items-center gap-2"
+              className="px-4 py-2 rounded-lg transition-all shadow-lg flex items-center gap-2"
+              style={{
+                background: 'var(--gradient-button)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
               title="传送到其他共享心域"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -323,7 +358,17 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
             </button>
             <button
               onClick={handleLeave}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 transition-all shadow-lg"
+              className="px-4 py-2 rounded-lg transition-all shadow-lg"
+              style={{
+                backgroundColor: 'var(--color-error)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error)';
+              }}
             >
               离开共享心域
             </button>
@@ -331,12 +376,26 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
         </div>
 
         {/* 提示信息 */}
-        <div className="mb-6 p-4 bg-blue-900/40 border border-blue-500/50 rounded-xl">
+        <div 
+          className="mb-6 p-4 border rounded-xl"
+          style={{
+            backgroundColor: 'var(--bg-info-alpha)',
+            borderColor: 'var(--border-info-alpha)',
+          }}
+        >
           <div className="flex items-start gap-3">
             <span className="text-2xl">💡</span>
             <div className="flex-1">
-              <p className="text-blue-200 font-bold text-sm mb-1">共享模式提示</p>
-              <p className="text-blue-300 text-xs">
+              <p 
+                className="font-bold text-sm mb-1"
+                style={{ color: 'var(--color-info)' }}
+              >
+                共享模式提示
+              </p>
+              <p 
+                className="text-xs"
+                style={{ color: 'var(--text-info-light)' }}
+              >
                 你正在查看他人共享的心域。在此模式下，你只能访问主人共享的场景和角色，且你的操作不会保存到主人的心域中。
               </p>
             </div>
@@ -348,8 +407,18 @@ export const SharedHeartSphereScreen: React.FC<SharedHeartSphereScreenProps> = (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="text-6xl mb-4">🌟</div>
-              <p className="text-gray-400 text-lg mb-2">暂无共享的场景</p>
-              <p className="text-gray-500 text-sm">主人还没有共享任何场景</p>
+              <p 
+                className="text-lg mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                暂无共享的场景
+              </p>
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                主人还没有共享任何场景
+              </p>
             </div>
           </div>
         ) : (

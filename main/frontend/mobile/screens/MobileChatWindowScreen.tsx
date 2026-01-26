@@ -317,6 +317,9 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
           timestamp: Date.now(),
         };
         
+        // 生成 sessionId（场景模式）
+        const scenarioSessionId = `chat_${focusedCharacter?.id || 'unknown'}_${userProfile?.id || 'guest'}`;
+        
         await generateAIResponse({
           userText: node.prompt || node.title || '请生成这个场景的内容',
           userMsg: scenarioUserMsg,
@@ -332,6 +335,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
           memorySystem: undefined,
           relevantMemories: [],
           customSystemInstructionSuffix: scenarioContext,
+          sessionId: scenarioSessionId, // 传入会话ID，用于保存消息
         });
       } else if (nodeType === 'ending') {
         const endingContent = node.prompt || node.title || '【结局】';
@@ -473,6 +477,9 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
         relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
       }
       
+      // 生成 sessionId（普通对话模式）
+      const sessionId = `chat_${character?.id || 'unknown'}_${userProfile?.id || 'guest'}`;
+      
       // 使用统一的AI响应生成函数
       await generateAIResponse({
         userText,
@@ -488,6 +495,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
         engineReady,
         memorySystem,
         relevantMemories,
+        sessionId, // 传入会话ID，用于保存消息
       });
     } catch (error) { 
         logger.error('[MobileChatWindow] AI服务调用失败:', error);
@@ -728,7 +736,10 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
   }, []);
 
   return (
-    <MobileSafeAreaView className="h-full w-full bg-black relative overflow-hidden">
+    <MobileSafeAreaView 
+      className="h-full w-full relative overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+    >
       {/* 背景层 */}
       <BackgroundLayer
         backgroundImage={sceneGeneration.currentBackgroundUrl || displayCharacter?.backgroundUrl || null}
@@ -759,13 +770,23 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
       )}
 
       {/* 头部栏（移动端优化） */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-gradient-to-b from-black/95 via-black/90 to-black/60 backdrop-blur-md">
+      <div
+        className="absolute top-0 left-0 right-0 z-30 p-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md"
+        style={{
+          background: 'linear-gradient(to bottom, var(--bg-overlay-alpha), var(--bg-primary))',
+        }}
+      >
         <div className="flex items-center justify-between">
           <MobileTouchableButton
             onClick={onBack}
             variant="ghost"
             size="sm"
-            className="text-white bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2"
+            className="backdrop-blur-sm border rounded-lg px-3 py-2"
+            style={{
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-overlay-alpha)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -778,10 +799,23 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
               size="small"
               isCinematic={false}
             />
-            <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1.5">
-              <h2 className="text-white font-bold text-base drop-shadow-lg">{displayCharacter.name}</h2>
+            <div 
+              className="backdrop-blur-sm rounded-lg px-3 py-1.5"
+              style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))' }}
+            >
+              <h2 
+                className="font-bold text-base drop-shadow-lg"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {displayCharacter.name}
+              </h2>
               {customScenario && (
-                <p className="text-white/80 text-xs drop-shadow-md">{customScenario.title}</p>
+                <p 
+                  className="text-xs drop-shadow-md"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {customScenario.title}
+                </p>
               )}
             </div>
           </div>
@@ -792,7 +826,7 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
                 onClick={() => uiState.setIsCinematic(true)}
                 variant="ghost"
                 size="sm"
-                className="text-white/70"
+                style={{ color: 'var(--text-tertiary)' }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -809,7 +843,11 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
           onClick={() => uiState.setIsCinematic(false)}
           variant="ghost"
           size="md"
-          className="absolute top-4 right-4 z-50 p-3 rounded-full bg-black/40 text-white/50"
+          className="absolute top-4 right-4 z-50 p-3 rounded-full"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))',
+            color: 'var(--text-tertiary)',
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-3.65-3.65m3.65 3.65F5.183 2.16 20.632 17.608M14.25 12a2.25 2.25 0 0 1-2.25 2.25" />
@@ -827,14 +865,26 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
       ))}
 
       {/* 主聊天区域（移动端优化） */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-[calc(4rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-black via-black/90 to-black/70 transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/70 to-black/50' : 'h-[55vh]'}`}>
+      <div
+        className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-[calc(4rem+env(safe-area-inset-bottom))] transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh]' : 'h-[55vh]'}`}
+        style={{
+          background: uiState.isCinematic
+            ? 'linear-gradient(to top, var(--bg-overlay-alpha), var(--bg-primary))'
+            : 'linear-gradient(to top, var(--bg-overlay-alpha), var(--bg-primary))',
+        }}
+      >
         
         {/* 消息列表（使用MobileSmoothScroll） */}
         <MobileSmoothScroll className="flex-1 px-4 py-4 space-y-4" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20%)' }}>
           {safeHistory.length === 0 && isLoading && isStoryMode && (
             <div className="h-full flex flex-col items-center justify-center space-y-4 animate-fade-in">
               <MobileLoadingSpinner />
-              <p className="text-indigo-300 font-bold text-lg animate-pulse">正在生成故事...</p>
+              <p 
+                className="font-bold text-lg animate-pulse"
+                style={{ color: 'var(--color-primary, #a5b4fc)' }}
+              >
+                正在生成故事...
+              </p>
             </div>
           )}
           
@@ -864,10 +914,25 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
           
           {isLoading && safeHistory.length > 0 && (
             <div className="flex justify-start w-full">
-              <div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}>
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
+              <div 
+                className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border flex items-center space-x-2" 
+                style={{ 
+                  backgroundColor: `${character.colorAccent}1A`,
+                  borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+                }}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
               </div>
             </div>
           )}
@@ -906,14 +971,24 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
                 />
               ) : (
                 /* 普通文本输入模式（移动端优化） */
-                <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
+                <div 
+                  className="relative flex items-center rounded-2xl p-2 border animate-fade-in w-full"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-color-overlay)',
+                  }}
+                >
                   {/* 表情按钮（使用MobileTouchableButton） */}
                   <MobileTouchableButton
                     onClick={() => uiState.setShowEmojiPicker(true)}
                     disabled={isLoading}
                     variant="ghost"
                     size="sm"
-                    className="mr-2 bg-white/10 text-white/70"
+                    className="mr-2"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary-alpha)',
+                      color: 'var(--text-secondary)',
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -937,11 +1012,20 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="输入你的消息..."
-                    className="flex-1 bg-transparent border-none text-white placeholder-slate-400 focus:ring-0 focus:outline-none resize-none max-h-24 py-3 px-3 scrollbar-hide text-base min-h-[44px] touch-manipulation"
+                    className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-24 py-3 px-3 scrollbar-hide text-base min-h-[44px] touch-manipulation"
+                    style={{
+                      color: 'var(--text-primary)',
+                    }}
                     rows={1}
                     disabled={isLoading}
                     inputMode="text"
                   />
+                  <style>{`
+                    textarea::placeholder {
+                      color: var(--text-disabled);
+                      opacity: 0.6;
+                    }
+                  `}</style>
                   
                   {/* 语音输入按钮（使用MobileTouchableButton） */}
                   <MobileTouchableButton
@@ -949,7 +1033,14 @@ export const MobileChatWindowScreen: React.FC<MobileChatWindowScreenProps> = mem
                     disabled={isLoading}
                     variant={voiceInput.isListening ? "danger" : "ghost"}
                     size="sm"
-                    className={`ml-2 ${voiceInput.isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-white/10 text-white/70'}`}
+                    className="ml-2"
+                    style={voiceInput.isListening ? {
+                      backgroundColor: 'var(--bg-error-alpha)',
+                      color: 'var(--color-error)',
+                    } : {
+                      backgroundColor: 'var(--bg-overlay-alpha)',
+                      color: 'var(--text-secondary)',
+                    }}
                   >
                     {voiceInput.isListening ? (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

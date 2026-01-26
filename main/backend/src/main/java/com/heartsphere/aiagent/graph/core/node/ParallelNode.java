@@ -87,7 +87,7 @@ public class ParallelNode implements GraphEngine.GraphNode {
         state.setData("parallel_merge_strategy", mergeStrategy.name());
         state.setData("parallel_executing", true);
         
-        log.debug("[ParallelNode] 并行节点执行完成，等待执行器处理并行分支");
+        log.info("[ParallelNode] 并行节点执行完成，等待执行器处理并行分支");
         return state;
     }
     

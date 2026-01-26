@@ -167,8 +167,11 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
-          <p className="text-slate-400">加载技能数据中...</p>
+          <div 
+            className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 mb-4"
+            style={{ borderColor: 'var(--color-primary, #4f46e5)' }}
+          />
+          <p style={{ color: 'var(--text-tertiary)' }}>加载技能数据中...</p>
         </div>
       </div>
     );
@@ -176,10 +179,31 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
 
   if (error) {
     return (
-      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-6 text-center">
-        <p className="text-red-400 mb-4">错误: {error}</p>
+      <div 
+        className="border rounded-lg p-6 text-center"
+        style={{
+          backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+          borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+        }}
+      >
+        <p 
+          className="mb-4"
+          style={{ color: 'var(--color-error, #fca5a5)' }}
+        >
+          错误: {error}
+        </p>
         <button
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+          className="px-4 py-2 rounded-lg transition-colors"
+          style={{
+            backgroundColor: 'var(--color-primary, #4f46e5)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+          }}
           onClick={loadData}
         >
           重试
@@ -191,15 +215,34 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
   return (
     <div className="character-skill-management space-y-6">
       {/* 头部统计信息 */}
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+      <div 
+        className="rounded-lg p-6 border"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">
+          <h2 
+            className="text-xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {characterName ? `${characterName} 的技能管理` : '技能管理'}
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+              className="px-3 py-1.5 text-sm rounded transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+              }}
               title={viewMode === 'grid' ? '切换到列表视图' : '切换到网格视图'}
             >
               {viewMode === 'grid' ? '📋' : '🔲'}
@@ -208,27 +251,97 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900/50 rounded p-3 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">总技能数</div>
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
+          <div 
+            className="rounded p-3 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+          >
+            <div 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              总技能数
+            </div>
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {stats.total}
+            </div>
           </div>
-          <div className="bg-slate-900/50 rounded p-3 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">已装备</div>
-            <div className="text-2xl font-bold text-indigo-400">{stats.equipped}</div>
+          <div 
+            className="rounded p-3 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+          >
+            <div 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              已装备
+            </div>
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--color-primary, #818cf8)' }}
+            >
+              {stats.equipped}
+            </div>
           </div>
-          <div className="bg-slate-900/50 rounded p-3 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">已启用</div>
-            <div className="text-2xl font-bold text-green-400">{stats.enabled}</div>
+          <div 
+            className="rounded p-3 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+          >
+            <div 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              已启用
+            </div>
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--color-success, #86efac)' }}
+            >
+              {stats.enabled}
+            </div>
           </div>
-          <div className="bg-slate-900/50 rounded p-3 border border-slate-700">
-            <div className="text-xs text-slate-400 mb-1">自动触发</div>
-            <div className="text-2xl font-bold text-yellow-400">{stats.autoTrigger}</div>
+          <div 
+            className="rounded p-3 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+          >
+            <div 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              自动触发
+            </div>
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--color-warning, #fcd34d)' }}
+            >
+              {stats.autoTrigger}
+            </div>
           </div>
         </div>
       </div>
 
       {/* 搜索和过滤控制 */}
-      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 space-y-4">
+      <div 
+        className="rounded-lg p-4 border space-y-4"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         <div className="flex flex-col md:flex-row gap-4">
           {/* 搜索框 */}
           <div className="flex-1">
@@ -238,15 +351,42 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
                 placeholder="搜索技能名称、描述或ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 pl-10 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full border rounded-lg px-4 py-2 pl-10 focus:outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, #0f172a)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                }}
               />
-              <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+              <span 
+                className="absolute left-3 top-2.5"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                🔍
+              </span>
             </div>
           </div>
 
           {/* 分类过滤 */}
           <select
-            className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
+            className="border rounded-lg px-4 py-2 focus:outline-none"
+            style={{
+              backgroundColor: 'var(--bg-overlay, #0f172a)',
+              borderColor: 'var(--bg-overlay, #475569)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+            }}
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
@@ -258,7 +398,18 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
 
           {/* 技能类型过滤 */}
           <select
-            className="bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
+            className="border rounded-lg px-4 py-2 focus:outline-none"
+            style={{
+              backgroundColor: 'var(--bg-overlay, #0f172a)',
+              borderColor: 'var(--bg-overlay, #475569)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+            }}
             value={skillTypeFilter}
             onChange={(e) => setSkillTypeFilter(e.target.value)}
           >
@@ -276,9 +427,19 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
               type="checkbox"
               checked={showEquippedOnly}
               onChange={(e) => setShowEquippedOnly(e.target.checked)}
-              className="w-4 h-4 text-indigo-600 bg-slate-700 border-slate-600 rounded focus:ring-indigo-500"
+              className="w-4 h-4 rounded"
+              style={{
+                accentColor: 'var(--color-primary, #4f46e5)',
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                borderColor: 'var(--bg-overlay, #475569)',
+              }}
             />
-            <span className="text-sm text-slate-300">只显示已装备</span>
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              只显示已装备
+            </span>
           </label>
         </div>
       </div>

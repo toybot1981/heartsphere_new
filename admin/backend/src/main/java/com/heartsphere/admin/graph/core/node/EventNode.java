@@ -104,7 +104,7 @@ public class EventNode implements GraphEngine.GraphNode {
                 // 检查触发条件
                 boolean canTrigger = checkCondition(state);
                 state.setData("event_can_trigger_" + eventId, canTrigger);
-                log.debug("[EventNode] 事件 {} 触发条件检查: {}", eventId, canTrigger);
+                log.info("[EventNode] 事件 {} 触发条件检查: {}", eventId, canTrigger);
                 if (!canTrigger) {
                     log.info("[EventNode] 事件 {} 触发条件不满足，跳过执行", eventId);
                     return state;
@@ -142,7 +142,7 @@ public class EventNode implements GraphEngine.GraphNode {
         }
         if (!triggeredEvents.contains(eventId)) {
             triggeredEvents.add(eventId);
-            log.debug("[EventNode] 触发事件: {}", eventId);
+            log.info("[EventNode] 触发事件: {}", eventId);
         }
     }
     
@@ -254,7 +254,7 @@ public class EventNode implements GraphEngine.GraphNode {
     private void applyStateUpdates(GraphEngine.GraphState state, Map<String, Object> updates) {
         updates.forEach((key, value) -> {
             state.setData(key, value);
-            log.debug("[EventNode] 更新状态: {} = {}", key, value);
+            log.info("[EventNode] 更新状态: {} = {}", key, value);
         });
     }
 }

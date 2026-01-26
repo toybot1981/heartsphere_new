@@ -1,66 +1,10 @@
 /* ==========================================
-   心域 - 温度感设计系统
-   CSS 变量定义
+   心域 - 主题系统
+   CSS 变量定义（支持多主题）
    ========================================== */
 
+/* === 默认值（向后兼容，保留温度感系统变量） === */
 :root {
-  /* === 色彩系统 === */
-  
-  /* 温暖粉色系 */
-  --color-warm-pink: #FF9999;
-  --color-warm-pink-light: #FFB3B3;
-  --color-warm-pink-lighter: #FFCCCC;
-  --color-warm-pink-lightest: #FFE5E5;
-  
-  /* 温暖米色系 */
-  --color-warm-beige: #F5F0E8;
-  --color-warm-beige-light: #E8DDD4;
-  --color-warm-beige-dark: #D4C4B8;
-  
-  /* 温暖橙色系 */
-  --color-warm-orange: #FFB366;
-  --color-warm-orange-light: #FFD699;
-  
-  /* 宁静蓝色系 */
-  --color-calm-blue: #7FB8D1;
-  --color-calm-blue-light: #9FC9E0;
-  --color-calm-blue-lighter: #BFD9E8;
-  --color-calm-blue-lightest: #E8F4F8;
-  
-  /* 成功绿色 */
-  --color-success: #A8D5BA;
-  
-  /* 警告橙色 */
-  --color-warning: #FFD699;
-  
-  /* 背景色层级 */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F5F0E8;
-  --bg-card: #FFFFFF;
-  --bg-hover: rgba(255, 229, 229, 0.3);
-  --bg-overlay: rgba(0, 0, 0, 0.5);
-  
-  /* 文字颜色层级 */
-  --text-primary: #2C2C2C;
-  --text-secondary: #6B6B6B;
-  --text-tertiary: #999999;
-  --text-disabled: #CCCCCC;
-  --text-link: #7FB8D1;
-  --text-accent: #FF9999;
-  
-  /* 阴影系统 */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-primary: 0 4px 16px rgba(255, 153, 153, 0.3);
-  
-  /* 圆角 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-full: 9999px;
-  
   /* 字体大小 */
   --font-size-hero: 2rem;
   --font-size-h1: 2rem;
@@ -90,23 +34,341 @@
   --ease-in-out: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-/* === 暗色模式 === */
-[data-theme="dark"] {
-  /* 背景色 */
-  --bg-primary: #1A1A1A;
-  --bg-secondary: #2A2A2A;
-  --bg-card: #2A2A2A;
-  --bg-hover: rgba(255, 153, 153, 0.15);
+/* === 科技风格主题（默认主题，兼容dark） === */
+:root,
+:root[data-theme="tech"],
+:root[data-theme="dark"] {
+  /* === 背景色 === */
+  --bg-primary: #000000;
+  --bg-secondary: #0F172A;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --bg-overlay-alpha: rgba(0, 0, 0, 0.85);  /* 沉浸模式专用，高不透明度确保文字清晰 */
+  --bg-hover: rgba(255, 255, 255, 0.1);
   
-  /* 文字颜色 */
-  --text-primary: #F5F0E8;
-  --text-secondary: #B8B8B8;
-  --text-tertiary: #808080;
-  --text-disabled: #666666;
+  /* === 文字颜色 === */
+  --text-primary: #FFFFFF;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-disabled: #64748B;
+  --text-link: #60A5FA;
+  --text-accent: #9333EA;
   
-  /* 强调色在暗色模式下提高饱和度 */
+  /* === 主色调 === */
+  --color-primary: #4F46E5;
+  --color-primary-light: #6366F1;
+  --color-primary-lighter: #818CF8;
+  --color-primary-lightest: #A5B4FC;
+  --color-secondary: #9333EA;
+  --color-secondary-light: #A855F7;
+  
+  /* === 语义色 === */
+  --color-success: #22C55E;
+  --color-warning: #EAB308;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* === 温度感系统变量（适配深色背景） === */
   --color-warm-pink: #FFB3B3;
+  --color-warm-pink-light: #FFCCCC;
+  --color-warm-pink-lighter: #FFE5E5;
+  --color-warm-pink-lightest: #FFF0F0;
+  --color-warm-beige: #F5F0E8;
+  --color-warm-beige-light: #E8DDD4;
+  --color-warm-beige-dark: #D4C4B8;
+  --color-warm-orange: #FFB366;
+  --color-warm-orange-light: #FFD699;
   --color-calm-blue: #9FC9E0;
+  --color-calm-blue-light: #BFD9E8;
+  --color-calm-blue-lighter: #D9E8F0;
+  --color-calm-blue-lightest: #E8F4F8;
+  
+  /* === 阴影 === */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 4px 16px rgba(79, 70, 229, 0.4);
+  
+  /* === 圆角 === */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  
+  /* === 渐变 === */
+  --gradient-primary: linear-gradient(135deg, #4F46E5 0%, #9333EA 100%);
+  --gradient-secondary: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
+  --gradient-button: linear-gradient(135deg, #4F46E5 0%, #9333EA 100%);
+  --gradient-bg: linear-gradient(135deg, #000000 0%, #0F172A 100%);
+  --gradient-text: linear-gradient(135deg, #4F46E5 0%, #9333EA 100%);
+  --gradient-card: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
+}
+
+/* === 海天宁静主题 === */
+:root[data-theme="serene-horizon"] {
+  /* === 背景色（确保与文字有足够对比度） === */
+  --bg-primary: #E3F2F8;  /* 淡蓝色背景（与深色文字对比度≥8:1） */
+  --bg-secondary: #C8E4F0;  /* 中等天空蓝（与深色文字对比度≥6:1） */
+  --bg-card: rgba(255, 255, 255, 0.98);  /* 白色卡片（提高不透明度，确保对比度） */
+  --bg-overlay: rgba(91, 163, 199, 0.1);
+  --bg-overlay-alpha: rgba(255, 255, 255, 0.95);  /* 沉浸模式专用，白色背景确保文字清晰 */
+  --bg-hover: rgba(91, 163, 199, 0.15);
+  
+  /* === 文字颜色（确保对比度≥4.5:1） === */
+  --text-primary: #0F1F2E;  /* 深蓝灰色（对比度约8.5:1，确保清晰可读） */
+  --text-secondary: #2D4152;  /* 中蓝灰色（对比度约6.2:1） */
+  --text-tertiary: #4A5F73;  /* 浅蓝灰色（对比度约4.8:1，符合WCAG AA） */
+  --text-disabled: #8A9BA8;  /* 禁用状态（对比度约3.2:1，符合禁用状态标准） */
+  --text-link: #5BA3C7;  /* 清爽蓝色 */
+  --text-accent: #4A8DB0;  /* 深清爽蓝色 */
+  
+  /* === 主色调 === */
+  --color-primary: #5BA3C7;  /* 清爽天空蓝（类似Sky Blue #87CEEB但稍深） */
+  --color-primary-light: #6BB6D6;  /* 浅清爽蓝 */
+  --color-primary-lighter: #8BC8E0;  /* 更浅清爽蓝 */
+  --color-primary-lightest: #B8DCE8;  /* 最浅清爽蓝 */
+  --color-secondary: #6BB6D6;
+  --color-secondary-light: #8BC8E0;
+  
+  /* === 语义色（适配淡色背景） === */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* === 温度感系统变量（适配淡色背景） === */
+  --color-warm-pink: #FF9999;
+  --color-warm-pink-light: #FFB3B3;
+  --color-warm-pink-lighter: #FFCCCC;
+  --color-warm-pink-lightest: #FFE5E5;
+  --color-warm-beige: #F5F0E8;
+  --color-warm-beige-light: #E8DDD4;
+  --color-warm-beige-dark: #D4C4B8;
+  --color-warm-orange: #FFB366;
+  --color-warm-orange-light: #FFD699;
+  --color-calm-blue: #4A9BC4;  /* 与主题主色一致（清爽天空蓝） */
+  --color-calm-blue-light: #6BB3D1;
+  --color-calm-blue-lighter: #8FC5DC;
+  --color-calm-blue-lightest: #B8DCE8;
+  
+  /* === 阴影（柔和风格，双层阴影） === */
+  --shadow-sm: 0 1px 3px rgba(74, 155, 196, 0.08), 0 1px 2px rgba(74, 155, 196, 0.06);
+  --shadow-md: 0 2px 6px rgba(74, 155, 196, 0.12), 0 1px 3px rgba(74, 155, 196, 0.08);
+  --shadow-lg: 0 4px 12px rgba(74, 155, 196, 0.15), 0 2px 6px rgba(74, 155, 196, 0.10);
+  --shadow-primary: 0 4px 16px rgba(74, 155, 196, 0.20), 0 2px 8px rgba(74, 155, 196, 0.12);
+  
+  /* === 圆角（大圆角） === */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* === 渐变 === */
+  --gradient-primary: linear-gradient(135deg, #4A9BC4 0%, #5BB3D1 50%, #6FC5DC 100%);
+  --gradient-secondary: linear-gradient(135deg, #6BB3D1 0%, #8FC5DC 100%);
+  --gradient-button: linear-gradient(135deg, #4A9BC4 0%, #5BB3D1 100%);
+  --gradient-bg: linear-gradient(180deg, #E8F5FA 0%, #D4E8F0 30%, #C8E4F0 60%, #B8DCE8 100%);
+  --gradient-text: linear-gradient(135deg, #3D8AB0 0%, #4A9BC4 50%, #5BB3D1 100%);
+  --gradient-card: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
+  
+  /* === 移动端特殊变量 === */
+  --bg-cloud-pattern: radial-gradient(ellipse 120% 80% at 15% 25%, rgba(255, 255, 255, 0.9) 0%, transparent 60%),
+                       radial-gradient(ellipse 100% 70% at 85% 75%, rgba(255, 255, 255, 0.7) 0%, transparent 55%),
+                       radial-gradient(ellipse 80% 60% at 45% 80%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+                       radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255, 255, 255, 0.5) 0%, transparent 45%),
+                       linear-gradient(180deg, #E8F5FA 0%, #D4E8F0 50%, #C8E4F0 100%);
+  --bg-starry: url(/images/starry-connection-bg.jpg);
+  --bg-starry-overlay: rgba(74, 155, 196, 0.1);
+  --card-bg: rgba(255, 255, 255, 0.98);
+  --card-shadow: 0 4px 12px rgba(74, 155, 196, 0.15), 0 2px 6px rgba(74, 155, 196, 0.10);
+  --card-radius: 24px;
+  --tabbar-bg: rgba(255, 255, 255, 0.98);
+  --tabbar-icon-color: #6B7F8F;  /* 三级文字色（未激活） */
+  --tabbar-icon-active: #4A9BC4;  /* 主色（激活） */
+}
+
+/* === 经典深色模式主题 === */
+:root[data-theme="classic-dark"] {
+  /* === 背景色 === */
+  --bg-primary: #121212;  /* 接近黑色，但不是纯黑 */
+  --bg-secondary: #1E1E1E;  /* 稍亮的深灰色 */
+  --bg-card: rgba(30, 30, 30, 0.9);  /* 卡片背景 */
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  --bg-overlay-alpha: rgba(0, 0, 0, 0.9);  /* 沉浸模式专用，高不透明度确保文字清晰 */
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  
+  /* === 文字颜色 === */
+  --text-primary: #FFFFFF;  /* 纯白色，高对比度 */
+  --text-secondary: #E0E0E0;  /* 浅灰色 */
+  --text-tertiary: #B0B0B0;  /* 中灰色 */
+  --text-disabled: #757575;  /* 禁用状态 */
+  --text-link: #64B5F6;  /* 柔和的蓝色链接 */
+  --text-accent: #81C784;  /* 柔和的绿色强调 */
+  
+  /* === 主色调 === */
+  --color-primary: #64B5F6;  /* 柔和的蓝色 */
+  --color-primary-light: #90CAF9;  /* 浅蓝色 */
+  --color-primary-lighter: #BBDEFB;  /* 更浅的蓝色 */
+  --color-primary-lightest: #E3F2FD;  /* 最浅的蓝色 */
+  --color-secondary: #81C784;  /* 柔和的绿色 */
+  --color-secondary-light: #A5D6A7;  /* 浅绿色 */
+  
+  /* === 语义色 === */
+  --color-success: #66BB6A;  /* 柔和的绿色 */
+  --color-warning: #FFB74D;  /* 柔和的橙色 */
+  --color-error: #E57373;  /* 柔和的红色 */
+  --color-info: #64B5F6;  /* 柔和的蓝色 */
+  
+  /* === 温度感系统变量 === */
+  --color-warm-pink: #F48FB1;  /* 柔和的粉色 */
+  --color-warm-pink-light: #F8BBD0;
+  --color-warm-pink-lighter: #FCE4EC;
+  --color-warm-pink-lightest: #FFF0F5;
+  --color-warm-beige: #D7CCC8;  /* 米色 */
+  --color-warm-beige-light: #E0D5D0;
+  --color-warm-beige-dark: #BCAAA4;
+  --color-warm-orange: #FFB74D;  /* 柔和的橙色 */
+  --color-warm-orange-light: #FFCC80;
+  --color-calm-blue: #64B5F6;  /* 柔和的蓝色 */
+  --color-calm-blue-light: #90CAF9;
+  --color-calm-blue-lighter: #BBDEFB;
+  --color-calm-blue-lightest: #E3F2FD;
+  
+  /* === 阴影 === */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-primary: 0 4px 16px rgba(100, 181, 246, 0.3);
+  
+  /* === 圆角 === */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* === 渐变 === */
+  --gradient-primary: linear-gradient(135deg, #64B5F6 0%, #81C784 100%);
+  --gradient-secondary: linear-gradient(135deg, #90CAF9 0%, #A5D6A7 100%);
+  --gradient-button: linear-gradient(135deg, #64B5F6 0%, #81C784 100%);
+  --gradient-bg: linear-gradient(135deg, #121212 0%, #1E1E1E 100%);
+  --gradient-text: linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%);
+  --gradient-card: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
+  
+  /* === 移动端特殊变量 === */
+  --bg-cloud-pattern: radial-gradient(ellipse 120% 80% at 15% 25%, rgba(100, 181, 246, 0.1) 0%, transparent 60%),
+                       radial-gradient(ellipse 100% 70% at 85% 75%, rgba(129, 199, 132, 0.08) 0%, transparent 55%),
+                       radial-gradient(ellipse 80% 60% at 45% 80%, rgba(100, 181, 246, 0.06) 0%, transparent 50%),
+                       radial-gradient(ellipse 60% 50% at 70% 20%, rgba(129, 199, 132, 0.05) 0%, transparent 45%),
+                       linear-gradient(180deg, #121212 0%, #1E1E1E 50%, #2D2D2D 100%);
+  --bg-starry: url(/images/starry-connection-bg.jpg);
+  --bg-starry-overlay: rgba(0, 0, 0, 0.3);
+  --card-bg: rgba(30, 30, 30, 0.95);
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --card-radius: 24px;
+  --tabbar-bg: rgba(30, 30, 30, 0.95);
+  --tabbar-icon-color: #757575;  /* 禁用色（未激活） */
+  --tabbar-icon-active: #64B5F6;  /* 主色（激活） */
+}
+
+/* === 温馨暖色模式主题 === */
+:root[data-theme="modern-light"] {
+  /* === 背景色 === */
+  --bg-primary: #FFF8F0;  /* 温暖的米白色（略带奶油色） */
+  --bg-secondary: #F5EDE0;  /* 浅米色 */
+  --bg-tertiary: #EDE4D6;  /* 稍深的米色，用于层次区分 */
+  --bg-card: rgba(255, 251, 245, 0.98);  /* 温暖的白色卡片 */
+  --bg-overlay: rgba(139, 90, 43, 0.08);  /* 暖棕色遮罩 */
+  --bg-overlay-alpha: rgba(255, 251, 245, 0.95);  /* 沉浸模式专用，暖白色背景确保文字清晰 */
+  --bg-hover: rgba(139, 90, 43, 0.12);  /* 暖棕色悬停 */
+  
+  /* === 文字颜色 === */
+  --text-primary: #3E2723;  /* 深棕色，温暖而清晰 */
+  --text-secondary: #5D4037;  /* 中棕色 */
+  --text-tertiary: #6D4C41;  /* 浅棕色 */
+  --text-disabled: #A1887F;  /* 禁用状态（浅棕色） */
+  --text-link: #D84315;  /* 温暖的橙红色链接 */
+  --text-accent: #BF360C;  /* 深橙红色强调 */
+  
+  /* === 主色调 === */
+  --color-primary: #E65100;  /* 温暖的橙色 */
+  --color-primary-light: #FF6F00;  /* 浅橙色 */
+  --color-primary-lighter: #FF8F00;  /* 更浅的橙色 */
+  --color-primary-lightest: #FFB74D;  /* 最浅的橙色 */
+  --color-secondary: #D84315;  /* 温暖的橙红色 */
+  --color-secondary-light: #FF6F00;  /* 浅橙色 */
+  
+  /* === 语义色 === */
+  --color-success: #558B2F;  /* 温暖的绿色 */
+  --color-warning: #F57C00;  /* 橙色警告 */
+  --color-error: #D84315;  /* 温暖的红色 */
+  --color-info: #BF360C;  /* 深橙红色（用于按钮文字，确保对比度） */
+  
+  /* === 温度感系统变量 === */
+  --color-warm-pink: #F48FB1;  /* 温暖的粉色 */
+  --color-warm-pink-light: #F8BBD0;
+  --color-warm-pink-lighter: #FCE4EC;
+  --color-warm-pink-lightest: #FFF0F5;
+  --color-warm-beige: #F5EDE0;  /* 米色（与背景色协调） */
+  --color-warm-beige-light: #FAF5ED;
+  --color-warm-beige-dark: #E8DCC8;
+  --color-warm-orange: #FF6F00;  /* 橙色 */
+  --color-warm-orange-light: #FF8F00;
+  --color-calm-blue: #E65100;  /* 温暖的橙色（与主色一致） */
+  --color-calm-blue-light: #FF6F00;
+  --color-calm-blue-lighter: #FF8F00;
+  --color-calm-blue-lightest: #FFB74D;
+  
+  /* === 阴影 === */
+  --shadow-sm: 0 1px 3px rgba(139, 90, 43, 0.15), 0 1px 2px rgba(139, 90, 43, 0.12);
+  --shadow-md: 0 2px 6px rgba(139, 90, 43, 0.18), 0 1px 3px rgba(139, 90, 43, 0.14);
+  --shadow-lg: 0 4px 12px rgba(139, 90, 43, 0.20), 0 2px 6px rgba(139, 90, 43, 0.16);
+  --shadow-primary: 0 4px 16px rgba(230, 81, 0, 0.25), 0 2px 8px rgba(230, 81, 0, 0.18);
+  
+  /* === 圆角 === */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* === 渐变 === */
+  --gradient-primary: linear-gradient(135deg, #E65100 0%, #D84315 100%);
+  --gradient-secondary: linear-gradient(135deg, #FF6F00 0%, #FF8F00 100%);
+  --gradient-button: linear-gradient(135deg, #E65100 0%, #D84315 100%);
+  --gradient-bg: linear-gradient(180deg, #FFF8F0 0%, #F5EDE0 50%, #EDE4D6 100%);
+  --gradient-text: linear-gradient(135deg, #BF360C 0%, #E65100 50%, #FF6F00 100%);
+  --gradient-card: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
+  
+  /* === Alpha 变量（用于半透明效果） === */
+  --bg-primary-alpha: rgba(230, 81, 0, 0.15);  /* 主色半透明（橙色） */
+  --bg-secondary-alpha: rgba(216, 67, 21, 0.2);  /* 次色半透明（橙红色） */
+  --bg-info-alpha: rgba(230, 81, 0, 0.15);  /* 信息色半透明（橙色） */
+  --bg-error-alpha: rgba(216, 67, 21, 0.15);  /* 错误色半透明 */
+  --bg-warning-alpha: rgba(245, 124, 0, 0.15);  /* 警告色半透明 */
+  --border-info-alpha: rgba(230, 81, 0, 0.3);  /* 边框信息色 */
+  --border-error-alpha: rgba(216, 67, 21, 0.3);  /* 边框错误色 */
+  --border-warning-alpha: rgba(245, 124, 0, 0.3);  /* 边框警告色 */
+  
+  /* === 移动端特殊变量 === */
+  --bg-cloud-pattern: radial-gradient(ellipse 120% 80% at 15% 25%, rgba(255, 248, 240, 0.9) 0%, transparent 60%),
+                       radial-gradient(ellipse 100% 70% at 85% 75%, rgba(255, 243, 224, 0.7) 0%, transparent 55%),
+                       radial-gradient(ellipse 80% 60% at 45% 80%, rgba(255, 235, 205, 0.6) 0%, transparent 50%),
+                       radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255, 228, 181, 0.5) 0%, transparent 45%),
+                       linear-gradient(180deg, #FFF8F0 0%, #F5EDE0 50%, #EDE4D6 100%);
+  --bg-starry: url(/images/starry-connection-bg.jpg);
+  --bg-starry-overlay: rgba(139, 90, 43, 0.1);
+  --card-bg: rgba(255, 251, 245, 0.98);
+  --card-shadow: 0 4px 12px rgba(139, 90, 43, 0.18), 0 2px 6px rgba(139, 90, 43, 0.14);
+  --card-radius: 24px;
+  --tabbar-bg: rgba(255, 251, 245, 0.98);
+  --tabbar-icon-color: #A1887F;  /* 禁用色（未激活） */
+  --tabbar-icon-active: #E65100;  /* 主色（激活） */
 }
 
 /* === 基础样式 === */
@@ -126,17 +388,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* === 渐变效果 === */
+/* === 渐变效果（支持主题切换） === */
 .gradient-primary {
-  background: linear-gradient(135deg, var(--color-warm-pink) 0%, var(--color-warm-pink-light) 100%);
+  background: var(--gradient-primary);
 }
 
 .gradient-secondary {
-  background: linear-gradient(135deg, var(--color-calm-blue) 0%, var(--color-calm-blue-light) 100%);
+  background: var(--gradient-secondary);
+}
+
+.gradient-button {
+  background: var(--gradient-button);
 }
 
 .gradient-bg {
-  background: linear-gradient(135deg, var(--color-warm-pink-lightest) 0%, var(--color-calm-blue-lightest) 100%);
+  background: var(--gradient-bg);
+}
+
+.gradient-text {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .gradient-radial {
@@ -167,7 +440,7 @@ body {
 
 /* === 文字样式 === */
 .text-gradient {
-  background: linear-gradient(135deg, var(--color-warm-pink) 0%, var(--color-calm-blue) 100%);
+  background: var(--gradient-text);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -250,6 +523,338 @@ html {
   cursor: not-allowed;
 }
 
+/* === 主题切换过渡动画 === */
+* {
+  transition: background-color var(--transition-normal) var(--ease-out),
+              color var(--transition-normal) var(--ease-out),
+              border-color var(--transition-normal) var(--ease-out);
+}
+
+/* 排除不需要过渡的元素 */
+input,
+textarea,
+select,
+button,
+[role="button"],
+a {
+  transition: background-color var(--transition-normal) var(--ease-out),
+              color var(--transition-normal) var(--ease-out),
+              border-color var(--transition-normal) var(--ease-out),
+              box-shadow var(--transition-normal) var(--ease-out);
+}
+
+/* === 移动端特殊效果 === */
+
+/* 云纹背景 */
+.mobile-scene-selection-bg {
+  background: var(--bg-cloud-pattern, var(--bg-primary));
+  background-size: 100% 100%;
+  background-attachment: fixed;
+}
+
+/* 星空背景 */
+.mobile-connection-space-bg {
+  background-image: var(--bg-starry, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+.mobile-connection-space-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-starry-overlay, transparent);
+  backdrop-filter: blur(0.5px);
+  pointer-events: none;
+}
+
+/* 柔光星辰效果 */
+.star-glow {
+  position: relative;
+  filter: drop-shadow(0 0 8px rgba(127, 184, 209, 0.6));
+  animation: starPulse 3s ease-in-out infinite;
+}
+
+.star-glow::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(127, 184, 209, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: starGlow 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes starPulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes starGlow {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+/* 大圆角白色浮动卡片（海天宁静主题） */
+.mobile-scene-card-serene {
+  background: var(--card-bg, var(--bg-card));
+  border-radius: var(--card-radius, var(--radius-xl));
+  box-shadow: var(--card-shadow, var(--shadow-md));
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mobile-scene-card-serene:active {
+  transform: scale(0.98);
+}
+
+/* 半透明白色底部导航（海天宁静主题） */
+.mobile-tabbar-serene {
+  background: var(--tabbar-bg, var(--bg-card));
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(127, 184, 209, 0.2);
+}
+
+.mobile-tabbar-icon-serene {
+  color: var(--tabbar-icon-color, var(--color-primary));
+  transition: color 0.2s ease;
+}
+
+.mobile-tabbar-icon-serene.active {
+  color: var(--tabbar-icon-active, var(--text-accent));
+}
+
+/* === 蓝天白云主题 === */
+:root[data-theme="blue-sky-white-cloud"] {
+  /* === 背景色系（与心域星空统一的深蓝色） === */
+  --bg-primary: #0369a1;  /* 深蓝色（与星空背景统一） */
+  --bg-secondary: #1e3a8a;  /* 更深的蓝色 */
+  --bg-tertiary: #1a1f4f;  /* 最深的蓝紫色 */
+  --bg-card: rgba(30, 58, 138, 0.7);  /* 半透明深蓝色卡片（在深蓝背景上清晰可见） */
+  --bg-overlay: rgba(33, 150, 243, 0.15);  /* 稍深的蓝色遮罩 */
+  --bg-overlay-alpha: rgba(30, 58, 138, 0.9);  /* 沉浸模式专用，深蓝色背景确保文字清晰 */
+  --bg-hover: rgba(33, 150, 243, 0.25);  /* 更深的蓝色悬停 */
+  
+  /* === 文字颜色（接近白色，与蓝色背景高对比度，清晰亮丽） === */
+  --text-primary: #F5F7FA;  /* 接近白色（稍微带灰，不刺眼，对比度约18:1） */
+  --text-secondary: #E8EAED;  /* 浅灰白（对比度约17:1） */
+  --text-tertiary: #D1D5DB;  /* 中灰白（对比度约15:1） */
+  --text-disabled: #B0B8C1;  /* 稍深灰白（禁用状态） */
+  --text-link: #FFFFFF;  /* 纯白链接（突出显示） */
+  --text-accent: #F5F7FA;  /* 接近白色强调 */
+  
+  /* === 主色调（蓝色系） === */
+  --color-primary: #2196F3;  /* 标准蓝色（Material Blue 500） */
+  --color-primary-light: #42A5F5;  /* 浅蓝色 */
+  --color-primary-lighter: #64B5F6;  /* 更浅蓝色 */
+  --color-primary-lightest: #90CAF9;  /* 最浅蓝色 */
+  --color-secondary: #1976D2;  /* 深蓝色 */
+  --color-secondary-light: #42A5F5;  /* 浅蓝色 */
+  
+  /* === 语义色（适配浅色背景） === */
+  --color-success: #4CAF50;  /* 绿色 */
+  --color-warning: #FF9800;  /* 橙色 */
+  --color-error: #F44336;  /* 红色 */
+  --color-info: #2196F3;  /* 蓝色 */
+  
+  /* === 温度感系统变量（适配浅色背景） === */
+  --color-warm-pink: #E91E63;  /* 粉色 */
+  --color-warm-pink-light: #F06292;
+  --color-warm-pink-lighter: #F48FB1;
+  --color-warm-pink-lightest: #F8BBD0;
+  --color-warm-beige: #FFF9E6;  /* 淡米色 */
+  --color-warm-beige-light: #FFFBF0;
+  --color-warm-beige-dark: #F5E6D3;
+  --color-warm-orange: #FF9800;  /* 橙色 */
+  --color-warm-orange-light: #FFB74D;
+  --color-calm-blue: #2196F3;  /* 蓝色（与主色一致） */
+  --color-calm-blue-light: #42A5F5;
+  --color-calm-blue-lighter: #64B5F6;
+  --color-calm-blue-lightest: #90CAF9;
+  
+  /* === 阴影（柔和的蓝色阴影） === */
+  --shadow-sm: 0 1px 3px rgba(33, 150, 243, 0.12), 0 1px 2px rgba(33, 150, 243, 0.08);
+  --shadow-md: 0 2px 6px rgba(33, 150, 243, 0.15), 0 1px 3px rgba(33, 150, 243, 0.10);
+  --shadow-lg: 0 4px 12px rgba(33, 150, 243, 0.18), 0 2px 6px rgba(33, 150, 243, 0.12);
+  --shadow-primary: 0 4px 16px rgba(33, 150, 243, 0.25), 0 2px 8px rgba(33, 150, 243, 0.15);
+  
+  /* === 圆角 === */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* === 渐变（蓝色渐变） === */
+  --gradient-primary: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  --gradient-secondary: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
+  --gradient-button: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  --gradient-bg: linear-gradient(180deg, #0369a1 0%, #1e3a8a 50%, #1a1f4f 100%);  /* 与背景色统一 */
+  --gradient-text: linear-gradient(135deg, #F5F7FA 0%, #E8EAED 50%, #D1D5DB 100%);  /* 白色渐变 */
+  --gradient-card: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
+  
+  /* === Alpha 变量（用于半透明效果） === */
+  --bg-primary-alpha: rgba(3, 105, 161, 0.2);  /* 主色半透明 */
+  --bg-secondary-alpha: rgba(30, 58, 138, 0.3);  /* 次色半透明 */
+  --bg-info-alpha: rgba(33, 150, 243, 0.2);  /* 信息色半透明 */
+  --bg-error-alpha: rgba(244, 67, 54, 0.2);  /* 错误色半透明 */
+  --bg-warning-alpha: rgba(255, 152, 0, 0.2);  /* 警告色半透明 */
+  --border-info-alpha: rgba(33, 150, 243, 0.3);  /* 边框信息色 */
+  --border-error-alpha: rgba(244, 67, 54, 0.3);  /* 边框错误色 */
+  --border-warning-alpha: rgba(255, 152, 0, 0.3);  /* 边框警告色 */
+  
+  /* === 移动端特殊变量 === */
+  /* 云朵背景图案（使用径向渐变创建云朵效果） */
+  --bg-cloud-pattern: radial-gradient(ellipse 120% 80% at 15% 25%, rgba(255, 255, 255, 0.9) 0%, transparent 60%),
+                       radial-gradient(ellipse 100% 70% at 85% 75%, rgba(255, 255, 255, 0.8) 0%, transparent 55%),
+                       radial-gradient(ellipse 80% 60% at 45% 80%, rgba(255, 255, 255, 0.7) 0%, transparent 50%),
+                       radial-gradient(ellipse 60% 50% at 70% 20%, rgba(255, 255, 255, 0.6) 0%, transparent 45%),
+                       linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%);
+  --bg-starry: url(/images/starry-connection-bg.jpg);
+  --bg-starry-overlay: rgba(33, 150, 243, 0.15);  /* 稍深的蓝色遮罩 */
+  --card-bg: rgba(30, 58, 138, 0.7);  /* 半透明深蓝色卡片 */
+  --card-shadow: 0 4px 12px rgba(33, 150, 243, 0.15), 0 2px 6px rgba(33, 150, 243, 0.10);
+  --card-radius: 24px;
+  --tabbar-bg: rgba(30, 58, 138, 0.8);  /* 半透明深蓝色导航栏 */
+  --tabbar-icon-color: #64B5F6;  /* 浅蓝色（未激活） */
+  --tabbar-icon-active: #2196F3;  /* 标准蓝色（激活） */
+  
+  /* === 心域连接页面特殊变量 === */
+  --connection-space-bg: linear-gradient(180deg, #87CEEB 0%, #4682B4 50%, #1E3A8A 100%);  /* 从浅天蓝到深天蓝 */
+  --connection-space-cloud: var(--bg-cloud-pattern);  /* 云朵效果 */
+  --star-color-white: rgba(255, 255, 255, 0.9);  /* 白色星辰 */
+  --star-color-blue: rgba(173, 216, 230, 0.8);  /* 淡蓝色星辰 */
+  --star-color-pink: rgba(255, 182, 193, 0.8);  /* 淡粉色星辰（心域色） */
+  --star-glow-blue: rgba(33, 150, 243, 0.6);  /* 蓝色光晕 */
+  --star-glow-pink: rgba(236, 64, 122, 0.6);  /* 粉色光晕 */
+}
+
+/* 半透明白色底部导航（蓝天白云主题） */
+.mobile-tabbar-blue-sky {
+  background: var(--tabbar-bg, var(--bg-card));
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(33, 150, 243, 0.2);
+}
+
+.mobile-tabbar-icon-blue-sky {
+  color: var(--tabbar-icon-color, var(--color-primary));
+  transition: color 0.2s ease;
+}
+
+.mobile-tabbar-icon-blue-sky.active {
+  color: var(--tabbar-icon-active, var(--text-accent));
+}
+
+/* === 蓝白主题表单元素样式修复 === */
+:root[data-theme="blue-sky-white-cloud"] input::placeholder {
+  color: var(--text-tertiary, #D1D5DB) !important;
+}
+
+:root[data-theme="blue-sky-white-cloud"] textarea::placeholder {
+  color: var(--text-tertiary, #D1D5DB) !important;
+}
+
+:root[data-theme="blue-sky-white-cloud"] select {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-secondary, #1e3a8a) !important;  /* 深蓝色背景 */
+}
+
+:root[data-theme="blue-sky-white-cloud"] select option {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-secondary, #1e3a8a) !important;
+}
+
+/* 搜索框的清除按钮等 */
+:root[data-theme="blue-sky-white-cloud"] input::-webkit-search-cancel-button {
+  color: var(--text-tertiary) !important;
+}
+
+/* === 暖色主题按钮文字对比度修复 === */
+/* 确保橙色按钮上的文字清晰可见 */
+:root[data-theme="modern-light"] button[style*="background"]:not([style*="transparent"]),
+:root[data-theme="modern-light"] .px-2.py-1[style*="var(--bg-info-alpha)"],
+:root[data-theme="modern-light"] .px-2.py-1[style*="var(--color-info)"] {
+  color: #FFFFFF !important;  /* 白色文字确保对比度 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);  /* 文字阴影增强可读性 */
+}
+
+/* 橙色渐变按钮上的文字 */
+:root[data-theme="modern-light"] button[style*="var(--gradient-primary)"],
+:root[data-theme="modern-light"] button[style*="var(--color-primary)"] {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* 确保"已连接"等标签文字清晰 */
+:root[data-theme="modern-light"] span[style*="var(--bg-info-alpha)"] {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 600;  /* 加粗增强可读性 */
+}
+
+/* === 所有主题按钮文字对比度修复（通用） === */
+/* 为所有主题的按钮添加文字阴影，增强可读性 */
+:root button[style*="var(--gradient-primary)"],
+:root button[style*="var(--color-primary)"],
+:root button[style*="var(--color-info)"],
+:root .px-2.py-1[style*="var(--bg-info-alpha)"] {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 确保按钮文字在深色背景上使用白色 */
+:root[data-theme="tech"] button[style*="var(--gradient-primary)"],
+:root[data-theme="tech"] button[style*="var(--color-primary)"],
+:root[data-theme="classic-dark"] button[style*="var(--gradient-primary)"],
+:root[data-theme="classic-dark"] button[style*="var(--color-primary)"],
+:root[data-theme="serene-horizon"] button[style*="var(--gradient-primary)"],
+:root[data-theme="serene-horizon"] button[style*="var(--color-primary)"],
+:root[data-theme="blue-sky-white-cloud"] button[style*="var(--gradient-primary)"],
+:root[data-theme="blue-sky-white-cloud"] button[style*="var(--color-primary)"] {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-weight: 500;
+}
+
+/* === 沉浸模式文字可读性增强（所有主题通用） === */
+/* 确保沉浸模式下文字清晰可见，无论背景如何 */
+.rounded-xl[style*="var(--bg-overlay-alpha)"] {
+  color: var(--text-primary) !important;
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(0, 0, 0, 0.3) !important;
+  font-weight: 500;
+}
+
+/* 沉浸模式消息气泡内部文字增强 */
+.rounded-xl[style*="var(--bg-overlay-alpha)"] p,
+.rounded-xl[style*="var(--bg-overlay-alpha)"] span,
+.rounded-xl[style*="var(--bg-overlay-alpha)"] div {
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 确保 RichTextRenderer 中的文字也清晰可见 */
+.rounded-xl[style*="var(--bg-overlay-alpha)"] * {
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(0, 0, 0, 0.2) !important;
+}
 
 
 

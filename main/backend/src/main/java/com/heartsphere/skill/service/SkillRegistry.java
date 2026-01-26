@@ -67,7 +67,7 @@ public class SkillRegistry {
         skillCache.clear();
         skills.forEach(skill -> {
             skillCache.put(skill.getSkillId(), skill);
-            log.debug("加载技能: {}", skill.getSkillId());
+            log.info("加载技能: {}", skill.getSkillId());
         });
     }
     
@@ -82,7 +82,7 @@ public class SkillRegistry {
             if (dbSkill.isPresent()) {
                 skill = dbSkill.get();
                 skillCache.put(skillId, skill);
-                log.debug("从数据库加载技能到缓存: {}", skillId);
+                log.info("从数据库加载技能到缓存: {}", skillId);
             } else {
                 log.warn("技能不存在: {}", skillId);
             }
@@ -207,7 +207,7 @@ public class SkillRegistry {
      */
     public void clearCharacterSkillCache(Long characterId) {
         characterSkillCache.remove(characterId);
-        log.debug("清除角色技能缓存: characterId={}", characterId);
+        log.info("清除角色技能缓存: characterId={}", characterId);
     }
     
     /**

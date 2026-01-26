@@ -59,9 +59,26 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+    # Agent Mind数据源（使用独立的heartsphere_agent_mind数据库）
+    agent-mind:
+      url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${AGENT_MIND_DB_NAME:heartsphere_agent_mind}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&connectionCollation=utf8mb4_unicode_ci
+      username: ${DB_USER:root}
+      password: ${DB_PASSWORD:123456}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        pool-name: AgentMindHikariPool
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
     # 注意：
     # - main项目直接使用heartsphere数据库（admin数据源），不需要单独配置
     # - company项目直接使用heartsphere数据库（admin数据源），不需要单独配置
+    # 禁用 H2 数据库控制台（如果存在）
+    h2:
+      console:
+        enabled: false
   jpa:
     hibernate:
       ddl-auto: none
@@ -92,6 +109,11 @@ edu:
 mentis:
   backend:
     base-url: ${MENTIS_BACKEND_BASE_URL:http://localhost:8082}
+
+# Agent Mind 后端配置
+agent-mind:
+  backend:
+    base-url: ${AGENT_MIND_BACKEND_BASE_URL:http://localhost:8086}
 
 # Main 后端配置
 main:
@@ -130,7 +152,7 @@ app:
 logging:
   level:
     root: INFO
-    com.heartsphere.admin: DEBUG
-    com.heartsphere.admin.service.edu: DEBUG
+    com.heartsphere.admin: INFO
+    com.heartsphere.admin.service.edu: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

@@ -151,12 +151,14 @@ export const billingApi = {
   // 用户使用统计
   statistics: {
     getMyStatistics: (token: string) => {
-      return request<UserUsageStatistics>('/api/billing/statistics/me', {
+      // 注意：不包含 /api，因为 request.ts 中的 API_BASE_URL 已经包含了 /api
+      return request<UserUsageStatistics>('/billing/statistics/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
     getUserStatistics: (userId: number, token: string) => {
-      return request<UserUsageStatistics>(`/api/billing/statistics/users/${userId}`, {
+      // 注意：不包含 /api，因为 request.ts 中的 API_BASE_URL 已经包含了 /api
+      return request<UserUsageStatistics>(`/billing/statistics/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },

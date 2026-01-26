@@ -19,20 +19,8 @@ export const useAdminAuth = () => {
         }
     }, []);
 
-    // 监听token过期事件
-    useEffect(() => {
-        const handleTokenExpired = () => {
-            console.log('[useAdminAuth] Token已过期，清除认证状态');
-            setAdminToken(null);
-            setIsAuthenticated(false);
-            localStorage.removeItem('admin_token');
-        };
-
-        window.addEventListener('admin-token-expired', handleTokenExpired);
-        return () => {
-            window.removeEventListener('admin-token-expired', handleTokenExpired);
-        };
-    }, []);
+    // 注意：token过期事件现在由 AdminAuthContext 统一处理
+    // 这个 hook 主要用于向后兼容，实际应该使用 AdminAuthContext 中的 useAdminAuth
 
     const login = useCallback(async (user?: string, pass?: string) => {
         const finalUsername = user || username;

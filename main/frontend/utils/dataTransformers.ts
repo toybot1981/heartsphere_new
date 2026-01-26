@@ -120,24 +120,53 @@ export function convertBackendScriptToScenario(
 ): CustomScenario {
   try {
     const scenarioContent = JSON.parse(script.content);
+    
+    // 确保 nodes 是一个有效的对象
+    const nodes = scenarioContent.nodes || {};
+    if (typeof nodes !== 'object' || Array.isArray(nodes)) {
+      console.warn('[convertBackendScriptToScenario] nodes 格式无效，使用空对象:', {
+        nodesType: typeof nodes,
+        isArray: Array.isArray(nodes),
+        scenarioContent,
+      });
+      return {
+        id: String(script.id),
+        sceneId: sceneId,
+        title: script.title || '未命名剧本',
+        description: script.title || '未命名剧本',
+        nodes: {},
+        startNodeId: '',
+        author: '用户'
+      };
+    }
+    
+    // 确保 startNodeId 有效
+    const startNodeId = scenarioContent.startNodeId || Object.keys(nodes)[0] || '';
+    if (startNodeId && !nodes[startNodeId]) {
+      console.warn('[convertBackendScriptToScenario] startNodeId 无效，使用第一个节点:', {
+        startNodeId: scenarioContent.startNodeId,
+        availableNodes: Object.keys(nodes),
+      });
+    }
+    
     return {
       id: String(script.id),
       sceneId: sceneId,
       title: script.title || '未命名剧本',
       description: script.title || '未命名剧本',
-      nodes: scenarioContent.nodes || {},
-      startNodeId: scenarioContent.startNodeId || Object.keys(scenarioContent.nodes || {})[0] || '',
+      nodes: nodes,
+      startNodeId: startNodeId,
       author: '用户'
     };
   } catch (error) {
     console.error('[convertBackendScriptToScenario] 解析剧本内容失败:', error);
-    // 返回一个默认的 scenario
+    // 返回一个默认的 scenario（确保 nodes 是空对象而不是 undefined）
     return {
       id: String(script.id),
       sceneId: sceneId,
       title: script.title || '未命名剧本',
       description: '剧本格式错误',
-      nodes: {},
+      nodes: {}, // 确保是空对象而不是 undefined
       startNodeId: '',
       author: '用户'
     };

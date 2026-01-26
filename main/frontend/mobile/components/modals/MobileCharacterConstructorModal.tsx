@@ -108,25 +108,53 @@ export const MobileCharacterConstructorModal: React.FC<MobileCharacterConstructo
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCreationMode('preset')}
-                    className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                      creationMode === 'preset'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-600 hover:border-purple-500/30'
-                    }`}
+                    className="flex-1 p-3 rounded-lg border-2 transition-all"
+                    style={{
+                      borderColor: creationMode === 'preset'
+                        ? 'var(--color-primary, #a855f7)'
+                        : 'var(--border-color-overlay, #475569)',
+                      backgroundColor: creationMode === 'preset'
+                        ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (creationMode !== 'preset') {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (creationMode !== 'preset') {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                      }
+                    }}
                   >
-                    <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>
+                    <span className={`${MobileTypography.fontSize.sm}`} style={{ color: 'var(--text-primary)' }}>
                       预置角色
                     </span>
                   </button>
                   <button
                     onClick={() => setCreationMode('custom')}
-                    className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                      creationMode === 'custom'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-600 hover:border-purple-500/30'
-                    }`}
+                    className="flex-1 p-3 rounded-lg border-2 transition-all"
+                    style={{
+                      borderColor: creationMode === 'custom'
+                        ? 'var(--color-primary, #a855f7)'
+                        : 'var(--border-color-overlay, #475569)',
+                      backgroundColor: creationMode === 'custom'
+                        ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (creationMode !== 'custom') {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (creationMode !== 'custom') {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                      }
+                    }}
                   >
-                    <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>
+                    <span className={`${MobileTypography.fontSize.sm}`} style={{ color: 'var(--text-primary)' }}>
                       自定义
                     </span>
                   </button>
@@ -147,7 +175,13 @@ export const MobileCharacterConstructorModal: React.FC<MobileCharacterConstructo
                       <div
                         key={char.id}
                         onClick={() => handleSelectPresetCharacter(char)}
-                        className={`${MobileCardStyles.default} p-3 cursor-pointer transition-all hover:border-purple-500/30 ${MobileCardStyles.interactive}`}
+                        className={`${MobileCardStyles.default} p-3 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }}
                         role="button"
                         tabIndex={0}
                         aria-label={`选择预置角色：${char.name}`}

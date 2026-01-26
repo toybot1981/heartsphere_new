@@ -30,23 +30,55 @@ export const ProductHighlights: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-neutral-900 mb-8 text-center">核心产品：心域（HeartSphere）</h2>
+      <h2 
+        className="text-3xl font-bold mb-8 text-center"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        核心产品：心域（HeartSphere）
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {features.map((feature, index) => (
           <div
             key={index}
-            className="bg-white rounded-lg p-6 border border-neutral-200 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-300 transition-colors"
+            className="rounded-lg p-6 border transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+            }}
           >
             <div className="text-4xl mb-4">{feature.icon}</div>
-            <h3 className="text-xl font-semibold text-neutral-900 mb-2">{feature.title}</h3>
-            <p className="text-neutral-600">{feature.description}</p>
+            <h3 
+              className="text-xl font-semibold mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {feature.title}
+            </h3>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              {feature.description}
+            </p>
           </div>
         ))}
       </div>
       <div className="text-center mt-8 space-x-4">
         <a
           href="/company/product"
-          className="inline-flex items-center px-6 py-3 border-2 border-primary-500 text-primary-500 rounded-lg font-semibold hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 transition-colors"
+          className="inline-flex items-center px-6 py-3 border-2 rounded-lg font-semibold focus:outline-none transition-colors"
+          style={{
+            borderColor: 'var(--color-primary)',
+            color: 'var(--color-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
         >
           查看完整产品介绍
           <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +89,17 @@ export const ProductHighlights: React.FC = () => {
           href="http://heartsphere.cn"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 transition-all hover:scale-105 shadow-lg hover:shadow-primary-500/50"
+          className="inline-flex items-center px-6 py-3 rounded-lg font-semibold focus:outline-none transition-all hover:scale-105 shadow-lg"
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+          }}
         >
           立即体验
           <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

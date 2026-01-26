@@ -139,19 +139,36 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
   
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.7))' }}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        style={{ backgroundColor: 'var(--bg-card, #111827)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold text-white">共享我的心域</h2>
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
+          <h2 
+            className="text-2xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            共享我的心域
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -162,7 +179,14 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
         {/* 内容 */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+            <div 
+              className="mb-4 p-4 border rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+                borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+                color: 'var(--color-error, #fca5a5)',
+              }}
+            >
               {error}
             </div>
           )}
@@ -195,15 +219,31 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
         
         {/* 底部按钮 */}
         {step !== 3 && (
-          <div className="flex items-center justify-between p-6 border-t border-gray-700">
-            <div className="text-sm text-gray-400">
+          <div 
+            className="flex items-center justify-between p-6 border-t"
+            style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+          >
+            <div 
+              className="text-sm"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               步骤 {step}/2
             </div>
             <div className="flex gap-3">
               {step === 2 && (
                 <button
                   onClick={handleBack}
-                  className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary, #374151)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+                  }}
                 >
                   上一步
                 </button>
@@ -211,7 +251,17 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
               {step === 1 ? (
                 <button
                   onClick={handleNext}
-                  className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                  className="px-6 py-2 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #3b82f6)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+                  }}
                 >
                   下一步
                 </button>
@@ -219,7 +269,19 @@ export const ShareConfigModal: React.FC<ShareConfigModalProps> = ({
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #3b82f6)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+                  }}
                 >
                   {loading ? '保存中...' : existingConfig ? '更新配置' : '保存并开启共享'}
                 </button>
@@ -289,42 +351,89 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-white mb-4">选择共享范围</h3>
+      <h3 
+        className="text-lg font-semibold mb-4"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        选择共享范围
+      </h3>
       
       {/* 全部共享 */}
       <div
-        className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-          shareType === 'all'
-            ? 'border-blue-500 bg-blue-500/10'
-            : 'border-gray-700 hover:border-gray-600'
-        }`}
+        className="p-4 rounded-lg border-2 cursor-pointer transition-colors"
+        style={{
+          borderColor: shareType === 'all' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'all' ? 'var(--bg-info-alpha)' : 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'all') {
+            e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'all') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
         onClick={() => setShareType('all')}
       >
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                shareType === 'all' ? 'border-blue-500 bg-blue-500' : 'border-gray-600'
-              }`}>
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{
+                  borderColor: shareType === 'all' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+                  backgroundColor: shareType === 'all' ? 'var(--color-info)' : 'transparent',
+                }}
+              >
                 {shareType === 'all' && (
-                  <div className="w-full h-full rounded-full bg-white scale-50" />
+                  <div
+                    className="w-full h-full rounded-full scale-50"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
-              <span className="text-white font-medium">全部共享 ⭐推荐</span>
+              <span 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                全部共享 ⭐推荐
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mt-1">共享所有世界和场景</p>
-            <p className="text-gray-500 text-xs mt-1">适合：完全开放的心域</p>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              共享所有世界和场景
+            </p>
+            <p 
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              适合：完全开放的心域
+            </p>
           </div>
         </div>
       </div>
       
       {/* 按世界共享 */}
       <div
-        className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-          shareType === 'world'
-            ? 'border-blue-500 bg-blue-500/10'
-            : 'border-gray-700 hover:border-gray-600'
-        }`}
+        className="p-4 rounded-lg border-2 cursor-pointer transition-colors"
+        style={{
+          borderColor: shareType === 'world' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'world' ? 'var(--bg-info-alpha)' : 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'world') {
+            e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'world') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
         onClick={() => {
           setShareType('world');
           // 切换到按世界共享时，只保留世界选择，清空场景选择
@@ -334,38 +443,65 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                shareType === 'world' ? 'border-blue-500 bg-blue-500' : 'border-gray-600'
-              }`}>
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{
+                  borderColor: shareType === 'world' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+                  backgroundColor: shareType === 'world' ? 'var(--color-info)' : 'transparent',
+                }}
+              >
                 {shareType === 'world' && (
-                  <div className="w-full h-full rounded-full bg-white scale-50" />
+                  <div
+                    className="w-full h-full rounded-full scale-50"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
-              <span className="text-white font-medium">按世界共享 ⭐推荐</span>
+              <span 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                按世界共享 ⭐推荐
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mt-1">选择要共享的世界</p>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              选择要共享的世界
+            </p>
           </div>
         </div>
         
         {shareType === 'world' && (
           <div className="mt-4 space-y-2">
             {loading ? (
-              <div className="text-center py-4 text-gray-400">加载中...</div>
+              <div className="text-center py-4" style={{ color: 'var(--text-tertiary)' }}>加载中...</div>
             ) : worlds.length === 0 ? (
-              <div className="text-center py-4 text-gray-400">暂无世界</div>
+              <div className="text-center py-4" style={{ color: 'var(--text-tertiary)' }}>暂无世界</div>
             ) : (
               worlds.map(world => (
                 <label
                   key={world.id}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-800 cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded cursor-pointer"
+                  style={{
+                    backgroundColor: 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, #1f2937)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   <input
                     type="checkbox"
                     checked={selectedScopes.some(s => s.scopeType === 'world' && s.scopeId === world.id)}
                     onChange={() => handleScopeToggle('world', world.id)}
-                    className="w-4 h-4 text-blue-500 rounded"
+                    className="w-4 h-4 rounded"
+                    style={{ accentColor: 'var(--color-primary, #3b82f6)' }}
                   />
-                  <span className="text-white">{world.name}</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{world.name}</span>
                 </label>
               ))
             )}
@@ -375,11 +511,21 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
       
       {/* 按场景共享 */}
       <div
-        className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-          shareType === 'era'
-            ? 'border-blue-500 bg-blue-500/10'
-            : 'border-gray-700 hover:border-gray-600'
-        }`}
+        className="p-4 rounded-lg border-2 cursor-pointer transition-colors"
+        style={{
+          borderColor: shareType === 'era' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'era' ? 'var(--bg-info-alpha)' : 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'era') {
+            e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'era') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
         onClick={() => {
           setShareType('era');
           // 切换到按场景共享时，只保留场景选择，清空世界选择
@@ -389,38 +535,63 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                shareType === 'era' ? 'border-blue-500 bg-blue-500' : 'border-gray-600'
-              }`}>
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{
+                  borderColor: shareType === 'era' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+                  backgroundColor: shareType === 'era' ? 'var(--color-info)' : 'transparent',
+                }}
+              >
                 {shareType === 'era' && (
-                  <div className="w-full h-full rounded-full bg-white scale-50" />
+                  <div
+                    className="w-full h-full rounded-full scale-50"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
-              <span className="text-white font-medium">按场景共享</span>
+              <span 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                按场景共享
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mt-1">精确选择要共享的场景</p>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              精确选择要共享的场景
+            </p>
           </div>
         </div>
         
         {shareType === 'era' && (
           <div className="mt-4 space-y-2">
             {loading ? (
-              <div className="text-center py-4 text-gray-400">加载中...</div>
+              <div className="text-center py-4" style={{ color: 'var(--text-tertiary)' }}>加载中...</div>
             ) : eras.length === 0 ? (
-              <div className="text-center py-4 text-gray-400">暂无场景</div>
+              <div className="text-center py-4" style={{ color: 'var(--text-tertiary)' }}>暂无场景</div>
             ) : (
               eras.map(era => (
                 <label
                   key={era.id}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-800 cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded cursor-pointer"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   <input
                     type="checkbox"
                     checked={selectedScopes.some(s => s.scopeType === 'era' && s.scopeId === era.id)}
                     onChange={() => handleScopeToggle('era', era.id)}
-                    className="w-4 h-4 text-blue-500 rounded"
+                    className="w-4 h-4 rounded"
+                    style={{ accentColor: 'var(--color-info)' }}
                   />
-                  <span className="text-white">{era.name}</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{era.name}</span>
                 </label>
               ))
             )}
@@ -429,7 +600,13 @@ const ShareScopeStep: React.FC<ShareScopeStepProps> = ({
       </div>
       
       {shareType !== 'all' && (
-        <div className="mt-4 p-3 bg-gray-800 rounded-lg text-sm text-gray-400">
+        <div 
+          className="mt-4 p-3 rounded-lg text-sm"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #1f2937)',
+            color: 'var(--text-tertiary)',
+          }}
+        >
           已选择 {selectedScopes.filter(s => s.scopeType === shareType).length} 个{shareType === 'world' ? '世界' : '场景'}
         </div>
       )}
@@ -463,80 +640,182 @@ const PermissionStep: React.FC<PermissionStepProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-white mb-4">权限和描述设置</h3>
+      <h3 
+        className="text-lg font-semibold mb-4"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        权限和描述设置
+      </h3>
       
       {/* 连接权限 */}
       <div>
-        <label className="block text-white font-medium mb-3">连接权限</label>
+        <label 
+          className="block font-medium mb-3"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          连接权限
+        </label>
         <div className="space-y-3">
           <div
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-              accessPermission === 'approval'
-                ? 'border-blue-500 bg-blue-500/10'
-                : 'border-gray-700 hover:border-gray-600'
-            }`}
+            className="p-4 rounded-lg border-2 cursor-pointer transition-colors"
+            style={{
+              borderColor: accessPermission === 'approval' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+              backgroundColor: accessPermission === 'approval' ? 'var(--bg-info-alpha)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (accessPermission !== 'approval') {
+                e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (accessPermission !== 'approval') {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }
+            }}
             onClick={() => setAccessPermission('approval')}
           >
             <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                accessPermission === 'approval' ? 'border-blue-500 bg-blue-500' : 'border-gray-600'
-              }`}>
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{
+                  borderColor: accessPermission === 'approval' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+                  backgroundColor: accessPermission === 'approval' ? 'var(--color-info)' : 'transparent',
+                }}
+              >
                 {accessPermission === 'approval' && (
-                  <div className="w-full h-full rounded-full bg-white scale-50" />
+                  <div
+                    className="w-full h-full rounded-full scale-50"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
-              <span className="text-white font-medium">需要我审批（推荐）</span>
+              <span 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                需要我审批（推荐）
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mt-1">其他人需要请求，我同意后才能进入</p>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              其他人需要请求，我同意后才能进入
+            </p>
           </div>
           
           <div
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-              accessPermission === 'free'
-                ? 'border-blue-500 bg-blue-500/10'
-                : 'border-gray-700 hover:border-gray-600'
-            }`}
+            className="p-4 rounded-lg border-2 cursor-pointer transition-colors"
+            style={{
+              borderColor: accessPermission === 'free' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+              backgroundColor: accessPermission === 'free' ? 'var(--bg-info-alpha)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (accessPermission !== 'free') {
+                e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (accessPermission !== 'free') {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }
+            }}
             onClick={() => setAccessPermission('free')}
           >
             <div className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                accessPermission === 'free' ? 'border-blue-500 bg-blue-500' : 'border-gray-600'
-              }`}>
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{
+                  borderColor: accessPermission === 'free' ? 'var(--color-info)' : 'var(--border-color-overlay)',
+                  backgroundColor: accessPermission === 'free' ? 'var(--color-info)' : 'transparent',
+                }}
+              >
                 {accessPermission === 'free' && (
-                  <div className="w-full h-full rounded-full bg-white scale-50" />
+                  <div
+                    className="w-full h-full rounded-full scale-50"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
-              <span className="text-white font-medium">自由连接</span>
+              <span 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                自由连接
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mt-1">任何人可以直接进入，无需审批</p>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              任何人可以直接进入，无需审批
+            </p>
           </div>
         </div>
       </div>
       
       {/* 共享描述 */}
       <div>
-        <label className="block text-white font-medium mb-2">共享描述（可选）</label>
+        <label 
+          className="block font-medium mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          共享描述（可选）
+        </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="介绍一下你的心域..."
           maxLength={200}
-          className="w-full h-24 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          className="w-full h-24 px-4 py-2 border rounded-lg focus:outline-none"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #1f2937)',
+            borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            color: 'var(--text-primary)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-primary, #3b82f6)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+          }}
         />
-        <div className="text-right text-sm text-gray-400 mt-1">
+        <div 
+          className="text-right text-sm mt-1"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           {description.length}/200 字
         </div>
       </div>
       
       {/* 预览 */}
       <div>
-        <label className="block text-white font-medium mb-2">预览效果</label>
-        <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
-          <div className="text-gray-400 text-sm mb-2">
+        <label 
+          className="block font-medium mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          预览效果
+        </label>
+        <div 
+          className="p-4 rounded-lg border"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #1f2937)',
+            borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+          }}
+        >
+          <div 
+            className="text-sm mb-2"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             共享范围：{shareType === 'all' ? '全部' : `${selectedScopes.filter(s => s.scopeType === shareType).length}个${shareType === 'world' ? '世界' : '场景'}`}
           </div>
           {description && (
-            <div className="text-white text-sm mt-2">{description}</div>
+            <div 
+              className="text-sm mt-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {description}
+            </div>
           )}
         </div>
       </div>
@@ -577,7 +856,10 @@ const SharePreviewStep: React.FC<SharePreviewStepProps> = ({
 
   if (!shareConfig) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div 
+        className="text-center py-8"
+        style={{ color: 'var(--text-secondary)' }}
+      >
         配置加载中...
       </div>
     );
@@ -587,10 +869,13 @@ const SharePreviewStep: React.FC<SharePreviewStepProps> = ({
     <div className="space-y-6">
       <div className="text-center">
         <div className="text-6xl mb-4">✅</div>
-        <h3 className="text-2xl font-bold text-white mb-2">
+        <h3 
+          className="text-2xl font-bold mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
           共享配置已{shareConfig.shareCode ? '创建' : '更新'}成功！
         </h3>
-        <p className="text-gray-400">
+        <p style={{ color: 'var(--text-tertiary)' }}>
           现在你可以分享你的心域了
         </p>
       </div>
@@ -605,7 +890,17 @@ const SharePreviewStep: React.FC<SharePreviewStepProps> = ({
       <div className="flex justify-center pt-4">
         <button
           onClick={onClose}
-          className="px-8 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-semibold"
+          className="px-8 py-3 rounded-lg transition-colors font-semibold"
+          style={{
+            backgroundColor: 'var(--color-primary, #3b82f6)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+          }}
         >
           完成
         </button>

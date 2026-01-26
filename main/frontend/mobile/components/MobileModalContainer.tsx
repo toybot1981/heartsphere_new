@@ -98,7 +98,8 @@ export const MobileModalContainer: React.FC<MobileModalContainerProps> = memo(({
             {title && (
               <h2
                 id="modal-title"
-                className="text-xl font-bold text-white"
+                className="text-xl font-bold"
+                style={{ color: 'var(--text-primary)' }}
               >
                 {title}
               </h2>
@@ -106,7 +107,18 @@ export const MobileModalContainer: React.FC<MobileModalContainerProps> = memo(({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-white/70 hover:text-white active:opacity-70 transition-opacity duration-200 touch-manipulation rounded-lg hover:bg-white/5"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center active:opacity-70 transition-opacity duration-200 touch-manipulation rounded-lg"
+                style={{
+                  color: 'var(--text-tertiary, rgba(255, 255, 255, 0.7))',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary, rgba(255, 255, 255, 0.7))';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
                 aria-label="关闭"
               >
                 <svg

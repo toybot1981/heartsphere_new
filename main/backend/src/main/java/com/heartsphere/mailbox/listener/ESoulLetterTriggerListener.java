@@ -37,7 +37,7 @@ public class ESoulLetterTriggerListener {
         
         // 检查是否应该触发来信
         if (!esoulLetterService.shouldTriggerLetter(userId)) {
-            log.debug("不满足触发条件，跳过来信生成 - userId={}", userId);
+            log.info("不满足触发条件，跳过来信生成 - userId={}", userId);
             return;
         }
         
@@ -47,7 +47,7 @@ public class ESoulLetterTriggerListener {
             
             // 离线时间少于60秒，不触发来信
             if (offlineSeconds < 60) {
-                log.debug("离线时间不足60秒，不触发来信 - userId={}, offlineSeconds={}", userId, offlineSeconds);
+                log.info("离线时间不足60秒，不触发来信 - userId={}, offlineSeconds={}", userId, offlineSeconds);
                 return;
             }
         }

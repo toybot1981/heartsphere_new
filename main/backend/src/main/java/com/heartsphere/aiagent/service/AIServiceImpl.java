@@ -35,7 +35,7 @@ public class AIServiceImpl implements AIService {
     @RequiresTokenQuota(quotaType = "text_token", usageType = "text_generation")
     public TextGenerationResponse generateText(Long userId, TextGenerationRequest request) {
         try {
-            log.debug("文本生成请求，userId={}, provider={}, model={}", 
+            log.info("文本生成请求，userId={}, provider={}, model={}", 
                 userId, request.getProvider(), request.getModel());
             
             // 统一接入模式：使用管理后台配置的模型和路由策略
@@ -52,13 +52,13 @@ public class AIServiceImpl implements AIService {
                     request.setModel(modelConfig.getModelName());
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());
-                        log.debug("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
+                        log.info("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
                     }
                     if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().isEmpty()) {
                         request.setApiKey(modelConfig.getApiKey());
-                        log.debug("统一接入模式：设置apiKey（已从数据库获取）");
+                        log.info("统一接入模式：设置apiKey（已从数据库获取）");
                     }
-                    log.debug("统一接入模式：使用模型配置 provider={}, model={}", 
+                    log.info("统一接入模式：使用模型配置 provider={}, model={}", 
                         modelConfig.getProvider(), modelConfig.getModelName());
                 } catch (Exception e) {
                     log.warn("统一接入模式路由失败，回退到用户配置: {}", e.getMessage());
@@ -87,12 +87,12 @@ public class AIServiceImpl implements AIService {
                         );
                     if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().trim().isEmpty()) {
                         request.setApiKey(modelConfig.getApiKey());
-                        log.debug("统一接入模式：从数据库获取并设置apiKey（provider={}, model={}）", 
+                        log.info("统一接入模式：从数据库获取并设置apiKey（provider={}, model={}）", 
                             request.getProvider(), request.getModel());
                     }
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().trim().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());
-                        log.debug("统一接入模式：从数据库获取并设置baseUrl={}", modelConfig.getBaseUrl());
+                        log.info("统一接入模式：从数据库获取并设置baseUrl={}", modelConfig.getBaseUrl());
                     }
                 } catch (Exception e) {
                     log.warn("获取模型配置失败（provider={}, model={}），将继续使用默认配置: {}", 
@@ -111,7 +111,7 @@ public class AIServiceImpl implements AIService {
             
             // 调用适配器生成文本
             TextGenerationResponse response = adapter.generateText(request);
-            log.debug("文本生成成功，userId={}, provider={}, model={}", 
+            log.info("文本生成成功，userId={}, provider={}, model={}", 
                 userId, response.getProvider(), response.getModel());
             
             return response;
@@ -245,7 +245,7 @@ public class AIServiceImpl implements AIService {
                             }
                         } else {
                             if (chunkCount <= 5) {
-                                log.debug("[AIServiceImpl] 统一接入模式 - 收到空内容chunk #{}", chunkCount);
+                                log.info("[AIServiceImpl] 统一接入模式 - 收到空内容chunk #{}", chunkCount);
                             }
                         }
                         if (done) {
@@ -282,7 +282,7 @@ public class AIServiceImpl implements AIService {
     @RequiresTokenQuota(quotaType = "image", usageType = "image_generation")
     public ImageGenerationResponse generateImage(Long userId, ImageGenerationRequest request) {
         try {
-            log.debug("图片生成请求，userId={}, provider={}, model={}", 
+            log.info("图片生成请求，userId={}, provider={}, model={}", 
                 userId, request.getProvider(), request.getModel());
             
             // 统一接入模式：如果请求中没有指定provider和model，从统一路由服务获取
@@ -298,13 +298,13 @@ public class AIServiceImpl implements AIService {
                     request.setModel(modelConfig.getModelName());
                     if (modelConfig.getBaseUrl() != null && !modelConfig.getBaseUrl().isEmpty()) {
                         request.setBaseUrl(modelConfig.getBaseUrl());
-                        log.debug("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
+                        log.info("统一接入模式：设置baseUrl={}", modelConfig.getBaseUrl());
                     }
                     if (modelConfig.getApiKey() != null && !modelConfig.getApiKey().isEmpty()) {
                         request.setApiKey(modelConfig.getApiKey());
-                        log.debug("统一接入模式：设置apiKey（已从数据库获取）");
+                        log.info("统一接入模式：设置apiKey（已从数据库获取）");
                     }
-                    log.debug("统一接入模式：使用模型配置 provider={}, model={}", 
+                    log.info("统一接入模式：使用模型配置 provider={}, model={}", 
                         modelConfig.getProvider(), modelConfig.getModelName());
                 } catch (Exception e) {
                     log.warn("统一接入模式路由失败，回退到用户配置: {}", e.getMessage());
@@ -329,7 +329,7 @@ public class AIServiceImpl implements AIService {
             
             // 调用适配器生成图片
             ImageGenerationResponse response = adapter.generateImage(request);
-            log.debug("图片生成成功，userId={}, provider={}, model={}", 
+            log.info("图片生成成功，userId={}, provider={}, model={}", 
                 userId, response.getProvider(), response.getModel());
             
             return response;
@@ -344,19 +344,49 @@ public class AIServiceImpl implements AIService {
     @Override
     @RequiresTokenQuota(quotaType = "audio", usageType = "audio_tts")
     public AudioResponse textToSpeech(Long userId, AudioRequest request) {
+        log.info("[AIServiceImpl] ========== 开始处理文本转语音 ==========");
+        log.info("[AIServiceImpl] 输入参数: userId={}, provider={}, model={}, textLength={}, voice={}, baseUrl={}", 
+            userId, request.getProvider(), request.getModel(), 
+            request.getText() != null ? request.getText().length() : 0,
+            request.getVoice(), request.getBaseUrl());
+        
         try {
             // 确定provider
             String provider = request.getProvider() != null ? 
                 request.getProvider() : "dashscope";
+            log.info("[AIServiceImpl] 步骤1: 确定provider={}", provider);
             
             // 获取适配器
+            log.info("[AIServiceImpl] 步骤2: 获取适配器");
             ModelAdapter adapter = adapterManager.getAdapter(provider);
+            if (adapter == null) {
+                log.error("[AIServiceImpl] ❌ 适配器不存在: provider={}", provider);
+                throw new AIServiceException("不支持的provider: " + provider);
+            }
+            log.info("[AIServiceImpl] ✅ 适配器获取成功: provider={}, adapterType={}", 
+                provider, adapter.getClass().getSimpleName());
             
             // 调用适配器文本转语音
-            return adapter.textToSpeech(request);
+            log.info("[AIServiceImpl] 步骤3: 调用适配器textToSpeech方法");
+            AudioResponse response = adapter.textToSpeech(request);
             
+            log.info("[AIServiceImpl] ✅ 文本转语音成功: provider={}, model={}, hasAudio={}, audioLength={}", 
+                response.getProvider(), response.getModel(), 
+                response.getAudioBase64() != null || response.getContent() != null,
+                response.getAudioBase64() != null ? response.getAudioBase64().length() : 0);
+            log.info("[AIServiceImpl] ========== 文本转语音处理完成 ==========");
+            
+            return response;
+            
+        } catch (AIServiceException e) {
+            log.error("[AIServiceImpl] ❌ 文本转语音失败（AIServiceException）: userId={}, provider={}, model={}, error={}", 
+                userId, request.getProvider(), request.getModel(), e.getMessage(), e);
+            log.info("[AIServiceImpl] ========== 文本转语音处理失败 ==========");
+            throw e;
         } catch (Exception e) {
-            log.error("文本转语音失败，userId={}", userId, e);
+            log.error("[AIServiceImpl] ❌ 文本转语音失败（Exception）: userId={}, provider={}, model={}, error={}", 
+                userId, request.getProvider(), request.getModel(), e.getMessage(), e);
+            log.info("[AIServiceImpl] ========== 文本转语音处理失败 ==========");
             throw new AIServiceException("文本转语音失败: " + e.getMessage(), e);
         }
     }

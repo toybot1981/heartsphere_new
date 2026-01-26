@@ -311,15 +311,45 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
     const currentSceneCharacters = getCurrentSceneCharacters();
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="max-w-4xl w-full bg-slate-900 p-8 rounded-xl border border-slate-800 my-8 max-h-[90vh] overflow-y-auto">
+        <div 
+            className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+            style={{
+                backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+            }}
+        >
+            <div 
+                className="max-w-4xl w-full p-8 rounded-xl border my-8 max-h-[90vh] overflow-y-auto"
+                style={{
+                    backgroundColor: 'var(--bg-secondary, #0f172a)',
+                    borderColor: 'var(--border-color-overlay, #1e293b)',
+                }}
+            >
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white">{script.id ? '编辑剧本' : '创建剧本'}</h3>
+                    <h3 
+                        className="text-xl font-bold"
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        {script.id ? '编辑剧本' : '创建剧本'}
+                    </h3>
                     {!script.id && (
                         <Button 
                             onClick={handleAiGenerate}
                             disabled={aiGenerating || !formData.title || !formData.eraId}
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                            className="transition-colors"
+                            style={{
+                                background: 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))',
+                                color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!aiGenerating && formData.title && formData.eraId) {
+                                    e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #7c3aed, #db2777))';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!aiGenerating && formData.title && formData.eraId) {
+                                    e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))';
+                                }
+                            }}
                         >
                             {aiGenerating ? '✨ AI生成中...' : '✨ AI一键创建'}
                         </Button>
@@ -328,16 +358,37 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">剧本标题</label>
+                        <label 
+                            className="block text-sm font-medium mb-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            剧本标题
+                        </label>
                         <input 
                             type="text"
                             value={formData.title || ''} 
                             onChange={e => setFormData({...formData, title: e.target.value})} 
-                            className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                            className="w-full border rounded px-3 py-2 text-sm outline-none"
+                            style={{
+                                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                                borderColor: 'var(--border-color-overlay, #475569)',
+                                color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                            }}
+                            onBlur={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                            }}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">所属场景</label>
+                        <label 
+                            className="block text-sm font-medium mb-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            所属场景
+                        </label>
                         <select 
                             value={formData.eraId || ''} 
                             onChange={e => {
@@ -348,7 +399,18 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                                     participatingCharacters: [] // 清空已选角色
                                 });
                             }}
-                            className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                            className="w-full border rounded px-3 py-2 text-sm outline-none"
+                            style={{
+                                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                                borderColor: 'var(--border-color-overlay, #475569)',
+                                color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                            }}
+                            onBlur={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                            }}
                         >
                             <option value="">未指定</option>
                             {scenes.map(scene => (
@@ -359,33 +421,76 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 </div>
                 
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">简介</label>
+                    <label 
+                        className="block text-sm font-medium mb-2"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        简介
+                    </label>
                     <textarea 
                         value={formData.description || ''} 
                         onChange={e => setFormData({...formData, description: e.target.value})} 
                         rows={2} 
-                        className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                        className="w-full border rounded px-3 py-2 text-sm outline-none"
+                        style={{
+                            backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                            borderColor: 'var(--border-color-overlay, #475569)',
+                            color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                        }}
                     />
                 </div>
 
                 {/* 标签 */}
                 <div className="mt-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">标签（逗号分隔）</label>
+                        <label 
+                            className="block text-sm font-medium mb-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            标签（逗号分隔）
+                        </label>
                         <input 
                             type="text"
                             value={formData.tags || ''} 
                             onChange={e => setFormData({...formData, tags: e.target.value})} 
                             placeholder="例如: 冒险,浪漫,校园"
-                            className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                            className="w-full border rounded px-3 py-2 text-sm outline-none"
+                            style={{
+                                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                                borderColor: 'var(--border-color-overlay, #475569)',
+                                color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                            }}
+                            onBlur={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                            }}
                         />
                     </div>
                 </div>
                 
                 {/* 参与角色显示（AI自动选择） */}
                 <div className="mt-6">
-                    <h4 className="text-sm font-bold text-purple-400 border-b border-purple-900/30 pb-2 mb-4">参与角色</h4>
-                    <p className="text-xs text-slate-500 mb-3">
+                    <h4 
+                        className="text-sm font-bold border-b pb-2 mb-4"
+                        style={{
+                            color: 'var(--color-primary, #a855f7)',
+                            borderColor: 'var(--color-primary, rgba(168, 85, 247, 0.3))',
+                        }}
+                    >
+                        参与角色
+                    </h4>
+                    <p 
+                        className="text-xs mb-3"
+                        style={{ color: 'var(--text-disabled)' }}
+                    >
                         {script.id 
                             ? '编辑模式下显示已选择的参与角色' 
                             : '点击"AI一键创建"按钮，AI将根据场景中的角色自动选择2-4个角色参与剧本'}
@@ -404,25 +509,50 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                                     return participatingChars.map(char => (
                                         <div
                                             key={char.id} 
-                                            className="flex items-center gap-3 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg"
+                                            className="flex items-center gap-3 p-3 border rounded-lg"
+                                            style={{
+                                                backgroundColor: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+                                                borderColor: 'var(--color-primary, rgba(168, 85, 247, 0.3))',
+                                            }}
                                         >
                                             <img 
                                                 src={char.avatarUrl || 'https://picsum.photos/seed/avatar/400/600'} 
                                                 alt={char.name} 
-                                                className="w-10 h-10 rounded-full object-cover border border-purple-500/50" 
+                                                className="w-10 h-10 rounded-full object-cover border" 
+                                                style={{
+                                                    borderColor: 'var(--color-primary, rgba(168, 85, 247, 0.5))',
+                                                }}
                                             />
                                             <div className="flex-1">
-                                                <div className="text-white font-medium">{char.name}</div>
-                                                <div className="text-xs text-slate-400">{char.role || '未定义'}</div>
+                                                <div 
+                                                    className="font-medium"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                >
+                                                    {char.name}
+                                                </div>
+                                                <div 
+                                                    className="text-xs"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    {char.role || '未定义'}
+                                                </div>
                                             </div>
                                             {char.bio && (
-                                                <div className="text-xs text-slate-500 max-w-xs truncate">{char.bio}</div>
+                                                <div 
+                                                    className="text-xs max-w-xs truncate"
+                                                    style={{ color: 'var(--text-disabled)' }}
+                                                >
+                                                    {char.bio}
+                                                </div>
                                             )}
                                         </div>
                                     ));
                                 } else {
                                     return (
-                                        <div className="text-center py-4 text-slate-500">
+                                        <div 
+                                            className="text-center py-4"
+                                            style={{ color: 'var(--text-disabled)' }}
+                                        >
                                             <p className="text-sm mb-2">暂未选择参与角色</p>
                                             <p className="text-xs">点击"AI一键创建"按钮自动生成剧本并选择角色</p>
                                         </div>
@@ -430,11 +560,21 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                                 }
                             })()}
                             {currentSceneCharacters.length === 0 && (
-                                <p className="text-sm text-slate-500 text-center py-4">该场景暂无角色，请先创建角色。</p>
+                                <p 
+                                    className="text-sm text-center py-4"
+                                    style={{ color: 'var(--text-disabled)' }}
+                                >
+                                    该场景暂无角色，请先创建角色。
+                                </p>
                             )}
                         </div>
                     ) : (
-                        <p className="text-sm text-slate-500 text-center py-4">请先选择所属场景。</p>
+                        <p 
+                            className="text-sm text-center py-4"
+                            style={{ color: 'var(--text-disabled)' }}
+                        >
+                            请先选择所属场景。
+                        </p>
                     )}
                 </div>
 
@@ -448,18 +588,42 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                             return (
                                 <div className="mt-6">
                                     <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-sm font-bold text-emerald-400 border-b border-emerald-900/30 pb-2 flex-1">节点流程</h4>
+                                        <h4 
+                                          className="text-sm font-bold border-b pb-2 flex-1"
+                                          style={{
+                                            color: 'var(--color-success)',
+                                            borderColor: 'var(--border-color-overlay)',
+                                          }}
+                                        >
+                                          节点流程
+                                        </h4>
                                         <Button 
                                             onClick={() => setShowScenarioBuilder(true)}
-                                            className="bg-emerald-600 hover:bg-emerald-500 text-sm"
+                                            className="text-sm"
+                                            style={{
+                                              backgroundColor: 'var(--color-success)',
+                                              color: 'var(--text-primary)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.backgroundColor = 'var(--color-success-light)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.backgroundColor = 'var(--color-success)';
+                                            }}
                                         >
                                             📝 打开可视化编辑器
                                         </Button>
                                     </div>
                                     {/* ScenarioNodeFlow 组件已移除，使用 ScenarioBuilder 替代 */}
-                                    <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                                        <p className="text-sm text-slate-400 mb-2">节点可视化编辑器（请使用上方的"打开可视化编辑器"按钮）</p>
-                                        <div className="text-xs text-slate-500">
+                                    <div
+                                        className="p-4 rounded-lg border"
+                                        style={{
+                                            backgroundColor: 'var(--bg-card)',
+                                            borderColor: 'var(--border-color-overlay)',
+                                        }}
+                                    >
+                                        <p className="text-sm mb-2" style={{ color: 'var(--text-tertiary)' }}>节点可视化编辑器（请使用上方的"打开可视化编辑器"按钮）</p>
+                                        <div className="text-xs" style={{ color: 'var(--text-disabled)' }}>
                                             {Object.keys(nodes).length} 个节点已定义
                                         </div>
                                     </div>
@@ -474,29 +638,68 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
 
                 {/* JSON节点编辑器 */}
                 <div className="mt-6">
-                    <p className="text-xs text-slate-500 mb-2">此处直接编辑剧情节点的 JSON 结构。适合高级用户或复制粘贴。</p>
-                    <textarea 
-                        value={formData.nodes || ''} 
-                        onChange={e => setFormData({...formData, nodes: e.target.value})} 
-                        rows={15} 
-                        className="w-full font-mono text-xs bg-slate-950 border border-slate-800 rounded px-3 py-2 text-emerald-300 focus:border-indigo-500 outline-none"
+                    <p className="text-xs mb-2" style={{ color: 'var(--text-disabled)' }}>此处直接编辑剧情节点的 JSON 结构。适合高级用户或复制粘贴。</p>
+                    <textarea
+                        value={formData.nodes || ''}
+                        onChange={e => setFormData({...formData, nodes: e.target.value})}
+                        rows={15}
+                        className="w-full font-mono text-xs rounded px-3 py-2 outline-none"
+                        style={{
+                            backgroundColor: 'var(--bg-primary-dark)',
+                            borderColor: 'var(--border-color-overlay)',
+                            color: 'var(--color-success)',
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--color-info)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }}
                         placeholder='{ "start": { "id": "start", "title": "...", "prompt": "...", "options": [] } }'
                     />
                 </div>
-                
+
                 <div className="mt-6">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">起始节点 ID</label>
-                    <input 
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>起始节点 ID</label>
+                    <input
                         type="text"
-                        value={formData.startNodeId || 'start'} 
-                        onChange={e => setFormData({...formData, startNodeId: e.target.value})} 
-                        className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none font-mono text-xs" 
+                        value={formData.startNodeId || 'start'}
+                        onChange={e => setFormData({...formData, startNodeId: e.target.value})}
+                        className="w-full rounded px-3 py-2 text-sm outline-none font-mono text-xs"
+                        style={{
+                            backgroundColor: 'var(--bg-card)',
+                            borderColor: 'var(--border-color-overlay)',
+                            color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--color-info)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }}
                     />
                 </div>
 
                 <div className="flex justify-end gap-3 mt-8">
                     <Button variant="ghost" onClick={onCancel} disabled={loading || aiGenerating}>取消</Button>
-                    <Button onClick={handleSave} className="bg-indigo-600" disabled={loading || aiGenerating}>
+                    <Button 
+                        onClick={handleSave} 
+                        className="transition-colors" 
+                        disabled={loading || aiGenerating}
+                        style={{
+                            backgroundColor: 'var(--color-primary, #6366f1)',
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!loading && !aiGenerating) {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!loading && !aiGenerating) {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+                            }
+                        }}
+                    >
                         {loading ? '保存中...' : '保存剧本'}
                     </Button>
                 </div>
@@ -519,7 +722,10 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                         };
                         
                         return (
-                            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm">
+                            <div
+                                className="fixed inset-0 z-[300] backdrop-blur-sm"
+                                style={{ backgroundColor: 'var(--bg-overlay-dark)' }}
+                            >
                                 <ScenarioBuilder
                                     initialScenario={scenario}
                                     onSave={(updatedScenario) => {
@@ -544,11 +750,29 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                         );
                     } catch (e) {
                         return (
-                            <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-                                <div className="bg-slate-900 border border-red-500/50 rounded-2xl p-6 max-w-md">
-                                    <h3 className="text-lg font-bold text-red-400 mb-2">无法打开编辑器</h3>
-                                    <p className="text-sm text-slate-400 mb-4">节点数据格式错误，请先修复 JSON 格式。</p>
-                                    <Button onClick={() => setShowScenarioBuilder(false)} className="bg-indigo-600 w-full">关闭</Button>
+                            <div
+                                className="fixed inset-0 z-[300] flex items-center justify-center backdrop-blur-sm p-4"
+                                style={{ backgroundColor: 'var(--bg-overlay-dark)' }}
+                            >
+                                <div
+                                    className="rounded-2xl p-6 max-w-md border"
+                                    style={{
+                                        backgroundColor: 'var(--bg-card)',
+                                        borderColor: 'var(--border-error-alpha)',
+                                    }}
+                                >
+                                    <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-error)' }}>无法打开编辑器</h3>
+                                    <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>节点数据格式错误，请先修复 JSON 格式。</p>
+                                    <Button
+                                        onClick={() => setShowScenarioBuilder(false)}
+                                        className="w-full"
+                                        style={{
+                                            backgroundColor: 'var(--color-info)',
+                                            color: 'var(--text-primary)',
+                                        }}
+                                    >
+                                        关闭
+                                    </Button>
                                 </div>
                             </div>
                         );

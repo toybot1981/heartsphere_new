@@ -183,6 +183,30 @@ heartconnect:
       wormhole: true   # 虫洞传送门
       quantum: true    # 量子传送门
 
+# 技能选择配置
+skill:
+  selection:
+    # LLM 驱动配置
+    llm-driven:
+      enabled: ${SKILL_LLM_DRIVEN_ENABLED:true}  # 是否启用 LLM 驱动（默认：true）
+      level1-candidates: ${SKILL_LEVEL1_CANDIDATES:10}  # Level 1 筛选的候选数量
+      level2-candidates: ${SKILL_LEVEL2_CANDIDATES:5}  # Level 2 评估的候选数量
+      level3-candidates: ${SKILL_LEVEL3_CANDIDATES:3}  # Level 3 最终决策的候选数量
+      enable-level3: ${SKILL_ENABLE_LEVEL3:true}  # 是否启用 Level 3（默认：true）
+      model: ${SKILL_LLM_MODEL:gpt-4}  # LLM 模型
+      temperature: ${SKILL_LLM_TEMPERATURE:0.3}  # 温度参数
+      max-tokens: ${SKILL_LLM_MAX_TOKENS:1000}  # 最大 Token 数
+    # 规则驱动配置（降级方案）
+    rule-driven:
+      enabled: ${SKILL_RULE_DRIVEN_ENABLED:true}  # 是否启用规则驱动
+      fallback: ${SKILL_RULE_DRIVEN_FALLBACK:true}  # 是否作为降级方案
+    # 缓存配置
+    cache:
+      level1-ttl: ${SKILL_CACHE_LEVEL1_TTL:3600}  # Level 1 缓存 TTL（秒）
+      level2-ttl: ${SKILL_CACHE_LEVEL2_TTL:1800}  # Level 2 缓存 TTL（秒）
+      level3-ttl: ${SKILL_CACHE_LEVEL3_TTL:600}  # Level 3 缓存 TTL（秒）
+      llm-result-ttl: ${SKILL_CACHE_LLM_RESULT_TTL:300}  # LLM 结果缓存 TTL（秒）
+
 # 记忆系统配置
 heartsphere:
   memory:
@@ -215,10 +239,10 @@ logging:
     root: INFO
     # 应用包日志级别
     com.heartsphere: INFO
-    # 传送门相关日志（调试模式）
-    com.heartsphere.heartconnect.portal: DEBUG
-    # 枚举转换器日志（调试模式）
-    com.heartsphere.heartconnect.portal.entity.converter: DEBUG
+    # 传送门相关日志
+    com.heartsphere.heartconnect.portal: INFO
+    # 枚举转换器日志
+    com.heartsphere.heartconnect.portal.entity.converter: INFO
     # Hibernate SQL日志
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
@@ -242,10 +266,10 @@ logging:
     com.alibaba.cloud.ai: INFO
     # Netty DNS日志（用于调试DNS问题）
     io.netty.resolver.dns: INFO
-    # HSMem Client 服务日志（默认 INFO，开发环境可调整为 DEBUG）
+    # HSMem Client 服务日志
     com.heartsphere.memory.service.HSMemClientService: INFO
-    # Memory Controller 日志（用于调试）
-    com.heartsphere.memory.controller.MemoryController: DEBUG
+    # Memory Controller 日志
+    com.heartsphere.memory.controller.MemoryController: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

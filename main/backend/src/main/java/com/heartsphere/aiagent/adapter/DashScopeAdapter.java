@@ -105,7 +105,7 @@ public class DashScopeAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[DashScopeAdapter] 使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DashScopeAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -115,7 +115,7 @@ public class DashScopeAdapter implements ModelAdapter {
             // 记录构建的请求体（不记录完整内容，只记录关键信息）
             @SuppressWarnings("unchecked")
             List<Map<String, String>> messagesList = (List<Map<String, String>>) requestBody.get("messages");
-            log.debug("[DashScopeAdapter] 构建的请求体 - model={}, messagesCount={}, hasTemperature={}, hasMaxTokens={}", 
+            log.info("[DashScopeAdapter] 构建的请求体 - model={}, messagesCount={}, hasTemperature={}, hasMaxTokens={}", 
                 requestBody.get("model"),
                 messagesList != null ? messagesList.size() : 0,
                 requestBody.containsKey("temperature"),
@@ -166,7 +166,7 @@ public class DashScopeAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[DashScopeAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DashScopeAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -271,7 +271,7 @@ public class DashScopeAdapter implements ModelAdapter {
                                         handler.handle(chunk, false);
                                     } else {
                                         if (chunkCount[0] <= 5) {
-                                            log.debug("[DashScopeAdapter] 统一接入模式 - delta没有content字段 - chunkCount={}", chunkCount[0]);
+                                            log.info("[DashScopeAdapter] 统一接入模式 - delta没有content字段 - chunkCount={}", chunkCount[0]);
                                         }
                                     }
                                     
@@ -340,7 +340,7 @@ public class DashScopeAdapter implements ModelAdapter {
     @Override
     public ImageGenerationResponse generateImage(ImageGenerationRequest request) {
         try {
-            log.debug("DashScope图片生成请求: provider={}, model={}, prompt={}", 
+            log.info("DashScope图片生成请求: provider={}, model={}, prompt={}", 
                 getProviderType(), request.getModel(), request.getPrompt());
             
             // 获取 API key
@@ -353,7 +353,7 @@ public class DashScopeAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : "https://dashscope.aliyuncs.com/api/v1";
-            log.debug("[DashScopeAdapter] 使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DashScopeAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
             // 判断使用哪个API端点
             String model = request.getModel() != null ? request.getModel() : "wanx-v1";
@@ -458,7 +458,7 @@ public class DashScopeAdapter implements ModelAdapter {
             // DashScope 异步模式：先返回 task_id，需要轮询获取结果
             if (response.has("output") && response.get("output").has("task_id")) {
                 String taskId = response.get("output").get("task_id").asText();
-                log.debug("DashScope图片生成任务ID: {}", taskId);
+                log.info("DashScope图片生成任务ID: {}", taskId);
                 
                 // 轮询获取结果（最多30次，每次间隔2秒）
                 String resultUrl = "https://dashscope.aliyuncs.com/api/v1/tasks/" + taskId;
@@ -600,7 +600,7 @@ public class DashScopeAdapter implements ModelAdapter {
             } else if (request.getAspectRatio() != null) {
                 // 根据宽高比映射到最接近的允许尺寸
                 selectedSize = mapAspectRatioToAllowedSize(request.getAspectRatio(), allowedSizes);
-                log.debug("[DashScopeAdapter] 宽高比 {} 映射到尺寸: {}", request.getAspectRatio(), selectedSize);
+                log.info("[DashScopeAdapter] 宽高比 {} 映射到尺寸: {}", request.getAspectRatio(), selectedSize);
             }
             
             parameters.put("size", selectedSize);
@@ -706,7 +706,7 @@ public class DashScopeAdapter implements ModelAdapter {
                                     continue;
                                 }
                                 
-                                log.debug("[DashScopeAdapter] multimodal-generation任务查询响应 (第{}次): {}", i + 1, taskBody.toString());
+                                log.info("[DashScopeAdapter] multimodal-generation任务查询响应 (第{}次): {}", i + 1, taskBody.toString());
                                 
                                 // 检查任务状态
                                 // multimodal-generation API的任务响应格式可能是：
@@ -720,17 +720,17 @@ public class DashScopeAdapter implements ModelAdapter {
                                     // 标准格式：task.task.status
                                     status = taskBody.get("task").get("status").asText();
                                     taskOutput = taskBody.get("output");
-                                    log.debug("[DashScopeAdapter] 使用标准格式 - status={}, hasOutput={}", status, taskOutput != null);
+                                    log.info("[DashScopeAdapter] 使用标准格式 - status={}, hasOutput={}", status, taskOutput != null);
                                 } else if (taskBody.has("output") && taskBody.get("output").has("status")) {
                                     // 输出中直接包含状态
                                     taskOutput = taskBody.get("output");
                                     status = taskOutput.get("status").asText();
-                                    log.debug("[DashScopeAdapter] 使用output格式 - status={}", status);
+                                    log.info("[DashScopeAdapter] 使用output格式 - status={}", status);
                                 } else if (taskBody.has("status")) {
                                     // 最外层状态
                                     status = taskBody.get("status").asText();
                                     taskOutput = taskBody.has("output") ? taskBody.get("output") : null;
-                                    log.debug("[DashScopeAdapter] 使用外层格式 - status={}, hasOutput={}", status, taskOutput != null);
+                                    log.info("[DashScopeAdapter] 使用外层格式 - status={}, hasOutput={}", status, taskOutput != null);
                                 }
                                 
                                 if (status != null) {
@@ -759,7 +759,7 @@ public class DashScopeAdapter implements ModelAdapter {
                                         throw new AIServiceException("DashScope图片生成任务失败: " + errorMsg);
                                     } else {
                                         // PENDING, RUNNING 或其他进行中状态，继续轮询
-                                        log.debug("[DashScopeAdapter] multimodal-generation任务进行中 - status={}", status);
+                                        log.info("[DashScopeAdapter] multimodal-generation任务进行中 - status={}", status);
                                     }
                                 } else {
                                     log.warn("[DashScopeAdapter] 无法识别任务状态格式，响应: {}", taskBody.toString());
@@ -862,10 +862,30 @@ public class DashScopeAdapter implements ModelAdapter {
             }
             
             // 优先使用请求中的 baseUrl（从配置表获取），如果没有则使用配置文件中的默认值
-            String effectiveBaseUrl = baseUrl.replace("/compatible-mode/v1", "/api/v1");
+            String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
+                ? request.getBaseUrl() 
+                : baseUrl;
             
-            // DashScope TTS API端点
+            // 标准化 baseUrl：移除路径后缀，确保是基础 URL
+            // 默认 baseUrl 是 https://dashscope.aliyuncs.com/compatible-mode/v1
+            // 需要转换为 https://dashscope.aliyuncs.com/api/v1
+            if (effectiveBaseUrl.contains("/compatible-mode/v1")) {
+                effectiveBaseUrl = effectiveBaseUrl.replace("/compatible-mode/v1", "/api/v1");
+            } else if (effectiveBaseUrl.contains("/chat/completions")) {
+                effectiveBaseUrl = effectiveBaseUrl.replace("/chat/completions", "/api/v1");
+            } else if (!effectiveBaseUrl.contains("/api/v1")) {
+                // 如果 baseUrl 不包含 /api/v1，需要添加
+                effectiveBaseUrl = effectiveBaseUrl.replaceAll("/+$", "") + "/api/v1";
+            }
+            
+            // 确保 baseUrl 格式正确（移除多余的斜杠）
+            effectiveBaseUrl = effectiveBaseUrl.replaceAll("(?<!:)//+", "/");
+            
+            // DashScope TTS API端点（sambert 模型使用 audio/tts/generation 端点）
+            // 参考：MultimodalService 中使用的端点
             String url = effectiveBaseUrl + "/services/audio/tts/generation";
+            
+            log.info("[DashScopeAdapter] TTS使用baseUrl: {}, 完整URL: {}", effectiveBaseUrl, url);
             
             // 确定模型名称（sambert-zhichu-v1 是DashScope主流的TTS模型）
             String model = request.getModel() != null ? request.getModel() : "sambert-zhichu-v1";
@@ -895,17 +915,56 @@ public class DashScopeAdapter implements ModelAdapter {
             headers.set("Authorization", "Bearer " + apiKey);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
             
-            log.info("[DashScopeAdapter] TTS请求 - URL: {}, Model: {}, TextLength: {}, Voice: {}", 
-                url, model, request.getText() != null ? request.getText().length() : 0, parameters.get("voice"));
+            log.info("[DashScopeAdapter] ========== 准备发送TTS请求 ==========");
+            log.info("[DashScopeAdapter] 请求URL: {}", url);
+            log.info("[DashScopeAdapter] 请求头: ContentType={}, Authorization={}", 
+                headers.getContentType(), 
+                apiKey != null && apiKey.length() > 10 ? "Bearer " + apiKey.substring(0, 10) + "..." : "null");
+            log.info("[DashScopeAdapter] 请求体: model={}, textLength={}, voice={}, format={}, sampleRate={}", 
+                model, request.getText() != null ? request.getText().length() : 0, 
+                parameters.get("voice"), parameters.get("format"), parameters.get("sample_rate"));
+            log.info("[DashScopeAdapter] 请求体完整内容: {}", requestBody);
             
-            ResponseEntity<JsonNode> response = restTemplate.exchange(
-                url, HttpMethod.POST, entity, JsonNode.class
-            );
-            
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                String errorBody = response.getBody() != null ? response.getBody().toString() : "无响应体";
-                log.error("[DashScopeAdapter] TTS API调用失败 - Status: {}, Body: {}", response.getStatusCode(), errorBody);
-                throw new AIServiceException("DashScope TTS API 调用失败: " + response.getStatusCode() + " - " + errorBody);
+            ResponseEntity<JsonNode> response;
+            try {
+                response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, JsonNode.class
+                );
+                
+                log.info("[DashScopeAdapter] ✅ TTS API响应收到 - Status: {}, HasBody: {}", 
+                    response.getStatusCode(), response.getBody() != null);
+                
+                if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    String errorBody = response.getBody() != null ? response.getBody().toString() : "无响应体";
+                    log.error("[DashScopeAdapter] ❌ TTS API调用失败 - Status: {}, Body: {}", 
+                        response.getStatusCode(), errorBody);
+                    log.info("[DashScopeAdapter] ========== TTS请求失败 ==========");
+                    throw new AIServiceException("DashScope TTS API 调用失败: " + response.getStatusCode() + " - " + errorBody);
+                }
+                
+                log.info("[DashScopeAdapter] ✅ TTS API响应成功 - Status: {}, ResponseBody: {}", 
+                    response.getStatusCode(), response.getBody().toString());
+                
+            } catch (org.springframework.web.client.HttpClientErrorException e) {
+                String errorBody = e.getResponseBodyAsString();
+                log.error("[DashScopeAdapter] ❌ TTS API HTTP客户端错误 - Status: {}, Body: {}, URL: {}", 
+                    e.getStatusCode(), errorBody, url, e);
+                log.info("[DashScopeAdapter] ========== TTS请求失败（HTTP错误） ==========");
+                throw new AIServiceException("DashScope TTS API HTTP错误: " + e.getStatusCode() + " - " + errorBody, e);
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                String errorBody = e.getResponseBodyAsString();
+                log.error("[DashScopeAdapter] ❌ TTS API HTTP服务器错误 - Status: {}, Body: {}, URL: {}", 
+                    e.getStatusCode(), errorBody, url, e);
+                log.info("[DashScopeAdapter] ========== TTS请求失败（服务器错误） ==========");
+                throw new AIServiceException("DashScope TTS API 服务器错误: " + e.getStatusCode() + " - " + errorBody, e);
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                log.error("[DashScopeAdapter] ❌ TTS API 网络访问错误 - URL: {}, Error: {}", url, e.getMessage(), e);
+                log.info("[DashScopeAdapter] ========== TTS请求失败（网络错误） ==========");
+                throw new AIServiceException("DashScope TTS API 网络访问失败: " + e.getMessage(), e);
+            } catch (Exception e) {
+                log.error("[DashScopeAdapter] ❌ TTS API 调用异常 - URL: {}, Error: {}", url, e.getMessage(), e);
+                log.info("[DashScopeAdapter] ========== TTS请求失败（异常） ==========");
+                throw new AIServiceException("DashScope TTS API 调用异常: " + e.getMessage(), e);
             }
             
             // 解析响应
@@ -1076,7 +1135,7 @@ public class DashScopeAdapter implements ModelAdapter {
     @Override
     public VideoGenerationResponse generateVideo(VideoGenerationRequest request) {
         try {
-            log.debug("DashScope视频生成请求: prompt={}", request.getPrompt());
+            log.info("DashScope视频生成请求: prompt={}", request.getPrompt());
             
             Map<String, Object> options = new HashMap<>();
             if (request.getModel() != null) {
@@ -1130,7 +1189,7 @@ public class DashScopeAdapter implements ModelAdapter {
     private String getApiKey(TextGenerationRequest request) {
         // 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
         if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
-            log.debug("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）");
+            log.info("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）");
             return request.getApiKey();
         }
         // 否则使用配置文件中的默认 API key
@@ -1140,7 +1199,7 @@ public class DashScopeAdapter implements ModelAdapter {
     private String getApiKey(ImageGenerationRequest request) {
         // 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
         if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
-            log.debug("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）(image)");
+            log.info("[DashScopeAdapter] 使用请求中的 API key（从数据库配置获取）(image)");
             return request.getApiKey();
         }
         // 否则使用配置文件中的默认 API key
@@ -1154,14 +1213,14 @@ public class DashScopeAdapter implements ModelAdapter {
     private String getApiKeyForAudio() {
         // 使用配置文件中的默认 API key
         if (defaultApiKey != null && !defaultApiKey.trim().isEmpty()) {
-            log.debug("[DashScopeAdapter] 使用配置文件中的 API key (audio)");
+            log.info("[DashScopeAdapter] 使用配置文件中的 API key (audio)");
             return defaultApiKey;
         }
         
         // 尝试从环境变量获取
         String envApiKey = System.getenv("DASHSCOPE_API_KEY");
         if (envApiKey != null && !envApiKey.trim().isEmpty()) {
-            log.debug("[DashScopeAdapter] 使用环境变量中的 API key (audio)");
+            log.info("[DashScopeAdapter] 使用环境变量中的 API key (audio)");
             return envApiKey;
         }
         
@@ -1219,7 +1278,7 @@ public class DashScopeAdapter implements ModelAdapter {
             throw new AIServiceException("请求中必须包含至少一个消息（systemInstruction、messages或prompt）");
         }
         
-        log.debug("[DashScopeAdapter] buildDashScopeRequest - 构建的消息列表大小: {}", messages.size());
+        log.info("[DashScopeAdapter] buildDashScopeRequest - 构建的消息列表大小: {}", messages.size());
         requestBody.put("messages", messages);
         
         // 添加生成参数
@@ -1310,7 +1369,7 @@ public class DashScopeAdapter implements ModelAdapter {
                     }
                 }
                 
-                log.debug("[DashScopeAdapter] 宽高比 {} (比例: {}) 映射到尺寸: {}", aspectRatio, aspect, bestMatch);
+                log.info("[DashScopeAdapter] 宽高比 {} (比例: {}) 映射到尺寸: {}", aspectRatio, aspect, bestMatch);
                 return bestMatch;
             }
         } catch (Exception e) {

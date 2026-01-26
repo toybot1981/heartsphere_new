@@ -204,15 +204,40 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-      <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-700/50 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-md p-4"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.9))' }}
+    >
+      <div 
+        className="border rounded-2xl p-6 max-w-lg w-full shadow-2xl"
+        style={{
+          background: 'var(--gradient-bg, linear-gradient(to bottom right, #0f172a, #020617))',
+          borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+        }}
+      >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+          <h3 
+            className="text-xl font-bold"
+            style={{
+              background: 'var(--gradient-text, linear-gradient(to right, #f472b6, #a855f7))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             ✉️ 写信
           </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800"
+            className="transition-colors p-2 rounded-lg"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -223,13 +248,29 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
         <div className="space-y-4">
           {/* 消息类型选择 */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               消息类型
             </label>
             <select
               value={messageType}
               onChange={(e) => setMessageType(e.target.value as MessageType)}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                e.currentTarget.style.outline = 'none';
+              }}
               disabled={isSending}
             >
               <option value={MessageType.SYSTEM_FEEDBACK}>系统反馈</option>
@@ -243,13 +284,29 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
           {/* 收件人选择 */}
           {messageType === MessageType.SYSTEM_FEEDBACK ? (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 收件人
               </label>
               <select
                 value={selectedReceiver}
                 onChange={(e) => setSelectedReceiver(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                  borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                  e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                  e.currentTarget.style.outline = 'none';
+                }}
                 disabled={isSending}
               >
                 <option value="admin">系统管理员 (admin)</option>
@@ -259,13 +316,29 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
             <>
               {/* 场景选择 */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   场景
                 </label>
                 <select
                   value={selectedEraId || ''}
                   onChange={(e) => setSelectedEraId(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                    borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                    e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                    e.currentTarget.style.outline = 'none';
+                  }}
                   disabled={isSending || isLoadingReceivers}
                 >
                   <option value="">请选择场景</option>
@@ -278,18 +351,41 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
               {/* 角色选择 */}
               {selectedEraId && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label 
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     收件人（角色）
                   </label>
                   {isLoadingReceivers ? (
-                    <div className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-slate-400 text-center">
+                    <div 
+                      className="w-full px-4 py-2.5 border rounded-xl text-center"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                        borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                        color: 'var(--text-tertiary)',
+                      }}
+                    >
                       加载中...
                     </div>
                   ) : receiverOptions.length > 0 ? (
                     <select
                       value={selectedReceiver}
                       onChange={(e) => setSelectedReceiver(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                        borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                        e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                        e.currentTarget.style.outline = 'none';
+                      }}
                       disabled={isSending}
                     >
                       {receiverOptions.map(option => (
@@ -297,7 +393,14 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
                       ))}
                     </select>
                   ) : (
-                    <div className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-slate-400 text-center">
+                    <div 
+                      className="w-full px-4 py-2.5 border rounded-xl text-center"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                        borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                        color: 'var(--text-tertiary)',
+                      }}
+                    >
                       该场景暂无角色
                     </div>
                   )}
@@ -307,7 +410,10 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               主题
             </label>
             <input
@@ -315,13 +421,29 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="请输入主题..."
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                e.currentTarget.style.outline = 'none';
+              }}
               disabled={isSending}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               内容
             </label>
             <textarea
@@ -329,13 +451,33 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
               onChange={(e) => setContent(e.target.value)}
               placeholder="请输入内容..."
               rows={6}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+              className="w-full px-4 py-2.5 border rounded-xl outline-none transition-all resize-none"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                e.currentTarget.style.outline = 'none';
+              }}
               disabled={isSending}
             />
           </div>
 
           {error && (
-            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+            <div 
+              className="text-sm border rounded-lg p-3"
+              style={{
+                color: 'var(--color-error, #f87171)',
+                backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.1))',
+                borderColor: 'var(--color-error, rgba(239, 68, 68, 0.3))',
+              }}
+            >
               {error}
             </div>
           )}
@@ -344,18 +486,53 @@ export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({
             <button
               onClick={onClose}
               disabled={isSending}
-              className="flex-1 px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700/50"
+              className="flex-1 px-4 py-2.5 rounded-xl transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed border"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                color: 'var(--text-secondary)',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSending) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #334155)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSending) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #1e293b)';
+                }
+              }}
             >
               取消
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSending || !subject.trim() || !content.trim()}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30"
+              className="flex-1 px-4 py-2.5 rounded-xl transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSending && subject.trim() && content.trim()) {
+                  e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #a855f7, #f472b6))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSending && subject.trim() && content.trim()) {
+                  e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))';
+                }
+              }}
             >
               {isSending ? (
                 <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div
+                    className="w-4 h-4 border-2 rounded-full animate-spin"
+                    style={{
+                      borderColor: 'var(--border-color-overlay)',
+                      borderTopColor: 'var(--text-primary)',
+                    }}
+                  />
                   发送中...
                 </span>
               ) : (

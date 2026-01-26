@@ -2,7 +2,7 @@
  * 计费管理主组件
  * 整合所有计费管理功能
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProvidersManagement } from './ProvidersManagement';
 import { ModelsManagement } from './ModelsManagement';
 import { PricingManagement } from './PricingManagement';
@@ -10,6 +10,7 @@ import { UsageRecordsView } from './UsageRecordsView';
 import { CostStatisticsView } from './CostStatisticsView';
 import { UserQuotaManagement } from './UserQuotaManagement';
 import { ResourcePoolManagement } from './ResourcePoolManagement';
+import { useAdminState } from '../../contexts/AdminStateContext';
 
 interface BillingManagementProps {
   adminToken: string | null;
@@ -29,7 +30,17 @@ export const BillingManagement: React.FC<BillingManagementProps> = ({
   adminToken,
   onReload,
 }) => {
+  const { billingSubSection, setBillingSubSection } = useAdminState();
   const [activeSubSection, setActiveSubSection] = useState<BillingSubSection>('providers');
+  
+  // 如果从用户管理页面跳转过来，自动切换到指定的子标签页
+  useEffect(() => {
+    if (billingSubSection && ['providers', 'models', 'pricing', 'usage', 'cost', 'quota', 'resource-pool'].includes(billingSubSection)) {
+      setActiveSubSection(billingSubSection as BillingSubSection);
+      // 清除状态，避免下次进入时自动切换
+      setBillingSubSection(null);
+    }
+  }, [billingSubSection, setBillingSubSection]);
 
   const subSections: Array<{ key: BillingSubSection; label: string; icon: string }> = [
     { key: 'providers', label: '提供商管理', icon: '🏢' },

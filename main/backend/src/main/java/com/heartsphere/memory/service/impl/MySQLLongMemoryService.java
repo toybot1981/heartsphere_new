@@ -78,7 +78,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
             }
             
             userFactRepository.save(entity);
-            log.debug("保存用户事实: userId={}, factId={}", fact.getUserId(), fact.getId());
+            log.info("保存用户事实: userId={}, factId={}", fact.getUserId(), fact.getId());
         } catch (Exception e) {
             log.error("保存用户事实失败: userId={}", fact.getUserId(), e);
             throw new RuntimeException("保存用户事实失败", e);
@@ -110,7 +110,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
                 .collect(Collectors.toList());
             
             userFactRepository.saveAll(entities);
-            log.debug("批量保存用户事实: count={}", facts.size());
+            log.info("批量保存用户事实: count={}", facts.size());
         } catch (Exception e) {
             log.error("批量保存用户事实失败", e);
             throw new RuntimeException("批量保存用户事实失败", e);
@@ -200,7 +200,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
     public void deleteFact(String factId) {
         try {
             userFactRepository.deleteById(factId);
-            log.debug("删除用户事实: factId={}", factId);
+            log.info("删除用户事实: factId={}", factId);
         } catch (Exception e) {
             log.error("删除用户事实失败: factId={}", factId, e);
         }
@@ -239,10 +239,10 @@ public class MySQLLongMemoryService implements LongMemoryService {
                 existing.setValue(entity.getValue());
                 existing.setType(entity.getType());
                 userPreferenceRepository.save(existing);
-                log.debug("更新用户偏好: userId={}, key={}", preference.getUserId(), preference.getKey());
+                log.info("更新用户偏好: userId={}, key={}", preference.getUserId(), preference.getKey());
             } else {
                 userPreferenceRepository.save(entity);
-                log.debug("保存用户偏好: userId={}, key={}", preference.getUserId(), preference.getKey());
+                log.info("保存用户偏好: userId={}, key={}", preference.getUserId(), preference.getKey());
             }
         } catch (Exception e) {
             log.error("保存用户偏好失败: userId={}, key={}", preference.getUserId(), preference.getKey(), e);
@@ -291,7 +291,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
     public void deletePreference(String userId, String key) {
         try {
             userPreferenceRepository.deleteByUserIdAndKey(userId, key);
-            log.debug("删除用户偏好: userId={}, key={}", userId, key);
+            log.info("删除用户偏好: userId={}, key={}", userId, key);
         } catch (Exception e) {
             log.error("删除用户偏好失败: userId={}, key={}", userId, key, e);
         }
@@ -398,7 +398,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
             }
             
             userMemoryRepository.save(entity);
-            log.debug("保存用户记忆: userId={}, memoryId={}, type={}", 
+            log.info("保存用户记忆: userId={}, memoryId={}, type={}", 
                 memory.getUserId(), memory.getId(), memory.getType());
         } catch (Exception e) {
             log.error("保存用户记忆失败: userId={}", memory.getUserId(), e);
@@ -433,7 +433,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
                 .collect(Collectors.toList());
             
             userMemoryRepository.saveAll(entities);
-            log.debug("批量保存用户记忆: count={}", memories.size());
+            log.info("批量保存用户记忆: count={}", memories.size());
         } catch (Exception e) {
             log.error("批量保存用户记忆失败", e);
             throw new RuntimeException("批量保存用户记忆失败", e);
@@ -555,7 +555,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
             }
             
             userMemoryRepository.save(existing);
-            log.debug("更新记忆成功: memoryId={}", memory.getId());
+            log.info("更新记忆成功: memoryId={}", memory.getId());
         } catch (Exception e) {
             log.error("更新记忆失败: memoryId={}", memory.getId(), e);
             throw new RuntimeException("更新记忆失败", e);
@@ -569,7 +569,7 @@ public class MySQLLongMemoryService implements LongMemoryService {
     public void deleteMemory(String memoryId) {
         try {
             userMemoryRepository.deleteById(memoryId);
-            log.debug("删除记忆成功: memoryId={}", memoryId);
+            log.info("删除记忆成功: memoryId={}", memoryId);
         } catch (Exception e) {
             log.error("删除记忆失败: memoryId={}", memoryId, e);
             throw new RuntimeException("删除记忆失败", e);

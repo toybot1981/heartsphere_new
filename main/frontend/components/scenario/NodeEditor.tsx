@@ -87,28 +87,75 @@ const NodeBasicInfo: React.FC<NodeBasicInfoProps> = ({ node, nodeIndex, onUpdate
     <>
       {/* 节点标题编辑 */}
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center font-bold text-lg">
+        <div 
+          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
+          style={{
+            backgroundColor: 'var(--color-primary, #ec4899)',
+            color: 'var(--text-primary)',
+          }}
+        >
           {nodeIndex + 1}
         </div>
         <div className="flex-1">
-          <label className="block text-xs text-gray-400 mb-1">节点标题 (内部标识)</label>
+          <label 
+            className="block text-xs mb-1"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            节点标题 (内部标识)
+          </label>
           <input
             value={node.title}
             onChange={(e) => onUpdateNode('title', e.target.value)}
-            className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 focus:border-pink-500 outline-none font-bold text-lg"
+            className="w-full rounded px-3 py-2 border outline-none font-bold text-lg"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1f2937)',
+              borderColor: 'var(--bg-overlay, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+            }}
           />
         </div>
       </div>
 
       {/* 节点类型选择 */}
-      <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
-        <label className="block text-sm font-bold text-purple-400 mb-3">节点类型</label>
+      <div 
+        className="p-4 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 0.3))',
+          borderColor: 'var(--bg-overlay, #374151)',
+        }}
+      >
+        <label 
+          className="block text-sm font-bold mb-3"
+          style={{ color: 'var(--color-primary, #a855f7)' }}
+        >
+          节点类型
+        </label>
         <div className="grid grid-cols-3 gap-3 mb-3">
           <label
-            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-gray-700/30"
+            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all"
             style={{
-              borderColor: (node.nodeType || 'fixed') === 'fixed' ? '#a855f7' : '#374151',
-              backgroundColor: (node.nodeType || 'fixed') === 'fixed' ? '#a855f7' + '20' : 'transparent'
+              borderColor: (node.nodeType || 'fixed') === 'fixed' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'var(--bg-overlay, #374151)',
+              backgroundColor: (node.nodeType || 'fixed') === 'fixed' 
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.2))' 
+                : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if ((node.nodeType || 'fixed') !== 'fixed') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(55, 65, 81, 0.3))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if ((node.nodeType || 'fixed') !== 'fixed') {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
             }}
           >
             <input
@@ -117,14 +164,37 @@ const NodeBasicInfo: React.FC<NodeBasicInfoProps> = ({ node, nodeIndex, onUpdate
               value="fixed"
               checked={(node.nodeType || 'fixed') === 'fixed'}
               onChange={() => onUpdateNode('nodeType', 'fixed')}
-              className="w-4 h-4 text-purple-500 focus:ring-purple-500 mb-2"
+              className="w-4 h-4 mb-2"
+              style={{
+                accentColor: 'var(--color-primary, #a855f7)',
+              }}
             />
             <span className="text-lg mb-1">📝</span>
-            <span className="text-sm font-semibold text-gray-300 text-center">固定内容</span>
-            <span className="text-[10px] text-gray-500 text-center mt-1">直接显示预设内容</span>
+            <span 
+              className="text-sm font-semibold text-center"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              固定内容
+            </span>
+            <span 
+              className="text-[10px] text-center mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              直接显示预设内容
+            </span>
           </label>
           <label
-            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-gray-700/30"
+            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all"
+            onMouseEnter={(e) => {
+              if (node.nodeType !== 'ai-dynamic') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(55, 65, 81, 0.3))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (node.nodeType !== 'ai-dynamic') {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
             style={{
               borderColor: node.nodeType === 'ai-dynamic' ? '#a855f7' : '#374151',
               backgroundColor: node.nodeType === 'ai-dynamic' ? '#a855f7' + '20' : 'transparent'
@@ -136,14 +206,37 @@ const NodeBasicInfo: React.FC<NodeBasicInfoProps> = ({ node, nodeIndex, onUpdate
               value="ai-dynamic"
               checked={node.nodeType === 'ai-dynamic'}
               onChange={() => onUpdateNode('nodeType', 'ai-dynamic')}
-              className="w-4 h-4 text-purple-500 focus:ring-purple-500 mb-2"
+              className="w-4 h-4 mb-2"
+              style={{
+                accentColor: 'var(--color-primary, #a855f7)',
+              }}
             />
             <span className="text-lg mb-1">✨</span>
-            <span className="text-sm font-semibold text-gray-300 text-center">AI动态生成</span>
-            <span className="text-[10px] text-gray-500 text-center mt-1">AI根据提示词生成</span>
+            <span 
+              className="text-sm font-semibold text-center"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              AI动态生成
+            </span>
+            <span 
+              className="text-[10px] text-center mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              AI根据提示词生成
+            </span>
           </label>
           <label
-            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-gray-700/30"
+            className="flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all"
+            onMouseEnter={(e) => {
+              if (node.nodeType !== 'ai-dynamic') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(55, 65, 81, 0.3))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (node.nodeType !== 'ai-dynamic') {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
             style={{
               borderColor: node.nodeType === 'ending' ? '#a855f7' : '#374151',
               backgroundColor: node.nodeType === 'ending' ? '#a855f7' + '20' : 'transparent'
@@ -155,14 +248,33 @@ const NodeBasicInfo: React.FC<NodeBasicInfoProps> = ({ node, nodeIndex, onUpdate
               value="ending"
               checked={node.nodeType === 'ending'}
               onChange={() => onUpdateNode('nodeType', 'ending')}
-              className="w-4 h-4 text-purple-500 focus:ring-purple-500 mb-2"
+              className="w-4 h-4 mb-2"
+              style={{
+                accentColor: 'var(--color-primary, #a855f7)',
+              }}
             />
             <span className="text-lg mb-1">🎯</span>
-            <span className="text-sm font-semibold text-gray-300 text-center">结局节点</span>
-            <span className="text-[10px] text-gray-500 text-center mt-1">剧本的结局</span>
+            <span 
+              className="text-sm font-semibold text-center"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              结局节点
+            </span>
+            <span 
+              className="text-[10px] text-center mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              剧本的结局
+            </span>
           </label>
         </div>
-        <div className="bg-gray-900/50 p-2 rounded text-xs text-gray-400">
+        <div 
+          className="p-2 rounded text-xs"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(17, 24, 39, 0.5))',
+            color: 'var(--text-tertiary)',
+          }}
+        >
           {(node.nodeType || 'fixed') === 'ai-dynamic'
             ? '💡 AI会根据提示词动态生成对话内容，每次体验略有不同，增强表现力'
             : (node.nodeType === 'ending')
@@ -185,8 +297,16 @@ interface NodePromptEditorProps {
 const NodePromptEditor: React.FC<NodePromptEditorProps> = ({ node, onUpdateNode }) => {
   return (
     <div>
-      <label className="block text-sm font-bold text-indigo-400 mb-2">AI 旁白提示词 (Prompt)</label>
-      <p className="text-xs text-gray-500 mb-2">
+      <label 
+        className="block text-sm font-bold mb-2"
+        style={{ color: 'var(--color-info, #818cf8)' }}
+      >
+        AI 旁白提示词 (Prompt)
+      </label>
+      <p 
+        className="text-xs mb-2"
+        style={{ color: 'var(--text-disabled)' }}
+      >
         {(node.nodeType || 'fixed') === 'ai-dynamic'
           ? '描述这一幕会发生什么。AI 将根据此场景描述生成符合角色性格的对话和旁白。'
           : '描述这一幕会发生什么。AI 将根据此生成对话和旁白。'}
@@ -194,7 +314,18 @@ const NodePromptEditor: React.FC<NodePromptEditorProps> = ({ node, onUpdateNode 
       <textarea
         value={node.prompt}
         onChange={(e) => onUpdateNode('prompt', e.target.value)}
-        className="w-full bg-gray-800 rounded-xl p-4 border border-gray-700 focus:border-indigo-500 outline-none h-40 resize-none leading-relaxed"
+        className="w-full rounded-xl p-4 border outline-none h-40 resize-none leading-relaxed"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #1f2937)',
+          borderColor: 'var(--bg-overlay, #374151)',
+          color: 'var(--text-primary)',
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-info, #818cf8)';
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+        }}
         placeholder="例如：用户在咖啡馆遇到了樱。她正在喝拿铁，看起来对考试很担心……"
       />
     </div>
@@ -230,7 +361,10 @@ const NodeAdvancedFeatures: React.FC<NodeAdvancedFeaturesProps> = ({
   onCreateItem,
 }) => {
   return (
-    <div className="border-t border-gray-700 pt-6">
+    <div 
+      className="border-t pt-6"
+      style={{ borderColor: 'var(--bg-overlay, #374151)' }}
+    >
       {/* 高级功能折叠面板标题 */}
       <div
         className="flex items-center justify-between cursor-pointer mb-4"
@@ -238,13 +372,26 @@ const NodeAdvancedFeatures: React.FC<NodeAdvancedFeaturesProps> = ({
       >
         <div className="flex items-center gap-2">
           <span className="text-lg">⚙️</span>
-          <label className="text-sm font-bold text-gray-300">高级功能（可选）</label>
+          <label 
+            className="text-sm font-bold"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            高级功能（可选）
+          </label>
         </div>
-        <span className="text-gray-500 text-sm">{expandedSections.advancedFeatures ? '▼' : '▶'}</span>
+        <span 
+          className="text-sm"
+          style={{ color: 'var(--text-disabled)' }}
+        >
+          {expandedSections.advancedFeatures ? '▼' : '▶'}
+        </span>
       </div>
 
       {expandedSections.advancedFeatures && (
-        <div className="space-y-4 pl-6 border-l-2 border-gray-700">
+        <div 
+          className="space-y-4 pl-6 border-l-2"
+          style={{ borderColor: 'var(--bg-overlay, #374151)' }}
+        >
           {/* 多角色对话编辑器 */}
           <MultiCharacterDialogueEditor
             node={node}
@@ -309,34 +456,78 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
         onClick={() => onToggleSection('multiCharacter')}
       >
         <div className="flex items-center gap-2">
-          <span className="text-cyan-400">💬</span>
-          <label className="text-sm font-semibold text-cyan-400">多角色对话</label>
-          <span className="text-xs text-gray-500">({dialogues.length} 条)</span>
+          <span style={{ color: 'var(--color-info, #22d3ee)' }}>💬</span>
+          <label 
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-info, #22d3ee)' }}
+          >
+            多角色对话
+          </label>
+          <span 
+            className="text-xs"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            ({dialogues.length} 条)
+          </span>
         </div>
-        <span className="text-gray-500 text-xs">{expandedSections.multiCharacter ? '▼' : '▶'}</span>
+        <span 
+          className="text-xs"
+          style={{ color: 'var(--text-disabled)' }}
+        >
+          {expandedSections.multiCharacter ? '▼' : '▶'}
+        </span>
       </div>
       {expandedSections.multiCharacter && (
         <div className="ml-6 space-y-3">
-          <p className="text-xs text-gray-400 italic">💡 让多个角色在此节点依次发言，营造多人对话场景</p>
+          <p 
+            className="text-xs italic"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            💡 让多个角色在此节点依次发言，营造多人对话场景
+          </p>
           <div className="space-y-2 mb-2">
             {dialogues.map((dialogue, idx) => (
-              <div key={idx} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+              <div 
+                key={idx} 
+                className="p-3 rounded-lg border"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 0.5))',
+                  borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 0.5))',
+                }}
+              >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-gray-400">第 {idx + 1} 条对话</span>
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    第 {idx + 1} 条对话
+                  </span>
                   <button
                     onClick={() => {
                       const newDialogue = [...dialogues];
                       newDialogue.splice(idx, 1);
                       onUpdateNode('multiCharacterDialogue', newDialogue);
                     }}
-                    className="ml-auto text-gray-500 hover:text-red-500 text-xs px-2"
+                    className="ml-auto text-xs px-2 transition-colors"
+                    style={{ color: 'var(--text-disabled)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--color-error, #ef4444)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-disabled)';
+                    }}
                   >
                     删除
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">角色</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      角色
+                    </label>
                     <select
                       value={dialogue.characterId}
                       onChange={(e) => {
@@ -344,7 +535,18 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
                         newDialogue[idx] = { ...newDialogue[idx], characterId: e.target.value };
                         onUpdateNode('multiCharacterDialogue', newDialogue);
                       }}
-                      className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-cyan-500 outline-none"
+                      className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, #111827)',
+                        borderColor: 'var(--bg-overlay, #374151)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                      }}
                     >
                       <option value="">选择角色</option>
                       {availableCharacters.map(char => (
@@ -357,11 +559,21 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
                       )}
                     </select>
                     {dialogue.characterId && !availableCharacters.find(c => c.id === dialogue.characterId) && (
-                      <p className="text-[10px] text-yellow-500 mt-1">⚠️ 此角色ID不在可选列表中</p>
+                      <p 
+                        className="text-[10px] mt-1"
+                        style={{ color: 'var(--color-warning, #eab308)' }}
+                      >
+                        ⚠️ 此角色ID不在可选列表中
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">显示顺序</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      显示顺序
+                    </label>
                     <input
                       type="number"
                       min="1"
@@ -371,12 +583,28 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
                         newDialogue[idx] = { ...newDialogue[idx], order: parseInt(e.target.value) || idx + 1 };
                         onUpdateNode('multiCharacterDialogue', newDialogue);
                       }}
-                      className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-cyan-500 outline-none"
+                      className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, #111827)',
+                        borderColor: 'var(--bg-overlay, #374151)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                      }}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">对话内容</label>
+                  <label 
+                    className="text-xs block mb-1"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
+                    对话内容
+                  </label>
                   <textarea
                     value={dialogue.content}
                     onChange={(e) => {
@@ -385,7 +613,18 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
                       onUpdateNode('multiCharacterDialogue', newDialogue);
                     }}
                     placeholder="例如：你好，很高兴见到你！"
-                    className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-cyan-500 outline-none resize-none"
+                    className="w-full text-xs rounded px-2 py-1.5 border outline-none resize-none"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay, #111827)',
+                      borderColor: 'var(--bg-overlay, #374151)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                    }}
                     rows={2}
                   />
                 </div>
@@ -397,7 +636,18 @@ const MultiCharacterDialogueEditor: React.FC<MultiCharacterDialogueEditorProps> 
               const newDialogue = [...dialogues, { characterId: '', content: '', order: dialogues.length + 1 }];
               onUpdateNode('multiCharacterDialogue', newDialogue);
             }}
-            className="text-xs bg-cyan-900/30 text-cyan-400 px-3 py-1.5 rounded border border-cyan-500/30 hover:bg-cyan-900/50"
+            className="text-xs px-3 py-1.5 rounded border transition-colors"
+            style={{
+              backgroundColor: 'var(--color-info, rgba(6, 182, 212, 0.3))',
+              color: 'var(--color-info, #22d3ee)',
+              borderColor: 'var(--color-info, rgba(6, 182, 212, 0.3))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(6, 182, 212, 0.5))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(6, 182, 212, 0.3))';
+            }}
           >
             + 添加一条对话
           </button>
@@ -444,34 +694,78 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
         onClick={() => onToggleSection('randomEvents')}
       >
         <div className="flex items-center gap-2">
-          <span className="text-pink-400">🎲</span>
-          <label className="text-sm font-semibold text-pink-400">随机事件</label>
-          <span className="text-xs text-gray-500">({randomEvents.length} 个)</span>
+          <span style={{ color: 'var(--color-primary, #ec4899)' }}>🎲</span>
+          <label 
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-primary, #ec4899)' }}
+          >
+            随机事件
+          </label>
+          <span 
+            className="text-xs"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            ({randomEvents.length} 个)
+          </span>
         </div>
-        <span className="text-gray-500 text-xs">{expandedSections.randomEvents ? '▼' : '▶'}</span>
+        <span 
+          className="text-xs"
+          style={{ color: 'var(--text-disabled)' }}
+        >
+          {expandedSections.randomEvents ? '▼' : '▶'}
+        </span>
       </div>
       {expandedSections.randomEvents && (
         <div className="ml-6 space-y-3">
-          <p className="text-xs text-gray-400 italic">💡 进入节点时随机触发的事件，增加不确定性（概率：0-1，0.5表示50%概率）</p>
+          <p 
+            className="text-xs italic"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            💡 进入节点时随机触发的事件，增加不确定性（概率：0-1，0.5表示50%概率）
+          </p>
           <div className="space-y-2 mb-2">
             {randomEvents.map((event, idx) => (
-              <div key={idx} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+              <div 
+                key={idx} 
+                className="p-3 rounded-lg border"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 0.5))',
+                  borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 0.5))',
+                }}
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">随机事件 #{idx + 1}</span>
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    随机事件 #{idx + 1}
+                  </span>
                   <button
                     onClick={() => {
                       const newEvents = [...randomEvents];
                       newEvents.splice(idx, 1);
                       onUpdateNode('randomEvents', newEvents);
                     }}
-                    className="text-gray-500 hover:text-red-500 text-xs px-2"
+                    className="text-xs px-2 transition-colors"
+                    style={{ color: 'var(--text-disabled)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--color-error, #ef4444)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-disabled)';
+                    }}
                   >
                     删除
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">事件ID</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      事件ID
+                    </label>
                     <div className="flex gap-1">
                       <input
                         type="text"
@@ -483,13 +777,34 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                           onUpdateNode('randomEvents', newEvents);
                         }}
                         placeholder="选择已有或输入新的事件ID"
-                        className="flex-1 text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                        className="flex-1 text-xs rounded px-2 py-1.5 border outline-none"
+                        style={{
+                          backgroundColor: 'var(--bg-overlay, #111827)',
+                          borderColor: 'var(--bg-overlay, #374151)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                        }}
                       />
                       {onCreateEvent && (
                         <button
                           type="button"
                           onClick={() => onCreateEvent({ nodeId: node.id, randomEventIdx: idx })}
-                          className="px-2 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs font-bold"
+                          className="px-2 py-1.5 rounded text-xs font-bold transition-colors"
+                          style={{
+                            backgroundColor: 'var(--color-primary, #db2777)',
+                            color: 'var(--text-primary)',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #be185d)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                          }}
                           title="创建新事件"
                         >
                           +
@@ -502,11 +817,21 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                       ))}
                     </datalist>
                     {usedEventIds.length > 0 && (
-                      <p className="text-[10px] text-gray-500 mt-0.5">💡 下拉选择已有ID，或直接输入新ID，点击"+"快速创建</p>
+                      <p 
+                        className="text-[10px] mt-0.5"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
+                        💡 下拉选择已有ID，或直接输入新ID，点击"+"快速创建
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">触发概率 (0-1)</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      触发概率 (0-1)
+                    </label>
                     <input
                       type="number"
                       min="0"
@@ -519,13 +844,29 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                         onUpdateNode('randomEvents', newEvents);
                       }}
                       placeholder="0.5 = 50%"
-                      className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                      className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, #111827)',
+                        borderColor: 'var(--bg-overlay, #374151)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                      }}
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">效果类型</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      效果类型
+                    </label>
                     <select
                       value={event.effect.type}
                       onChange={(e) => {
@@ -533,7 +874,18 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                         newEvents[idx] = { ...newEvents[idx], effect: { ...newEvents[idx].effect, type: e.target.value as any } };
                         onUpdateNode('randomEvents', newEvents);
                       }}
-                      className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                      className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, #111827)',
+                        borderColor: 'var(--bg-overlay, #374151)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                      }}
                     >
                       <option value="event">触发事件</option>
                       <option value="item">获得物品</option>
@@ -541,7 +893,10 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
                       {event.effect.type === 'favorability' ? '角色' : event.effect.type === 'event' ? '事件ID' : '物品ID'}
                     </label>
                     {event.effect.type === 'favorability' ? (
@@ -552,7 +907,18 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                           newEvents[idx] = { ...newEvents[idx], effect: { ...newEvents[idx].effect, target: e.target.value } };
                           onUpdateNode('randomEvents', newEvents);
                         }}
-                        className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                        className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                        style={{
+                          backgroundColor: 'var(--bg-overlay, #111827)',
+                          borderColor: 'var(--bg-overlay, #374151)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                        }}
                       >
                         <option value="">选择角色</option>
                         {availableCharacters.map(char => (
@@ -574,13 +940,34 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                               onUpdateNode('randomEvents', newEvents);
                             }}
                             placeholder={`选择已有或输入新的${event.effect.type === 'event' ? '事件' : '物品'}ID`}
-                            className="flex-1 text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                            className="flex-1 text-xs rounded px-2 py-1.5 border outline-none"
+                            style={{
+                              backgroundColor: 'var(--bg-overlay, #111827)',
+                              borderColor: 'var(--bg-overlay, #374151)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                            }}
                           />
                           {event.effect.type === 'event' && onCreateEvent && (
                             <button
                               type="button"
                               onClick={() => onCreateEvent({ nodeId: node.id, randomEventIdx: idx })}
-                              className="px-2 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs font-bold"
+                              className="px-2 py-1.5 rounded text-xs font-bold transition-colors"
+                              style={{
+                                backgroundColor: 'var(--color-primary, #db2777)',
+                                color: 'var(--text-primary)',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #be185d)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                              }}
                               title="创建新事件"
                             >
                               +
@@ -590,7 +977,17 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                             <button
                               type="button"
                               onClick={() => onCreateItem({ nodeId: node.id, randomEventIdx: idx })}
-                              className="px-2 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs font-bold"
+                              className="px-2 py-1.5 rounded text-xs font-bold transition-colors"
+                              style={{
+                                backgroundColor: 'var(--color-primary, #db2777)',
+                                color: 'var(--text-primary)',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #be185d)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                              }}
                               title="创建新物品"
                             >
                               +
@@ -603,7 +1000,12 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                           ))}
                         </datalist>
                         {(event.effect.type === 'event' ? usedEventIds : usedItemIds).length > 0 && (
-                          <p className="text-[10px] text-gray-500 mt-0.5">💡 下拉选择已有ID，或直接输入新ID</p>
+                          <p 
+                            className="text-[10px] mt-0.5"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            💡 下拉选择已有ID，或直接输入新ID
+                          </p>
                         )}
                       </>
                     )}
@@ -611,7 +1013,12 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                 </div>
                 {event.effect.type === 'favorability' && (
                   <div className="mt-2">
-                    <label className="text-xs text-gray-500 block mb-1">好感度变化 (±)</label>
+                    <label 
+                      className="text-xs block mb-1"
+                      style={{ color: 'var(--text-disabled)' }}
+                    >
+                      好感度变化 (±)
+                    </label>
                     <input
                       type="number"
                       value={event.effect.value ?? 0}
@@ -621,7 +1028,18 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
                         onUpdateNode('randomEvents', newEvents);
                       }}
                       placeholder="例如：10 或 -5"
-                      className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-pink-500 outline-none"
+                      className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, #111827)',
+                        borderColor: 'var(--bg-overlay, #374151)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                      }}
                     />
                   </div>
                 )}
@@ -633,7 +1051,18 @@ const RandomEventsEditor: React.FC<RandomEventsEditorProps> = ({
               const newEvents = [...randomEvents, { id: `random_${Date.now()}`, probability: 0.5, effect: { type: 'event' as const, target: '' } }];
               onUpdateNode('randomEvents', newEvents);
             }}
-            className="text-xs bg-pink-900/30 text-pink-400 px-3 py-1.5 rounded border border-pink-500/30 hover:bg-pink-900/50"
+            className="text-xs px-3 py-1.5 rounded border transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, rgba(236, 72, 153, 0.3))',
+              color: 'var(--color-primary, #f472b6)',
+              borderColor: 'var(--color-primary, rgba(236, 72, 153, 0.3))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(236, 72, 153, 0.5))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(236, 72, 153, 0.3))';
+            }}
           >
             + 添加随机事件
           </button>
@@ -668,37 +1097,94 @@ const TimeSystemEditor: React.FC<TimeSystemEditorProps> = ({
         onClick={() => onToggleSection('timeSystem')}
       >
         <div className="flex items-center gap-2">
-          <span className="text-orange-400">⏱️</span>
-          <label className="text-sm font-semibold text-orange-400">限时节点</label>
+          <span style={{ color: 'var(--color-warning, #fb923c)' }}>⏱️</span>
+          <label 
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-warning, #fb923c)' }}
+          >
+            限时节点
+          </label>
           {node.timeLimit && (
-            <span className="text-xs text-gray-500">({node.timeLimit}秒)</span>
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              ({node.timeLimit}秒)
+            </span>
           )}
         </div>
-        <span className="text-gray-500 text-xs">{expandedSections.timeSystem ? '▼' : '▶'}</span>
+        <span 
+          className="text-xs"
+          style={{ color: 'var(--text-disabled)' }}
+        >
+          {expandedSections.timeSystem ? '▼' : '▶'}
+        </span>
       </div>
       {expandedSections.timeSystem && (
         <div className="ml-6 space-y-3">
-          <p className="text-xs text-gray-400 italic">💡 设置时间限制，玩家必须在指定时间内做出选择，否则自动跳转到超时节点</p>
+          <p 
+            className="text-xs italic"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            💡 设置时间限制，玩家必须在指定时间内做出选择，否则自动跳转到超时节点
+          </p>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">限时时间（秒）</label>
+              <label 
+                className="text-xs block mb-1"
+                style={{ color: 'var(--text-disabled)' }}
+              >
+                限时时间（秒）
+              </label>
               <input
                 type="number"
                 min="0"
                 value={node.timeLimit || ''}
                 onChange={(e) => onUpdateNode('timeLimit', e.target.value ? parseInt(e.target.value) : undefined)}
                 placeholder="例如：30 表示30秒"
-                className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-orange-500 outline-none"
+                className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, #111827)',
+                  borderColor: 'var(--bg-overlay, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-warning, #fb923c)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                }}
               />
-              <p className="text-[10px] text-gray-500 mt-1">留空表示无时间限制</p>
+              <p 
+                className="text-[10px] mt-1"
+                style={{ color: 'var(--text-disabled)' }}
+              >
+                留空表示无时间限制
+              </p>
             </div>
             {node.timeLimit && (
               <div>
-                <label className="text-xs text-gray-500 block mb-1">超时后跳转到</label>
+                <label 
+                  className="text-xs block mb-1"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  超时后跳转到
+                </label>
                 <select
                   value={node.timeoutNodeId || ''}
                   onChange={(e) => onUpdateNode('timeoutNodeId', e.target.value || undefined)}
-                  className="w-full text-xs bg-gray-900 rounded px-2 py-1.5 border border-gray-700 text-white focus:border-orange-500 outline-none"
+                  className="w-full text-xs rounded px-2 py-1.5 border outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, #111827)',
+                    borderColor: 'var(--bg-overlay, #374151)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-warning, #fb923c)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                  }}
                 >
                   <option value="">选择节点（留空表示继续当前节点）</option>
                   {Object.values(nodes).map((n: StoryNode) => (

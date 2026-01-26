@@ -50,7 +50,11 @@ import { adminEduApi } from './edu';
 import { mentisMcpApi, mentisAgentApi } from './mentis';
 import { adminImageApi } from './image';
 import { adminVideoApi } from './video';
+import { adminDevOpsApi } from './devops';
 import { toolApi } from './tools';
+import { multiAgentApi } from './multiAgent';
+import { cmdbApi } from './cmdb';
+import { adminAutoFixApi } from './autoFix';
 
 // 导出子模块API（供需要单独使用的场景）
 export {
@@ -85,6 +89,8 @@ export {
   adminImageApi,
   adminVideoApi,
   toolApi,
+  cmdbApi,
+  adminAutoFixApi,
 };
 
 // 导出 edu API 的类型
@@ -193,4 +199,16 @@ export const adminApi = {
 
   // 视频管理
   videos: adminVideoApi,
+
+  // DevOps 工作台
+  devops: adminDevOpsApi,
+
+  // 多智能体管理
+  multiAgent: multiAgentApi,
+
+  // CMDB 配置管理数据库
+  cmdb: cmdbApi,
+
+  // 自动修复
+  autoFix: adminAutoFixApi,
 };

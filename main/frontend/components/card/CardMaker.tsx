@@ -106,19 +106,38 @@ export const CardMaker: React.FC<CardMakerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.5))' }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] max-h-[800px] flex flex-col overflow-hidden"
+        className="rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] max-h-[800px] flex flex-col overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-modal, #ffffff)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">制作卡片</h3>
+        <div 
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+        >
+          <h3 
+            className="text-lg font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            制作卡片
+          </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             ×
           </button>
@@ -126,25 +145,61 @@ export const CardMaker: React.FC<CardMakerProps> = ({
 
         <div className="flex-1 flex overflow-hidden">
           {/* 左侧：模板选择 */}
-          <div className="w-64 border-r border-gray-200 flex flex-col">
-            <div className="flex border-b border-gray-200">
+          <div 
+            className="w-64 border-r flex flex-col"
+            style={{ borderColor: 'var(--border-color-overlay)' }}
+          >
+            <div 
+              className="flex border-b"
+              style={{ borderColor: 'var(--border-color-overlay)' }}
+            >
               <button
-                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'template'
-                    ? 'bg-pink-100 text-pink-600 border-b-2 border-pink-500'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className="flex-1 px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === 'template'
+                    ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+                    : 'transparent',
+                  color: activeTab === 'template'
+                    ? 'var(--color-primary, #ec4899)'
+                    : 'var(--text-secondary)',
+                  borderBottom: activeTab === 'template' ? '2px solid var(--color-primary, #ec4899)' : 'none',
+                }}
                 onClick={() => setActiveTab('template')}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'template') {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'template') {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
               >
                 模板
               </button>
               <button
-                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'custom'
-                    ? 'bg-pink-100 text-pink-600 border-b-2 border-pink-500'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className="flex-1 px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === 'custom'
+                    ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+                    : 'transparent',
+                  color: activeTab === 'custom'
+                    ? 'var(--color-primary, #ec4899)'
+                    : 'var(--text-secondary)',
+                  borderBottom: activeTab === 'custom' ? '2px solid var(--color-primary, #ec4899)' : 'none',
+                }}
                 onClick={() => setActiveTab('custom')}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'custom') {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'custom') {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
               >
                 自定义
               </button>
@@ -156,17 +211,39 @@ export const CardMaker: React.FC<CardMakerProps> = ({
                   {templates.map((template) => (
                     <div
                       key={template.id}
-                      className={`p-3 rounded-lg cursor-pointer transition-all border-2 ${
-                        selectedTemplate?.id === template.id
-                          ? 'bg-pink-50 border-pink-400'
-                          : 'bg-gray-50 border-transparent hover:border-gray-300'
-                      }`}
+                      className="p-3 rounded-lg cursor-pointer transition-all border-2"
+                      style={{
+                        backgroundColor: selectedTemplate?.id === template.id
+                          ? 'var(--color-primary, rgba(236, 72, 153, 0.1))'
+                          : 'var(--bg-card, rgba(249, 250, 251, 1))',
+                        borderColor: selectedTemplate?.id === template.id
+                          ? 'var(--color-primary, #ec4899)'
+                          : 'transparent',
+                      }}
                       onClick={() => applyTemplate(template)}
+                      onMouseEnter={(e) => {
+                        if (selectedTemplate?.id !== template.id) {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, #d1d5db)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedTemplate?.id !== template.id) {
+                          e.currentTarget.style.borderColor = 'transparent';
+                        }
+                      }}
                     >
-                      <div className="text-sm font-medium text-gray-800 mb-1">
+                      <div 
+                        className="text-sm font-medium mb-1"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {template.name}
                       </div>
-                      <div className="text-xs text-gray-500">{template.type}</div>
+                      <div 
+                        className="text-xs"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {template.type}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -175,7 +252,7 @@ export const CardMaker: React.FC<CardMakerProps> = ({
 
             {activeTab === 'custom' && (
               <div className="flex-1 overflow-y-auto p-4">
-                <p className="text-sm text-gray-500">自定义模式：从空白开始创建</p>
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>自定义模式：从空白开始创建</p>
               </div>
             )}
           </div>
@@ -185,7 +262,17 @@ export const CardMaker: React.FC<CardMakerProps> = ({
             <div className="mb-4 flex justify-end">
               <button
                 onClick={() => setPreviewMode(!previewMode)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                className="px-4 py-2 rounded-lg transition-colors text-sm"
+                style={{
+                  backgroundColor: 'var(--bg-card, rgba(243, 244, 246, 1))',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(229, 231, 235, 1))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(243, 244, 246, 1))';
+                }}
               >
                 {previewMode ? '编辑' : '预览'}
               </button>
@@ -205,22 +292,55 @@ export const CardMaker: React.FC<CardMakerProps> = ({
         </div>
 
         {/* 底部操作 */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+        <div 
+          className="px-6 py-4 border-t flex items-center justify-end gap-3"
+          style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+        >
           <button
-            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-6 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-card, rgba(243, 244, 246, 1))',
+              color: 'var(--text-primary)',
+            }}
             onClick={onClose}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(229, 231, 235, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(243, 244, 246, 1))';
+            }}
           >
             取消
           </button>
           <button
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-6 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-info, #3b82f6)',
+              color: 'var(--text-primary)',
+            }}
             onClick={handleSave}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, #2563eb)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, #3b82f6)';
+            }}
           >
             保存
           </button>
           <button
-            className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+            className="px-6 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #ec4899)',
+              color: 'var(--text-primary)',
+            }}
             onClick={handleSendClick}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #ec4899)';
+            }}
           >
             发送
           </button>

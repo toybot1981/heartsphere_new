@@ -86,17 +86,39 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.5))' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[600px] flex flex-col overflow-hidden"
+        className="rounded-2xl shadow-2xl w-full max-w-md max-h-[600px] flex flex-col overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-modal, #ffffff)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">选择表情</h3>
+        <div 
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+        >
+          <h3 
+            className="text-lg font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            选择表情
+          </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             ×
           </button>
@@ -104,15 +126,32 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
 
         {/* 分类标签 */}
         {showCategories && (
-          <div className="flex px-4 py-2 border-b border-gray-200 gap-2 overflow-x-auto">
+          <div 
+            className="flex px-4 py-2 border-b gap-2 overflow-x-auto"
+            style={{ borderColor: 'var(--border-color-overlay)' }}
+          >
             {categories.map((category) => (
               <button
                 key={category}
-                className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-pink-100 text-pink-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                className="px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors"
+                style={{
+                  backgroundColor: selectedCategory === category
+                    ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+                    : 'transparent',
+                  color: selectedCategory === category
+                    ? 'var(--color-primary, #ec4899)'
+                    : 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== category) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== category) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
                 onClick={() => setSelectedCategory(category)}
               >
                 <span className="mr-1">{getCategoryIcon(category)}</span>
@@ -144,13 +183,26 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
 
         {/* 搜索框 */}
         {showSearch && (
-          <div className="px-4 py-2 border-b border-gray-200">
+          <div 
+            className="px-4 py-2 border-b"
+            style={{ borderColor: 'var(--border-color-overlay)' }}
+          >
             <input
               type="text"
               placeholder="搜索表情..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-pink-400 transition-colors"
+              className="w-full px-3 py-2 border rounded-lg text-sm outline-none transition-colors"
+              style={{
+                borderColor: 'var(--border-color-overlay, #d1d5db)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #d1d5db)';
+              }}
             />
           </div>
         )}
@@ -158,15 +210,36 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
         {/* 表情网格 */}
         <div className="flex-1 overflow-y-auto p-4">
           {emojis.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">暂无表情</div>
+            <div 
+              className="text-center py-8"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              暂无表情
+            </div>
           ) : (
             <div className="grid grid-cols-10 gap-2">
               {emojis.map((emoji) => (
                 <button
                   key={emoji.id}
-                  className={`text-2xl w-10 h-10 flex items-center justify-center rounded-lg transition-all hover:scale-125 hover:bg-gray-100 ${
-                    selectedEmojis.find((e) => e.id === emoji.id) ? 'bg-pink-100 border-2 border-pink-400' : ''
-                  }`}
+                  className="text-2xl w-10 h-10 flex items-center justify-center rounded-lg transition-all hover:scale-125"
+                  style={{
+                    backgroundColor: selectedEmojis.find((e) => e.id === emoji.id)
+                      ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+                      : 'transparent',
+                    border: selectedEmojis.find((e) => e.id === emoji.id)
+                      ? '2px solid var(--color-primary, #ec4899)'
+                      : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedEmojis.find((e2) => e2.id === emoji.id)) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedEmojis.find((e2) => e2.id === emoji.id)) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
                   onClick={() => handleEmojiClick(emoji)}
                   onMouseEnter={() => setHoveredEmoji(emoji)}
                   onMouseLeave={() => setHoveredEmoji(null)}
@@ -181,23 +254,59 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
 
         {/* 预览区域 */}
         {showPreview && hoveredEmoji && (
-          <div className="px-4 py-2 border-t border-gray-200 flex items-center gap-3 bg-gray-50">
+          <div 
+            className="px-4 py-2 border-t flex items-center gap-3"
+            style={{
+              borderColor: 'var(--border-color-overlay, #e5e7eb)',
+              backgroundColor: 'var(--bg-card, rgba(249, 250, 251, 1))',
+            }}
+          >
             <span className="text-2xl">{hoveredEmoji.code}</span>
-            <span className="text-sm text-gray-600">{hoveredEmoji.name}</span>
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {hoveredEmoji.name}
+            </span>
           </div>
         )}
 
         {/* 底部操作 */}
         {multiSelect && (
-          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
-            <span className="text-sm text-gray-600">
+          <div 
+            className="px-4 py-3 border-t flex items-center justify-between"
+            style={{
+              borderColor: 'var(--border-color-overlay, #e5e7eb)',
+              backgroundColor: 'var(--bg-card, rgba(249, 250, 251, 1))',
+            }}
+          >
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               已选择 {selectedEmojis.length}
               {maxSelection && ` / ${maxSelection}`}
             </span>
             <button
-              className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-medium hover:bg-pink-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: selectedEmojis.length === 0
+                  ? 'var(--bg-disabled, #d1d5db)'
+                  : 'var(--color-primary, #ec4899)',
+                color: 'var(--text-primary)',
+              }}
               onClick={handleConfirm}
               disabled={selectedEmojis.length === 0}
+              onMouseEnter={(e) => {
+                if (selectedEmojis.length > 0) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedEmojis.length > 0) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary, #ec4899)';
+                }
+              }}
             >
               确认使用
             </button>

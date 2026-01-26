@@ -8,11 +8,20 @@ import { fadeIn, slideUp } from './animations';
  */
 export const HeroSection: React.FC = () => {
   return (
-    <div className="py-20 text-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 relative overflow-hidden">
+    <div 
+      className="py-20 text-center relative overflow-hidden"
+      style={{ background: 'var(--gradient-bg)' }}
+    >
       {/* 科技感装饰元素 - 蓝色渐变 */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-300 rounded-full blur-3xl"></div>
+        <div 
+          className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl"
+          style={{ backgroundColor: 'var(--color-info)' }}
+        ></div>
+        <div 
+          className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl"
+          style={{ backgroundColor: 'var(--color-info-light)' }}
+        ></div>
       </div>
       {/* 网格背景 - 蓝色调 */}
       <div className="absolute inset-0 opacity-5" style={{
@@ -24,19 +33,21 @@ export const HeroSection: React.FC = () => {
           className="text-5xl md:text-7xl font-bold mb-6"
           {...fadeIn}
         >
-          <span className="text-neutral-900">
+          <span style={{ color: 'var(--text-primary)' }}>
             泰安正心智能科技有限公司
           </span>
         </motion.h1>
         <motion.p
-          className="text-xl md:text-2xl text-neutral-700 mb-4 max-w-3xl mx-auto"
+          className="text-xl md:text-2xl mb-4 max-w-3xl mx-auto"
+          style={{ color: 'var(--text-secondary)' }}
           {...slideUp}
           transition={{ delay: 0.2 }}
         >
           专注于人工智能领域，致力于将技术与人文相结合
         </motion.p>
         <motion.p
-          className="text-lg text-neutral-600 mb-8 max-w-2xl mx-auto"
+          className="text-lg mb-8 max-w-2xl mx-auto"
+          style={{ color: 'var(--text-tertiary)' }}
           {...slideUp}
           transition={{ delay: 0.4 }}
         >
@@ -49,8 +60,12 @@ export const HeroSection: React.FC = () => {
         >
           <motion.a
             href="/company/about"
-            className="px-8 py-3 bg-primary-500 text-white rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2"
-            whileHover={{ backgroundColor: '#2563EB' }}
+            className="px-8 py-3 rounded-lg font-semibold focus:outline-none relative overflow-hidden group"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--text-primary)',
+            }}
+            whileHover={{ scale: 0.98 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
           >
@@ -60,8 +75,12 @@ export const HeroSection: React.FC = () => {
             href="http://heartsphere.cn"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-3 border-2 border-primary-500 text-primary-500 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 relative overflow-hidden group"
-            whileHover={{ backgroundColor: '#EFF6FF', borderColor: '#2563EB', scale: 1.02 }}
+            className="px-8 py-3 border-2 rounded-lg font-semibold focus:outline-none relative overflow-hidden group"
+            style={{
+              borderColor: 'var(--color-primary)',
+              color: 'var(--color-primary)',
+            }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
           >

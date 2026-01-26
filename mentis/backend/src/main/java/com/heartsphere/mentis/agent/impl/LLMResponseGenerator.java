@@ -50,8 +50,8 @@ public class LLMResponseGenerator implements ResponseGenerator {
         try {
             // 构建 Prompt（直接使用硬编码，mentis项目的提示词不在admin中管理）
             String executionSummary = buildExecutionSummary(executionResult);
-            log.debug("执行结果摘要长度: sessionId={}, summaryLength={}", sessionId, executionSummary.length());
-            log.debug("执行结果摘要内容: sessionId={}, summary={}", sessionId, 
+            log.info("执行结果摘要长度: sessionId={}, summaryLength={}", sessionId, executionSummary.length());
+            log.info("执行结果摘要内容: sessionId={}, summary={}", sessionId, 
                     executionSummary.length() > 500 ? executionSummary.substring(0, 500) + "..." : executionSummary);
             
             String prompt = RESPONSE_GENERATION_PROMPT.replace("{executionResult}", executionSummary);
@@ -65,7 +65,7 @@ public class LLMResponseGenerator implements ResponseGenerator {
             
             // TODO: 获取真实的 userId
             Long userId = 1L;
-            log.debug("调用 AI 服务生成响应: sessionId={}, promptLength={}", sessionId, prompt.length());
+            log.info("调用 AI 服务生成响应: sessionId={}, promptLength={}", sessionId, prompt.length());
             TextGenerationResponse response = aiService.generateText(userId, request);
             
             String content = response != null ? response.getContent() : null;
@@ -152,7 +152,7 @@ public class LLMResponseGenerator implements ResponseGenerator {
         try {
             // 构建 Prompt
             String executionSummary = buildExecutionSummary(executionResult);
-            log.debug("执行结果摘要长度: sessionId={}, summaryLength={}", sessionId, executionSummary.length());
+            log.info("执行结果摘要长度: sessionId={}, summaryLength={}", sessionId, executionSummary.length());
             
             String prompt = RESPONSE_GENERATION_PROMPT.replace("{executionResult}", executionSummary);
             
@@ -169,7 +169,7 @@ public class LLMResponseGenerator implements ResponseGenerator {
             final StringBuilder[] fullResponse = {new StringBuilder()};
             final int[] chunkCount = {0};
             
-            log.debug("调用 AI 服务流式生成响应: sessionId={}, messageId={}, promptLength={}", 
+            log.info("调用 AI 服务流式生成响应: sessionId={}, messageId={}, promptLength={}", 
                     sessionId, messageId, prompt.length());
             
             // 调用流式生成
@@ -199,7 +199,7 @@ public class LLMResponseGenerator implements ResponseGenerator {
                         try {
                             if (fullResponse[0].length() > 0) {
                                 messageService.saveMessage(sessionId, "MENTIS", fullResponse[0].toString(), "TEXT");
-                                log.debug("保存完整响应到数据库: sessionId={}, messageId={}, length={}", 
+                                log.info("保存完整响应到数据库: sessionId={}, messageId={}, length={}", 
                                         sessionId, messageId, fullResponse[0].length());
                             }
                         } catch (Exception e) {

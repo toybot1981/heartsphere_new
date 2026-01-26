@@ -43,6 +43,18 @@ export interface Message {
   // 技能信息（当角色触发技能时显示）
   skillId?: string;      // 技能ID
   skillName?: string;    // 技能名称
+  // 元数据（包含技能应用信息等）
+  metadata?: {
+    skillApplications?: {
+      appliedSkills?: Array<{
+        skillId: number;
+        skillName?: string;
+        score?: number;
+        compositeScore?: number;
+      }>;
+    };
+    [key: string]: any;
+  };
 }
 
 export interface StoryOptionEffect {

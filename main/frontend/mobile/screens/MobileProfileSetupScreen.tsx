@@ -31,11 +31,27 @@ export const MobileProfileSetupScreen: React.FC<MobileProfileSetupScreenProps> =
   };
 
   return (
-    <div className="h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+    <div 
+      className="h-screen w-full flex flex-col items-center justify-center p-6 space-y-6"
+      style={{ backgroundColor: 'var(--bg-primary, #020617)' }}
+    >
+      <h1 
+        className="text-3xl font-bold"
+        style={{
+          background: 'var(--gradient-text-primary, linear-gradient(to right, var(--color-primary, #818cf8), var(--color-primary, #c084fc)))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}
+      >
         HeartSphere Mobile
       </h1>
-      <p className="text-slate-400 text-center text-sm">选择你的进入方式</p>
+      <p 
+        className="text-center text-sm"
+        style={{ color: 'var(--text-tertiary)' }}
+      >
+        选择你的进入方式
+      </p>
       <div className="w-full space-y-3">
         <MobileTouchableButton 
           onClick={() => setShowGuestNicknameModal(true)}
@@ -58,16 +74,38 @@ export const MobileProfileSetupScreen: React.FC<MobileProfileSetupScreenProps> =
           登录账户
         </MobileTouchableButton>
       </div>
-      <p className="text-xs text-slate-500 text-center mt-4 leading-relaxed">
+      <p 
+        className="text-xs text-center mt-4 leading-relaxed"
+        style={{ color: 'var(--text-tertiary)' }}
+      >
         访客模式可快速体验，登录账户可同步数据。
       </p>
       
       {/* 访客昵称输入对话框 */}
       {showGuestNicknameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">访客体验</h3>
-            <p className="text-sm text-slate-400 mb-6">输入你的昵称，以访客身份进入体验</p>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))' }}
+        >
+          <div 
+            className="rounded-2xl border p-6 max-w-sm w-full shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-card, #0f172a)',
+              borderColor: 'var(--bg-overlay, rgba(51, 65, 85, 1))',
+            }}
+          >
+            <h3 
+              className="text-xl font-bold mb-4"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              访客体验
+            </h3>
+            <p 
+              className="text-sm mb-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              输入你的昵称，以访客身份进入体验
+            </p>
             <input 
               type="text"
               value={profileNickname}
@@ -78,7 +116,20 @@ export const MobileProfileSetupScreen: React.FC<MobileProfileSetupScreenProps> =
                 }
               }}
               placeholder="请输入昵称"
-              className="w-full min-h-[44px] bg-slate-800/80 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 outline-none mb-4 text-base transition-all duration-200 touch-manipulation"
+              className="w-full min-h-[44px] backdrop-blur-sm border rounded-lg px-4 py-3 focus:ring-2 outline-none mb-4 text-base transition-all duration-200 touch-manipulation"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(168, 85, 247, 0.2)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
               autoFocus
             />
             <div className="flex gap-3">
@@ -87,7 +138,16 @@ export const MobileProfileSetupScreen: React.FC<MobileProfileSetupScreenProps> =
                 disabled={!profileNickname.trim()}
                 variant="primary"
                 size="md"
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500"
+                className="flex-1"
+                style={{
+                  background: 'var(--bg-primary-button, var(--color-primary, #6366f1))',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-primary-button-hover, var(--color-primary, #4f46e5))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-primary-button, var(--color-primary, #6366f1))';
+                }}
               >
                 进入
               </MobileTouchableButton>

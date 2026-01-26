@@ -191,12 +191,12 @@ public class AIModelConfigService {
                 .collect(Collectors.toList());
         
         if (!configsToClear.isEmpty()) {
-            log.debug("清除 capability={} 的 {} 个默认模型（排除ID: {}）", 
+            log.info("清除 capability={} 的 {} 个默认模型（排除ID: {}）", 
                     capability, configsToClear.size(), excludeId);
             for (AIModelConfig config : configsToClear) {
                 config.setIsDefault(false);
                 modelConfigRepository.save(config);
-                log.debug("已清除默认模型: id={}, provider={}, model={}", 
+                log.info("已清除默认模型: id={}, provider={}, model={}", 
                         config.getId(), config.getProvider(), config.getModelName());
             }
         }

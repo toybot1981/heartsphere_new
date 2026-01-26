@@ -98,11 +98,27 @@ export const SkillList: React.FC<SkillListProps> = ({
 
   if (filteredSkills.length === 0) {
     return (
-      <div className="bg-slate-800/50 rounded-lg p-12 text-center border border-slate-700">
+      <div 
+        className="rounded-lg p-12 text-center border"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         <div className="text-4xl mb-4">🔍</div>
-        <p className="text-slate-300 text-lg mb-2">没有找到技能</p>
+        <p 
+          className="text-lg mb-2"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          没有找到技能
+        </p>
         {searchQuery && (
-          <p className="text-slate-500 text-sm">尝试使用不同的搜索关键词或清除筛选条件</p>
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            尝试使用不同的搜索关键词或清除筛选条件
+          </p>
         )}
       </div>
     );
@@ -112,11 +128,30 @@ export const SkillList: React.FC<SkillListProps> = ({
     <div className="skill-list">
       {/* 排序控制 */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-sm text-slate-400">
-          共找到 <span className="text-white font-semibold">{filteredSkills.length}</span> 个技能
+        <div 
+          className="text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          共找到 <span 
+            className="font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {filteredSkills.length}
+          </span> 个技能
         </div>
         <select
-          className="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+          className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none"
+          style={{
+            backgroundColor: 'var(--bg-overlay, #0f172a)',
+            borderColor: 'var(--bg-overlay, #475569)',
+            color: 'var(--text-primary)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+          }}
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as any)}
         >

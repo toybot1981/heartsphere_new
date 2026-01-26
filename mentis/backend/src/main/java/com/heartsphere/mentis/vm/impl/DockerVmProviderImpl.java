@@ -118,7 +118,7 @@ public class DockerVmProviderImpl implements VmProvider {
     
     @Override
     public MentisVmService.VmStatus getVmStatus(String vmId) {
-        log.debug("获取 Docker 容器状态: vmId={}", vmId);
+        log.info("获取 Docker 容器状态: vmId={}", vmId);
         
         try {
             // docker ps --filter id=<vmId> --format "{{.Status}}"
@@ -241,7 +241,7 @@ public class DockerVmProviderImpl implements VmProvider {
     
     @Override
     public String getScreenshot(String vmId) {
-        log.debug("获取 Docker 容器截图（已禁用）: vmId={}", vmId);
+        log.info("获取 Docker 容器截图（已禁用）: vmId={}", vmId);
         // 截图功能已禁用，直接返回 null
         return null;
         

@@ -61,24 +61,28 @@ public class CharacterSkillBinding {
      * 是否启用（装备后可以启用/禁用）
      */
     @Column(name = "is_enabled", nullable = false)
+    @Builder.Default
     private Boolean isEnabled = true;
     
     /**
      * 是否自动触发（AI自动判断是否使用）
      */
     @Column(name = "auto_trigger", nullable = false)
+    @Builder.Default
     private Boolean autoTrigger = false;
     
     /**
      * 优先级（数字越大优先级越高，用于多个技能同时匹配时）
      */
     @Column(nullable = false)
+    @Builder.Default
     private Integer priority = 0;
     
     /**
      * 使用次数统计
      */
     @Column(name = "usage_count", nullable = false)
+    @Builder.Default
     private Integer usageCount = 0;
     
     /**

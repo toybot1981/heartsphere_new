@@ -80,27 +80,46 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
       aria-labelledby="warm-message-modal-title"
     >
       <div
-        className="relative w-full max-w-md bg-gradient-to-br from-amber-50 to-pink-50 rounded-2xl shadow-2xl overflow-hidden border-2 border-amber-200 animate-scale-in"
+        className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-2 animate-scale-in"
+        style={{
+          background: 'var(--bg-gradient-modal-light, linear-gradient(to bottom right, var(--bg-primary-light, #fffbeb), var(--bg-primary-light, #fdf2f8)))',
+          borderColor: 'var(--border-color-modal-light, #fde68a)',
+          animationDuration: '200ms',
+          animationTimingFunction: 'ease-out',
+        }}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.stopPropagation();
           }
         }}
-        style={{
-          animationDuration: '200ms',
-          animationTimingFunction: 'ease-out',
-        }}
       >
         {/* 头部 */}
-        <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-amber-200 bg-gradient-to-r from-amber-100 to-pink-100">
+        <div 
+          className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b"
+          style={{
+            borderColor: 'var(--border-color-modal-light, #fde68a)',
+            background: 'var(--bg-gradient-header-light, linear-gradient(to right, var(--bg-primary-light, #fef3c7), var(--bg-primary-light, #fce7f3)))',
+          }}
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="text-2xl" aria-hidden="true">💝</div>
               <div>
-                <h2 id="warm-message-modal-title" className="text-lg font-bold text-gray-800">留下暖心留言</h2>
+                <h2 
+                  id="warm-message-modal-title" 
+                  className="text-lg font-bold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  留下暖心留言
+                </h2>
                 {ownerName && (
-                  <p className="text-xs text-gray-600">给 {ownerName} 的留言</p>
+                  <p 
+                    className="text-xs"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    给 {ownerName} 的留言
+                  </p>
                 )}
               </div>
             </div>
@@ -108,7 +127,7 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="text-gray-600"
+              style={{ color: 'var(--text-secondary)' }}
               aria-label="关闭"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -127,7 +146,11 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
           )}
           
           <div className="mb-3">
-            <label className="block text-gray-700 font-medium mb-1 text-sm" htmlFor="warm-message">
+            <label 
+              className="block font-medium mb-1 text-sm" 
+              htmlFor="warm-message"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               你的留言
             </label>
             <textarea
@@ -136,16 +159,40 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
               onChange={(e) => setMessage(e.target.value)}
               placeholder="分享你的体验感受，给主人一些温暖的话语..."
               maxLength={500}
-              className="w-full h-24 min-h-[44px] px-3 py-2 bg-white border-2 border-amber-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 resize-none text-sm touch-manipulation"
+              className="w-full h-24 min-h-[44px] px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 resize-none text-sm touch-manipulation"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
               aria-label="暖心留言"
               aria-describedby="warm-message-count"
             />
-            <div className="text-right text-xs text-gray-500 mt-1" id="warm-message-count" role="status" aria-live="polite">
+            <div 
+              className="text-right text-xs mt-1" 
+              id="warm-message-count" 
+              role="status" 
+              aria-live="polite"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               {message.length}/500 字
             </div>
           </div>
           
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800">
+          <div 
+            className="border rounded-lg p-2 text-xs"
+            style={{
+              backgroundColor: 'var(--bg-warning-alpha)',
+              borderColor: 'var(--border-warning-alpha)',
+              color: 'var(--color-warning)',
+            }}
+          >
             <div className="flex items-start gap-2">
               <span className="text-base" aria-hidden="true">💡</span>
               <div>
@@ -157,13 +204,23 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
         </div>
         
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-2 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-amber-200 bg-gradient-to-r from-amber-100 to-pink-100">
+        <div 
+          className="flex items-center justify-end gap-2 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t"
+          style={{
+            borderColor: 'var(--border-color-overlay)',
+            background: 'var(--bg-secondary)',
+          }}
+        >
           <MobileTouchableButton
             onClick={onClose}
             variant="secondary"
             size="md"
             disabled={loading}
-            className="bg-white text-gray-700 border border-gray-300"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
             aria-label="跳过"
           >
             跳过
@@ -171,7 +228,19 @@ export const MobileWarmMessageModal: React.FC<MobileWarmMessageModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={loading || !message.trim()}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-pink-400 text-white hover:from-amber-500 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md text-sm"
+            className="px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md text-sm"
+            style={{
+              background: 'var(--gradient-button)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading && message.trim()) {
+                e.currentTarget.style.opacity = '0.9';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
           >
             {loading ? '提交中...' : '💝 发送留言'}
           </button>

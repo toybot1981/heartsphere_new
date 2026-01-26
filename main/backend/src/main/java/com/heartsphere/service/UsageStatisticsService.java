@@ -46,7 +46,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public UsageStats getCurrentPeriodStats(Long userId) {
-        log.debug("获取当前周期使用统计: userId={}", userId);
+        log.info("获取当前周期使用统计: userId={}", userId);
         
         // 获取会员信息
         Membership membership = membershipService.getUserMembership(userId)
@@ -68,7 +68,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public UsageStats.QuotaUsageStats getQuotaUsageRate(Long userId, QuotaType quotaType) {
-        log.debug("获取配额使用率: userId={}, quotaType={}", userId, quotaType);
+        log.info("获取配额使用率: userId={}, quotaType={}", userId, quotaType);
         
         // 获取配额信息
         com.heartsphere.billing.dto.QuotaInfo quotaInfo = quotaManagementService.getQuotaInfo(userId);
@@ -114,7 +114,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public List<UsageStats.DailyUsage> getDailyUsage(Long userId, LocalDate startDate, LocalDate endDate) {
-        log.debug("获取每日使用统计: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
+        log.info("获取每日使用统计: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
         
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(23, 59, 59);
@@ -177,7 +177,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public List<UsageStats> getMonthlyUsage(Long userId, int months) {
-        log.debug("获取月度使用统计: userId={}, months={}", userId, months);
+        log.info("获取月度使用统计: userId={}, months={}", userId, months);
         
         List<UsageStats> monthlyStats = new ArrayList<>();
         
@@ -207,7 +207,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public BigDecimal calculateUsageCost(Long userId, LocalDate startDate, LocalDate endDate) {
-        log.debug("计算使用成本: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
+        log.info("计算使用成本: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
         
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(23, 59, 59);
@@ -230,7 +230,7 @@ public class UsageStatisticsService {
      */
     @Transactional(readOnly = true)
     public CostAnalysis getCostAnalysis(Long userId, LocalDate startDate, LocalDate endDate) {
-        log.debug("获取成本分析: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
+        log.info("获取成本分析: userId={}, startDate={}, endDate={}", userId, startDate, endDate);
         
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(23, 59, 59);

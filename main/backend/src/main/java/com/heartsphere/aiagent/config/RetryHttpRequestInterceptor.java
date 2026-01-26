@@ -51,7 +51,7 @@ public class RetryHttpRequestInterceptor implements ClientHttpRequestInterceptor
                 
                 // 如果响应成功，记录日志（仅第一次）
                 if (attempt == 0 && response.getStatusCode().is2xxSuccessful()) {
-                    log.debug("[RetryInterceptor] 请求成功 - URL: {}", request.getURI());
+                    log.info("[RetryInterceptor] 请求成功 - URL: {}", request.getURI());
                 }
                 
                 return response;

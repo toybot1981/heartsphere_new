@@ -30,7 +30,7 @@ public class DockerVmProvider implements VmProvider {
     
     @Override
     public MentisVmService.VmStatus getVmStatus(String vmId) {
-        log.debug("获取Docker容器状态: vmId={}", vmId);
+        log.info("获取Docker容器状态: vmId={}", vmId);
         
         // TODO: 实现状态查询逻辑
         MentisVmService.VmStatus status = new MentisVmService.VmStatus();

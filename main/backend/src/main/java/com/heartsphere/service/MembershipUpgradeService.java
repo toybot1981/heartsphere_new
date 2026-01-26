@@ -202,7 +202,7 @@ public class MembershipUpgradeService {
             upgradePrice = BigDecimal.ZERO;
         }
         
-        log.debug("计算升级价格: currentPlan={}, targetPlan={}, remainingValue={}, upgradePrice={}", 
+        log.info("计算升级价格: currentPlan={}, targetPlan={}, remainingValue={}, upgradePrice={}", 
                 currentPlan.getType(), targetPlan.getType(), remainingValue, upgradePrice);
         
         return upgradePrice.setScale(2, RoundingMode.HALF_UP);
@@ -290,7 +290,7 @@ public class MembershipUpgradeService {
             }
         }
         
-        log.debug("配额转换完成: userId={}, conversionRatio={}", membership.getUserId(), conversionRatio);
+        log.info("配额转换完成: userId={}, conversionRatio={}", membership.getUserId(), conversionRatio);
     }
 
     /**
@@ -329,7 +329,7 @@ public class MembershipUpgradeService {
             membership.setVideoGenerationUsed(Math.min(membership.getVideoGenerationUsed(), targetVideoQuota));
         }
         
-        log.debug("降级配额调整完成: userId={}", membership.getUserId());
+        log.info("降级配额调整完成: userId={}", membership.getUserId());
     }
 
     /**

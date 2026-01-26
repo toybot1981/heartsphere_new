@@ -565,8 +565,14 @@ export const PageTransition: React.FC<PageTransitionProps> = ({
       >
         {displayChildren}
         {showLoading && isTransitioning && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div 
+            className="absolute inset-0 flex items-center justify-center backdrop-blur-sm z-50"
+            style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.2))' }}
+          >
+            <div 
+              className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
+              style={{ borderColor: 'var(--color-primary, #3b82f6)' }}
+            />
           </div>
         )}
       </div>

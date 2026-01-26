@@ -81,7 +81,10 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
     return (
       <div className="mb-6">
         <div className="flex items-center justify-center py-12">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <div 
+            className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: 'var(--color-primary, #a855f7)' }}
+          />
         </div>
       </div>
     );
@@ -90,7 +93,14 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
   if (error) {
     return (
       <div className="mb-6">
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-300 text-center">
+        <div 
+          className="border rounded-lg p-4 text-center"
+          style={{
+            backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+            borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+            color: 'var(--color-error, #fca5a5)',
+          }}
+        >
           {error}
         </div>
       </div>
@@ -100,13 +110,26 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
   if (sharedHeartSpheres.length === 0) {
     return (
       <div className="mb-6">
-        <div className="text-center py-8 text-gray-400">
+        <div 
+          className="text-center py-8"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <div className="text-4xl mb-2">🌟</div>
           <p className="text-sm">暂无其他用户共享的心域</p>
           <p className="text-xs mt-1">当有用户分享心域时，会在这里显示</p>
           <button
             onClick={loadSharedHeartSpheres}
-            className="mt-4 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+            className="mt-4 px-4 py-2 rounded-lg transition-colors text-sm"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+            }}
           >
             刷新
           </button>
@@ -130,20 +153,18 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
           </div>
           <div>
             <h3 
-              className="text-2xl font-bold text-white mb-1"
+              className="text-2xl font-bold mb-1"
               style={{
+                color: 'var(--text-primary)',
                 textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(147, 51, 234, 0.4)',
-                background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
               }}
             >
               发现共享心域
             </h3>
             <p 
-              className="text-gray-300 text-sm"
+              className="text-sm"
               style={{
+                color: 'var(--text-secondary)',
                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
               }}
             >
@@ -153,9 +174,19 @@ export const SharedHeartSphereSection: React.FC<SharedHeartSphereSectionProps> =
         </div>
         <button
           onClick={loadSharedHeartSpheres}
-          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm whitespace-nowrap font-medium shadow-lg hover:shadow-xl"
+          className="px-4 py-2 rounded-lg transition-all text-sm whitespace-nowrap font-medium shadow-lg"
           style={{
+            background: 'linear-gradient(to right, var(--color-primary, #9333ea), var(--color-primary, #ec4899))',
+            color: 'var(--text-primary)',
             boxShadow: '0 4px 15px rgba(147, 51, 234, 0.4), 0 0 10px rgba(236, 72, 153, 0.3)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary-light, #7e22ce), var(--color-primary-light, #db2777))';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(147, 51, 234, 0.5), 0 0 15px rgba(236, 72, 153, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary, #9333ea), var(--color-primary, #ec4899))';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(147, 51, 234, 0.4), 0 0 10px rgba(236, 72, 153, 0.3)';
           }}
         >
           刷新

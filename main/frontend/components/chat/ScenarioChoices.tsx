@@ -36,14 +36,23 @@ const ChoiceButton = memo<{
         }
       }}
       disabled={disabled}
-      className={`
-        bg-indigo-600/80 backdrop-blur-md hover:bg-indigo-500 text-white px-6 py-3 rounded-xl 
-        shadow-lg border border-indigo-400/50 transition-all active:scale-95
-        disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none
-        min-w-[120px] text-base font-medium whitespace-nowrap
-      `}
+      className="backdrop-blur-md px-6 py-3 rounded-xl shadow-lg border transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none min-w-[120px] text-base font-medium whitespace-nowrap"
       style={{
-        backgroundColor: disabled ? 'rgba(79, 70, 229, 0.4)' : 'rgba(79, 70, 229, 0.8)',
+        backgroundColor: disabled 
+          ? 'var(--bg-overlay, rgba(79, 70, 229, 0.4))' 
+          : 'var(--color-primary, rgba(79, 70, 229, 0.8))',
+        borderColor: 'var(--color-primary-light, rgba(99, 102, 241, 0.5))',
+        color: 'var(--text-primary)',
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = 'var(--color-primary-light, rgba(99, 102, 241, 1))';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(79, 70, 229, 0.8))';
+        }
       }}
       aria-label={`选择: ${buttonText}`}
     >

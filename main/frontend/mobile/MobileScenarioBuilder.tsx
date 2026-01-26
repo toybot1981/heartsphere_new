@@ -170,28 +170,73 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
       if (!node) return null;
 
       return (
-          <div className="absolute inset-0 z-20 bg-slate-900 flex flex-col animate-fade-in">
-              <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-md">
-                  <button onClick={() => setEditingNodeId(null)} className="text-slate-400 flex items-center gap-1">
+          <div 
+            className="absolute inset-0 z-20 flex flex-col animate-fade-in"
+            style={{ backgroundColor: 'var(--bg-primary, #0f172a)' }}
+          >
+              <div 
+                className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b flex items-center justify-between backdrop-blur-md"
+                style={{
+                  borderColor: 'var(--border-color-overlay, #1e293b)',
+                  backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 0.9))',
+                }}
+              >
+                  <button 
+                    onClick={() => setEditingNodeId(null)} 
+                    className="flex items-center gap-1"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
                       返回
                   </button>
-                  <h3 className="font-bold text-white truncate max-w-[150px]">{node.title}</h3>
-                  <button onClick={() => deleteNode(node.id)} className="text-red-400 text-sm">删除</button>
+                  <h3 
+                    className="font-bold truncate max-w-[150px]"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {node.title}
+                  </h3>
+                  <button 
+                    onClick={() => deleteNode(node.id)} 
+                    className="text-sm"
+                    style={{ color: 'var(--color-error, #f87171)' }}
+                  >
+                    删除
+                  </button>
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
                   <div>
-                      <label className="text-xs text-slate-500 font-bold mb-1 block">节点标题 (内部标识)</label>
+                      <label 
+                        className="text-xs font-bold mb-1 block"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
+                        节点标题 (内部标识)
+                      </label>
                       <input 
                         value={node.title} 
                         onChange={(e) => updateNode(node.id, 'title', e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                        className="w-full rounded-xl px-4 py-3 outline-none"
+                        style={{
+                          backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                          borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                          color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-info, #6366f1)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                        }}
                       />
                   </div>
 
                   <div>
-                      <label className="text-xs text-purple-400 font-bold mb-2 block">节点类型</label>
+                      <label 
+                        className="text-xs font-bold mb-2 block"
+                        style={{ color: 'var(--color-primary, #c084fc)' }}
+                      >
+                        节点类型
+                      </label>
                       <div className="flex flex-col gap-2 mb-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -200,10 +245,21 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                             value="fixed"
                             checked={(node.nodeType || 'fixed') === 'fixed'}
                             onChange={() => updateNode(node.id, 'nodeType', 'fixed')}
-                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                            className="w-4 h-4 focus:ring-2"
+                            style={{ accentColor: 'var(--color-primary, #a855f7)' }}
                           />
-                          <span className="text-xs text-white">固定内容</span>
-                          <span className="text-[10px] text-slate-500">(直接显示预设内容)</span>
+                          <span 
+                            className="text-xs"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            固定内容
+                          </span>
+                          <span 
+                            className="text-[10px]"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            (直接显示预设内容)
+                          </span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -212,10 +268,21 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                             value="ai-dynamic"
                             checked={node.nodeType === 'ai-dynamic'}
                             onChange={() => updateNode(node.id, 'nodeType', 'ai-dynamic')}
-                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                            className="w-4 h-4 focus:ring-2"
+                            style={{ accentColor: 'var(--color-primary, #a855f7)' }}
                           />
-                          <span className="text-xs text-white">AI动态生成</span>
-                          <span className="text-[10px] text-slate-500">(AI根据提示词生成内容)</span>
+                          <span 
+                            className="text-xs"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            AI动态生成
+                          </span>
+                          <span 
+                            className="text-[10px]"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            (AI根据提示词生成内容)
+                          </span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -224,13 +291,27 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                             value="ending"
                             checked={node.nodeType === 'ending'}
                             onChange={() => updateNode(node.id, 'nodeType', 'ending')}
-                            className="w-4 h-4 text-purple-500 focus:ring-purple-500"
+                            className="w-4 h-4 focus:ring-2"
+                            style={{ accentColor: 'var(--color-primary, #a855f7)' }}
                           />
-                          <span className="text-xs text-white">结局节点</span>
-                          <span className="text-[10px] text-slate-500">(剧本的结局)</span>
+                          <span 
+                            className="text-xs"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            结局节点
+                          </span>
+                          <span 
+                            className="text-[10px]"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            (剧本的结局)
+                          </span>
                         </label>
                       </div>
-                      <p className="text-[10px] text-slate-500">
+                      <p 
+                        className="text-[10px]"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
                         {(node.nodeType || 'fixed') === 'ai-dynamic' 
                           ? '✨ AI会根据提示词动态生成对话内容，每次体验略有不同。' 
                           : (node.nodeType === 'ending')
@@ -240,8 +321,16 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                   </div>
 
                   <div>
-                      <label className="text-xs text-indigo-400 font-bold mb-1 block">AI 剧情指令 (Prompt)</label>
-                      <p className="text-[10px] text-slate-500 mb-2">
+                      <label 
+                        className="text-xs font-bold mb-1 block"
+                        style={{ color: 'var(--color-info, #818cf8)' }}
+                      >
+                        AI 剧情指令 (Prompt)
+                      </label>
+                      <p 
+                        className="text-[10px] mb-2"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
                         {(node.nodeType || 'fixed') === 'ai-dynamic' 
                           ? '描述这一幕发生的事情，AI将根据此场景描述生成符合角色性格的对话和旁白。'
                           : '描述这一幕发生的事情，AI将据此生成旁白。'}
@@ -249,18 +338,46 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                       <textarea 
                         value={node.prompt} 
                         onChange={(e) => updateNode(node.id, 'prompt', e.target.value)}
-                        className="w-full h-40 bg-slate-800 border border-slate-700 rounded-xl p-4 text-white focus:border-indigo-500 outline-none resize-none leading-relaxed"
+                        className="w-full h-40 rounded-xl p-4 outline-none resize-none leading-relaxed"
+                        style={{
+                          backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                          borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                          color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-info, #6366f1)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                        }}
                         placeholder="例如：樱有些害羞地低下了头，递给你一封信..."
                       />
                   </div>
 
                   {/* 多角色对话编辑 */}
                   <div>
-                      <label className="text-xs text-cyan-400 font-bold mb-1 block">多角色对话（可选）</label>
-                      <p className="text-[10px] text-slate-500 mb-2">设置多个角色在此节点的对话，按顺序显示</p>
+                      <label 
+                        className="text-xs font-bold mb-1 block"
+                        style={{ color: 'var(--color-info, #06b6d4)' }}
+                      >
+                        多角色对话（可选）
+                      </label>
+                      <p 
+                        className="text-[10px] mb-2"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
+                        设置多个角色在此节点的对话，按顺序显示
+                      </p>
                       <div className="space-y-2 mb-2">
                           {(node.multiCharacterDialogue || []).map((dialogue, idx) => (
-                              <div key={`dialogue-${node.id}-${idx}-${dialogue.characterId || idx}`} className="bg-slate-800 p-2 rounded-xl border border-slate-700 flex gap-2 items-center flex-wrap">
+                              <div 
+                                key={`dialogue-${node.id}-${idx}-${dialogue.characterId || idx}`} 
+                                className="p-2 rounded-xl border flex gap-2 items-center flex-wrap"
+                                style={{
+                                  backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                  borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                }}
+                              >
                                   <input
                                       type="text"
                                       value={dialogue.characterId}
@@ -270,7 +387,12 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                           updateNode(node.id, 'multiCharacterDialogue', newDialogue);
                                       }}
                                       placeholder="角色ID"
-                                      className="w-24 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                      className="w-24 text-[10px] rounded px-2 py-1 border outline-none"
+                                      style={{
+                                        backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                        borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                        color: 'var(--text-primary)',
+                                      }}
                                   />
                                   <input
                                       type="number"
@@ -281,7 +403,12 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                           updateNode(node.id, 'multiCharacterDialogue', newDialogue);
                                       }}
                                       placeholder="顺序"
-                                      className="w-12 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                      className="w-12 text-[10px] rounded px-2 py-1 border outline-none"
+                                      style={{
+                                        backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                        borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                        color: 'var(--text-primary)',
+                                      }}
                                   />
                                   <input
                                       type="text"
@@ -292,7 +419,12 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                           updateNode(node.id, 'multiCharacterDialogue', newDialogue);
                                       }}
                                       placeholder="对话内容"
-                                      className="flex-1 text-[10px] bg-slate-900 rounded px-2 py-1 border border-slate-700 text-white outline-none min-w-[120px]"
+                                      className="flex-1 text-[10px] rounded px-2 py-1 border outline-none min-w-[120px]"
+                                      style={{
+                                        backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                        borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                        color: 'var(--text-primary)',
+                                      }}
                                   />
                                   <button
                                       onClick={() => {
@@ -300,7 +432,14 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                           newDialogue.splice(idx, 1);
                                           updateNode(node.id, 'multiCharacterDialogue', newDialogue);
                                       }}
-                                      className="text-slate-500 hover:text-red-400 text-sm px-1"
+                                      className="text-sm px-1"
+                                      style={{ color: 'var(--text-disabled)' }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = 'var(--text-disabled)';
+                                      }}
                                   >
                                       ×
                                   </button>
@@ -312,7 +451,12 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                               const newDialogue = [...(node.multiCharacterDialogue || []), { characterId: '', content: '', order: (node.multiCharacterDialogue?.length || 0) + 1 }];
                               updateNode(node.id, 'multiCharacterDialogue', newDialogue);
                           }}
-                          className="text-[10px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded border border-cyan-500/30"
+                          className="text-[10px] px-2 py-1 rounded border"
+                          style={{
+                            backgroundColor: 'var(--bg-info-alpha, rgba(6, 182, 212, 0.3))',
+                            color: 'var(--color-info, #06b6d4)',
+                            borderColor: 'var(--border-info-alpha, rgba(6, 182, 212, 0.3))',
+                          }}
                       >
                           + 添加角色对话
                       </button>
@@ -320,8 +464,18 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
 
                   {/* 时间系统编辑 */}
                   <div>
-                      <label className="text-xs text-orange-400 font-bold mb-1 block">时间限制（可选）</label>
-                      <p className="text-[10px] text-slate-500 mb-2">设置节点的时间限制，超时后自动跳转</p>
+                      <label 
+                        className="text-xs font-bold mb-1 block"
+                        style={{ color: 'var(--color-warning, #fb923c)' }}
+                      >
+                        时间限制（可选）
+                      </label>
+                      <p 
+                        className="text-[10px] mb-2"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
+                        设置节点的时间限制，超时后自动跳转
+                      </p>
                       <div className="flex gap-2 items-center">
                           <div className="flex-1">
                               <input
@@ -330,14 +484,24 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                   value={node.timeLimit || ''}
                                   onChange={(e) => updateNode(node.id, 'timeLimit', e.target.value ? parseInt(e.target.value) : undefined)}
                                   placeholder="限时（秒）"
-                                  className="w-full text-[10px] bg-slate-800 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                  className="w-full text-[10px] rounded px-2 py-1 border outline-none"
+                                  style={{
+                                    backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                    borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                    color: 'var(--text-primary)',
+                                  }}
                               />
                           </div>
                           {node.timeLimit && (
                               <select
                                   value={node.timeoutNodeId || ''}
                                   onChange={(e) => updateNode(node.id, 'timeoutNodeId', e.target.value || undefined)}
-                                  className="flex-1 text-[10px] bg-slate-800 rounded px-2 py-1 border border-slate-700 text-white outline-none"
+                                  className="flex-1 text-[10px] rounded px-2 py-1 border outline-none"
+                                  style={{
+                                    backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                    borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                    color: 'var(--text-primary)',
+                                  }}
                               >
                                   <option value="">超时跳转节点</option>
                                   {Object.values(nodes).map((n: StoryNode) => (
@@ -350,29 +514,92 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
 
                   <div>
                       <div className="flex justify-between items-center mb-3">
-                          <label className="text-xs text-green-400 font-bold">分支选项</label>
-                          <button onClick={() => addOption(node.id)} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-500/30">+ 添加选项</button>
+                          <label 
+                            className="text-xs font-bold"
+                            style={{ color: 'var(--color-success, #34d399)' }}
+                          >
+                            分支选项
+                          </label>
+                          <button 
+                            onClick={() => addOption(node.id)} 
+                            className="text-[10px] px-2 py-1 rounded border"
+                            style={{
+                              backgroundColor: 'var(--bg-success-alpha, rgba(34, 197, 94, 0.3))',
+                              color: 'var(--color-success, #34d399)',
+                              borderColor: 'var(--border-success-alpha, rgba(34, 197, 94, 0.3))',
+                            }}
+                          >
+                            + 添加选项
+                          </button>
                       </div>
                       
                       <div className="space-y-3">
                           {node.options.map((opt, idx) => (
-                              <div key={opt.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-3">
+                              <div 
+                                key={opt.id} 
+                                className="p-3 rounded-xl border space-y-3"
+                                style={{
+                                  backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                  borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                }}
+                              >
                                   <div className="flex justify-between items-start">
-                                      <span className="text-[10px] text-slate-500 rounded bg-slate-900 px-1">选项 {idx + 1}</span>
-                                      <button onClick={() => deleteOption(node.id, idx)} className="text-slate-600 hover:text-red-400">×</button>
+                                      <span 
+                                        className="text-[10px] rounded px-1"
+                                        style={{
+                                          color: 'var(--text-disabled)',
+                                          backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                        }}
+                                      >
+                                        选项 {idx + 1}
+                                      </span>
+                                      <button 
+                                        onClick={() => deleteOption(node.id, idx)} 
+                                        className="text-sm"
+                                        style={{ color: 'var(--text-disabled)' }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.color = 'var(--text-disabled)';
+                                        }}
+                                      >
+                                        ×
+                                      </button>
                                   </div>
                                   <input 
                                     value={opt.text} 
                                     onChange={(e) => updateOption(node.id, idx, 'text', e.target.value)}
                                     placeholder="按钮文字"
-                                    className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:border-green-500 outline-none"
+                                    className="w-full rounded px-3 py-2 text-sm outline-none"
+                                    style={{
+                                      backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                      borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                      color: 'var(--text-primary)',
+                                    }}
+                                    onFocus={(e) => {
+                                      e.currentTarget.style.borderColor = 'var(--color-success, #22c55e)';
+                                    }}
+                                    onBlur={(e) => {
+                                      e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                                    }}
                                   />
                                   <div className="flex items-center gap-2">
-                                      <span className="text-[10px] text-slate-500 shrink-0">跳转至 &rarr;</span>
+                                      <span 
+                                        className="text-[10px] shrink-0"
+                                        style={{ color: 'var(--text-disabled)' }}
+                                      >
+                                        跳转至 &rarr;
+                                      </span>
                                       <select 
                                         value={opt.nextNodeId}
                                         onChange={(e) => updateOption(node.id, idx, 'nextNodeId', e.target.value)}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none"
+                                        className="w-full rounded px-2 py-1.5 text-xs outline-none"
+                                        style={{
+                                          backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 1))',
+                                          borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                          color: 'var(--text-primary)',
+                                        }}
                                       >
                                           {Object.values(nodes).map((n: StoryNode) => (
                                               <option key={n.id} value={n.id}>{n.title}</option>
@@ -380,26 +607,56 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                       </select>
                                   </div>
                                   {/* 状态影响编辑 */}
-                                  <div className="mt-2 pt-2 border-t border-slate-700">
+                                  <div 
+                                    className="mt-2 pt-2 border-t"
+                                    style={{ borderTopColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))' }}
+                                  >
                                       <div className="flex justify-between items-center mb-1">
-                                          <span className="text-[10px] text-yellow-400 font-bold">状态影响</span>
+                                          <span 
+                                            className="text-[10px] font-bold"
+                                            style={{ color: 'var(--color-warning, #fbbf24)' }}
+                                          >
+                                            状态影响
+                                          </span>
                                           <button 
                                             onClick={() => addEffect(node.id, idx)} 
-                                            className="text-[9px] bg-yellow-900/30 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30"
+                                            className="text-[9px] px-1.5 py-0.5 rounded border"
+                                            style={{
+                                              backgroundColor: 'var(--bg-warning-alpha, rgba(251, 191, 36, 0.3))',
+                                              color: 'var(--color-warning, #fbbf24)',
+                                              borderColor: 'var(--border-warning-alpha, rgba(251, 191, 36, 0.3))',
+                                            }}
                                           >
                                               + 添加
                                           </button>
                                       </div>
                                       {(!opt.effects || opt.effects.length === 0) ? (
-                                          <p className="text-[10px] text-slate-500 italic">未设置（可选）</p>
+                                          <p 
+                                            className="text-[10px] italic"
+                                            style={{ color: 'var(--text-disabled)' }}
+                                          >
+                                            未设置（可选）
+                                          </p>
                                       ) : (
                                           <div className="space-y-1.5">
                                               {opt.effects.map((effect, effectIdx) => (
-                                                  <div key={`effect-${node.id}-${idx}-${effectIdx}-${effect.type}-${effect.target}`} className="bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex gap-1.5 items-center">
+                                                  <div 
+                                                    key={`effect-${node.id}-${idx}-${effectIdx}-${effect.type}-${effect.target}`} 
+                                                    className="p-1.5 rounded border flex gap-1.5 items-center"
+                                                    style={{
+                                                      backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 0.5))',
+                                                      borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 0.5))',
+                                                    }}
+                                                  >
                                                       <select
                                                           value={effect.type}
                                                           onChange={(e) => updateEffect(node.id, idx, effectIdx, 'type', e.target.value)}
-                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          className="text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                          style={{
+                                                            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                            borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                            color: 'var(--text-primary)',
+                                                          }}
                                                       >
                                                           <option value="favorability">好感度</option>
                                                           <option value="event">事件</option>
@@ -410,7 +667,12 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                                           value={effect.target}
                                                           onChange={(e) => updateEffect(node.id, idx, effectIdx, 'target', e.target.value)}
                                                           placeholder={effect.type === 'favorability' ? '角色ID' : effect.type === 'event' ? '事件ID' : '物品ID'}
-                                                          className="flex-1 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          className="flex-1 text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                          style={{
+                                                            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                            borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                            color: 'var(--text-primary)',
+                                                          }}
                                                       />
                                                       {effect.type === 'favorability' && (
                                                           <input
@@ -418,12 +680,24 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                                               value={effect.value ?? 0}
                                                               onChange={(e) => updateEffect(node.id, idx, effectIdx, 'value', parseInt(e.target.value) || 0)}
                                                               placeholder="±值"
-                                                              className="w-16 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                              className="w-16 text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                              style={{
+                                                                backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                                borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                                color: 'var(--text-primary)',
+                                                              }}
                                                           />
                                                       )}
                                                       <button
                                                           onClick={() => deleteEffect(node.id, idx, effectIdx)}
-                                                          className="text-slate-500 hover:text-red-400 text-xs px-0.5"
+                                                          className="text-xs px-0.5"
+                                                          style={{ color: 'var(--text-disabled)' }}
+                                                          onMouseEnter={(e) => {
+                                                            e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                                                          }}
+                                                          onMouseLeave={(e) => {
+                                                            e.currentTarget.style.color = 'var(--text-disabled)';
+                                                          }}
                                                       >
                                                           ×
                                                       </button>
@@ -433,26 +707,56 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                       )}
                                   </div>
                                   {/* 条件编辑 */}
-                                  <div className="mt-2 pt-2 border-t border-slate-700">
+                                  <div 
+                                    className="mt-2 pt-2 border-t"
+                                    style={{ borderTopColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))' }}
+                                  >
                                       <div className="flex justify-between items-center mb-1">
-                                          <span className="text-[10px] text-blue-400 font-bold">显示条件</span>
+                                          <span 
+                                            className="text-[10px] font-bold"
+                                            style={{ color: 'var(--color-info, #60a5fa)' }}
+                                          >
+                                            显示条件
+                                          </span>
                                           <button 
                                             onClick={() => addCondition(node.id, idx)} 
-                                            className="text-[9px] bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30"
+                                            className="text-[9px] px-1.5 py-0.5 rounded border"
+                                            style={{
+                                              backgroundColor: 'var(--bg-info-alpha, rgba(37, 99, 235, 0.3))',
+                                              color: 'var(--color-info, #60a5fa)',
+                                              borderColor: 'var(--border-info-alpha, rgba(59, 130, 246, 0.3))',
+                                            }}
                                           >
                                               + 添加
                                           </button>
                                       </div>
                                       {(!opt.conditions || opt.conditions.length === 0) ? (
-                                          <p className="text-[10px] text-slate-500 italic">未设置（默认显示）</p>
+                                          <p 
+                                            className="text-[10px] italic"
+                                            style={{ color: 'var(--text-disabled)' }}
+                                          >
+                                            未设置（默认显示）
+                                          </p>
                                       ) : (
                                           <div className="space-y-1.5">
                                               {opt.conditions.map((condition, conditionIdx) => (
-                                                  <div key={`condition-${node.id}-${idx}-${conditionIdx}-${condition.type}-${condition.target}`} className="bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex gap-1.5 items-center flex-wrap">
+                                                  <div 
+                                                    key={`condition-${node.id}-${idx}-${conditionIdx}-${condition.type}-${condition.target}`} 
+                                                    className="p-1.5 rounded border flex gap-1.5 items-center flex-wrap"
+                                                    style={{
+                                                      backgroundColor: 'var(--bg-primary, rgba(15, 23, 42, 0.5))',
+                                                      borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 0.5))',
+                                                    }}
+                                                  >
                                                       <select
                                                           value={condition.type}
                                                           onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'type', e.target.value)}
-                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          className="text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                          style={{
+                                                            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                            borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                            color: 'var(--text-primary)',
+                                                          }}
                                                       >
                                                           <option value="favorability">好感度</option>
                                                           <option value="event">事件</option>
@@ -464,12 +768,22 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                                           value={condition.target}
                                                           onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'target', e.target.value)}
                                                           placeholder={condition.type === 'favorability' ? '角色ID' : condition.type === 'event' ? '事件ID' : condition.type === 'item' ? '物品ID' : '时间ID'}
-                                                          className="flex-1 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none min-w-[80px]"
+                                                          className="flex-1 text-[10px] rounded px-1.5 py-0.5 border outline-none min-w-[80px]"
+                                                          style={{
+                                                            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                            borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                            color: 'var(--text-primary)',
+                                                          }}
                                                       />
                                                       <select
                                                           value={condition.operator}
                                                           onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'operator', e.target.value)}
-                                                          className="text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                          className="text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                          style={{
+                                                            backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                            borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                            color: 'var(--text-primary)',
+                                                          }}
                                                       >
                                                           {(condition.type === 'favorability' || condition.type === 'time') && (
                                                               <>
@@ -494,12 +808,24 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                                                               value={condition.value ?? 0}
                                                               onChange={(e) => updateCondition(node.id, idx, conditionIdx, 'value', parseFloat(e.target.value) || 0)}
                                                               placeholder="值"
-                                                              className="w-16 text-[10px] bg-slate-800 rounded px-1.5 py-0.5 border border-slate-700 text-white outline-none"
+                                                              className="w-16 text-[10px] rounded px-1.5 py-0.5 border outline-none"
+                                                              style={{
+                                                                backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                                                borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                                                                color: 'var(--text-primary)',
+                                                              }}
                                                           />
                                                       )}
                                                       <button
                                                           onClick={() => deleteCondition(node.id, idx, conditionIdx)}
-                                                          className="text-slate-500 hover:text-red-400 text-xs px-0.5"
+                                                          className="text-xs px-0.5"
+                                                          style={{ color: 'var(--text-disabled)' }}
+                                                          onMouseEnter={(e) => {
+                                                            e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                                                          }}
+                                                          onMouseLeave={(e) => {
+                                                            e.currentTarget.style.color = 'var(--text-disabled)';
+                                                          }}
                                                       >
                                                           ×
                                                       </button>
@@ -511,7 +837,15 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
                               </div>
                           ))}
                           {node.options.length === 0 && (
-                              <div className="text-center text-xs text-slate-600 py-2 border-2 border-dashed border-slate-800 rounded-xl">无分支（剧情结束）</div>
+                              <div 
+                                className="text-center text-xs py-2 border-2 border-dashed rounded-xl"
+                                style={{
+                                  color: 'var(--text-disabled)',
+                                  borderColor: 'var(--border-color-overlay, rgba(30, 41, 59, 1))',
+                                }}
+                              >
+                                无分支（剧情结束）
+                              </div>
                           )}
                       </div>
                   </div>
@@ -521,26 +855,68 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
   };
 
   return (
-    <div className="h-full bg-black text-white flex flex-col relative overflow-hidden">
+    <div 
+      className="h-full flex flex-col relative overflow-hidden"
+      style={{
+        backgroundColor: 'var(--bg-primary, #000000)',
+        color: 'var(--text-primary)',
+      }}
+    >
       
       {/* Header */}
-      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-white/10 flex justify-between items-center bg-black/80 backdrop-blur-md z-10">
-          <button onClick={onCancel} className="text-slate-400">取消</button>
-          <h2 className="font-bold text-lg">剧本编辑器</h2>
-          <button onClick={handleSave} className="text-pink-500 font-bold">保存</button>
+      <div 
+        className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b flex justify-between items-center backdrop-blur-md z-10"
+        style={{
+          borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+          backgroundColor: 'var(--bg-primary, rgba(0, 0, 0, 0.8))',
+        }}
+      >
+          <button 
+            onClick={onCancel}
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            取消
+          </button>
+          <h2 
+            className="font-bold text-lg"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            剧本编辑器
+          </h2>
+          <button 
+            onClick={handleSave}
+            className="font-bold"
+            style={{ color: 'var(--color-pink, #ec4899)' }}
+          >
+            保存
+          </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/10 bg-black">
+      <div 
+        className="flex border-b"
+        style={{
+          borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+          backgroundColor: 'var(--bg-primary, #000000)',
+        }}
+      >
           <button 
             onClick={() => setActiveTab('basic')}
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'basic' ? 'text-white border-b-2 border-pink-500' : 'text-slate-500'}`}
+            className="flex-1 py-3 text-sm font-bold transition-colors border-b-2"
+            style={{
+              color: activeTab === 'basic' ? 'var(--text-primary)' : 'var(--text-disabled)',
+              borderBottomColor: activeTab === 'basic' ? 'var(--color-pink, #ec4899)' : 'transparent',
+            }}
           >
               基本设定
           </button>
           <button 
             onClick={() => setActiveTab('nodes')}
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'nodes' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
+            className="flex-1 py-3 text-sm font-bold transition-colors border-b-2"
+            style={{
+              color: activeTab === 'nodes' ? 'var(--text-primary)' : 'var(--text-disabled)',
+              borderBottomColor: activeTab === 'nodes' ? 'var(--color-info, #6366f1)' : 'transparent',
+            }}
           >
               剧情节点 ({Object.keys(nodes).length})
           </button>
@@ -552,11 +928,32 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
           {/* Basic Tab */}
           {activeTab === 'basic' && (
               <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/10 p-4 rounded-2xl flex flex-col items-center text-center space-y-3">
-                      <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">✨</div>
+                  <div 
+                    className="border p-4 rounded-2xl flex flex-col items-center text-center space-y-3"
+                    style={{
+                      background: 'linear-gradient(to bottom right, var(--bg-info-alpha, rgba(30, 58, 138, 0.4)), var(--bg-accent-alpha, rgba(88, 28, 135, 0.4)))',
+                      borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+                    }}
+                  >
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                        style={{ backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))' }}
+                      >
+                        ✨
+                      </div>
                       <div>
-                          <h3 className="font-bold text-white">AI 灵感生成</h3>
-                          <p className="text-xs text-slate-400 mt-1">输入你的想法，AI为你构建完整剧本</p>
+                          <h3 
+                            className="font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            AI 灵感生成
+                          </h3>
+                          <p 
+                            className="text-xs mt-1"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            输入你的想法，AI为你构建完整剧本
+                          </p>
                       </div>
                       <MobileTouchableButton 
                         variant="secondary" 
@@ -570,19 +967,51 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
 
                   <div className="space-y-4">
                       <div>
-                          <label className="text-xs text-slate-500 font-bold mb-1 block">剧本标题</label>
+                          <label 
+                            className="text-xs font-bold mb-1 block"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            剧本标题
+                          </label>
                           <input 
                             value={title} 
                             onChange={e => setTitle(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-pink-500 outline-none font-bold"
+                            className="w-full rounded-xl px-4 py-3 outline-none font-bold"
+                            style={{
+                              backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                              borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--color-pink, #ec4899)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                            }}
                           />
                       </div>
                       <div>
-                          <label className="text-xs text-slate-500 font-bold mb-1 block">简介</label>
+                          <label 
+                            className="text-xs font-bold mb-1 block"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
+                            简介
+                          </label>
                           <textarea 
                             value={description} 
                             onChange={e => setDescription(e.target.value)}
-                            className="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-pink-500 outline-none resize-none"
+                            className="w-full h-32 rounded-xl p-4 outline-none resize-none"
+                            style={{
+                              backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                              borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--color-pink, #ec4899)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                            }}
                           />
                       </div>
                   </div>
@@ -593,33 +1022,91 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
           {activeTab === 'nodes' && (
               <div className="space-y-4 pb-20">
                   <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs text-slate-500">点击节点进行编辑</p>
-                      <button onClick={addNode} className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-full shadow-lg">+ 新增节点</button>
+                      <p 
+                        className="text-xs"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
+                        点击节点进行编辑
+                      </p>
+                      <button 
+                        onClick={addNode} 
+                        className="text-xs px-3 py-1.5 rounded-full shadow-lg"
+                        style={{
+                          backgroundColor: 'var(--color-info, #6366f1)',
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        + 新增节点
+                      </button>
                   </div>
                   
                   {Object.values(nodes).map((node: StoryNode, index) => (
                       <div 
                         key={node.id} 
                         onClick={() => setEditingNodeId(node.id)}
-                        className={`p-4 rounded-xl border cursor-pointer active:scale-95 transition-all ${
-                            node.id === 'start' ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-900 border-slate-800'
-                        }`}
+                        className="p-4 rounded-xl border cursor-pointer active:scale-95 transition-all"
+                        style={{
+                          backgroundColor: node.id === 'start' 
+                            ? 'var(--bg-info-alpha, rgba(30, 58, 138, 0.2))' 
+                            : 'var(--bg-card, rgba(15, 23, 42, 1))',
+                          borderColor: node.id === 'start' 
+                            ? 'var(--border-info-alpha, rgba(99, 102, 241, 0.5))' 
+                            : 'var(--border-color-overlay, rgba(30, 41, 59, 1))',
+                        }}
                       >
                           <div className="flex justify-between items-center mb-1">
-                              <h4 className="font-bold text-white flex items-center gap-2">
-                                  {node.id === 'start' && <span className="text-[10px] bg-indigo-500 text-white px-1.5 rounded">START</span>}
+                              <h4 
+                                className="font-bold flex items-center gap-2"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                  {node.id === 'start' && (
+                                    <span 
+                                      className="text-[10px] px-1.5 rounded"
+                                      style={{
+                                        backgroundColor: 'var(--color-info, #6366f1)',
+                                        color: 'var(--text-primary)',
+                                      }}
+                                    >
+                                      START
+                                    </span>
+                                  )}
                                   {node.title}
                               </h4>
-                              <span className="text-slate-600 text-lg">&rsaquo;</span>
+                              <span 
+                                className="text-lg"
+                                style={{ color: 'var(--text-disabled)' }}
+                              >
+                                &rsaquo;
+                              </span>
                           </div>
-                          <p className="text-xs text-slate-400 line-clamp-1">{node.prompt || '暂无内容...'}</p>
+                          <p 
+                            className="text-xs line-clamp-1"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            {node.prompt || '暂无内容...'}
+                          </p>
                           <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide">
                               {node.options.map(opt => (
-                                  <span key={opt.id} className="text-[10px] bg-white/5 border border-white/10 px-2 py-1 rounded text-slate-300 whitespace-nowrap">
+                                  <span 
+                                    key={opt.id} 
+                                    className="text-[10px] border px-2 py-1 rounded whitespace-nowrap"
+                                    style={{
+                                      backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.05))',
+                                      borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+                                      color: 'var(--text-secondary)',
+                                    }}
+                                  >
                                       {opt.text} &rarr;
                                   </span>
                               ))}
-                              {node.options.length === 0 && <span className="text-[10px] text-slate-600">END</span>}
+                              {node.options.length === 0 && (
+                                <span 
+                                  className="text-[10px]"
+                                  style={{ color: 'var(--text-disabled)' }}
+                                >
+                                  END
+                                </span>
+                              )}
                           </div>
                       </div>
                   ))}
@@ -632,14 +1119,38 @@ export const MobileScenarioBuilder: React.FC<MobileScenarioBuilderProps> = ({ in
 
       {/* Magic Modal */}
       {showMagicModal && (
-          <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-              <div className="w-full bg-slate-900 rounded-2xl border border-slate-700 p-6 shadow-2xl">
-                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 mb-4">AI 创意生成</h3>
+          <div 
+            className="absolute inset-0 z-50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in"
+            style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.9))' }}
+          >
+              <div 
+                className="w-full rounded-2xl border p-6 shadow-2xl"
+                style={{
+                  backgroundColor: 'var(--bg-modal, rgba(15, 23, 42, 1))',
+                  borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                }}
+              >
+                  <h3 
+                    className="text-xl font-bold mb-4"
+                    style={{
+                      background: 'var(--gradient-text-primary, linear-gradient(to right, var(--color-info, #818cf8), var(--color-pink, #ec4899)))',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    AI 创意生成
+                  </h3>
                   <textarea 
                     value={magicPrompt}
                     onChange={e => setMagicPrompt(e.target.value)}
                     placeholder="输入一个故事想法，例如：“在深夜的便利店遇到了前女友，但她似乎不记得我了...”"
-                    className="w-full h-32 bg-slate-800 border border-slate-700 rounded-xl p-4 text-white outline-none resize-none mb-6"
+                    className="w-full h-32 rounded-xl p-4 outline-none resize-none mb-6"
+                    style={{
+                      backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                      borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                      color: 'var(--text-primary)',
+                    }}
                   />
                   <div className="flex gap-3">
                       <MobileTouchableButton 

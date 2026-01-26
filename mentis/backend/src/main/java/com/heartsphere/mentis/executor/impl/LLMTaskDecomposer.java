@@ -96,7 +96,7 @@ public class LLMTaskDecomposer implements TaskDecomposer {
     
     @Override
     public String identifyTaskType(String userRequest) {
-        log.debug("识别任务类型: request={}", userRequest);
+        log.info("识别任务类型: request={}", userRequest);
         
         // 简单的关键词匹配，后续可以用 LLM 优化
         String requestLower = userRequest.toLowerCase();
@@ -145,7 +145,7 @@ public class LLMTaskDecomposer implements TaskDecomposer {
                 log.warn("响应中没有找到 steps 数组");
             }
             
-            log.debug("解析任务步骤完成: 共 {} 个步骤", steps.size());
+            log.info("解析任务步骤完成: 共 {} 个步骤", steps.size());
             return steps;
             
         } catch (Exception e) {

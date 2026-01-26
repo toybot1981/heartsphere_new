@@ -40,7 +40,7 @@ public class QuotaManagementService {
      */
     @Transactional(readOnly = true)
     public QuotaInfo getQuotaInfo(Long userId) {
-        log.debug("获取用户配额信息: userId={}", userId);
+        log.info("获取用户配额信息: userId={}", userId);
         
         // 获取或创建会员
         Membership membership = membershipService.getUserMembership(userId)
@@ -105,7 +105,7 @@ public class QuotaManagementService {
      */
     @Transactional(readOnly = true)
     public boolean checkQuota(Long userId, QuotaType quotaType, Long amount) {
-        log.debug("检查配额: userId={}, quotaType={}, amount={}", userId, quotaType, amount);
+        log.info("检查配额: userId={}, quotaType={}, amount={}", userId, quotaType, amount);
         
         QuotaInfo quotaInfo = getQuotaInfo(userId);
         

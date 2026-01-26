@@ -7,6 +7,7 @@ import { adminApi } from "../../services/api";
 import { Button } from "../../components/Button";
 import { InputGroup, TextInput } from '../AdminUIComponents';
 import { showAlert, showConfirm } from "../../utils/dialog";
+import { useAdminState } from '../../contexts/AdminStateContext';
 
 interface UserQuotaManagementProps {
   adminToken: string | null;
@@ -15,6 +16,7 @@ interface UserQuotaManagementProps {
 export const UserQuotaManagement: React.FC<UserQuotaManagementProps> = ({
   adminToken,
 }) => {
+  const { selectedUserId, setSelectedUserId } = useAdminState();
   const [userId, setUserId] = useState('');
   const [quota, setQuota] = useState<UserTokenQuota | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,31 @@ export const UserQuotaManagement: React.FC<UserQuotaManagementProps> = ({
   // 配额拦截开关状态
   const [quotaEnforcementEnabled, setQuotaEnforcementEnabled] = useState(false);
   const [loadingSwitch, setLoadingSwitch] = useState(false);
+
+  // 如果从用户管理页面跳转过来，自动设置userId并加载配额
+  useEffect(() => {
+    if (selectedUserId !== null && adminToken) {
+      const userId = selectedUserId;
+      const userIdStr = String(userId);
+      setUserId(userIdStr);
+      // 清除selectedUserId，避免下次进入时自动加载
+      setSelectedUserId(null);
+      // 自动加载配额
+      const loadQuota = async () => {
+        setLoading(true);
+        try {
+          const data = await billingApi.quota.getUserQuota(userId, adminToken);
+          setQuota(data);
+        } catch (error: any) {
+          showAlert('加载失败: ' + (error.message || '未知错误'), '错误', 'error');
+          setQuota(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadQuota();
+    }
+  }, [selectedUserId, setSelectedUserId, adminToken]);
 
   // 加载配额拦截开关状态
   useEffect(() => {
@@ -78,7 +105,9 @@ export const UserQuotaManagement: React.FC<UserQuotaManagementProps> = ({
 
   const handleLoadQuota = async () => {
     if (!adminToken || !userId) {
-      showAlert('请输入用户ID', '缺少参数', 'warning');
+      if (!userId) {
+        showAlert('请输入用户ID', '缺少参数', 'warning');
+      }
       return;
     }
 

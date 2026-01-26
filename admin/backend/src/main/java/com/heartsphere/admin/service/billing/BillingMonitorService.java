@@ -47,7 +47,7 @@ public class BillingMonitorService {
                 // 注意：模型状态现在通过ai_model_config管理，不再自动禁用/启用
                 // 管理员可以通过管理后台手动管理模型状态
                 
-                log.debug("检查资源池: providerId={}, percentage={}%, isLow={}", 
+                log.info("检查资源池: providerId={}, percentage={}%, isLow={}", 
                         provider.getId(), percentage, isLow);
             } catch (Exception e) {
                 log.error("检查资源池失败: providerId={}", provider.getId(), e);

@@ -61,13 +61,20 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   return (
     <div 
       onClick={() => onSelect(character)}
-      className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+      className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+      style={{
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        boxShadow: 'var(--shadow-lg)',
+      }}
       style={{
         '--card-accent': character.colorAccent
       } as React.CSSProperties}
     >
       {/* Background Image with Gradient Overlay */}
-      <div className="absolute inset-0 bg-gray-900 pointer-events-none">
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
+      >
         {displayImage && displayImage.trim() ? (
           <LazyImage
             src={displayImage}
@@ -77,7 +84,10 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none ${isGenerating ? 'opacity-50 blur-sm scale-105' : ''}`}
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center pointer-events-none">
+          <div 
+            className="h-full w-full flex items-center justify-center pointer-events-none gradient-bg"
+            style={{ opacity: 0.5 }}
+          >
             <div className="text-6xl opacity-30">👤</div>
           </div>
         )}
@@ -89,7 +99,12 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
              />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 transition-opacity group-hover:opacity-70 pointer-events-none" />
+        <div 
+          className="absolute inset-0 opacity-80 transition-opacity group-hover:opacity-70 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, var(--bg-primary) 90%, var(--bg-primary) 40%, transparent)',
+          }}
+        />
       </div>
 
       {/* Action Buttons (Top Right) */}
@@ -97,7 +112,18 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
         <button
           onClick={handleGenerateClick}
           disabled={isGenerating}
-          className="bg-black/50 backdrop-blur-md text-white p-3 rounded-full border border-white/20 transition-all duration-300 shadow-lg hover:rotate-180 hover:bg-white/20"
+          className="backdrop-blur-md p-3 rounded-full border transition-all duration-300 shadow-lg hover:rotate-180"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'var(--text-primary)',
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+          }}
           style={{ borderColor: character.colorAccent }}
           title="生成新形象"
         >
@@ -108,7 +134,18 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
         {isUserCreated && onEdit && (
           <button
             onClick={handleEditClick}
-            className="bg-black/50 backdrop-blur-md text-white p-3 rounded-full border border-white/20 transition-all duration-300 shadow-lg hover:bg-blue-500/50"
+            className="backdrop-blur-md p-3 rounded-full border transition-all duration-300 shadow-lg"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: 'var(--text-primary)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }}
             title="编辑角色"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -119,7 +156,18 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
         {isUserCreated && onDelete && (
           <button
             onClick={handleDeleteClick}
-            className="bg-black/50 backdrop-blur-md text-white p-3 rounded-full border border-white/20 transition-all duration-300 shadow-lg hover:bg-red-500/50"
+            className="backdrop-blur-md p-3 rounded-full border transition-all duration-300 shadow-lg"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: 'var(--text-primary)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }}
             title="删除角色"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -157,7 +205,9 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             {character.role}
           </div>
         </div>
-        <h3 className="mb-1 text-2xl font-black text-white transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+        <h3 
+          className="mb-1 text-2xl font-black transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+          style={{ color: 'var(--text-primary)' }}
             style={{ 
               textShadow: `0 2px 12px rgba(0,0,0,0.9), 0 0 20px ${character.colorAccent}40, 0 0 30px rgba(0,0,0,0.7)`,
               WebkitTextStroke: '0.5px rgba(0,0,0,0.3)',
@@ -165,7 +215,9 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             }}>
           {character.name}
         </h3>
-        <p className="text-sm font-semibold text-white line-clamp-2 mb-4 group-hover:text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+        <p 
+          className="text-sm font-semibold line-clamp-2 mb-4 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+          style={{ color: 'var(--text-primary)' }}
            style={{ 
              textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)',
              letterSpacing: '0.01em'

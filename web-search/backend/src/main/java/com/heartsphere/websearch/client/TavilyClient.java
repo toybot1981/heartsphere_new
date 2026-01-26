@@ -53,7 +53,7 @@ public class TavilyClient {
     public TavilySearchResponse search(TavilySearchRequest request) throws IOException {
         String url = tavilyConfig.getBaseUrl() + "/search";
 
-        log.debug("调用Tavily API: query={}, maxResults={}", request.getQuery(), request.getMaxResults());
+        log.info("调用Tavily API: query={}, maxResults={}", request.getQuery(), request.getMaxResults());
 
         String jsonBody = objectMapper.writeValueAsString(request);
         RequestBody body = RequestBody.create(
@@ -75,7 +75,7 @@ public class TavilyClient {
             }
 
             String responseBody = response.body().string();
-            log.debug("Tavily API响应成功: query={}, results={}", request.getQuery(),
+            log.info("Tavily API响应成功: query={}, results={}", request.getQuery(),
                     responseBody.length());
 
             return objectMapper.readValue(responseBody, TavilySearchResponse.class);

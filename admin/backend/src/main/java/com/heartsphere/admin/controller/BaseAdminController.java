@@ -2,6 +2,7 @@ package com.heartsphere.admin.controller;
 
 import com.heartsphere.admin.entity.SystemAdmin;
 import com.heartsphere.admin.service.AdminAuthService;
+import com.heartsphere.shared.exception.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestHeader;
 
@@ -32,10 +33,15 @@ public abstract class BaseAdminController {
      */
     protected SystemAdmin validateAdminToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("需要管理员认证");
+            throw new UnauthorizedException("需要管理员认证");
         }
-        String token = authHeader.substring(7);
-        return adminAuthService.validateToken(token);
+        try {
+            String token = authHeader.substring(7);
+            return adminAuthService.validateToken(token);
+        } catch (RuntimeException e) {
+            // 将认证失败转换为 UnauthorizedException
+            throw new UnauthorizedException("认证失败: " + e.getMessage());
+        }
     }
 }
 

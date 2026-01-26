@@ -173,7 +173,7 @@ public class ExecutionEngineImpl implements ExecutionEngine {
                 
                 // 更新步骤执行时间
                 long stepDuration = System.currentTimeMillis() - status.getCurrentStepStartTime();
-                log.debug("步骤执行完成: stepId={}, duration={}ms", step.getStepId(), stepDuration);
+                log.info("步骤执行完成: stepId={}, duration={}ms", step.getStepId(), stepDuration);
                 
                 // 检查是否需要停止
                 if (stepResult.contains("ERROR")) {

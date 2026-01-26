@@ -134,7 +134,7 @@ public class CompanyService {
             // 选项 3: 暂时只记录日志，后续实现
             
             log.info("联系表单提交（邮件功能待实现）: subject={}, content length={}", subject, content.length());
-            log.debug("邮件内容: {}", content);
+            log.info("邮件内容: {}", content);
         } catch (Exception e) {
             // 邮件发送失败不影响表单提交，只记录日志
             log.warn("发送通知邮件失败，但表单已记录: error={}", e.getMessage());

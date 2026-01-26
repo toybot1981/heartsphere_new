@@ -102,25 +102,53 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCreationMode('preset')}
-                    className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                      creationMode === 'preset'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-600 hover:border-purple-500/30'
-                    }`}
+                    className="flex-1 p-3 rounded-lg border-2 transition-all"
+                    style={{
+                      borderColor: creationMode === 'preset'
+                        ? 'var(--color-primary, #a855f7)'
+                        : 'var(--border-color-overlay, #475569)',
+                      backgroundColor: creationMode === 'preset'
+                        ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (creationMode !== 'preset') {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (creationMode !== 'preset') {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                      }
+                    }}
                   >
-                    <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>
+                    <span className={`${MobileTypography.fontSize.sm}`} style={{ color: 'var(--text-primary)' }}>
                       预置场景
                     </span>
                   </button>
                   <button
                     onClick={() => setCreationMode('custom')}
-                    className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                      creationMode === 'custom'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-600 hover:border-purple-500/30'
-                    }`}
+                    className="flex-1 p-3 rounded-lg border-2 transition-all"
+                    style={{
+                      borderColor: creationMode === 'custom'
+                        ? 'var(--color-primary, #a855f7)'
+                        : 'var(--border-color-overlay, #475569)',
+                      backgroundColor: creationMode === 'custom'
+                        ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (creationMode !== 'custom') {
+                        e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (creationMode !== 'custom') {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, #475569)';
+                      }
+                    }}
                   >
-                    <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>
+                    <span className={`${MobileTypography.fontSize.sm}`} style={{ color: 'var(--text-primary)' }}>
                       自定义
                     </span>
                   </button>
@@ -141,11 +169,25 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
                       <div
                         key={era.id}
                         onClick={() => handleSelectPresetEra(era.id)}
-                        className={`${MobileCardStyles.default} p-3 cursor-pointer transition-all ${
-                          selectedPresetEraId === era.id
-                            ? 'border-purple-500/50 bg-purple-500/10'
-                            : 'hover:border-purple-500/30'
-                        } ${MobileCardStyles.interactive}`}
+                        className={`${MobileCardStyles.default} p-3 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+                        style={{
+                          borderColor: selectedPresetEraId === era.id
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+                            : 'var(--border-color-overlay)',
+                          backgroundColor: selectedPresetEraId === era.id
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                            : undefined,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedPresetEraId !== era.id) {
+                            e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedPresetEraId !== era.id) {
+                            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                          }
+                        }}
                         role="button"
                         tabIndex={0}
                         aria-label={`选择预置场景：${era.name}`}
@@ -224,11 +266,25 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setImageMode('generate')}
-                      className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                        imageMode === 'generate'
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-slate-600 hover:border-purple-500/30'
-                      }`}
+                      className="flex-1 p-3 rounded-lg border-2 transition-all"
+                      style={{
+                        borderColor: imageMode === 'generate'
+                          ? 'var(--color-primary)'
+                          : 'var(--border-color-overlay)',
+                        backgroundColor: imageMode === 'generate'
+                          ? 'var(--bg-primary-alpha)'
+                          : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (imageMode !== 'generate') {
+                          e.currentTarget.style.borderColor = 'var(--border-color-primary-alpha)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (imageMode !== 'generate') {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }
+                      }}
                       disabled={isLoading || isGeneratingImage}
                     >
                       <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>
@@ -237,11 +293,25 @@ export const MobileEraConstructorModal: React.FC<MobileEraConstructorModalProps>
                     </button>
                     <button
                       onClick={() => setImageMode('upload')}
-                      className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                        imageMode === 'upload'
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-slate-600 hover:border-purple-500/30'
-                      }`}
+                      className="flex-1 p-3 rounded-lg border-2 transition-all"
+                      style={{
+                        borderColor: imageMode === 'upload'
+                          ? 'var(--color-primary)'
+                          : 'var(--border-color-overlay)',
+                        backgroundColor: imageMode === 'upload'
+                          ? 'var(--bg-primary-alpha)'
+                          : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (imageMode !== 'upload') {
+                          e.currentTarget.style.borderColor = 'var(--border-color-primary-alpha)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (imageMode !== 'upload') {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }
+                      }}
                       disabled={isLoading || isUploading}
                     >
                       <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary}`}>

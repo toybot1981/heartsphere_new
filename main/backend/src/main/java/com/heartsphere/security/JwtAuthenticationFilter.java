@@ -29,17 +29,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             
             if (jwt != null) {
-                logger.debug("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
-                logger.debug("JWT token length: " + jwt.length() + ", contains dots: " + jwt.chars().filter(ch -> ch == '.').count());
+                logger.info("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
+                logger.info("JWT token length: " + jwt.length() + ", contains dots: " + jwt.chars().filter(ch -> ch == '.').count());
                 
                 // 2. 验证令牌
                 if (jwtUtils.validateJwtToken(jwt)) {
-                    logger.debug("JWT token is valid");
+                    logger.info("JWT token is valid");
                     
                     try {
                         // 3. 从令牌中获取用户名
                         String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                        logger.debug("Extracted username from token: " + username);
+                        logger.info("Extracted username from token: " + username);
                         
                         // 4. 加载用户信息
                         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         
                         // 6. 将认证对象设置到SecurityContextHolder中
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("Authentication set in SecurityContext for user: " + username);
+                        logger.info("Authentication set in SecurityContext for user: " + username);
                     } catch (Exception e) {
                         logger.warn("Failed to load user details for token: " + e.getMessage());
                         // 清除可能已设置的认证信息
@@ -63,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.clearContext();
                 }
             } else {
-                logger.debug("No JWT token found in request headers");
+                logger.info("No JWT token found in request headers");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: " + e.getMessage(), e);
@@ -80,17 +80,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String headerAuth = request.getHeader("Authorization");
         
         if (StringUtils.hasText(headerAuth)) {
-            logger.debug("Authorization header found: " + (headerAuth.length() > 30 ? headerAuth.substring(0, 30) + "..." : headerAuth));
+            logger.info("Authorization header found: " + (headerAuth.length() > 30 ? headerAuth.substring(0, 30) + "..." : headerAuth));
             
             if (headerAuth.startsWith("Bearer ")) {
                 String jwt = headerAuth.substring(7);
-                logger.debug("Extracted JWT token length: " + jwt.length() + ", starts with: " + (jwt.length() > 10 ? jwt.substring(0, 10) : jwt));
+                logger.info("Extracted JWT token length: " + jwt.length() + ", starts with: " + (jwt.length() > 10 ? jwt.substring(0, 10) : jwt));
                 return jwt;
             } else {
                 logger.warn("Authorization header does not start with 'Bearer ': " + (headerAuth.length() > 50 ? headerAuth.substring(0, 50) + "..." : headerAuth));
             }
         } else {
-            logger.debug("No Authorization header found in request");
+            logger.info("No Authorization header found in request");
         }
         
         return null;

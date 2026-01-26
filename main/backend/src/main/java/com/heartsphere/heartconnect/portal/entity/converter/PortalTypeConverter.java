@@ -21,7 +21,7 @@ public class PortalTypeConverter implements AttributeConverter<PortalConfig.Port
             return null;
         }
         String result = attribute.name().toLowerCase();
-        log.debug("PortalTypeConverter: 转换到数据库 - {} -> {}", attribute, result);
+        log.info("PortalTypeConverter: 转换到数据库 - {} -> {}", attribute, result);
         return result;
     }
     
@@ -34,7 +34,7 @@ public class PortalTypeConverter implements AttributeConverter<PortalConfig.Port
         try {
             String upperCase = dbData.toUpperCase();
             PortalConfig.PortalType result = PortalConfig.PortalType.valueOf(upperCase);
-            log.debug("PortalTypeConverter: 从数据库转换 - '{}' -> {}", dbData, result);
+            log.info("PortalTypeConverter: 从数据库转换 - '{}' -> {}", dbData, result);
             return result;
         } catch (IllegalArgumentException e) {
             log.error("PortalTypeConverter: 无法转换数据库值 '{}' 到 PortalType 枚举。可用值: {}", 

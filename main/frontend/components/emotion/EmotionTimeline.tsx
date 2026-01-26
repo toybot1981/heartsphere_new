@@ -104,15 +104,30 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48 bg-slate-900/50 rounded-lg">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div 
+        className="flex items-center justify-center h-48 rounded-lg"
+        style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+      >
+        <div 
+          className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+          style={{
+            borderColor: 'var(--color-primary, #6366f1)',
+            borderTopColor: 'transparent',
+          }}
+        />
       </div>
     );
   }
 
   if (emotionHistory.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 bg-slate-900/50 rounded-lg text-slate-400">
+      <div 
+        className="flex items-center justify-center h-48 rounded-lg"
+        style={{
+          backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))',
+          color: 'var(--text-tertiary)',
+        }}
+      >
         <p>暂无情绪数据</p>
       </div>
     );
@@ -151,23 +166,52 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
     return padding.top + chartHeight - ((score - minScore) / scoreRange) * chartHeight;
   };
 
+  // 验证并格式化坐标值
+  const formatCoord = (val: number) => {
+    if (!isFinite(val)) return '0';
+    return val.toFixed(2);
+  };
+  
   // 生成路径
   const pathData = chartData
     .map((point, index) => {
       const x = getX(point.timestamp);
       const y = getY(point.score);
-      return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+      // 验证坐标有效性
+      if (!isFinite(x) || !isFinite(y)) {
+        return null;
+      }
+      return index === 0 ? `M ${formatCoord(x)} ${formatCoord(y)}` : `L ${formatCoord(x)} ${formatCoord(y)}`;
     })
+    .filter((cmd): cmd is string => cmd !== null)
     .join(' ');
 
   // 生成区域路径（用于填充）
-  const areaPath = `${pathData} L ${getX(maxTime)} ${getY(0)} L ${getX(minTime)} ${getY(0)} Z`;
+  const maxX = getX(maxTime);
+  const minX = getX(minTime);
+  const zeroY = getY(0);
+  
+  let areaPath = pathData;
+  if (pathData && isFinite(maxX) && isFinite(minX) && isFinite(zeroY)) {
+    areaPath = `${pathData} L ${formatCoord(maxX)} ${formatCoord(zeroY)} L ${formatCoord(minX)} ${formatCoord(zeroY)} Z`;
+  }
 
   return (
-    <div className="bg-slate-900/50 rounded-lg p-4">
+    <div 
+      className="rounded-lg p-4"
+      style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+    >
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-white mb-2">情绪时间线</h3>
-        <div className="flex items-center gap-4 text-sm text-slate-400">
+        <h3 
+          className="text-lg font-bold mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          情绪时间线
+        </h3>
+        <div 
+          className="flex items-center gap-4 text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <span>周期: {period === 'day' ? '一天' : period === 'week' ? '一周' : '一月'}</span>
           <span>记录数: {emotionHistory.length}</span>
         </div>
@@ -178,9 +222,9 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
           {/* 背景网格 */}
           <defs>
             <linearGradient id="emotionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#4CAF50" stopOpacity="0.3" />
-              <stop offset="50%" stopColor="#9E9E9E" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="#F44336" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="var(--color-success)" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="var(--text-tertiary)" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="var(--color-error)" stopOpacity="0.3" />
             </linearGradient>
           </defs>
 
@@ -190,7 +234,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
             y1={getY(0)}
             x2={width - padding.right}
             y2={getY(0)}
-            stroke="#666"
+            stroke="var(--border-color-overlay, #666666)"
             strokeWidth="1"
             strokeDasharray="4 4"
           />
@@ -206,7 +250,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
           <path
             d={pathData}
             fill="none"
-            stroke="#4CAF50"
+            stroke="var(--color-success, #4CAF50)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -220,7 +264,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
               cy={getY(point.score)}
               r="4"
               fill={point.color}
-              stroke="#fff"
+              stroke="var(--text-primary)"
               strokeWidth="2"
               className="cursor-pointer hover:r-6 transition-all"
             >
@@ -235,7 +279,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
             x={padding.left - 10}
             y={getY(1)}
             textAnchor="end"
-            fill="#9E9E9E"
+            fill="var(--text-tertiary, #9E9E9E)"
             fontSize="12"
           >
             积极
@@ -244,7 +288,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
             x={padding.left - 10}
             y={getY(0)}
             textAnchor="end"
-            fill="#9E9E9E"
+            fill="var(--text-tertiary, #9E9E9E)"
             fontSize="12"
           >
             中性
@@ -253,7 +297,7 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
             x={padding.left - 10}
             y={getY(-1)}
             textAnchor="end"
-            fill="#9E9E9E"
+            fill="var(--text-tertiary, #9E9E9E)"
             fontSize="12"
           >
             消极
@@ -262,18 +306,30 @@ export const EmotionTimeline: React.FC<EmotionTimelineProps> = ({
       </div>
 
       {/* 图例 */}
-      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+      <div 
+        className="mt-4 flex flex-wrap gap-2 text-xs"
+        style={{ color: 'var(--text-tertiary)' }}
+      >
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="text-slate-400">积极情绪</span>
+          <div 
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: 'var(--color-success, #22c55e)' }}
+          />
+          <span>积极情绪</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-blue-500" />
-          <span className="text-slate-400">中性情绪</span>
+          <div 
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: 'var(--color-info, #3b82f6)' }}
+          />
+          <span>中性情绪</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span className="text-slate-400">消极情绪</span>
+          <div 
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: 'var(--color-error, #ef4444)' }}
+          />
+          <span>消极情绪</span>
         </div>
       </div>
     </div>

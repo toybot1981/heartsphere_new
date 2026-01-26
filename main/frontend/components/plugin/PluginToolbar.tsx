@@ -19,7 +19,17 @@ export const PluginToolbar: React.FC<PluginToolbarProps> = ({
     <div className="flex items-center gap-2">
       <button
         onClick={onAddPlugin}
-        className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded-lg transition-colors flex items-center gap-1.5"
+        className="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+        style={{
+          background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+          color: 'var(--text-primary)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+        }}
         title="添加插件"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,11 +40,29 @@ export const PluginToolbar: React.FC<PluginToolbarProps> = ({
       
       <button
         onClick={onToggleEditMode}
-        className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 ${
-          isEditMode
-            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white'
-            : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-        }`}
+        className="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+        style={{
+          background: isEditMode
+            ? 'var(--gradient-primary, linear-gradient(to right, #06b6d4, #3b82f6))'
+            : 'var(--bg-secondary, #334155)',
+          color: isEditMode
+            ? 'var(--text-primary)'
+            : 'var(--text-secondary)',
+        }}
+        onMouseEnter={(e) => {
+          if (isEditMode) {
+            e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #22d3ee, #60a5fa))';
+          } else {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, #475569)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (isEditMode) {
+            e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #06b6d4, #3b82f6))';
+          } else {
+            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #334155)';
+          }
+        }}
         title={isEditMode ? '退出编辑模式' : '进入编辑模式'}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -44,7 +72,10 @@ export const PluginToolbar: React.FC<PluginToolbarProps> = ({
       </button>
       
       {pluginCount > 0 && (
-        <span className="text-xs text-slate-400 px-2">
+        <span 
+          className="text-xs px-2"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           {pluginCount} 个插件
         </span>
       )}

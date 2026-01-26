@@ -49,7 +49,7 @@ public class MembershipPermissionService {
     public boolean canUseApi(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         boolean allowed = plan.getAllowApiAccess() != null && plan.getAllowApiAccess();
-        log.debug("API访问权限检查: userId={}, allowed={}", userId, allowed);
+        log.info("API访问权限检查: userId={}, allowed={}", userId, allowed);
         return allowed;
     }
 
@@ -60,7 +60,7 @@ public class MembershipPermissionService {
     public boolean canUsePriorityQueue(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         boolean allowed = plan.getAllowPriorityQueue() != null && plan.getAllowPriorityQueue();
-        log.debug("优先队列权限检查: userId={}, allowed={}", userId, allowed);
+        log.info("优先队列权限检查: userId={}, allowed={}", userId, allowed);
         return allowed;
     }
 
@@ -71,7 +71,7 @@ public class MembershipPermissionService {
     public boolean canRemoveWatermark(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         boolean allowed = plan.getAllowWatermarkRemoval() != null && plan.getAllowWatermarkRemoval();
-        log.debug("去水印权限检查: userId={}, allowed={}", userId, allowed);
+        log.info("去水印权限检查: userId={}, allowed={}", userId, allowed);
         return allowed;
     }
 
@@ -82,7 +82,7 @@ public class MembershipPermissionService {
     public boolean canBatchProcess(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         boolean allowed = plan.getAllowBatchProcessing() != null && plan.getAllowBatchProcessing();
-        log.debug("批量处理权限检查: userId={}, allowed={}", userId, allowed);
+        log.info("批量处理权限检查: userId={}, allowed={}", userId, allowed);
         return allowed;
     }
 
@@ -93,7 +93,7 @@ public class MembershipPermissionService {
     public boolean canUseTeamCollaboration(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         boolean allowed = plan.getAllowTeamCollaboration() != null && plan.getAllowTeamCollaboration();
-        log.debug("团队协作权限检查: userId={}, allowed={}", userId, allowed);
+        log.info("团队协作权限检查: userId={}, allowed={}", userId, allowed);
         return allowed;
     }
 
@@ -114,12 +114,12 @@ public class MembershipPermissionService {
         
         // 如果允许的模型列表为空，表示无限制（向后兼容）
         if (allowedModels == null || allowedModels.isEmpty()) {
-            log.debug("允许的模型列表为空，默认允许所有模型: userId={}, modelName={}", userId, modelName);
+            log.info("允许的模型列表为空，默认允许所有模型: userId={}, modelName={}", userId, modelName);
             return true;
         }
 
         boolean allowed = allowedModels.contains(modelName);
-        log.debug("模型权限检查: userId={}, modelName={}, allowed={}", userId, modelName, allowed);
+        log.info("模型权限检查: userId={}, modelName={}, allowed={}", userId, modelName, allowed);
         return allowed;
     }
 
@@ -147,7 +147,7 @@ public class MembershipPermissionService {
                     allowedAiModelsJson, 
                     new TypeReference<List<String>>() {}
             );
-            log.debug("解析允许的模型列表: planId={}, models={}", plan.getId(), models);
+            log.info("解析允许的模型列表: planId={}, models={}", plan.getId(), models);
             return models;
         } catch (Exception e) {
             log.error("解析允许的模型列表失败: planId={}, json={}, error={}", 
@@ -202,7 +202,7 @@ public class MembershipPermissionService {
     public String getMaxImageResolution(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         String resolution = plan.getMaxImageResolution();
-        log.debug("最大图片分辨率: userId={}, resolution={}", userId, resolution);
+        log.info("最大图片分辨率: userId={}, resolution={}", userId, resolution);
         return resolution;
     }
 
@@ -213,7 +213,7 @@ public class MembershipPermissionService {
     public Integer getMaxVideoDuration(Long userId) {
         SubscriptionPlan plan = getUserPlan(userId);
         Integer duration = plan.getMaxVideoDuration();
-        log.debug("最大视频时长: userId={}, duration={}", userId, duration);
+        log.info("最大视频时长: userId={}, duration={}", userId, duration);
         return duration;
     }
 

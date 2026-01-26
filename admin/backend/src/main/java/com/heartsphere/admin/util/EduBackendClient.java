@@ -61,7 +61,7 @@ public class EduBackendClient {
         HttpEntity<?> entity = new HttpEntity<>(headers);
         
         try {
-            log.debug("Calling edu backend GET: {}", builder.toUriString());
+            log.info("Calling edu backend GET: {}", builder.toUriString());
             ResponseEntity<T> response = restTemplate.exchange(
                     builder.toUriString(),
                     HttpMethod.GET,
@@ -106,7 +106,7 @@ public class EduBackendClient {
         HttpEntity<?> entity = new HttpEntity<>(headers);
         
         try {
-            log.debug("Calling edu backend GET (ParameterizedTypeReference): {}", builder.toUriString());
+            log.info("Calling edu backend GET (ParameterizedTypeReference): {}", builder.toUriString());
             ResponseEntity<T> response = restTemplate.exchange(
                     builder.toUriString(),
                     HttpMethod.GET,
@@ -151,7 +151,7 @@ public class EduBackendClient {
         HttpEntity<?> entity = new HttpEntity<>(headers);
         
         try {
-            log.debug("Calling edu backend GET (Page): {}", builder.toUriString());
+            log.info("Calling edu backend GET (Page): {}", builder.toUriString());
             ResponseEntity<org.springframework.data.domain.Page<T>> response = restTemplate.exchange(
                     builder.toUriString(),
                     HttpMethod.GET,
@@ -177,7 +177,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend POST (ParameterizedTypeReference): {}", url);
+            log.info("Calling edu backend POST (ParameterizedTypeReference): {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
@@ -207,7 +207,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend POST: {}", url);
+            log.info("Calling edu backend POST: {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
@@ -237,7 +237,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend PUT: {}", url);
+            log.info("Calling edu backend PUT: {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.PUT,
@@ -267,7 +267,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend PUT (ParameterizedTypeReference): {}", url);
+            log.info("Calling edu backend PUT (ParameterizedTypeReference): {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.PUT,
@@ -297,7 +297,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend PATCH (ParameterizedTypeReference): {}", url);
+            log.info("Calling edu backend PATCH (ParameterizedTypeReference): {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.PATCH,
@@ -327,7 +327,7 @@ public class EduBackendClient {
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            log.debug("Calling edu backend PATCH: {}", url);
+            log.info("Calling edu backend PATCH: {}", url);
             ResponseEntity<T> response = restTemplate.exchange(
                     url,
                     HttpMethod.PATCH,
@@ -357,7 +357,7 @@ public class EduBackendClient {
         HttpEntity<?> entity = new HttpEntity<>(headers);
         
         try {
-            log.debug("Calling edu backend DELETE: {}", url);
+            log.info("Calling edu backend DELETE: {}", url);
             restTemplate.exchange(
                     url,
                     HttpMethod.DELETE,

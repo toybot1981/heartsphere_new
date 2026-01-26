@@ -32,14 +32,23 @@ export const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({
   if (displayMilestones.length === 0) {
     return (
       <div className={`text-center py-8 ${className}`}>
-        <p className="text-white/50">还没有里程碑，继续努力吧！💪</p>
+        <p 
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          还没有里程碑，继续努力吧！💪
+        </p>
       </div>
     );
   }
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-semibold text-white">成长里程碑</h3>
+      <h3 
+        className="text-lg font-semibold"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        成长里程碑
+      </h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {displayMilestones.map((milestone) => (
@@ -82,28 +91,58 @@ const MilestoneCard: React.FC<MilestoneCardProps> = ({
 
   return (
     <div
-      className={`rounded-lg p-4 border backdrop-blur-md cursor-pointer transition-all ${
-        isSelected
-          ? `${color.bg} ${color.border} scale-105 shadow-lg`
-          : 'bg-white/10 border-white/20 hover:bg-white/15'
-      }`}
+      className="rounded-lg p-4 border backdrop-blur-md cursor-pointer transition-all"
+      style={{
+        backgroundColor: isSelected
+          ? getMilestoneColorStyle(milestone.type).bg
+          : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+        borderColor: isSelected
+          ? getMilestoneColorStyle(milestone.type).border
+          : 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+        transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+        boxShadow: isSelected ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))' : 'none',
+      }}
       onClick={onClick}
+      onMouseEnter={(e) => {
+        if (!isSelected) {
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.15))';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected) {
+          e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+        }
+      }}
     >
       <div className="flex items-start space-x-3">
         <div className={`text-3xl ${isSelected ? 'animate-bounce' : ''}`}>
           {icon}
         </div>
         <div className="flex-1">
-          <h4 className="text-lg font-semibold text-white mb-1">
+          <h4 
+            className="text-lg font-semibold mb-1"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {milestone.title}
           </h4>
-          <p className="text-sm text-white/70 mb-2">{milestone.description}</p>
+          <p 
+            className="text-sm mb-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {milestone.description}
+          </p>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-white/50">
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               {formatDate(milestone.achievedAt)}
             </span>
             {milestone.value && (
-              <span className={`text-xs font-semibold ${color.text}`}>
+              <span 
+                className="text-xs font-semibold"
+                style={{ color: getMilestoneColorStyle(milestone.type).text }}
+              >
                 {milestone.value}
               </span>
             )}
@@ -129,26 +168,50 @@ const MilestoneDetailModal: React.FC<MilestoneDetailModalProps> = ({
   const icon = getMilestoneIcon(milestone.type);
   const color = getMilestoneColor(milestone.type);
 
+  const colorStyle = getMilestoneColorStyle(milestone.type);
+  
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.5))' }}
       onClick={onClose}
     >
       <div
-        className={`bg-gray-900 rounded-lg p-6 max-w-md w-full border ${color.border} backdrop-blur-md`}
+        className="rounded-lg p-6 max-w-md w-full border backdrop-blur-md"
+        style={{
+          backgroundColor: 'var(--bg-card, #111827)',
+          borderColor: colorStyle.border,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <span className="text-4xl">{icon}</span>
             <div>
-              <h3 className="text-xl font-bold text-white">{milestone.title}</h3>
-              <p className="text-sm text-white/50">{formatDate(milestone.achievedAt)}</p>
+              <h3 
+                className="text-xl font-bold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {milestone.title}
+              </h3>
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {formatDate(milestone.achievedAt)}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white/50 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -167,23 +230,49 @@ const MilestoneDetailModal: React.FC<MilestoneDetailModalProps> = ({
           </button>
         </div>
 
-        <p className="text-white/70 mb-4">{milestone.description}</p>
+        <p 
+          className="mb-4"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {milestone.description}
+        </p>
 
         {milestone.value && (
-          <div className={`${color.bg} rounded-lg p-3 mb-4`}>
-            <p className="text-sm text-white/70 mb-1">达成值</p>
-            <p className={`text-2xl font-bold ${color.text}`}>{milestone.value}</p>
+          <div 
+            className="rounded-lg p-3 mb-4"
+            style={{ backgroundColor: colorStyle.bg }}
+          >
+            <p 
+              className="text-sm mb-1"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              达成值
+            </p>
+            <p 
+              className="text-2xl font-bold"
+              style={{ color: colorStyle.text }}
+            >
+              {milestone.value}
+            </p>
           </div>
         )}
 
         {milestone.metadata && Object.keys(milestone.metadata).length > 0 && (
-          <div className="border-t border-white/10 pt-4">
-            <p className="text-sm text-white/50 mb-2">详细信息</p>
+          <div 
+            className="border-t pt-4"
+            style={{ borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))' }}
+          >
+            <p 
+              className="text-sm mb-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              详细信息
+            </p>
             <div className="space-y-1">
               {Object.entries(milestone.metadata).map(([key, value]) => (
                 <div key={key} className="flex justify-between text-sm">
-                  <span className="text-white/70">{key}:</span>
-                  <span className="text-white">{String(value)}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{key}:</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{String(value)}</span>
                 </div>
               ))}
             </div>
@@ -192,7 +281,18 @@ const MilestoneDetailModal: React.FC<MilestoneDetailModalProps> = ({
 
         <button
           onClick={onClose}
-          className={`mt-6 w-full ${color.bg} ${color.border} border rounded-lg py-2 text-white font-semibold hover:opacity-80 transition-opacity`}
+          className="mt-6 w-full border rounded-lg py-2 font-semibold transition-opacity"
+          style={{
+            backgroundColor: colorStyle.bg,
+            borderColor: colorStyle.border,
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.8';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
         >
           关闭
         </button>
@@ -219,60 +319,71 @@ function getMilestoneIcon(type: MilestoneType): string {
 }
 
 /**
- * 获取里程碑颜色
+ * 获取里程碑颜色（CSS变量版本）
+ */
+function getMilestoneColorStyle(type: MilestoneType): {
+  bg: string;
+  border: string;
+  text: string;
+} {
+  const colorMap: Record<MilestoneType, { bg: string; border: string; text: string }> = {
+    first_use: {
+      bg: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+      border: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+      text: 'var(--color-warning, #fbbf24)',
+    },
+    first_conversation: {
+      bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+      border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+      text: 'var(--color-info, #60a5fa)',
+    },
+    first_memory: {
+      bg: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+      border: 'var(--color-primary, rgba(168, 85, 247, 0.5))',
+      text: 'var(--color-primary, #a78bfa)',
+    },
+    conversation_count: {
+      bg: 'var(--color-primary, rgba(99, 102, 241, 0.2))',
+      border: 'var(--color-primary, rgba(99, 102, 241, 0.5))',
+      text: 'var(--color-primary, #818cf8)',
+    },
+    memory_count: {
+      bg: 'var(--color-primary, rgba(236, 72, 153, 0.2))',
+      border: 'var(--color-primary, rgba(236, 72, 153, 0.5))',
+      text: 'var(--color-primary, #f472b6)',
+    },
+    emotion_insight: {
+      bg: 'var(--color-success, rgba(34, 197, 94, 0.2))',
+      border: 'var(--color-success, rgba(34, 197, 94, 0.5))',
+      text: 'var(--color-success, #4ade80)',
+    },
+    growth_streak: {
+      bg: 'var(--color-warning, rgba(251, 146, 60, 0.2))',
+      border: 'var(--color-warning, rgba(251, 146, 60, 0.5))',
+      text: 'var(--color-warning, #fb923c)',
+    },
+    anniversary: {
+      bg: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+      border: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+      text: 'var(--color-error, #f87171)',
+    },
+  };
+  return colorMap[type] || {
+    bg: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+    border: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+    text: 'var(--text-primary)',
+  };
+}
+
+/**
+ * 获取里程碑颜色（保留原函数以兼容）
  */
 function getMilestoneColor(type: MilestoneType): {
   bg: string;
   border: string;
   text: string;
 } {
-  const colors: Record<MilestoneType, { bg: string; border: string; text: string }> = {
-    first_use: {
-      bg: 'bg-yellow-500/20',
-      border: 'border-yellow-400/50',
-      text: 'text-yellow-400',
-    },
-    first_conversation: {
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-400/50',
-      text: 'text-blue-400',
-    },
-    first_memory: {
-      bg: 'bg-purple-500/20',
-      border: 'border-purple-400/50',
-      text: 'text-purple-400',
-    },
-    conversation_count: {
-      bg: 'bg-indigo-500/20',
-      border: 'border-indigo-400/50',
-      text: 'text-indigo-400',
-    },
-    memory_count: {
-      bg: 'bg-pink-500/20',
-      border: 'border-pink-400/50',
-      text: 'text-pink-400',
-    },
-    emotion_insight: {
-      bg: 'bg-green-500/20',
-      border: 'border-green-400/50',
-      text: 'text-green-400',
-    },
-    growth_streak: {
-      bg: 'bg-orange-500/20',
-      border: 'border-orange-400/50',
-      text: 'text-orange-400',
-    },
-    anniversary: {
-      bg: 'bg-red-500/20',
-      border: 'border-red-400/50',
-      text: 'text-red-400',
-    },
-  };
-  return colors[type] || {
-    bg: 'bg-white/10',
-    border: 'border-white/20',
-    text: 'text-white',
-  };
+  return getMilestoneColorStyle(type);
 }
 
 /**

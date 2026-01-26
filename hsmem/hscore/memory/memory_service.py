@@ -135,10 +135,18 @@ class MemoryService:
             检索结果
         """
         # 合并多个查询
-        combined_query = " ".join([
-            q.get("content", {}).get("text", "")
-            for q in queries
-        ])
+        query_texts = []
+        for q in queries:
+            content = q.get("content", "")
+            # 处理 content 可能是字符串或字典的情况
+            if isinstance(content, dict):
+                text = content.get("text", str(content))
+            else:
+                text = str(content) if not isinstance(content, str) else content
+            if text:
+                query_texts.append(text)
+        
+        combined_query = " ".join(query_texts)
 
         # 使用检索器
         result = await self.retriever.retrieve(combined_query, where, limit)

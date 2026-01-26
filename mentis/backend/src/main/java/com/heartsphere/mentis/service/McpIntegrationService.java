@@ -40,10 +40,10 @@ public class McpIntegrationService {
         
         // 1. 获取可用的 MCP 工具（转换为 FunctionDefinition 格式）
         List<FunctionDefinition> availableTools = getAvailableTools(sessionId);
-        log.debug("可用 MCP 工具数量: {}", availableTools.size());
+        log.info("可用 MCP 工具数量: {}", availableTools.size());
         
         if (availableTools.isEmpty()) {
-            log.debug("没有可用的 MCP 工具，使用普通对话处理");
+            log.info("没有可用的 MCP 工具，使用普通对话处理");
             return processNormalChat(userId, request);
         }
         
@@ -165,7 +165,7 @@ public class McpIntegrationService {
      */
     private String callAIWithTools(String userMessage, String sessionId, List<Map<String, Object>> functions) {
         try {
-            log.debug("调用 AI 服务，工具数量: {}", functions.size());
+            log.info("调用 AI 服务，工具数量: {}", functions.size());
             
             // 构建 AI 请求
             com.heartsphere.mentis.ai.dto.request.TextGenerationRequest request = 

@@ -93,11 +93,11 @@ public class WebMvcConfig implements WebMvcConfigurer, Ordered {
             .responseTimeout(Duration.ofSeconds(60)) // 响应超时 60 秒
             .doOnConnected(conn -> {
                 // 连接建立时的回调，可以记录日志
-                // log.debug("[WebClient] 连接已建立");
+                // log.info("[WebClient] 连接已建立");
             })
             .doOnDisconnected(conn -> {
                 // 连接断开时的回调
-                // log.debug("[WebClient] 连接已断开");
+                // log.info("[WebClient] 连接已断开");
             });
         
         return WebClient.builder()

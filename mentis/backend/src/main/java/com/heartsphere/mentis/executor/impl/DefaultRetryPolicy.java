@@ -22,7 +22,7 @@ public class DefaultRetryPolicy implements RetryPolicy {
     @Override
     public boolean shouldRetry(int attemptCount, Exception lastException) {
         if (attemptCount >= maxRetries) {
-            log.debug("达到最大重试次数: attemptCount={}, maxRetries={}", attemptCount, maxRetries);
+            log.info("达到最大重试次数: attemptCount={}, maxRetries={}", attemptCount, maxRetries);
             return false;
         }
         

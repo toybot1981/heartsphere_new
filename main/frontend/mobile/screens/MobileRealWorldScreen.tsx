@@ -294,22 +294,46 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
   // --- LIST VIEW ---
   if (view === 'list') {
       return (
-          <div className="h-full bg-slate-950 flex flex-col">
+          <div 
+            className="h-full flex flex-col"
+            style={{ backgroundColor: 'var(--bg-primary, #020617)' }}
+          >
               <MobileSmoothScroll className="flex-1 p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
               <div className="flex justify-between items-center mb-6">
                   <div>
                       <div className="flex items-center gap-3">
-                          <h1 className="text-3xl font-bold text-white">日记</h1>
+                          <h1 
+                            className="text-3xl font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            日记
+                          </h1>
                           <MobileTouchableButton
                             onClick={onSwitchToPC}
                             variant="secondary"
                             size="sm"
-                            className="bg-slate-800 border border-slate-700"
+                            className="border"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary-alpha)',
+                              borderColor: 'var(--border-color-overlay)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                            }}
                           >
                             <span>💻</span> PC端
                           </MobileTouchableButton>
                       </div>
-                      <p className="text-slate-400 text-xs mt-1">记录你的现实瞬间</p>
+                      <p 
+                        className="text-xs mt-1"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        记录你的现实瞬间
+                      </p>
                   </div>
                   <MobileTouchableButton
                     onClick={startNew}
@@ -329,7 +353,20 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="检索记忆/#标签"
-                      className={`${MobileInputStyles} text-base`}
+                      className="w-full min-h-[44px] px-4 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 transition-all duration-200 touch-manipulation"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-color-overlay)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                        e.currentTarget.style.boxShadow = '0 0 0 2px var(--bg-info-alpha)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
                       autoComplete="off"
                       inputMode="search"
                       aria-label="搜索日记"
@@ -345,7 +382,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
                               variant={selectedTag === tag ? 'primary' : 'secondary'}
                               size="sm"
-                              className={`rounded-full text-xs font-medium ${selectedTag === tag ? 'bg-indigo-600' : 'bg-slate-800 text-slate-300'}`}
+                              className="rounded-full text-xs font-medium border"
+                              style={{
+                                backgroundColor: selectedTag === tag ? 'var(--bg-info-alpha)' : 'var(--bg-card)',
+                                color: selectedTag === tag ? 'var(--color-info)' : 'var(--text-secondary)',
+                                borderColor: selectedTag === tag ? 'var(--border-info-alpha)' : 'var(--border-color-overlay)',
+                              }}
                           >
                               {tag}
                           </MobileTouchableButton>
@@ -355,23 +397,54 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
 
               {/* Daily Greeting */}
               {dailyGreeting && (
-                  <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950/30 border border-indigo-500/20 w-full overflow-visible">
-                      <div className="flex items-center gap-2 mb-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                  <div
+                    className="mb-4 p-4 rounded-xl border w-full overflow-visible"
+                    style={{
+                      background: 'var(--gradient-card, linear-gradient(to right, var(--bg-card), var(--bg-secondary)))',
+                      borderColor: 'var(--border-color-overlay)',
+                    }}
+                  >
+                      <div
+                        className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: 'var(--color-primary)' }}
+                      >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full animate-pulse"
+                            style={{ backgroundColor: 'var(--color-primary)' }}
+                          ></span>
                           Daily Resonance
                       </div>
-                      <h2 className="text-base font-bold text-white/90 mb-2 break-words whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <h2 
+                        className="text-base font-bold mb-2 break-words whitespace-normal" 
+                        style={{ 
+                          color: 'var(--text-primary)',
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word' 
+                        }}
+                      >
                           {dailyGreeting.greeting || "你好，旅人。"}
                       </h2>
                       <div className="flex flex-row items-start justify-between gap-2">
-                          <p className="text-sm text-indigo-200/70 italic flex-1 min-w-0 break-words whitespace-normal pr-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: 'calc(100% - 50px)' }}>
+                          <p
+                            className="text-sm italic flex-1 min-w-0 break-words whitespace-normal pr-2"
+                            style={{
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              maxWidth: 'calc(100% - 50px)',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
                               "{dailyGreeting.prompt || dailyGreeting.question || "今天的风带给你什么感觉？"}"
                           </p>
                           <MobileTouchableButton
                             onClick={handleGreetingQuestionClick}
                             variant="ghost"
                             size="md"
-                            className="bg-indigo-600/20 text-indigo-300 flex-shrink-0"
+                            className="flex-shrink-0"
+                            style={{
+                              backgroundColor: 'var(--bg-info-alpha)',
+                              color: 'var(--color-info)',
+                            }}
                             title="回应"
                             aria-label="回应问候"
                           >
@@ -398,7 +471,17 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                       <div 
                         key={entry.id} 
                         onClick={() => openEntry(entry)} 
-                        className="bg-slate-900 rounded-xl p-4 border border-slate-800 active:bg-slate-800 active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+                        className="rounded-xl p-4 border active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--bg-card)',
+                          borderColor: 'var(--border-color-overlay)',
+                        }}
+                        onTouchStart={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                        }}
+                        onTouchEnd={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                        }}
                         role="button"
                         tabIndex={0}
                         onKeyPress={(e) => {
@@ -408,10 +491,25 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                         }}
                       >
                           <div className="flex justify-between items-start mb-2">
-                              <h3 className="text-white font-bold truncate flex-1">{entry.title}</h3>
-                              <span className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleDateString()}</span>
+                              <h3 
+                                className="font-bold truncate flex-1"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {entry.title}
+                              </h3>
+                              <span
+                                className="text-[10px]"
+                                style={{ color: 'var(--text-tertiary)' }}
+                              >
+                                {new Date(entry.timestamp).toLocaleDateString()}
+                              </span>
                           </div>
-                          <p className="text-slate-400 text-sm line-clamp-2">{entry.content}</p>
+                          <p
+                            className="text-sm line-clamp-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            {entry.content}
+                          </p>
                           {entry.tags && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                   {entry.tags.split(',').map((tag, idx) => {
@@ -424,7 +522,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                                                   e.stopPropagation();
                                                   setSelectedTag(trimmedTag);
                                               }}
-                                              className="text-[10px] px-2 py-0.5 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30"
+                                              className="text-[10px] px-2 py-0.5 rounded-full border"
+                                              style={{
+                                                backgroundColor: 'var(--bg-info-alpha)',
+                                                color: 'var(--color-info)',
+                                                borderColor: 'var(--border-info-alpha)',
+                                              }}
                                           >
                                               {trimmedTag}
                                           </span>
@@ -453,23 +556,37 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
   // --- DETAIL VIEW ---
   if (view === 'detail' && selectedEntry) {
       return (
-          <div className="h-full bg-slate-950 flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))]">
-              <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-4 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
+          <div 
+            className="h-full flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))]"
+            style={{ backgroundColor: 'var(--bg-primary, #020617)' }}
+          >
+              <div 
+                className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-4 border-b backdrop-blur-md sticky top-0 z-10"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(2, 6, 23, 0.9))',
+                  borderColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                }}
+              >
                   <MobileTouchableButton
                     onClick={() => setView('list')}
                     variant="ghost"
                     size="md"
-                    className="text-slate-400"
+                    style={{ color: 'var(--text-tertiary)' }}
                     aria-label="返回"
                   >
                     &larr;
                   </MobileTouchableButton>
-                  <h2 className="text-white font-bold truncate flex-1">{selectedEntry.title}</h2>
+                  <h2 
+                    className="font-bold truncate flex-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {selectedEntry.title}
+                  </h2>
                   <MobileTouchableButton
                     onClick={startEdit}
                     variant="ghost"
                     size="sm"
-                    className="text-indigo-400"
+                    style={{ color: 'var(--color-info)' }}
                   >
                     编辑
                   </MobileTouchableButton>
@@ -478,7 +595,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                   {selectedEntry.imageUrl && (
                       <MobileLazyImage src={selectedEntry.imageUrl} alt="Mind Projection" className="w-full rounded-xl mb-6 shadow-lg" />
                   )}
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedEntry.content}</p>
+                  <p
+                    className="leading-relaxed whitespace-pre-wrap"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {selectedEntry.content}
+                  </p>
                   
                   {selectedEntry.tags && (
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -492,7 +614,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                                           setSelectedTag(trimmedTag);
                                           setView('list');
                                       }}
-                                      className="text-xs px-3 py-2 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                                      className="text-xs px-3 py-2 rounded-full border min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                                      style={{
+                                        backgroundColor: 'var(--bg-info-alpha)',
+                                        color: 'var(--color-info)',
+                                        borderColor: 'var(--border-info-alpha)',
+                                      }}
                                   >
                                       {trimmedTag}
                                   </span>
@@ -502,19 +629,41 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                   )}
                   
                   {selectedEntry.insight && (
-                      <div className="mt-6 p-4 bg-cyan-900/20 border-l-2 border-cyan-500 rounded-r-lg">
-                          <p className="text-xs text-cyan-400 font-bold uppercase mb-1">Mirror of Truth</p>
-                          <p className="text-cyan-100 text-sm italic">"{selectedEntry.insight}"</p>
+                      <div 
+                        className="mt-6 p-4 border-l-2 rounded-r-lg"
+                        style={{
+                          backgroundColor: 'var(--bg-info-alpha)',
+                          borderColor: 'var(--color-info)',
+                        }}
+                      >
+                          <p 
+                            className="text-xs font-bold uppercase mb-1"
+                            style={{ color: 'var(--color-info)' }}
+                          >
+                            Mirror of Truth
+                          </p>
+                          <p 
+                            className="text-sm italic"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            "{selectedEntry.insight}"
+                          </p>
                       </div>
                   )}
 
-                  <div className="mt-8 pt-8 border-t border-slate-800">
+                  <div
+                    className="mt-8 pt-8 border-t"
+                    style={{ borderColor: 'var(--border-color-overlay)' }}
+                  >
                       <MobileTouchableButton
                           onClick={() => onExplore(selectedEntry)}
                           variant="primary"
                           size="lg"
                           fullWidth
-                          className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600"
+                          className="mb-4"
+                          style={{
+                            background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-primary, #6366f1), var(--color-primary, #9333ea)))',
+                          }}
                       >
                           带着问题进入心域
                       </MobileTouchableButton>
@@ -540,8 +689,17 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
 
   // --- EDIT VIEW ---
   return (
-      <div className="h-full bg-slate-950 flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))]">
-           <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
+      <div 
+        className="h-full flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))]"
+        style={{ backgroundColor: 'var(--bg-primary, #020617)' }}
+      >
+           <div 
+             className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between border-b backdrop-blur-md sticky top-0 z-10"
+             style={{
+               backgroundColor: 'var(--bg-overlay, rgba(2, 6, 23, 0.9))',
+               borderColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+             }}
+           >
                 <MobileTouchableButton
                   onClick={() => setView(selectedEntry ? 'detail' : 'list')}
                   variant="ghost"
@@ -549,14 +707,19 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                 >
                   取消
                 </MobileTouchableButton>
-                <h2 className="text-white font-bold">{selectedEntry ? '编辑' : '新建'}</h2>
+                <h2 
+                  className="font-bold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {selectedEntry ? '编辑' : '新建'}
+                </h2>
                 <MobileTouchableButton
                   onClick={handleSave}
                   disabled={isGenerating}
                   loading={isGenerating}
                   variant="ghost"
                   size="md"
-                  className="text-pink-500"
+                  style={{ color: 'var(--color-primary)' }}
                 >
                   {isGenerating ? '保存中...' : '保存'}
                 </MobileTouchableButton>
@@ -568,15 +731,31 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                        onClick={() => setShowTemplates(!showTemplates)}
                        variant="outline"
                        size="sm"
-                       className="text-xs text-indigo-400 border-indigo-800 bg-indigo-900/10"
+                       className="text-xs border"
+                       style={{
+                         color: 'var(--color-info)',
+                         borderColor: 'var(--border-info-alpha)',
+                         backgroundColor: 'var(--bg-info-alpha)',
+                       }}
                    >
                        <span>📝</span> 模板
                    </MobileTouchableButton>
                </div>
                
                {showTemplates && (
-                   <div className="bg-slate-900 rounded-lg p-3 border border-slate-700 mb-2">
-                       <div className="text-xs text-slate-400 mb-2 font-bold">选择模板</div>
+                   <div 
+                     className="rounded-lg p-3 mb-2"
+                     style={{
+                       backgroundColor: 'var(--bg-secondary, #0f172a)',
+                       borderColor: 'var(--bg-overlay, rgba(51, 65, 85, 1))',
+                     }}
+                   >
+                       <div
+                         className="text-xs mb-2 font-bold"
+                         style={{ color: 'var(--text-tertiary)' }}
+                       >
+                         选择模板
+                       </div>
                        <div className="grid grid-cols-2 gap-2">
                            {getAllTemplates().slice(0, 4).map(template => (
                                <MobileTouchableButton
@@ -586,8 +765,18 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                                    size="md"
                                    className="p-3 text-left min-h-[80px] justify-start"
                                >
-                                   <div className="text-xs font-bold text-white mb-1">{template.icon} {template.name}</div>
-                                   <div className="text-[10px] text-slate-400">{template.description}</div>
+                                   <div
+                                     className="text-xs font-bold mb-1"
+                                     style={{ color: 'var(--text-primary)' }}
+                                   >
+                                     {template.icon} {template.name}
+                                   </div>
+                                   <div
+                                     className="text-[10px]"
+                                     style={{ color: 'var(--text-tertiary)' }}
+                                   >
+                                     {template.description}
+                                   </div>
                                </MobileTouchableButton>
                            ))}
                        </div>
@@ -598,7 +787,13 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                  value={title} 
                  onChange={e => setTitle(e.target.value)} 
                  placeholder="标题..." 
-                 className="bg-transparent text-xl font-bold text-white placeholder-slate-500 focus:outline-none min-h-[44px] px-2 touch-manipulation" 
+                 className="bg-transparent text-xl font-bold focus:outline-none min-h-[44px] px-2 touch-manipulation" 
+                 style={{
+                   color: 'var(--text-primary)',
+                 }}
+                 onFocus={(e) => {
+                   e.currentTarget.style.color = 'var(--text-primary)';
+                 }}
                  autoFocus={!selectedEntry}
                  inputMode="text"
                  aria-label="日记标题"
@@ -607,25 +802,45 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                  value={content} 
                  onChange={e => setContent(e.target.value)} 
                  placeholder="写下你的想法..." 
-                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-500 focus:outline-none resize-none leading-relaxed min-h-[300px] px-2 text-base touch-manipulation" 
+                 className="flex-1 bg-transparent focus:outline-none resize-none leading-relaxed min-h-[300px] px-2 text-base touch-manipulation" 
+                 style={{
+                   color: 'var(--text-secondary)',
+                 }}
                  inputMode="text"
                  aria-label="日记内容"
                />
                
                {/* Tags Section */}
                <div className="space-y-2">
-                   <div className="text-xs text-slate-400 font-bold">标签</div>
+                   <div
+                     className="text-xs font-bold"
+                     style={{ color: 'var(--text-tertiary)' }}
+                   >
+                     标签
+                   </div>
                    {newTags.length > 0 && (
                        <div className="flex flex-wrap gap-2 mb-2">
                            {newTags.map((tag, idx) => (
                                <span
                                    key={idx}
-                                   className="text-xs px-2 py-1 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 flex items-center gap-1"
+                                   className="text-xs px-2 py-1 rounded-full border flex items-center gap-1"
+                                   style={{
+                                     backgroundColor: 'var(--bg-info-alpha)',
+                                     color: 'var(--color-info)',
+                                     borderColor: 'var(--border-info-alpha)',
+                                   }}
                                >
                                    {tag}
                                    <button
                                        onClick={() => removeTag(tag)}
-                                       className="text-indigo-400 active:text-white min-w-[20px] min-h-[20px] flex items-center justify-center active:scale-110 transition-transform touch-manipulation"
+                                       className="min-w-[20px] min-h-[20px] flex items-center justify-center active:scale-110 transition-transform touch-manipulation"
+                                       style={{ color: 'var(--color-info)' }}
+                                       onMouseEnter={(e) => {
+                                         e.currentTarget.style.color = 'var(--color-error)';
+                                       }}
+                                       onMouseLeave={(e) => {
+                                         e.currentTarget.style.color = 'var(--color-info)';
+                                       }}
                                        aria-label="删除标签"
                                    >
                                        ×
@@ -647,7 +862,14 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                </div>
                
                {insight && (
-                   <div className="p-3 bg-cyan-900/20 rounded border border-cyan-900 text-cyan-200 text-xs">
+                   <div 
+                     className="p-3 rounded border text-xs"
+                     style={{
+                       backgroundColor: 'var(--bg-info-alpha)',
+                       borderColor: 'var(--border-info-alpha)',
+                       color: 'var(--text-secondary)',
+                     }}
+                   >
                        {insight}
                    </div>
                )}
@@ -657,7 +879,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                      onClick={handleMirror}
                      variant="outline"
                      size="sm"
-                     className="text-xs text-cyan-400 border-cyan-800 bg-cyan-900/10"
+                     className="text-xs border rounded px-2 py-1"
+                     style={{
+                       color: 'var(--color-info)',
+                       borderColor: 'var(--border-info-alpha)',
+                       backgroundColor: 'var(--bg-info-alpha)',
+                     }}
                      disabled={!content.trim()}
                    >
                        <span>🔮</span> 本我镜像分析

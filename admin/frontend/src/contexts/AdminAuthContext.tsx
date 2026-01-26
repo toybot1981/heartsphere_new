@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../services/api';
 import { showAlert } from "../utils/dialog";
+import { startHandlingTokenExpiry, completeHandlingTokenExpiry } from '../utils/tokenExpiryHandler';
 
 interface AdminAuthContextType {
     isAuthenticated: boolean;
@@ -55,16 +56,27 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
         setLoginError('');
     }, []);
 
-    // 监听token过期事件
+    // 监听token过期事件 - 使用统一的处理机制，确保只处理一次
     useEffect(() => {
-        const handleTokenExpired = () => {
-            console.log('[AdminAuthContext] Token已过期，清除认证状态并跳转到登录页面');
+        const handleTokenExpired = (event?: Event) => {
+            // 使用统一的处理机制，确保只处理一次
+            if (!startHandlingTokenExpiry()) {
+                console.log('[AdminAuthContext] Token过期事件已在处理中，跳过重复处理');
+                return;
+            }
+            
+            console.log('[AdminAuthContext] Token已过期，清除认证状态并跳转到登录页面', event);
+            
             // 清除所有认证状态
             logout();
-            // 显示提示信息
-            showAlert('登录已过期，请重新登录', '提示', 'warning');
-            // 跳转到根路径，AppContent 会根据 isAuthenticated 自动显示登录页面
+            
+            // 立即跳转到根路径，AppContent 会根据 isAuthenticated 自动显示登录页面
             navigate('/', { replace: true });
+            
+            // 显示提示信息（延迟显示，确保页面已跳转）
+            setTimeout(() => {
+                showAlert('登录已过期，请重新登录', '提示', 'warning');
+            }, 300);
         };
 
         window.addEventListener('admin-token-expired', handleTokenExpired);
@@ -104,6 +116,9 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             setIsAuthenticated(true);
             setUsername('');
             setPassword('');
+            
+            // 登录成功后，重置 token 过期处理状态
+            completeHandlingTokenExpiry();
         } catch (error: any) {
             console.error('登录失败:', error);
             setLoginError(error.message || '登录失败，请检查用户名和密码');

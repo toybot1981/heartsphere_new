@@ -135,7 +135,7 @@ public class DoubaoAdapter implements ModelAdapter {
     @Override
     public TextGenerationResponse generateText(TextGenerationRequest request) {
         try {
-            log.debug("豆包文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
+            log.info("豆包文本生成请求: model={}, prompt={}", request.getModel(), request.getPrompt());
             
             // 获取 API key
             String apiKey = getApiKey(request);
@@ -147,7 +147,7 @@ public class DoubaoAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[DoubaoAdapter] 使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DoubaoAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -210,7 +210,7 @@ public class DoubaoAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[DoubaoAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DoubaoAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -293,7 +293,7 @@ public class DoubaoAdapter implements ModelAdapter {
                                     finalResponse.setModel(request.getModel() != null ? request.getModel() : "doubao-1-5-pro-32k-250115");
                                     handler.handle(finalResponse, true);
                                 } else {
-                                    log.debug("[DoubaoAdapter] 流式响应已完成，忽略[DONE]信号");
+                                    log.info("[DoubaoAdapter] 流式响应已完成，忽略[DONE]信号");
                                 }
                                 return;
                             }
@@ -354,7 +354,7 @@ public class DoubaoAdapter implements ModelAdapter {
                                                 isCompleted[0] = true;
                                                 handler.handle(finalResponse, true);
                                             } else {
-                                                log.debug("[DoubaoAdapter] 流式响应已完成，忽略重复的完成信号");
+                                                log.info("[DoubaoAdapter] 流式响应已完成，忽略重复的完成信号");
                                             }
                                         }
                                     }
@@ -389,7 +389,7 @@ public class DoubaoAdapter implements ModelAdapter {
                             handler.handle(null, true);
                         }
                     } else {
-                        log.debug("[DoubaoAdapter] 流式响应已完成，忽略完成回调中的重复完成信号");
+                        log.info("[DoubaoAdapter] 流式响应已完成，忽略完成回调中的重复完成信号");
                     }
                 }
             );
@@ -416,7 +416,7 @@ public class DoubaoAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[DoubaoAdapter] 使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[DoubaoAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
             // 火山引擎 Seedream 模型使用 /images/generations 端点（OpenAPI兼容格式）
             String url = effectiveBaseUrl + "/images/generations";
@@ -453,7 +453,7 @@ public class DoubaoAdapter implements ModelAdapter {
                     double scale = Math.sqrt(3686400.0 / (width * height));
                     width = (int) Math.ceil(width * scale);
                     height = (int) Math.ceil(height * scale);
-                    log.debug("[DoubaoAdapter] 尺寸 {}x{} 不满足最小要求，调整为 {}x{}", 
+                    log.info("[DoubaoAdapter] 尺寸 {}x{} 不满足最小要求，调整为 {}x{}", 
                         request.getWidth(), request.getHeight(), width, height);
                 }
                 requestBody.put("size", width + "x" + height);
@@ -461,7 +461,7 @@ public class DoubaoAdapter implements ModelAdapter {
                 // 根据宽高比映射到标准尺寸（确保满足最小像素要求）
                 String size = mapAspectRatioToSize(request.getAspectRatio());
                 requestBody.put("size", size);
-                log.debug("[DoubaoAdapter] 宽高比 {} 映射到尺寸: {}", request.getAspectRatio(), size);
+                log.info("[DoubaoAdapter] 宽高比 {} 映射到尺寸: {}", request.getAspectRatio(), size);
             } else {
                 // 默认使用 1920x1920（满足最小像素要求：3686400）
                 requestBody.put("size", "1920x1920");
@@ -865,20 +865,20 @@ public class DoubaoAdapter implements ModelAdapter {
     private String getApiKey(TextGenerationRequest request) {
         // 1. 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
         if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用请求中的 API key（从数据库配置获取）");
+            log.info("DoubaoAdapter: 使用请求中的 API key（从数据库配置获取）");
             return request.getApiKey();
         }
         
         // 2. 使用配置文件中的 API key
         if (defaultApiKey != null && !defaultApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用配置文件中的 API key");
+            log.info("DoubaoAdapter: 使用配置文件中的 API key");
         return defaultApiKey;
         }
         
         // 3. 尝试从环境变量获取
         String envApiKey = System.getenv("DOUBAO_API_KEY");
         if (envApiKey != null && !envApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用环境变量中的 API key");
+            log.info("DoubaoAdapter: 使用环境变量中的 API key");
             return envApiKey;
         }
         
@@ -889,20 +889,20 @@ public class DoubaoAdapter implements ModelAdapter {
     private String getApiKey(ImageGenerationRequest request) {
         // 1. 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
         if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用请求中的 API key（从数据库配置获取）(image)");
+            log.info("DoubaoAdapter: 使用请求中的 API key（从数据库配置获取）(image)");
             return request.getApiKey();
         }
         
         // 2. 使用配置文件中的 API key
         if (defaultApiKey != null && !defaultApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用配置文件中的 API key (image)");
+            log.info("DoubaoAdapter: 使用配置文件中的 API key (image)");
         return defaultApiKey;
         }
         
         // 3. 尝试从环境变量获取
         String envApiKey = System.getenv("DOUBAO_API_KEY");
         if (envApiKey != null && !envApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用环境变量中的 API key (image)");
+            log.info("DoubaoAdapter: 使用环境变量中的 API key (image)");
             return envApiKey;
         }
         
@@ -914,14 +914,14 @@ public class DoubaoAdapter implements ModelAdapter {
         // AudioRequest没有apiKey字段，直接使用配置文件或环境变量
         // 1. 使用配置文件中的 API key
         if (defaultApiKey != null && !defaultApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用配置文件中的 API key (audio)");
+            log.info("DoubaoAdapter: 使用配置文件中的 API key (audio)");
             return defaultApiKey;
         }
         
         // 2. 尝试从环境变量获取
         String envApiKey = System.getenv("DOUBAO_API_KEY");
         if (envApiKey != null && !envApiKey.trim().isEmpty()) {
-            log.debug("DoubaoAdapter: 使用环境变量中的 API key (audio)");
+            log.info("DoubaoAdapter: 使用环境变量中的 API key (audio)");
             return envApiKey;
         }
         
@@ -986,7 +986,7 @@ public class DoubaoAdapter implements ModelAdapter {
             requestBody.put("max_tokens", request.getMaxTokens());
         }
         
-        log.debug("[DoubaoAdapter] 构建的请求体 - model={}, messagesCount={}, temperature={}, maxTokens={}", 
+        log.info("[DoubaoAdapter] 构建的请求体 - model={}, messagesCount={}, temperature={}, maxTokens={}", 
             model, messages.size(), requestBody.get("temperature"), requestBody.get("max_tokens"));
         
         return requestBody;
@@ -1054,7 +1054,7 @@ public class DoubaoAdapter implements ModelAdapter {
             // 火山引擎 Seedream API 响应格式：data 数组中包含生成的图片
             if (response.has("data") && response.get("data").isArray()) {
                 JsonNode dataArray = response.get("data");
-                log.debug("[DoubaoAdapter] 解析图片响应，找到 {} 张图片", dataArray.size());
+                log.info("[DoubaoAdapter] 解析图片响应，找到 {} 张图片", dataArray.size());
                 
                 for (JsonNode item : dataArray) {
                     ImageGenerationResponse.Image img = new ImageGenerationResponse.Image();
@@ -1062,17 +1062,17 @@ public class DoubaoAdapter implements ModelAdapter {
                     // 优先使用 url 字段
                     if (item.has("url")) {
                         img.setUrl(item.get("url").asText());
-                        log.debug("[DoubaoAdapter] 提取图片URL: {}", img.getUrl());
+                        log.info("[DoubaoAdapter] 提取图片URL: {}", img.getUrl());
                     } 
                     // 如果返回 base64 编码的图片
                     else if (item.has("b64_json")) {
                         img.setUrl("data:image/png;base64," + item.get("b64_json").asText());
-                        log.debug("[DoubaoAdapter] 提取Base64编码图片");
+                        log.info("[DoubaoAdapter] 提取Base64编码图片");
                     }
                     // 某些API可能直接返回图片数据在 image 字段
                     else if (item.has("image")) {
                         img.setUrl(item.get("image").asText());
-                        log.debug("[DoubaoAdapter] 从image字段提取图片URL");
+                        log.info("[DoubaoAdapter] 从image字段提取图片URL");
                     }
                     
                     if (img.getUrl() != null && !img.getUrl().isEmpty()) {
@@ -1132,7 +1132,7 @@ public class DoubaoAdapter implements ModelAdapter {
                     return "1440x2560";
                 } else {
                     // 默认使用 1920x1920（满足最小像素要求）
-                    log.debug("[DoubaoAdapter] 未匹配的宽高比: {}，使用默认尺寸 1920x1920", aspectRatio);
+                    log.info("[DoubaoAdapter] 未匹配的宽高比: {}，使用默认尺寸 1920x1920", aspectRatio);
                     return "1920x1920";
                 }
             }

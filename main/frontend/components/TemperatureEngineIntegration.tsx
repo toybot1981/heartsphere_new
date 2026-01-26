@@ -48,7 +48,14 @@ export const TemperatureEngineIntegration: React.FC<TemperatureEngineIntegration
 
   if (!isReady) {
     return (
-      <div className="fixed bottom-4 right-4 bg-slate-900/90 backdrop-blur-md rounded-lg p-3 border border-slate-700 text-xs text-slate-400">
+      <div 
+        className="fixed bottom-4 right-4 backdrop-blur-md rounded-lg p-3 border text-xs"
+        style={{
+          backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.9))',
+          borderColor: 'var(--border-color-overlay, #334155)',
+          color: 'var(--text-tertiary)',
+        }}
+      >
         温度感引擎初始化中...
       </div>
     );
@@ -58,31 +65,55 @@ export const TemperatureEngineIntegration: React.FC<TemperatureEngineIntegration
   const emotion = state?.currentEmotion;
 
   return (
-    <div className="fixed bottom-4 right-4 bg-slate-900/90 backdrop-blur-md rounded-lg p-4 border border-slate-700 text-xs space-y-2 min-w-[200px] z-50">
-      <div className="text-white font-bold mb-2">温度感引擎</div>
+    <div 
+      className="fixed bottom-4 right-4 backdrop-blur-md rounded-lg p-4 border text-xs space-y-2 min-w-[200px] z-50"
+      style={{
+        backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.9))',
+        borderColor: 'var(--border-color-overlay, #334155)',
+      }}
+    >
+      <div 
+        className="font-bold mb-2"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        温度感引擎
+      </div>
       
       {temperature && (
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">温度感:</span>
-            <span className={`font-bold ${
-              temperature.level === 'hot' ? 'text-red-400' :
-              temperature.level === 'warm' ? 'text-pink-400' :
-              temperature.level === 'neutral' ? 'text-gray-400' :
-              'text-blue-400'
-            }`}>
+            <span style={{ color: 'var(--text-tertiary)' }}>温度感:</span>
+            <span 
+              className="font-bold"
+              style={{
+                color: temperature.level === 'hot' 
+                  ? 'var(--color-error, #f87171)'
+                  : temperature.level === 'warm'
+                  ? 'var(--color-primary, #f472b6)'
+                  : temperature.level === 'neutral'
+                  ? 'var(--text-tertiary)'
+                  : 'var(--color-info, #60a5fa)',
+              }}
+            >
               {temperature.level} ({temperature.score.toFixed(0)})
             </span>
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-2">
+          <div 
+            className="w-full rounded-full h-2"
+            style={{ backgroundColor: 'var(--bg-secondary, #475569)' }}
+          >
             <div
-              className={`h-2 rounded-full transition-all ${
-                temperature.level === 'hot' ? 'bg-red-500' :
-                temperature.level === 'warm' ? 'bg-pink-500' :
-                temperature.level === 'neutral' ? 'bg-gray-500' :
-                'bg-blue-500'
-              }`}
-              style={{ width: `${temperature.score}%` }}
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: `${temperature.score}%`,
+                backgroundColor: temperature.level === 'hot'
+                  ? 'var(--color-error, #ef4444)'
+                  : temperature.level === 'warm'
+                  ? 'var(--color-primary, #ec4899)'
+                  : temperature.level === 'neutral'
+                  ? 'var(--text-tertiary)'
+                  : 'var(--color-info, #3b82f6)',
+              }}
             />
           </div>
         </div>
@@ -90,19 +121,35 @@ export const TemperatureEngineIntegration: React.FC<TemperatureEngineIntegration
 
       {emotion && (
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">情绪:</span>
-          <span className="text-white font-medium">{emotion.type}</span>
+          <span style={{ color: 'var(--text-tertiary)' }}>情绪:</span>
+          <span 
+            className="font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {emotion.type}
+          </span>
         </div>
       )}
 
       {currentExpression && (
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">表情:</span>
-          <span className="text-white font-medium">{currentExpression}</span>
+          <span style={{ color: 'var(--text-tertiary)' }}>表情:</span>
+          <span 
+            className="font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {currentExpression}
+          </span>
         </div>
       )}
 
-      <div className="pt-2 border-t border-slate-700 text-slate-500 text-[10px]">
+      <div 
+        className="pt-2 border-t text-[10px]"
+        style={{
+          borderColor: 'var(--border-color-overlay, #475569)',
+          color: 'var(--text-disabled)',
+        }}
+      >
         引擎状态: {state?.isEngineRunning ? '运行中' : '已停止'}
       </div>
     </div>

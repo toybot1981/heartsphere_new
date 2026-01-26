@@ -297,7 +297,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
             message.put(audioBytes);
             
             send(message.array());
-            log.debug("[RealtimeAsrWebSocketClient] 已发送音频数据块, size={}, isLast={}", audioBytes.length, isLast);
+            log.info("[RealtimeAsrWebSocketClient] 已发送音频数据块, size={}, isLast={}", audioBytes.length, isLast);
             
         } catch (Exception e) {
             log.error("[RealtimeAsrWebSocketClient] 发送音频数据失败", e);
@@ -375,7 +375,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
         int serialization = (header[2] >> 4) & 0x0F;
         int compression = header[2] & 0x0F;
         
-        log.debug("[RealtimeAsrWebSocketClient] 收到消息: protocolVersion={}, messageType={}, flags={}, serialization={}", 
+        log.info("[RealtimeAsrWebSocketClient] 收到消息: protocolVersion={}, messageType={}, flags={}, serialization={}", 
             protocolVersion, messageType, messageTypeFlags, serialization);
         
         // 解析 optional 字段
@@ -389,7 +389,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
                 return;
             }
             eventId = buffer.getInt();
-            log.debug("[RealtimeAsrWebSocketClient] Event ID: {}", eventId);
+            log.info("[RealtimeAsrWebSocketClient] Event ID: {}", eventId);
         }
         
         // 检查是否包含 session ID（Session 类事件）
@@ -403,7 +403,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
                 byte[] sessionIdBytes = new byte[sessionIdSize];
                 buffer.get(sessionIdBytes);
                 sessionIdFromMsg = new String(sessionIdBytes, "UTF-8");
-                log.debug("[RealtimeAsrWebSocketClient] Session ID: {}", sessionIdFromMsg);
+                log.info("[RealtimeAsrWebSocketClient] Session ID: {}", sessionIdFromMsg);
             }
         }
         
@@ -475,7 +475,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
                     break;
                     
                 default:
-                    log.debug("[RealtimeAsrWebSocketClient] 未处理的事件: eventId={}", eventId);
+                    log.info("[RealtimeAsrWebSocketClient] 未处理的事件: eventId={}", eventId);
             }
         } catch (Exception e) {
             log.error("[RealtimeAsrWebSocketClient] 处理服务端事件失败: eventId={}", eventId, e);
@@ -504,7 +504,7 @@ public class RealtimeAsrWebSocketClient extends WebSocketClient {
                     response.setIsPartial(isInterim);
                     response.setStreamId(sessionId);
                     
-                    log.debug("[RealtimeAsrWebSocketClient] ASR 识别结果: text={}, isPartial={}", text, isInterim);
+                    log.info("[RealtimeAsrWebSocketClient] ASR 识别结果: text={}, isPartial={}", text, isInterim);
                     handler.handle(response, false);
                 }
             }

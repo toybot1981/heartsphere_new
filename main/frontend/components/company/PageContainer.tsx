@@ -13,7 +13,10 @@ interface PageContainerProps {
  */
 export const PageContainer: React.FC<PageContainerProps> = ({ children, className = '' }) => {
   return (
-    <div className={`bg-gray-50 ${className}`}>
+    <div 
+      className={className}
+      style={{ backgroundColor: 'var(--bg-secondary)' }}
+    >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         {children}
       </div>

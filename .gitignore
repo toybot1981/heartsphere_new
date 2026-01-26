@@ -68,3 +68,5 @@ __pycache__/
 # 排除备份 SQL 文件，但保留迁移脚本
 sql/*.sql
 !sql/clean*.sql
+.build-cache/
+.deps-cache/

@@ -40,11 +40,26 @@ export const MobileEntryPointScreen: React.FC<MobileEntryPointScreenProps> = mem
   const [showLoginScreen, setShowLoginScreen] = useState(false);
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-black overflow-hidden">
+    <div 
+      className="h-full w-full flex flex-col items-center justify-center p-6 overflow-hidden"
+      style={{
+        background: 'var(--gradient-bg)',
+      }}
+    >
       {/* Background Effect */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-slate-900/50 to-slate-950" />
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to top, var(--bg-primary) 70%, transparent)',
+          }}
+        />
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at center, var(--color-primary) 30%, var(--bg-secondary) 50%, var(--bg-primary))',
+          }}
+        />
       </div>
 
       {/* Content */}

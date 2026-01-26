@@ -94,7 +94,12 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
       return (
         <button
           disabled
-          className="px-2 py-1.5 bg-yellow-500/20 text-yellow-300 rounded-md border border-yellow-500/30 cursor-not-allowed text-xs"
+          className="px-2 py-1.5 rounded-md border cursor-not-allowed text-xs"
+          style={{
+            backgroundColor: 'var(--bg-warning-alpha)',
+            color: 'var(--color-warning)',
+            borderColor: 'var(--border-warning-alpha)',
+          }}
         >
           等待审批
         </button>
@@ -143,7 +148,17 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
               window.location.href = `/share/${sharedHeartSphere.shareCode}`;
             }
           }}
-          className="px-2 py-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-xs font-medium"
+          className="px-2 py-1.5 rounded-md transition-colors text-xs font-medium"
+          style={{
+            backgroundColor: 'var(--color-success, #22c55e)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-success-light, #16a34a)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-success, #22c55e)';
+          }}
         >
           进入共享心域
         </button>
@@ -154,7 +169,17 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
       return (
         <button
           onClick={(e) => handleConnect(e)}
-          className="px-2 py-1.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-md hover:from-blue-600 hover:to-purple-600 transition-all text-xs font-medium shadow-md"
+          className="px-2 py-1.5 rounded-md transition-all text-xs font-medium shadow-md"
+          style={{
+            background: 'linear-gradient(to right, var(--color-primary, #3b82f6), var(--color-primary, #a855f7))',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary-light, #2563eb), var(--color-primary-light, #9333ea))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary, #3b82f6), var(--color-primary, #a855f7))';
+          }}
         >
           快速体验
         </button>
@@ -164,7 +189,17 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
       return (
         <button
           onClick={(e) => handleConnect(e)}
-          className="px-2 py-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-md hover:from-pink-600 hover:to-rose-600 transition-all text-xs font-medium shadow-md"
+          className="px-2 py-1.5 rounded-md transition-all text-xs font-medium shadow-md"
+          style={{
+            background: 'linear-gradient(to right, var(--color-primary, #ec4899), var(--color-error, #f43f5e))',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary-light, #db2777), var(--color-error-light, #e11d48))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(to right, var(--color-primary, #ec4899), var(--color-error, #f43f5e))';
+          }}
         >
           申请连接
         </button>
@@ -173,11 +208,19 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
   
   return (
     <>
-      <div className={`relative bg-gradient-to-br from-purple-900/80 via-pink-900/80 to-blue-900/80 rounded-xl p-4 border-2 shadow-lg transition-all transform ${
-        isSelected 
-          ? 'border-blue-500 shadow-blue-500/50 ring-2 ring-blue-500/30 ring-offset-1 ring-offset-transparent z-10 scale-105' 
-          : 'border-purple-500/50 hover:shadow-purple-500/50 hover:scale-[1.02]'
-      }`}
+      <div 
+        className={`relative rounded-xl p-4 border-2 shadow-lg transition-all transform ${
+          isSelected 
+            ? 'ring-2 ring-offset-1 ring-offset-transparent z-10 scale-105' 
+            : 'hover:scale-[1.02]'
+        }`}
+        style={{
+          background: 'var(--gradient-card)',
+          borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+          boxShadow: isSelected 
+            ? 'var(--shadow-primary)' 
+            : 'var(--shadow-md)',
+        }}
       style={{
         boxShadow: isSelected 
           ? '0 20px 40px rgba(59, 130, 246, 0.4), 0 0 20px rgba(147, 51, 234, 0.3), inset 0 2px 10px rgba(255, 255, 255, 0.1)' 
@@ -187,9 +230,11 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
       }}>
         {/* 醒目标识 - 增强立体感 */}
         <div 
-          className="absolute top-2 right-2 flex items-center gap-1 bg-gradient-to-r from-yellow-400/30 via-yellow-300/30 to-amber-400/30 backdrop-blur-md px-2.5 py-1 rounded-full border-2 border-yellow-400/60 z-10 shadow-lg"
+          className="absolute top-2 right-2 flex items-center gap-1 backdrop-blur-md px-2.5 py-1 rounded-full border-2 z-10 shadow-lg"
           style={{
-            boxShadow: '0 4px 15px rgba(250, 204, 21, 0.5), 0 0 10px rgba(250, 204, 21, 0.3), inset 0 1px 3px rgba(255, 255, 255, 0.3)',
+            background: 'var(--bg-warning-alpha)',
+            borderColor: 'var(--border-warning-alpha)',
+            boxShadow: 'var(--shadow-warning)',
             transform: 'translateZ(10px)',
           }}
         >
@@ -202,7 +247,12 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
         >
           ⭐
         </span>
-          <span className="text-yellow-200 font-bold text-xs whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">共享心域</span>
+          <span
+            className="font-bold text-xs whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            style={{ color: 'var(--text-warning)' }}
+          >
+            共享心域
+          </span>
         </div>
         
         {/* 封面图片 - 增强立体感 */}
@@ -214,7 +264,12 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
               transform: 'translateZ(5px)',
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10 pointer-events-none" />
+            <div 
+              className="absolute inset-0 z-10 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+              }}
+            />
             <img
               src={sharedHeartSphere.coverImageUrl}
               alt={sharedHeartSphere.heartSphereName}
@@ -239,7 +294,8 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
               <img
                 src={sharedHeartSphere.ownerAvatar}
                 alt={sharedHeartSphere.ownerName}
-                className="w-8 h-8 rounded-full border-2 border-white/40 flex-shrink-0"
+                className="w-8 h-8 rounded-full border-2 flex-shrink-0"
+                style={{ borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.4))' }}
                 style={{
                   boxShadow: '0 4px 12px rgba(147, 51, 234, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
                 }}
@@ -247,7 +303,11 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
             </div>
           ) : (
             <div 
-              className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 relative"
+              className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0 relative"
+              style={{
+                background: 'linear-gradient(to right, var(--color-primary, #a855f7), var(--color-primary, #ec4899))',
+                color: 'var(--text-primary)',
+              }}
               style={{
                 boxShadow: '0 4px 12px rgba(147, 51, 234, 0.5), 0 0 8px rgba(236, 72, 153, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
                 transform: 'translateZ(8px)',
@@ -258,7 +318,8 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
           )}
           <div className="flex-1 min-w-0">
             <h3 
-              className="text-sm font-bold text-white truncate"
+              className="text-sm font-bold truncate"
+              style={{ color: 'var(--text-primary)' }}
               style={{
                 textShadow: '0 2px 4px rgba(0, 0, 0, 0.5), 0 0 8px rgba(147, 51, 234, 0.3)',
               }}
@@ -266,8 +327,9 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
               {sharedHeartSphere.heartSphereName}
             </h3>
             <p 
-              className="text-gray-200 text-xs truncate"
+              className="text-xs truncate"
               style={{
+                color: 'var(--text-secondary)',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
               }}
             >
@@ -278,14 +340,21 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
         
         {/* 描述 - 缩小 */}
         {sharedHeartSphere.description && (
-          <p className="text-gray-200 mb-2 line-clamp-2 break-words text-xs">{sharedHeartSphere.description}</p>
+          <p 
+            className="mb-2 line-clamp-2 break-words text-xs"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {sharedHeartSphere.description}
+          </p>
         )}
         
         {/* 统计信息 - 增强立体感 */}
         <div className="flex items-center gap-3 mb-2 text-xs">
           <div 
-            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-sm"
             style={{
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
               boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
             }}
           >
@@ -293,8 +362,10 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
             <span className="font-semibold">{sharedHeartSphere.viewCount || 0}</span>
           </div>
           <div 
-            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-sm"
             style={{
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
               boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
             }}
           >
@@ -302,8 +373,10 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
             <span className="font-semibold">{sharedHeartSphere.requestCount || 0}</span>
           </div>
           <div 
-            className="flex items-center gap-1 text-gray-200 px-2 py-1 rounded-md bg-white/5 backdrop-blur-sm"
+            className="flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-sm"
             style={{
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.05))',
               boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
             }}
           >
@@ -315,10 +388,13 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
         {/* 共享范围 - 增强立体感 */}
         <div className="mb-2 flex flex-wrap gap-1.5">
           {sharedHeartSphere.shareType === 'all' && (
-            <span 
-              className="px-2 py-0.5 bg-gradient-to-r from-blue-500/30 to-blue-600/30 text-blue-200 rounded-full text-xs border border-blue-400/50 whitespace-nowrap font-medium"
+            <span
+              className="px-2 py-0.5 rounded-full text-xs border whitespace-nowrap font-medium"
               style={{
-                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                background: 'var(--gradient-badge-info)',
+                color: 'var(--text-info-light)',
+                borderColor: 'var(--border-info-alpha)',
+                boxShadow: '0 2px 8px var(--shadow-info), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
               }}
             >
@@ -327,20 +403,25 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
           )}
           {sharedHeartSphere.worldCount && sharedHeartSphere.worldCount > 0 && (
             <span 
-              className="px-2 py-0.5 bg-gradient-to-r from-purple-500/30 to-purple-600/30 text-purple-200 rounded-full text-xs border border-purple-400/50 whitespace-nowrap font-medium"
+              className="px-2 py-0.5 rounded-full text-xs border whitespace-nowrap font-medium"
               style={{
-                boxShadow: '0 2px 8px rgba(147, 51, 234, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                background: 'var(--bg-secondary-alpha)',
+                color: 'var(--color-primary)',
+                borderColor: 'var(--border-color-overlay)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               {sharedHeartSphere.worldCount} 个世界
             </span>
           )}
           {sharedHeartSphere.eraCount && sharedHeartSphere.eraCount > 0 && (
-            <span 
-              className="px-2 py-0.5 bg-gradient-to-r from-pink-500/30 to-pink-600/30 text-pink-200 rounded-full text-xs border border-pink-400/50 whitespace-nowrap font-medium"
+            <span
+              className="px-2 py-0.5 rounded-full text-xs border whitespace-nowrap font-medium"
               style={{
-                boxShadow: '0 2px 8px rgba(236, 72, 153, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
+                background: 'var(--gradient-badge-pink)',
+                color: 'var(--text-pink-light)',
+                borderColor: 'var(--border-pink-alpha)',
+                boxShadow: '0 2px 8px var(--shadow-pink), inset 0 1px 2px rgba(255, 255, 255, 0.2)',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
               }}
             >
@@ -357,7 +438,17 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
                 e.stopPropagation();
                 onViewCharacters();
               }}
-              className="px-2 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs font-medium flex-1 min-w-[80px]"
+              className="px-2 py-1.5 rounded-md transition-colors text-xs font-medium flex-1 min-w-[80px]"
+              style={{
+                backgroundColor: 'var(--color-info)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-info)';
+              }}
             >
               👀 查看角色
             </button>
@@ -368,7 +459,17 @@ export const SharedHeartSphereCard: React.FC<SharedHeartSphereCardProps> = ({
               e.stopPropagation();
               setShowCodeInputModal(true);
             }}
-            className="px-2 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors text-xs"
+            className="px-2 py-1.5 rounded-md transition-colors text-xs"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+            }}
             title="输入共享码"
           >
             🔑

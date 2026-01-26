@@ -74,7 +74,7 @@ public class ItemEventEraMatchingService {
                     // 如果已有systemEraId，可以选择跳过或重新匹配
                     // 这里选择重新匹配以确保准确性
                     matchedEraId = item.getSystemEraId();
-                    log.debug("物品 '{}' 已有 systemEraId: {}，将重新验证", item.getName(), matchedEraId);
+                    log.info("物品 '{}' 已有 systemEraId: {}，将重新验证", item.getName(), matchedEraId);
                 }
                 
                 // 2. 如果还没有匹配，通过名称、标签、描述匹配
@@ -116,7 +116,7 @@ public class ItemEventEraMatchingService {
                     // 如果已有systemEraId，可以选择跳过或重新匹配
                     // 这里选择重新匹配以确保准确性
                     matchedEraId = event.getSystemEraId();
-                    log.debug("事件 '{}' 已有 systemEraId: {}，将重新验证", event.getName(), matchedEraId);
+                    log.info("事件 '{}' 已有 systemEraId: {}，将重新验证", event.getName(), matchedEraId);
                 }
                 
                 // 2. 如果还没有匹配，通过名称、标签、描述匹配

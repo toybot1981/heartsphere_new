@@ -216,7 +216,7 @@ public class MainGlobalExceptionHandler {
                     .body(ApiResponse.error(404, "API 端点未找到: /" + resourcePath + "（请检查控制器是否正确注册）"));
         }
         // 真正的静态资源未找到
-        log.debug("静态资源未找到: {}", resourcePath);
+        log.info("静态资源未找到: {}", resourcePath);
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(404, "资源未找到: " + resourcePath));

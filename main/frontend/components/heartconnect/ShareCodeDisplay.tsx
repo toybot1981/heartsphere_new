@@ -50,19 +50,52 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
   };
   
   return (
-    <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-      <h3 className="text-white font-semibold mb-4">分享链接</h3>
+    <div 
+      className="p-6 rounded-lg border"
+      style={{
+        backgroundColor: 'var(--bg-secondary, #1f2937)',
+        borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+      }}
+    >
+      <h3 
+        className="font-semibold mb-4"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        分享链接
+      </h3>
       
       {/* 共享码 */}
       <div className="mb-4">
-        <label className="block text-gray-400 text-sm mb-2">共享码</label>
+        <label 
+          className="block text-sm mb-2"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          共享码
+        </label>
         <div className="flex items-center gap-2">
-          <div className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white font-mono text-lg">
+          <div 
+            className="flex-1 px-4 py-2 border rounded-lg font-mono text-lg"
+            style={{
+              backgroundColor: 'var(--bg-primary, #111827)',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+              color: 'var(--text-primary)',
+            }}
+          >
             {shareConfig.shareCode}
           </div>
           <button
             onClick={handleCopy}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #3b82f6)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+            }}
           >
             {copied ? '已复制' : '复制'}
           </button>
@@ -71,17 +104,37 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       
       {/* 分享链接 */}
       <div className="mb-4">
-        <label className="block text-gray-400 text-sm mb-2">分享链接</label>
+        <label 
+          className="block text-sm mb-2"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          分享链接
+        </label>
         <div className="flex items-center gap-2">
           <input
             type="text"
             value={shareUrl}
             readOnly
-            className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm"
+            className="flex-1 px-4 py-2 border rounded-lg text-sm"
+            style={{
+              backgroundColor: 'var(--bg-primary, #111827)',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+              color: 'var(--text-primary)',
+            }}
           />
           <button
             onClick={handleCopy}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #3b82f6)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+            }}
           >
             {copied ? '已复制' : '复制'}
           </button>
@@ -90,26 +143,69 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       
       {/* 二维码 */}
       <div className="mb-4">
-        <label className="block text-gray-400 text-sm mb-2">二维码</label>
-        <div className="flex justify-center p-4 bg-white rounded-lg">
+        <label 
+          className="block text-sm mb-2"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          二维码
+        </label>
+        <div 
+          className="flex justify-center p-4 rounded-lg"
+          style={{ backgroundColor: 'var(--bg-card, #ffffff)' }}
+        >
           <QRCodeGenerator text={shareUrl} size={200} />
         </div>
-        <p className="text-center text-gray-400 text-xs mt-2">扫描二维码快速访问</p>
+        <p 
+          className="text-center text-xs mt-2"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          扫描二维码快速访问
+        </p>
       </div>
       
       {/* 统计信息 */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">{shareConfig.viewCount}</div>
-          <div className="text-sm text-gray-400">查看次数</div>
+          <div 
+            className="text-2xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {shareConfig.viewCount}
+          </div>
+          <div 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            查看次数
+          </div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">{shareConfig.requestCount}</div>
-          <div className="text-sm text-gray-400">请求次数</div>
+          <div 
+            className="text-2xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {shareConfig.requestCount}
+          </div>
+          <div 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            请求次数
+          </div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">{shareConfig.approvedCount}</div>
-          <div className="text-sm text-gray-400">已批准</div>
+          <div 
+            className="text-2xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {shareConfig.approvedCount}
+          </div>
+          <div 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            已批准
+          </div>
         </div>
       </div>
       
@@ -117,7 +213,17 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
       <div className="flex gap-2">
         <button
           onClick={() => setShowMessages(!showMessages)}
-          className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: 'var(--color-primary, #a855f7)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #9333ea)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary, #a855f7)';
+          }}
         >
           <span>💌</span>
           <span>{showMessages ? '隐藏留言' : '查看留言'}</span>
@@ -125,7 +231,19 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
         <button
           onClick={handleRegenerate}
           disabled={loading}
-          className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+          className="flex-1 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #374151)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+          }}
         >
           {loading ? '生成中...' : '重新生成共享码'}
         </button>
@@ -133,7 +251,10 @@ export const ShareCodeDisplay: React.FC<ShareCodeDisplayProps> = ({
 
       {/* 留言列表 */}
       {showMessages && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
+        <div 
+          className="mt-4 pt-4 border-t"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
           <WarmMessagesList
             shareConfigId={shareConfig.id}
             onClose={() => setShowMessages(false)}

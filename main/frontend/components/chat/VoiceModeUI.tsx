@@ -40,9 +40,13 @@ export const VoiceModeUI = memo<VoiceModeUIProps>(({
     switch (status) {
       case 'listening':
         return {
-          circleClass: 'bg-red-500/20 border-4 border-red-400 animate-pulse',
+          circleClass: 'border-4 animate-pulse',
+          circleStyle: {
+            backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+            borderColor: 'var(--color-error, #f87171)',
+          },
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-error, #f87171)' }}>
               <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
               <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
             </svg>
@@ -52,16 +56,29 @@ export const VoiceModeUI = memo<VoiceModeUIProps>(({
         };
       case 'waiting':
         return {
-          circleClass: 'bg-yellow-500/20 border-4 border-yellow-400',
-          icon: <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />,
+          circleClass: 'border-4',
+          circleStyle: {
+            backgroundColor: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+            borderColor: 'var(--color-warning, #fbbf24)',
+          },
+          icon: (
+            <div 
+              className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin"
+              style={{ borderColor: 'var(--color-warning, #fbbf24)' }}
+            />
+          ),
           message: '正在处理...',
           subMessage: 'AI正在思考',
         };
       case 'playing':
         return {
-          circleClass: 'bg-yellow-500/20 border-4 border-yellow-400',
+          circleClass: 'border-4',
+          circleStyle: {
+            backgroundColor: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+            borderColor: 'var(--color-warning, #fbbf24)',
+          },
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-warning, #fbbf24)' }}>
               <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06Z"/>
             </svg>
           ),
@@ -70,9 +87,13 @@ export const VoiceModeUI = memo<VoiceModeUIProps>(({
         };
       default:
         return {
-          circleClass: 'bg-green-500/20 border-4 border-green-400',
+          circleClass: 'border-4',
+          circleStyle: {
+            backgroundColor: 'var(--color-success, rgba(34, 197, 94, 0.2))',
+            borderColor: 'var(--color-success, #4ade80)',
+          },
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success, #4ade80)' }}>
               <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
               <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
             </svg>
@@ -86,21 +107,37 @@ export const VoiceModeUI = memo<VoiceModeUIProps>(({
   return (
     <div className="flex flex-col items-center justify-center space-y-4 py-8">
       <div className="relative">
-        <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${statusConfig.circleClass}`}>
+        <div 
+          className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${statusConfig.circleClass}`}
+          style={statusConfig.circleStyle}
+        >
           {statusConfig.icon}
         </div>
       </div>
       <div className="text-center">
-        <p className="text-lg font-semibold text-white mb-2">
+        <p 
+          className="text-lg font-semibold mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
           {statusConfig.message}
         </p>
-        <p className="text-sm text-white/60">
+        <p 
+          className="text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           {statusConfig.subMessage}
         </p>
       </div>
       <button
         onClick={onExit}
-        className="mt-4 text-sm text-white/60 hover:text-white transition-colors"
+        className="mt-4 text-sm transition-colors"
+        style={{ color: 'var(--text-tertiary)' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = 'var(--text-primary)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = 'var(--text-tertiary)';
+        }}
       >
         退出语音模式
       </button>

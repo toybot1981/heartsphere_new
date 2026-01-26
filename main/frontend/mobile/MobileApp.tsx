@@ -712,14 +712,28 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
                         const convertedScripts: CustomScenario[] = scripts.map(script => {
                             try {
                                 const content = JSON.parse(script.content || '{}');
+                                // 确保 nodes 是对象类型
+                                const nodes = content.nodes || {};
+                                if (typeof nodes !== 'object' || Array.isArray(nodes)) {
+                                    console.warn('[MobileApp] 系统预设剧本 nodes 格式无效:', { scriptId: script.id, nodesType: typeof nodes });
+                                    return {
+                                        id: `system_script_${script.id}`,
+                                        sceneId: currentScene.id,
+                                        title: script.title,
+                                        description: script.description || '',
+                                        author: '系统预设',
+                                        startNodeId: 'start',
+                                        nodes: {} // 确保是空对象而不是 undefined
+                                    };
+                                }
                                 return {
                                     id: `system_script_${script.id}`,
                                     sceneId: currentScene.id,
                                     title: script.title,
                                     description: script.description || '',
                                     author: '系统预设',
-                                    startNodeId: content.startNodeId || 'start',
-                                    nodes: content.nodes || {}
+                                    startNodeId: content.startNodeId || Object.keys(nodes)[0] || 'start',
+                                    nodes: nodes // 确保是对象
                                 };
                             } catch (e) {
                                 console.error('解析系统剧本内容失败:', e, script);
@@ -743,15 +757,37 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
     // 从当前场景的 scripts 获取剧本（不再使用本地缓存的 customScenarios）
     const currentSceneScenarios = currentScene
         ? [
-            ...(currentScene.scripts || []).map(script => ({
-                id: script.id.toString(),
-                title: script.title,
-                description: script.description || null,
-                sceneId: currentScene.id,
-                nodes: script.content ? JSON.parse(script.content) : {},
-                startNodeId: '',
-                participatingCharacters: script.characterIds ? JSON.parse(script.characterIds) : []
-            })),
+            ...(currentScene.scripts || []).map(script => {
+              try {
+                // 使用统一的转换函数确保 nodes 格式正确
+                const { convertBackendScriptToScenario } = require('../../utils/dataTransformers');
+                return convertBackendScriptToScenario(script, currentScene.id);
+              } catch (error) {
+                console.error('[MobileApp] 转换剧本失败:', { scriptId: script.id, error });
+                // 降级处理：尝试直接解析
+                let nodes = {};
+                let startNodeId = '';
+                try {
+                  if (script.content) {
+                    const parsed = JSON.parse(script.content);
+                    nodes = parsed.nodes || {};
+                    startNodeId = parsed.startNodeId || Object.keys(nodes)[0] || '';
+                  }
+                } catch (parseError) {
+                  console.error('[MobileApp] 解析剧本内容失败:', parseError);
+                }
+                return {
+                  id: script.id.toString(),
+                  title: script.title,
+                  description: script.description || null,
+                  sceneId: currentScene.id,
+                  nodes: nodes, // 确保是对象而不是 undefined
+                  startNodeId: startNodeId,
+                  author: '用户',
+                  participatingCharacters: script.characterIds ? JSON.parse(script.characterIds) : []
+                };
+              }
+            }),
             ...systemScripts
           ]
         : [];
@@ -1211,7 +1247,17 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     // --- RENDER ---
     
-    if (!isLoaded) return <div className="h-screen bg-black flex items-center justify-center text-white">Loading Mobile Core...</div>;
+    if (!isLoaded) return (
+      <div 
+        className="h-screen flex items-center justify-center"
+        style={{
+          backgroundColor: 'var(--bg-primary, #000000)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Loading Mobile Core...
+      </div>
+    );
 
     // ProfileSetup Screen - 使用独立的Screen组件（特殊处理，不通过路由映射）
     // 注意：ProfileSetup在CONTENT AREA中单独处理，这里不需要重复渲染
@@ -1415,7 +1461,13 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     return (
         <MobileErrorBoundary>
-        <div className="h-screen w-full bg-black text-white relative overflow-hidden">
+        <div 
+          className="h-screen w-full relative overflow-hidden"
+          style={{
+            backgroundColor: 'var(--bg-primary, #000000)',
+            color: 'var(--text-primary)',
+          }}
+        >
             
             {/* CONTENT AREA */}
             <div className="h-full w-full relative overflow-hidden">
@@ -1564,7 +1616,10 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             )}
             
             {showScenarioBuilder && (
-                 <div className="absolute inset-0 z-50 bg-black">
+                 <div 
+                   className="absolute inset-0 z-50"
+                   style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+                 >
                      <MobileScenarioBuilder 
                          onSave={handleSaveScenario}
                          onCancel={() => setShowScenarioBuilder(false)}

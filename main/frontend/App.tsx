@@ -33,7 +33,9 @@ import { GlobalDialogs, showAlert, showConfirm } from './utils/dialog';
 import { InitializationWizard } from './components/InitializationWizard';
 import { SceneCreationWizard } from './components/SceneCreationWizard';
 import { StateManagementTest } from './components/StateManagementTest';
+import { ThemeTestPage } from './components/ThemeTestPage';
 import { GameStateProvider, useGameState } from './contexts/GameStateContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { DEFAULT_GAME_STATE } from './contexts/constants/defaultState';
 import { convertErasToWorldScenes, convertBackendMainStoryToCharacter, convertBackendCharacterToFrontend } from './utils/dataTransformers';
 import { showSyncErrorToast } from './utils/toast';
@@ -47,6 +49,8 @@ import { useMemoryHandlers } from './hooks/useMemoryHandlers';
 import { useMailHandlers } from './hooks/useMailHandlers';
 import { useMirrorHandlers } from './hooks/useMirrorHandlers';
 import { checkIsMobile } from './utils/deviceDetection';
+// 导入主题测试工具（开发环境自动加载到全局对象）
+import './src/utils/themeTestUtils';
 import { useModalState } from './hooks/useModalState';
 import { useInitializationWizard } from './hooks/useInitializationWizard';
 import { useAuthHandlers } from './hooks/useAuthHandlers';
@@ -1508,16 +1512,40 @@ const AppContent: React.FC = () => {
         // 未登录情况：如果使用新的统一信箱，需要登录；否则降级到旧系统
         // 为了更好的体验，提示用户登录
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full text-center">
-              <h3 className="text-xl font-bold text-white mb-4">需要登录</h3>
-              <p className="text-slate-400 mb-6">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4"
+            style={{ backgroundColor: 'var(--bg-overlay-alpha)' }}
+          >
+            <div 
+              className="border rounded-2xl p-6 max-w-md w-full text-center"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+              }}
+            >
+              <h3 
+                className="text-xl font-bold mb-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                需要登录
+              </h3>
+              <p 
+                className="mb-6"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 统一信箱功能需要登录后使用。请先登录账号。
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowMailbox(false)}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  className="flex-1 px-4 py-2 text-white rounded-lg transition-colors"
+                  style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                  }}
                 >
                   关闭
                 </button>
@@ -1527,7 +1555,14 @@ const AppContent: React.FC = () => {
                     // 可以触发登录模态框
                     // setShowLoginModal(true);
                   }}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+                  className="flex-1 px-4 py-2 text-white rounded-lg transition-colors"
+                  style={{ backgroundColor: 'var(--color-primary)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                  }}
                 >
                   去登录
                 </button>
@@ -1631,10 +1666,21 @@ const App: React.FC = () => {
     return <StateManagementTest />;
   }
 
+  // 测试路由：用于测试主题系统
+  if (new URLSearchParams(window.location.search).get('test') === 'theme') {
+    return (
+      <ThemeProvider>
+        <ThemeTestPage />
+      </ThemeProvider>
+    );
+  }
+
   return (
-    <GameStateProvider>
-      <AppContent />
-    </GameStateProvider>
+    <ThemeProvider>
+      <GameStateProvider>
+        <AppContent />
+      </GameStateProvider>
+    </ThemeProvider>
   );
 };
 
@@ -1772,15 +1818,46 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
   
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-        <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full mx-4">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--gradient-bg)' }}
+      >
+        <div 
+          className="rounded-lg p-8 max-w-md w-full mx-4"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--border-color-overlay)',
+          }}
+        >
           <div className="text-center">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <h2 className="text-white text-xl font-bold mb-2">访问失败</h2>
-            <p className="text-gray-400 mb-6">{error}</p>
+            <div 
+              className="text-4xl mb-4"
+              style={{ color: 'var(--color-error)' }}
+            >
+              ⚠️
+            </div>
+            <h2 
+              className="text-xl font-bold mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              访问失败
+            </h2>
+            <p 
+              className="mb-6"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {error}
+            </p>
             <button
               onClick={() => window.location.href = '/'}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-6 py-2 text-white rounded-lg transition-colors"
+              style={{ backgroundColor: 'var(--color-info)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-info)';
+              }}
             >
               返回首页
             </button>
@@ -1795,16 +1872,36 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div 
+      className="min-h-screen"
+      style={{ background: 'var(--gradient-bg)' }}
+    >
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-gray-900 rounded-lg p-8 mb-6">
+          <div 
+            className="rounded-lg p-8 mb-6"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-white mb-4">
+              <h1 
+                className="text-3xl font-bold mb-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {shareConfig.description || '心域分享'}
               </h1>
-              <p className="text-gray-400 mb-6">
-                共享码: <span className="font-mono text-blue-400">{shareConfig.shareCode}</span>
+              <p 
+                className="mb-6"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                共享码: <span 
+                  className="font-mono"
+                  style={{ color: 'var(--color-info)' }}
+                >
+                  {shareConfig.shareCode}
+                </span>
               </p>
               
               {shareConfig.coverImageUrl && (
@@ -1815,40 +1912,87 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
                 />
               )}
               
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+              <div 
+                className="flex items-center justify-center gap-4 text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.viewCount || 0}</span> 次查看
+                  <span 
+                    className="font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {shareConfig.viewCount || 0}
+                  </span> 次查看
                 </div>
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.requestCount || 0}</span> 次请求
+                  <span 
+                    className="font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {shareConfig.requestCount || 0}
+                  </span> 次请求
                 </div>
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.approvedCount || 0}</span> 已批准
+                  <span 
+                    className="font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {shareConfig.approvedCount || 0}
+                  </span> 已批准
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-gray-900 rounded-lg p-6 mb-6">
-            <h3 className="text-white font-semibold mb-3">访问权限</h3>
+          <div 
+            className="rounded-lg p-6 mb-6"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
+            <h3 
+              className="font-semibold mb-3"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              访问权限
+            </h3>
             {shareConfig.accessPermission === 'free' ? (
-              <p className="text-gray-400">自由连接 - 可以直接进入体验</p>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                自由连接 - 可以直接进入体验
+              </p>
             ) : (
-              <p className="text-gray-400">需要审批 - 主人同意后才能进入</p>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                需要审批 - 主人同意后才能进入
+              </p>
             )}
           </div>
           
           <div className="flex gap-4">
             <button
               onClick={() => window.location.href = '/'}
-              className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex-1 px-6 py-3 text-white rounded-lg transition-colors"
+              style={{ backgroundColor: 'var(--bg-secondary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+              }}
             >
               返回首页
             </button>
             {shareConfig.accessPermission === 'free' && (
               <button
                 onClick={handleEnterExperience}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-semibold shadow-lg"
+                className="flex-1 px-6 py-3 text-white rounded-lg transition-all font-semibold shadow-lg"
+                style={{ background: 'var(--gradient-primary-button)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--gradient-secondary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--gradient-primary-button)';
+                }}
               >
                 进入体验
               </button>
@@ -1856,7 +2000,14 @@ const SharePageContentSimple: React.FC<{ shareCode: string }> = ({ shareCode }) 
             {shareConfig.accessPermission === 'approval' && (
               <button
                 onClick={() => setShowRequestModal(true)}
-                className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 px-6 py-3 text-white rounded-lg transition-colors"
+                style={{ backgroundColor: 'var(--color-info)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
               >
                 请求连接
               </button>

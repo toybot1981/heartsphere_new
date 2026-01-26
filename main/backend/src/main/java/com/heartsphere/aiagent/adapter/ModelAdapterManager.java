@@ -60,7 +60,7 @@ public class ModelAdapterManager {
         if (adapter == null && PROVIDER_ALIASES.containsKey(normalizedProvider)) {
             String actualProvider = PROVIDER_ALIASES.get(normalizedProvider);
             adapter = adapters.get(actualProvider);
-            log.debug("通过别名映射找到适配器: {} -> {} -> {}", provider, normalizedProvider, actualProvider);
+            log.info("通过别名映射找到适配器: {} -> {} -> {}", provider, normalizedProvider, actualProvider);
         }
         
         if (adapter == null) {

@@ -424,29 +424,91 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     icon: string; 
     color: string;
     onClick?: () => void;
-  }> = ({ title, value, icon, color, onClick }) => (
-    <div 
-      className={`bg-gray-50 rounded-lg p-2.5 flex items-center justify-between border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer ${onClick ? '' : ''}`}
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        {icon && <div className="text-base flex-shrink-0">{icon}</div>}
-        <div className="text-xs text-gray-600 truncate">{title}</div>
+  }> = ({ title, value, icon, color, onClick }) => {
+    // 将Tailwind颜色类转换为CSS变量（移除fallback值）
+    const getColorStyle = (colorClass: string) => {
+      const colorMap: Record<string, string> = {
+        'text-pink-600': 'var(--color-primary)',
+        'text-indigo-600': 'var(--color-primary)',
+        'text-emerald-600': 'var(--color-success)',
+        'text-blue-600': 'var(--color-info)',
+        'text-purple-600': 'var(--color-primary)',
+        'text-yellow-600': 'var(--color-warning)',
+        'text-cyan-600': 'var(--color-info)',
+        'text-green-600': 'var(--color-success)',
+        'text-red-600': 'var(--color-error)',
+      };
+      return colorMap[colorClass] || 'var(--text-primary)';
+    };
+
+    return (
+      <div 
+        className="rounded-lg p-2.5 flex items-center justify-between border transition-colors cursor-pointer"
+        style={{
+          backgroundColor: 'var(--bg-card, #f9fafb)',
+          borderColor: 'var(--border-color-overlay, #e5e7eb)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover, #f3f4f6)';
+          e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+          e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+        }}
+        onClick={onClick}
+      >
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {icon && <div className="text-base flex-shrink-0">{icon}</div>}
+          <div 
+            className="text-xs truncate"
+            style={{ color: 'var(--text-secondary, #4b5563)' }}
+          >
+            {title}
+          </div>
+        </div>
+        <div 
+          className="text-base font-semibold flex-shrink-0 ml-1"
+          style={{ color: getColorStyle(color) }}
+        >
+          {value}
+        </div>
       </div>
-      <div className={`text-base font-semibold ${color} flex-shrink-0 ml-1`}>{value}</div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="h-full bg-gray-50 pb-32 overflow-y-auto">
+    <div 
+      className="h-full pb-32 overflow-y-auto"
+      style={{ backgroundColor: 'var(--bg-card, #f9fafb)' }}
+    >
       {/* Header Profile Card */}
-      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-white border-b border-gray-200">
+      <div 
+        className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b"
+        style={{
+          backgroundColor: 'var(--bg-primary, #ffffff)',
+          borderColor: 'var(--border-color-overlay, #e5e7eb)',
+        }}
+      >
         {/* 返回按钮（在Header内部，避免遮挡头像） */}
         {onBack && (
           <div className="mb-3">
             <button
               onClick={onBack}
-              className="p-2 text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200"
+              className="p-2 rounded-lg transition-all border"
+              style={{
+                color: 'var(--text-secondary, #4b5563)',
+                backgroundColor: 'var(--bg-card, #f9fafb)',
+                borderColor: 'var(--border-color-overlay, #e5e7eb)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary, #111827)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #f3f4f6)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary, #4b5563)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+              }}
               title="返回"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -465,16 +527,45 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               accept="image/*" 
               className="hidden" 
             />
-            <div className="w-16 h-16 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center overflow-hidden">
+            <div 
+              className="w-16 h-16 rounded-full border-2 flex items-center justify-center overflow-hidden"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #e5e7eb)',
+                borderColor: 'var(--border-color-overlay, #d1d5db)',
+              }}
+            >
               {isUpdatingAvatar ? (
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+                <div 
+                  className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent"
+                  style={{
+                    borderColor: 'var(--color-primary, #3b82f6)',
+                    borderTopColor: 'transparent',
+                  }}
+                />
               ) : userProfile.avatarUrl ? (
                 <UserAvatarImage src={userProfile.avatarUrl} />
               ) : (
-                <span className="text-2xl font-semibold text-gray-600">{userProfile.nickname[0]?.toUpperCase()}</span>
+                <span 
+                  className="text-2xl font-semibold"
+                  style={{ color: 'var(--text-secondary, #4b5563)' }}
+                >
+                  {userProfile.nickname[0]?.toUpperCase()}
+                </span>
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 border-2 border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+            <div 
+              className="absolute -bottom-1 -right-1 rounded-full p-1.5 border-2 cursor-pointer transition-colors shadow-sm"
+              style={{
+                backgroundColor: 'var(--bg-primary, #ffffff)',
+                borderColor: 'var(--border-color-overlay, #d1d5db)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-primary, #ffffff)';
+              }}
+            >
               <span className="text-xs">📷</span>
             </div>
           </div>
@@ -488,12 +579,31 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   onChange={(e) => setEditedNickname(e.target.value)}
                   onBlur={handleNicknameSave}
                   onKeyPress={(e) => e.key === 'Enter' && handleNicknameSave()}
-                  className="bg-white border-2 border-blue-500 rounded-lg px-3 py-1 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  className="border-2 rounded-lg px-3 py-1 text-base font-semibold focus:outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-primary, #ffffff)',
+                    borderColor: 'var(--color-primary, #3b82f6)',
+                    color: 'var(--text-primary, #111827)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(59, 130, 246, 0.3))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.outline = 'none';
+                    handleNicknameSave();
+                  }}
                   autoFocus
                 />
                 <button
                   onClick={handleNicknameSave}
-                  className="text-green-600 hover:text-green-700 text-lg"
+                  className="text-lg"
+                  style={{ color: 'var(--color-success, #16a34a)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--color-success, #15803d)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--color-success, #16a34a)';
+                  }}
                 >
                   ✓
                 </button>
@@ -502,37 +612,81 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     setEditedNickname(userProfile.nickname);
                     setIsEditingNickname(false);
                   }}
-                  className="text-red-500 hover:text-red-600 text-lg"
+                  className="text-lg"
+                  style={{ color: 'var(--color-error, #ef4444)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--color-error, #dc2626)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--color-error, #ef4444)';
+                  }}
                 >
                   ✕
                 </button>
               </div>
             ) : (
               <h2 
-                className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                className="text-xl font-semibold cursor-pointer transition-colors"
+                style={{ color: 'var(--text-primary, #111827)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-primary, #3b82f6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary, #111827)';
+                }}
                 onClick={() => setIsEditingNickname(true)}
               >
                 {userProfile.nickname}
               </h2>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p 
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-disabled, #6b7280)' }}
+            >
               {userProfile.isGuest ? '访客身份 (未绑定)' : '已连接至心域网络'}
             </p>
             {userProfile.phoneNumber && (
-              <p className="text-xs text-gray-400 mt-0.5">{userProfile.phoneNumber}</p>
+              <p 
+                className="text-xs mt-0.5"
+                style={{ color: 'var(--text-tertiary, #9ca3af)' }}
+              >
+                {userProfile.phoneNumber}
+              </p>
             )}
             <div className="flex gap-2 mt-2">
               {userProfile.isGuest && (
                 <button 
                   onClick={onOpenSettings} 
-                  className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-lg border border-pink-200 hover:bg-pink-100 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-lg border transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, rgba(236, 72, 153, 0.1))',
+                    color: 'var(--color-primary, #ec4899)',
+                    borderColor: 'var(--color-primary, rgba(236, 72, 153, 0.2))',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(236, 72, 153, 0.15))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(236, 72, 153, 0.1))';
+                  }}
                 >
                   绑定账号
                 </button>
               )}
               <button 
                 onClick={handleCopyPrompt} 
-                className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg border transition-colors"
+                style={{
+                  backgroundColor: 'var(--color-info, rgba(59, 130, 246, 0.1))',
+                  color: 'var(--color-info, #3b82f6)',
+                  borderColor: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(59, 130, 246, 0.15))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(59, 130, 246, 0.1))';
+                }}
               >
                 复制头像 Prompt
               </button>
@@ -564,22 +718,47 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         </div>
       </div>
 
-      {/* 详细统计区域 - 扁平清新风格 */}
-      <div className="p-4">
-        <div 
-          className="bg-white rounded-lg border border-gray-200 mb-3 cursor-pointer hover:border-gray-300 transition-colors"
-          onClick={() => toggleSection('statistics')}
-        >
-          <div className="p-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">📊 数据统计</h3>
-            <span className="text-gray-400 text-sm">{expandedSections.statistics ? '▼' : '▶'}</span>
-          </div>
+        {/* 详细统计区域 - 扁平清新风格 */}
+        <div className="p-4">
+          <div 
+            className="rounded-lg border mb-3 cursor-pointer transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-primary, #ffffff)',
+              borderColor: 'var(--border-color-overlay, #e5e7eb)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+            }}
+            onClick={() => toggleSection('statistics')}
+          >
+            <div className="p-3 flex items-center justify-between">
+              <h3 
+                className="text-sm font-semibold"
+                style={{ color: 'var(--text-primary, #111827)' }}
+              >
+                📊 数据统计
+              </h3>
+              <span 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary, #9ca3af)' }}
+              >
+                {expandedSections.statistics ? '▼' : '▶'}
+              </span>
+            </div>
           
           {expandedSections.statistics && (
             <div className="p-3 pt-0 space-y-3">
               {/* 心域探索统计 */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">心域探索</h4>
+                <h4 
+                  className="text-xs font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--text-secondary, #4b5563)' }}
+                >
+                  心域探索
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <StatCard title="访问场景" value={statistics.scenesCount} icon="🌍" color="text-blue-600" />
                   <StatCard title="对话轮数" value={statistics.totalMessages} icon="💬" color="text-purple-600" />
@@ -590,7 +769,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
               {/* 内容创作统计 */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">内容创作</h4>
+                <h4 
+                  className="text-xs font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--text-secondary, #4b5563)' }}
+                >
+                  内容创作
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <StatCard title="自定义角色" value={statistics.customCharactersCount} icon="🎭" color="text-indigo-600" />
                   <StatCard title="自定义场景" value={statistics.customScenesCount} icon="🎬" color="text-cyan-600" />
@@ -601,12 +785,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
               {/* 社交互动统计 */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">社交互动</h4>
+                <h4 
+                  className="text-xs font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--text-secondary, #4b5563)' }}
+                >
+                  社交互动
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <StatCard title="时光信件" value={statistics.totalMails} icon="📭" color="text-emerald-600" />
                     {statistics.unreadMails > 0 && (
-                      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                      <span 
+                        className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: 'var(--color-error, #ef4444)' }}
+                      />
                     )}
                   </div>
                   <StatCard title="未读信件" value={statistics.unreadMails} icon="📬" color="text-red-600" />
@@ -618,25 +810,65 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
         {/* 我的内容区域 */}
         <div 
-          className="bg-white rounded-lg border border-gray-200 mb-3 cursor-pointer hover:border-gray-300 transition-colors"
+          className="rounded-lg border mb-3 cursor-pointer transition-colors"
+          style={{
+            backgroundColor: 'var(--bg-primary, #ffffff)',
+            borderColor: 'var(--border-color-overlay, #e5e7eb)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+          }}
           onClick={() => toggleSection('myContent')}
         >
           <div className="p-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">📚 我的内容</h3>
-            <span className="text-gray-400 text-sm">{expandedSections.myContent ? '▼' : '▶'}</span>
+            <h3 
+              className="text-sm font-semibold"
+              style={{ color: 'var(--text-primary, #111827)' }}
+            >
+              📚 我的内容
+            </h3>
+            <span 
+              className="text-sm"
+              style={{ color: 'var(--text-tertiary, #9ca3af)' }}
+            >
+              {expandedSections.myContent ? '▼' : '▶'}
+            </span>
           </div>
           
           {expandedSections.myContent && (
-            <div className="p-3 pt-0 space-y-3 border-t border-gray-200">
+            <div 
+              className="p-3 pt-0 space-y-3 border-t"
+              style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+            >
               {/* 我的场景 */}
               {myContent.customScenes.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">我的场景 ({myContent.customScenes.length})</h4>
+                  <h4 
+                    className="text-xs font-semibold uppercase tracking-wider mb-2"
+                    style={{ color: 'var(--text-secondary, #4b5563)' }}
+                  >
+                    我的场景 ({myContent.customScenes.length})
+                  </h4>
                   <div className="space-y-2">
                     {myContent.customScenes.slice(0, 5).map(scene => (
                       <div
                         key={scene.id}
-                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
+                        className="rounded-lg p-3 border flex items-center justify-between transition-colors cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--bg-card, #f9fafb)',
+                          borderColor: 'var(--border-color-overlay, #e5e7eb)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover, #f3f4f6)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+                        }}
                         onClick={() => onNavigateToScene?.(scene.id)}
                       >
                         <div className="flex items-center gap-3">
@@ -644,11 +876,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                             <img src={scene.imageUrl} alt={scene.name} className="w-10 h-10 rounded-lg object-cover" />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{scene.name}</p>
-                            <p className="text-xs text-gray-500">{scene.description?.slice(0, 30)}...</p>
+                            <p 
+                              className="text-sm font-medium"
+                              style={{ color: 'var(--text-primary, #111827)' }}
+                            >
+                              {scene.name}
+                            </p>
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--text-disabled, #6b7280)' }}
+                            >
+                              {scene.description?.slice(0, 30)}...
+                            </p>
                           </div>
                         </div>
-                        <span className="text-gray-600">→</span>
+                        <span style={{ color: 'var(--text-secondary, #4b5563)' }}>→</span>
                       </div>
                     ))}
                   </div>
@@ -658,12 +900,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               {/* 我的角色 */}
               {myContent.customCharacters.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">我的角色 ({myContent.customCharacters.length})</h4>
+                  <h4 
+                    className="text-xs font-semibold uppercase tracking-wider mb-2"
+                    style={{ color: 'var(--text-secondary, #4b5563)' }}
+                  >
+                    我的角色 ({myContent.customCharacters.length})
+                  </h4>
                   <div className="space-y-2">
                     {myContent.customCharacters.slice(0, 5).map(({ character, sceneId }) => (
                       <div
                         key={character.id}
-                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
+                        className="rounded-lg p-3 border flex items-center justify-between transition-colors cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--bg-card, #f9fafb)',
+                          borderColor: 'var(--border-color-overlay, #e5e7eb)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover, #f3f4f6)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+                        }}
                         onClick={() => onNavigateToCharacter?.(character.id, sceneId)}
                       >
                         <div className="flex items-center gap-3">
@@ -671,11 +930,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                             <CharacterAvatarSmallImage src={character.avatarUrl} alt={character.name} className="w-10 h-10 rounded-full object-cover" />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{character.name}</p>
-                            <p className="text-xs text-gray-500">{character.bio?.slice(0, 30)}...</p>
+                            <p 
+                              className="text-sm font-medium"
+                              style={{ color: 'var(--text-primary, #111827)' }}
+                            >
+                              {character.name}
+                            </p>
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--text-disabled, #6b7280)' }}
+                            >
+                              {character.bio?.slice(0, 30)}...
+                            </p>
                           </div>
                         </div>
-                        <span className="text-gray-400">→</span>
+                        <span style={{ color: 'var(--text-tertiary, #9ca3af)' }}>→</span>
                       </div>
                     ))}
                   </div>
@@ -685,16 +954,43 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               {/* 最近日记 */}
               {myContent.recentJournalEntries.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">最近日记</h4>
+                  <h4 
+                    className="text-xs font-semibold uppercase tracking-wider mb-2"
+                    style={{ color: 'var(--text-secondary, #4b5563)' }}
+                  >
+                    最近日记
+                  </h4>
                   <div className="space-y-2">
                     {myContent.recentJournalEntries.map(entry => (
                       <div
                         key={entry.id}
-                        className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
+                        className="rounded-lg p-3 border transition-colors cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--bg-card, #f9fafb)',
+                          borderColor: 'var(--border-color-overlay, #e5e7eb)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-hover, #f3f4f6)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+                        }}
                         onClick={onNavigateToJournal}
                       >
-                        <p className="text-sm font-medium text-gray-900">{entry.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{new Date(entry.timestamp).toLocaleDateString()}</p>
+                        <p 
+                          className="text-sm font-medium"
+                          style={{ color: 'var(--text-primary, #111827)' }}
+                        >
+                          {entry.title}
+                        </p>
+                        <p 
+                          className="text-xs mt-1"
+                          style={{ color: 'var(--text-disabled, #6b7280)' }}
+                        >
+                          {new Date(entry.timestamp).toLocaleDateString()}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -708,11 +1004,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         <div className="mb-4">
           <button
             onClick={() => setShowShareConfigModal(true)}
-            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-300 transition-all"
+            className="w-full font-semibold py-4 px-4 rounded-lg flex flex-col items-center justify-center gap-2 border-2 transition-all"
+            style={{
+              backgroundColor: 'var(--color-info, rgba(59, 130, 246, 0.1))',
+              color: 'var(--color-info, #1d4ed8)',
+              borderColor: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(59, 130, 246, 0.15))';
+              e.currentTarget.style.borderColor = 'var(--color-info, rgba(59, 130, 246, 0.3))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info, rgba(59, 130, 246, 0.1))';
+              e.currentTarget.style.borderColor = 'var(--color-info, rgba(59, 130, 246, 0.2))';
+            }}
           >
             <span className="text-2xl">🔗</span>
             <span className="text-sm">心域共享</span>
-            <span className="text-xs text-blue-600">分享你的心域</span>
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--color-info, #3b82f6)' }}
+            >
+              分享你的心域
+            </span>
           </button>
         </div>
         
@@ -727,17 +1041,47 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
         {/* 快捷操作 */}
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wider px-1 mb-2">系统选项</h3>
+          <h3 
+            className="text-xs font-semibold uppercase tracking-wider px-1 mb-2"
+            style={{ color: 'var(--text-secondary, #4b5563)' }}
+          >
+            系统选项
+          </h3>
           
           <button 
             onClick={onOpenSettings} 
-            className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 p-3 rounded-lg flex items-center justify-between group hover:bg-gray-50 transition-all"
+            className="w-full border-2 p-3 rounded-lg flex items-center justify-between group transition-all"
+            style={{
+              backgroundColor: 'var(--bg-primary, #ffffff)',
+              borderColor: 'var(--border-color-overlay, #e5e7eb)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-hover, #d1d5db)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-card, #f9fafb)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-overlay, #e5e7eb)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-primary, #ffffff)';
+            }}
           >
             <div className="flex items-center gap-3">
-              <span className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600 group-hover:bg-indigo-100 transition-colors text-sm">⚙️</span>
-              <span className="text-gray-900 font-medium text-sm">设置与模型配置</span>
+              <span 
+                className="p-1.5 rounded-lg text-sm transition-colors"
+                style={{
+                  backgroundColor: 'var(--color-primary, rgba(99, 102, 241, 0.1))',
+                  color: 'var(--color-primary, #6366f1)',
+                }}
+              >
+                ⚙️
+              </span>
+              <span 
+                className="font-medium text-sm"
+                style={{ color: 'var(--text-primary, #111827)' }}
+              >
+                设置与模型配置
+              </span>
             </div>
-            <span className="text-gray-400">→</span>
+            <span style={{ color: 'var(--text-tertiary, #9ca3af)' }}>→</span>
           </button>
         </div>
 
@@ -748,11 +1092,27 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               e.stopPropagation();
               onLogout();
             }} 
-            className="w-full py-3 text-red-600 font-semibold text-sm bg-red-50 rounded-lg border-2 border-red-200 hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer"
+            className="w-full py-3 font-semibold text-sm rounded-lg border-2 transition-all cursor-pointer"
+            style={{
+              color: 'var(--color-error, #dc2626)',
+              backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.1))',
+              borderColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-error, rgba(239, 68, 68, 0.15))';
+              e.currentTarget.style.borderColor = 'var(--color-error, rgba(239, 68, 68, 0.3))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-error, rgba(239, 68, 68, 0.1))';
+              e.currentTarget.style.borderColor = 'var(--color-error, rgba(239, 68, 68, 0.2))';
+            }}
           >
             退出登录
           </button>
-          <p className="text-center text-xs text-gray-400 mt-3">
+          <p 
+            className="text-center text-xs mt-3"
+            style={{ color: 'var(--text-tertiary, #9ca3af)' }}
+          >
             HeartSphere v1.0.3
           </p>
         </div>
@@ -760,29 +1120,68 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
       {/* 微信绑定对话框 */}
       {showWechatBindModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">绑定微信账号</h3>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          style={{
+            backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+          }}
+        >
+          <div 
+            className="rounded-2xl border p-6 max-w-sm w-full shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1f2937)',
+              borderColor: 'var(--border-color-overlay, #374151)',
+            }}
+          >
+            <h3 
+              className="text-xl font-bold mb-4"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              绑定微信账号
+            </h3>
             
             {wechatBindStatus === 'waiting' && (
               <>
-                <p className="text-sm text-gray-400 mb-4">请使用微信扫码绑定</p>
+                <p 
+                  className="text-sm mb-4"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  请使用微信扫码绑定
+                </p>
                 <div className="flex justify-center mb-4">
                   {wechatBindQrCodeUrl && (
                     <img src={wechatBindQrCodeUrl} alt="微信绑定二维码" className="w-64 h-64" />
                   )}
                 </div>
-                <p className="text-xs text-gray-500 text-center">等待扫码...</p>
+                <p 
+                  className="text-xs text-center"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  等待扫码...
+                </p>
               </>
             )}
             
             {wechatBindStatus === 'scanned' && (
               <>
                 <div className="flex justify-center mb-4">
-                  <div className="w-64 h-64 flex items-center justify-center bg-gray-800 rounded-lg">
+                  <div 
+                    className="w-64 h-64 flex items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))' }}
+                  >
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
-                      <p className="text-green-400 font-medium">已扫码，等待确认...</p>
+                      <div 
+                        className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+                        style={{
+                          borderColor: 'var(--color-success, #4ade80)',
+                        }}
+                      />
+                      <p 
+                        className="font-medium"
+                        style={{ color: 'var(--color-success, #4ade80)' }}
+                      >
+                        已扫码，等待确认...
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -792,10 +1191,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {wechatBindStatus === 'confirmed' && (
               <>
                 <div className="flex justify-center mb-4">
-                  <div className="w-64 h-64 flex items-center justify-center bg-gray-800 rounded-lg">
+                  <div 
+                    className="w-64 h-64 flex items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))' }}
+                  >
                     <div className="text-center">
                       <div className="text-6xl mb-4">✓</div>
-                      <p className="text-green-400 font-medium text-lg">绑定成功！</p>
+                      <p 
+                        className="font-medium text-lg"
+                        style={{ color: 'var(--color-success, #4ade80)' }}
+                      >
+                        绑定成功！
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -805,12 +1212,30 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {wechatBindStatus === 'expired' && (
               <>
                 <div className="flex justify-center mb-4">
-                  <div className="w-64 h-64 flex items-center justify-center bg-gray-800 rounded-lg">
+                  <div 
+                    className="w-64 h-64 flex items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))' }}
+                  >
                     <div className="text-center">
-                      <p className="text-red-400 font-medium mb-4">二维码已过期</p>
+                      <p 
+                        className="font-medium mb-4"
+                        style={{ color: 'var(--color-error, #f87171)' }}
+                      >
+                        二维码已过期
+                      </p>
                       <button
                         onClick={handleStartWechatBind}
-                        className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="px-4 py-2 rounded-lg transition-colors"
+                        style={{
+                          backgroundColor: 'var(--color-success, #16a34a)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-success, #15803d)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-success, #16a34a)';
+                        }}
                       >
                         重新生成
                       </button>
@@ -823,12 +1248,30 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {wechatBindStatus === 'error' && (
               <>
                 <div className="flex justify-center mb-4">
-                  <div className="w-64 h-64 flex items-center justify-center bg-gray-800 rounded-lg">
+                  <div 
+                    className="w-64 h-64 flex items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))' }}
+                  >
                     <div className="text-center">
-                      <p className="text-red-400 font-medium mb-4">绑定失败</p>
+                      <p 
+                        className="font-medium mb-4"
+                        style={{ color: 'var(--color-error, #f87171)' }}
+                      >
+                        绑定失败
+                      </p>
                       <button
                         onClick={handleStartWechatBind}
-                        className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="px-4 py-2 rounded-lg transition-colors"
+                        style={{
+                          backgroundColor: 'var(--color-success, #16a34a)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-success, #15803d)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-success, #16a34a)';
+                        }}
                       >
                         重试
                       </button>
@@ -841,7 +1284,17 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleCloseWechatBindModal}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg font-bold transition-colors"
+                className="flex-1 py-2.5 rounded-lg font-bold transition-colors"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(75, 85, 99, 1))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+                }}
               >
                 {wechatBindStatus === 'confirmed' ? '关闭' : '取消'}
               </button>

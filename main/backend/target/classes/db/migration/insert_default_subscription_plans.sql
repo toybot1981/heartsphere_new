@@ -1,9 +1,9 @@
 -- 插入默认订阅计划
 -- 执行方法：mysql -u root -p123456 heartsphere < insert_default_subscription_plans.sql
 
--- 免费会员
-INSERT INTO `subscription_plans` (`name`, `type`, `billing_cycle`, `price`, `points_per_month`, `max_images_per_month`, `max_videos_per_month`, `features`, `is_active`, `sort_order`) VALUES
-('免费', 'free', 'monthly', 0.00, 0, 0, 0, '["每天赠送积分"]', TRUE, 0);
+-- 注册用户
+INSERT INTO `subscription_plans` (`name`, `type`, `billing_cycle`, `price`, `points_per_month`, `max_images_per_month`, `max_videos_per_month`, `text_token_quota`, `image_generation_quota`, `features`, `is_active`, `sort_order`) VALUES
+('注册用户', 'free', 'monthly', 0.00, 0, 0, 0, 100000, 10, '["每天赠送积分"]', TRUE, 0);
 
 -- 基础会员 - 连续包年
 INSERT INTO `subscription_plans` (`name`, `type`, `billing_cycle`, `price`, `original_price`, `discount_percent`, `points_per_month`, `max_images_per_month`, `max_videos_per_month`, `features`, `is_active`, `sort_order`) VALUES

@@ -202,14 +202,14 @@ public class PortalService {
         try {
             List<PortalConfig> portals;
             if (onlyActive != null && onlyActive) {
-                log.debug("查询场景 {} 的激活传送门", sceneId);
+                log.info("查询场景 {} 的激活传送门", sceneId);
                 portals = portalConfigRepository.findBySceneIdAndIsActive(sceneId, true);
             } else {
-                log.debug("查询场景 {} 的所有传送门", sceneId);
+                log.info("查询场景 {} 的所有传送门", sceneId);
                 portals = portalConfigRepository.findBySceneId(sceneId);
             }
             
-            log.debug("找到 {} 个传送门", portals.size());
+            log.info("找到 {} 个传送门", portals.size());
             
             return portals.stream()
                     .map(portal -> {
@@ -260,7 +260,7 @@ public class PortalService {
         
         // 验证权限
         boolean canTeleport = permissionService.canUserTeleport(userId, portalId);
-        log.debug("[PortalService] 传送权限检查结果: userId={}, portalId={}, canTeleport={}", userId, portalId, canTeleport);
+        log.info("[PortalService] 传送权限检查结果: userId={}, portalId={}, canTeleport={}", userId, portalId, canTeleport);
         
         if (!canTeleport) {
             PortalTeleportationLog logEntry = new PortalTeleportationLog();

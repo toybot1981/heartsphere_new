@@ -99,7 +99,7 @@ public class BigModelAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[BigModelAdapter] 使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[BigModelAdapter] 使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -109,7 +109,7 @@ public class BigModelAdapter implements ModelAdapter {
             // 记录构建的请求体（不记录完整内容，只记录关键信息）
             @SuppressWarnings("unchecked")
             List<Map<String, String>> messagesList = (List<Map<String, String>>) requestBody.get("messages");
-            log.debug("[BigModelAdapter] 构建的请求体 - model={}, messagesCount={}, hasTemperature={}, hasMaxTokens={}", 
+            log.info("[BigModelAdapter] 构建的请求体 - model={}, messagesCount={}, hasTemperature={}, hasMaxTokens={}", 
                 requestBody.get("model"),
                 messagesList != null ? messagesList.size() : 0,
                 requestBody.containsKey("temperature"),
@@ -173,7 +173,7 @@ public class BigModelAdapter implements ModelAdapter {
             String effectiveBaseUrl = (request.getBaseUrl() != null && !request.getBaseUrl().isEmpty()) 
                 ? request.getBaseUrl() 
                 : baseUrl;
-            log.debug("[BigModelAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
+            log.info("[BigModelAdapter] 流式请求使用baseUrl: {}", effectiveBaseUrl);
             
             String url = effectiveBaseUrl + "/chat/completions";
             
@@ -278,7 +278,7 @@ public class BigModelAdapter implements ModelAdapter {
                                         handler.handle(chunk, false);
                                     } else {
                                         if (chunkCount[0] <= 5) {
-                                            log.debug("[BigModelAdapter] delta没有content字段 - chunkCount={}", chunkCount[0]);
+                                            log.info("[BigModelAdapter] delta没有content字段 - chunkCount={}", chunkCount[0]);
                                         }
                                     }
                                     
@@ -381,7 +381,7 @@ public class BigModelAdapter implements ModelAdapter {
     private String getApiKey(TextGenerationRequest request) {
         // 优先从请求中获取 API key（由 AIServiceImpl 从数据库配置注入）
         if (request.getApiKey() != null && !request.getApiKey().trim().isEmpty()) {
-            log.debug("[BigModelAdapter] 使用请求中的 API key（从数据库配置获取）");
+            log.info("[BigModelAdapter] 使用请求中的 API key（从数据库配置获取）");
             return request.getApiKey();
         }
         // 否则使用配置文件中的默认 API key
@@ -438,7 +438,7 @@ public class BigModelAdapter implements ModelAdapter {
             throw new AIServiceException("请求中必须包含至少一个消息（systemInstruction、messages或prompt）");
         }
         
-        log.debug("[BigModelAdapter] buildBigModelRequest - 构建的消息列表大小: {}", messages.size());
+        log.info("[BigModelAdapter] buildBigModelRequest - 构建的消息列表大小: {}", messages.size());
         requestBody.put("messages", messages);
         
         // 添加生成参数

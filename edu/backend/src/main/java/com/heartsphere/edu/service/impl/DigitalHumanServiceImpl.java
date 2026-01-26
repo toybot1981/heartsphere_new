@@ -70,7 +70,7 @@ public class DigitalHumanServiceImpl implements DigitalHumanService {
     
     @Override
     public Page<EduCharacter> getCharacters(CharacterQuery query, Pageable pageable) {
-        log.debug("查询数字人角色列表: query={}, pageable={}", query, pageable);
+        log.info("查询数字人角色列表: query={}, pageable={}", query, pageable);
         
         // 如果有关键词搜索，使用搜索方法
         if (query.getSearchKeyword() != null && !query.getSearchKeyword().trim().isEmpty()) {
@@ -176,7 +176,7 @@ public class DigitalHumanServiceImpl implements DigitalHumanService {
     
     @Override
     public EduCharacter getCharacterById(Long id) {
-        log.debug("查询数字人角色详情: id={}", id);
+        log.info("查询数字人角色详情: id={}", id);
         return characterRepository.findById(id)
             .filter(c -> !c.getIsDeleted())
             .orElseThrow(() -> new ResourceNotFoundException("数字人角色", id));
@@ -361,7 +361,7 @@ public class DigitalHumanServiceImpl implements DigitalHumanService {
     
     @Override
     public Page<EduCharacterInteraction> getStudentInteractions(Long studentId, InteractionQuery query, Pageable pageable) {
-        log.debug("查询学生互动历史: studentId={}, query={}", studentId, query);
+        log.info("查询学生互动历史: studentId={}, query={}", studentId, query);
         
         if (query.getCharacterId() != null && query.getInteractionType() != null) {
             // 同时按角色和类型筛选
@@ -390,14 +390,14 @@ public class DigitalHumanServiceImpl implements DigitalHumanService {
     
     @Override
     public EduCharacterInteraction getInteractionById(Long id) {
-        log.debug("查询互动详情: id={}", id);
+        log.info("查询互动详情: id={}", id);
         return interactionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("互动记录", id));
     }
     
     @Override
     public CharacterStatistics getCharacterStatistics(Long characterId) {
-        log.debug("查询角色统计信息: characterId={}", characterId);
+        log.info("查询角色统计信息: characterId={}", characterId);
         
         EduCharacter character = getCharacterById(characterId);
         

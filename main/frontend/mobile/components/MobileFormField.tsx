@@ -44,11 +44,18 @@ export const MobileFormField: React.FC<MobileFormFieldProps> = memo(({
         <label
           id={labelId}
           htmlFor={id}
-          className={`${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} text-white block`}
+          className={`${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} block`}
+          style={{ color: 'var(--text-primary)' }}
         >
           {label}
           {required && (
-            <span className="text-red-400 ml-1" aria-label="必填">*</span>
+            <span 
+              className="ml-1"
+              style={{ color: 'var(--color-error, #f87171)' }}
+              aria-label="必填"
+            >
+              *
+            </span>
           )}
         </label>
       )}
@@ -78,7 +85,8 @@ export const MobileFormField: React.FC<MobileFormFieldProps> = memo(({
       {hint && !error && !success && (
         <p
           id={hintId}
-          className={`${MobileTypography.fontSize.xs} text-slate-400`}
+          className={MobileTypography.fontSize.xs}
+          style={{ color: 'var(--text-tertiary)' }}
         >
           {hint}
         </p>

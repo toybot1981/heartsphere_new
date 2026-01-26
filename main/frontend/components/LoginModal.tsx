@@ -473,9 +473,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-indigo-500/30 rounded-2xl w-full max-w-md max-h-[90vh] shadow-2xl overflow-hidden flex flex-col relative my-auto">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md p-4 animate-fade-in overflow-y-auto"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+    >
+      <div 
+        className="rounded-2xl w-full max-w-md max-h-[90vh] shadow-2xl overflow-hidden flex flex-col relative my-auto"
+        style={{
+          backgroundColor: 'var(--bg-card, #0f172a)',
+          borderColor: 'var(--color-primary, rgba(99, 102, 241, 0.3))',
+        }}
+      >
+        <button 
+          onClick={onCancel} 
+          className="absolute top-4 right-4 z-10"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+          }}
+        >
              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
@@ -483,26 +502,76 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             <h2 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400">
                 身份连接
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-2">绑定身份以保存记忆、解锁心域全部功能。</p>
+            <p 
+              className="text-xs sm:text-sm mt-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              绑定身份以保存记忆、解锁心域全部功能。
+            </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700 mx-4 sm:mx-8 flex-shrink-0">
+        <div 
+          className="flex border-b mx-4 sm:mx-8 flex-shrink-0"
+          style={{ borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))' }}
+        >
             <button 
                 onClick={() => setActiveTab('login')}
-                className={`flex-1 pb-3 text-sm font-bold transition-colors ${activeTab === 'login' ? 'text-white border-b-2 border-pink-500' : 'text-slate-500 hover:text-slate-300'}`}
+                className="flex-1 pb-3 text-sm font-bold transition-colors"
+                style={{
+                  color: activeTab === 'login' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  borderBottom: activeTab === 'login' ? '2px solid #ec4899' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'login') {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'login') {
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }
+                }}
             >
                 登录
             </button>
             <button 
                 onClick={() => setActiveTab('register')}
-                className={`flex-1 pb-3 text-sm font-bold transition-colors ${activeTab === 'register' ? 'text-white border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-300'}`}
+                className="flex-1 pb-3 text-sm font-bold transition-colors"
+                style={{
+                  color: activeTab === 'register' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  borderBottom: activeTab === 'register' ? '2px solid #3b82f6' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'register') {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'register') {
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }
+                }}
             >
                 注册
             </button>
             <button 
                 onClick={() => setActiveTab('wechat')}
-                className={`flex-1 pb-3 text-sm font-bold transition-colors ${activeTab === 'wechat' ? 'text-white border-b-2 border-green-500' : 'text-slate-500 hover:text-slate-300'}`}
+                className="flex-1 pb-3 text-sm font-bold transition-colors"
+                style={{
+                  color: activeTab === 'wechat' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  borderBottom: activeTab === 'wechat' ? '2px solid #22c55e' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'wechat') {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'wechat') {
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }
+                }}
             >
                 微信登录
             </button>
@@ -513,28 +582,67 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             {activeTab === 'login' && (
                 <div className="space-y-5">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">用户名</label>
+                        <label 
+                          className="text-xs font-bold uppercase"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          用户名
+                        </label>
                         <input 
                             type="text" 
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             placeholder="请输入用户名"
-                            className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-pink-500 outline-none transition-all touch-manipulation"
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary, #1e293b)',
+                              borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#ec4899';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                            }}
                         />
                     </div>
 
                     <div className="space-y-1">
-                         <label className="text-xs font-bold text-slate-500 uppercase">密码</label>
+                         <label 
+                           className="text-xs font-bold uppercase"
+                           style={{ color: 'var(--text-tertiary)' }}
+                         >
+                           密码
+                         </label>
                          <input 
                             type="password" 
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             placeholder="请输入密码"
-                            className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-pink-500 outline-none transition-all touch-manipulation"
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary, #1e293b)',
+                              borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#ec4899';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                            }}
                         />
                     </div>
                     
-                    {error && <p className="text-red-400 text-xs text-center animate-pulse">{error}</p>}
+                    {error && (
+                      <p 
+                        className="text-xs text-center animate-pulse"
+                        style={{ color: 'var(--color-error, #f87171)' }}
+                      >
+                        {error}
+                      </p>
+                    )}
 
                     <Button onClick={handleLoginSubmit} fullWidth className="bg-gradient-to-r from-pink-500 to-indigo-600 shadow-lg shadow-indigo-500/20 mt-2" disabled={isLoading}>
                         {isLoading ? '登录中...' : '登录'}
@@ -546,32 +654,74 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             {activeTab === 'register' && (
                 <div className="space-y-5">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">昵称 <span className="text-cyan-400">（在心域中的称呼）</span></label>
+                        <label 
+                          className="text-xs font-bold uppercase"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          昵称 <span style={{ color: 'var(--color-info, #22d3ee)' }}>（在心域中的称呼）</span>
+                        </label>
                         <input 
                             type="text" 
                             value={registerNickname}
                             onChange={e => setRegisterNickname(e.target.value)}
                             placeholder="输入你的昵称"
-                            className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all touch-manipulation"
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary, #1e293b)',
+                              borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#3b82f6';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                            }}
                         />
                         {initialNickname && (
-                            <p className="text-xs text-cyan-400 mt-1">已从访客昵称自动填入，可修改</p>
+                            <p 
+                              className="text-xs mt-1"
+                              style={{ color: 'var(--color-info, #22d3ee)' }}
+                            >
+                              已从访客昵称自动填入，可修改
+                            </p>
                         )}
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">用户名</label>
+                        <label 
+                          className="text-xs font-bold uppercase"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          用户名
+                        </label>
                         <input 
                             type="text" 
                             value={registerUsername}
                             onChange={e => setRegisterUsername(e.target.value)}
                             placeholder="请输入用户名（用于登录）"
-                            className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all touch-manipulation"
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary, #1e293b)',
+                              borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#3b82f6';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                            }}
                         />
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">邮箱</label>
+                        <label 
+                          className="text-xs font-bold uppercase"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          邮箱
+                        </label>
                         {emailVerificationRequired ? (
                             <div className="flex gap-2">
                                 <input 
@@ -583,13 +733,38 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                                         setRegisterEmailVerificationCode('');
                                     }}
                                     placeholder="请输入邮箱"
-                                    className="flex-1 min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all touch-manipulation"
+                                    className="flex-1 min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                                    style={{
+                                      backgroundColor: 'var(--bg-secondary, #1e293b)',
+                                      borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                                      color: 'var(--text-primary)',
+                                    }}
+                                    onFocus={(e) => {
+                                      e.currentTarget.style.borderColor = '#3b82f6';
+                                    }}
+                                    onBlur={(e) => {
+                                      e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                                    }}
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSendVerificationCode}
                                     disabled={isSendingCode || codeCountdown > 0 || !registerEmail || !registerEmail.includes('@')}
-                                    className="min-w-[44px] min-h-[44px] px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors text-sm whitespace-nowrap touch-manipulation active:scale-95"
+                                    className="min-w-[44px] min-h-[44px] px-4 py-3 disabled:cursor-not-allowed font-bold rounded-lg transition-colors text-sm whitespace-nowrap touch-manipulation active:scale-95"
+                                    style={{
+                                      backgroundColor: 'var(--color-primary, #2563eb)',
+                                      color: 'var(--text-primary)',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (!isSendingCode && codeCountdown === 0 && registerEmail && registerEmail.includes('@')) {
+                                        e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #1d4ed8)';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (!isSendingCode && codeCountdown === 0 && registerEmail && registerEmail.includes('@')) {
+                                        e.currentTarget.style.backgroundColor = 'var(--color-primary, #2563eb)';
+                                      }
+                                    }}
                                 >
                                     {isSendingCode ? '发送中...' : codeCountdown > 0 ? `${codeCountdown}秒` : '发送验证码'}
                                 </button>
@@ -600,79 +775,159 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                                 value={registerEmail}
                                 onChange={e => setRegisterEmail(e.target.value)}
                                 placeholder="请输入邮箱"
-                                className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all touch-manipulation"
+                                className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all touch-manipulation"
+                                style={{
+                                  backgroundColor: 'var(--bg-card)',
+                                  borderColor: 'var(--border-color-overlay)',
+                                  color: 'var(--text-primary)',
+                                }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--color-info)';
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                                }}
                             />
                         )}
                         {emailVerificationRequired && codeSent && (
-                            <p className="text-xs text-green-400">验证码已发送，请查收邮件</p>
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--color-success, #4ade80)' }}
+                            >
+                              验证码已发送，请查收邮件
+                            </p>
                         )}
                     </div>
 
                     {emailVerificationRequired && (
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">邮箱验证码 <span className="text-red-400">*</span></label>
+                            <label 
+                              className="text-xs font-bold uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              邮箱验证码 <span style={{ color: 'var(--color-error, #f87171)' }}>*</span>
+                            </label>
                             <input 
                                 type="text" 
                                 value={registerEmailVerificationCode}
                                 onChange={e => setRegisterEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 placeholder="请输入6位验证码"
                                 maxLength={6}
-                                className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all font-mono text-center text-lg tracking-widest touch-manipulation"
+                                className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all font-mono text-center text-lg tracking-widest touch-manipulation"
+                                style={{
+                                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                                  borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                                  color: 'var(--text-primary)',
+                                }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = '#3b82f6';
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                                }}
                             />
-                            <p className="text-xs text-slate-500">验证码有效期为10分钟</p>
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              验证码有效期为10分钟
+                            </p>
                         </div>
                     )}
 
                     <div className="space-y-1">
-                         <label className="text-xs font-bold text-slate-500 uppercase">密码</label>
+                         <label 
+                           className="text-xs font-bold uppercase"
+                           style={{ color: 'var(--text-tertiary)' }}
+                         >
+                           密码
+                         </label>
                          <input 
                             type="password" 
                             value={registerPassword}
                             onChange={e => handlePasswordChange(e.target.value)}
                             placeholder="至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)"
-                            className={`w-full min-h-[44px] bg-slate-800 border rounded-lg py-3 px-4 text-white focus:outline-none transition-all touch-manipulation ${
-                                registerPassword.length > 0 
-                                    ? passwordStrength === 'strong' 
-                                        ? 'border-green-500 focus:border-green-400' 
-                                        : passwordStrength === 'medium'
-                                        ? 'border-yellow-500 focus:border-yellow-400'
-                                        : passwordErrors.length > 0
-                                        ? 'border-red-500 focus:border-red-400'
-                                        : 'border-slate-700 focus:border-blue-500'
-                                    : 'border-slate-700 focus:border-blue-500'
-                            }`}
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 focus:outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              borderColor: registerPassword.length > 0 
+                                ? passwordStrength === 'strong' 
+                                  ? 'var(--color-success)' 
+                                  : passwordStrength === 'medium'
+                                  ? 'var(--color-warning)'
+                                  : passwordErrors.length > 0
+                                  ? 'var(--color-error)'
+                                  : 'var(--border-color-overlay)'
+                                : 'var(--border-color-overlay)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              if (registerPassword.length === 0) {
+                                e.currentTarget.style.borderColor = 'var(--color-info)';
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (registerPassword.length === 0) {
+                                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                              }
+                            }}
                         />
                         {/* 密码强度指示器 */}
                         {registerPassword.length > 0 && (
                             <div className="space-y-1">
                                 {/* 强度条 */}
                                 <div className="flex gap-1 h-1">
-                                    <div className={`flex-1 rounded ${
-                                        passwordStrength === 'strong' ? 'bg-green-500' :
-                                        passwordStrength === 'medium' ? 'bg-yellow-500' :
-                                        passwordErrors.length > 0 ? 'bg-red-500' : 'bg-slate-600'
-                                    }`}></div>
-                                    <div className={`flex-1 rounded ${
-                                        passwordStrength === 'strong' || passwordStrength === 'medium' ? 
-                                        (passwordStrength === 'strong' ? 'bg-green-500' : 'bg-yellow-500') : 'bg-slate-600'
-                                    }`}></div>
-                                    <div className={`flex-1 rounded ${
-                                        passwordStrength === 'strong' ? 'bg-green-500' : 'bg-slate-600'
-                                    }`}></div>
+                                    <div 
+                                      className="flex-1 rounded"
+                                      style={{
+                                        backgroundColor: passwordStrength === 'strong' 
+                                          ? 'var(--color-success)' 
+                                          : passwordStrength === 'medium' 
+                                          ? 'var(--color-warning)'
+                                          : passwordErrors.length > 0
+                                          ? 'var(--color-error)'
+                                          : 'var(--bg-secondary)',
+                                      }}
+                                    ></div>
+                                    <div 
+                                      className="flex-1 rounded"
+                                      style={{
+                                        backgroundColor: passwordStrength === 'strong' || passwordStrength === 'medium' 
+                                          ? (passwordStrength === 'strong' ? 'var(--color-success)' : 'var(--color-warning)')
+                                          : 'var(--bg-secondary)',
+                                      }}
+                                    ></div>
+                                    <div 
+                                      className="flex-1 rounded"
+                                      style={{
+                                        backgroundColor: passwordStrength === 'strong' 
+                                          ? 'var(--color-success)' 
+                                          : 'var(--bg-secondary)',
+                                      }}
+                                    ></div>
                                 </div>
                                 {/* 强度文字提示 */}
                                 {passwordStrength && (
-                                    <p className={`text-xs ${
-                                        passwordStrength === 'strong' ? 'text-green-400' :
-                                        passwordStrength === 'medium' ? 'text-yellow-400' : 'text-red-400'
-                                    }`}>
+                                    <p 
+                                      className="text-xs"
+                                      style={{
+                                        color: passwordStrength === 'strong' 
+                                          ? 'var(--color-success)' 
+                                          : passwordStrength === 'medium' 
+                                          ? 'var(--color-warning)' 
+                                          : 'var(--color-error)',
+                                      }}
+                                    >
                                         {passwordStrength === 'strong' ? '✓ 密码强度：强' :
                                          passwordStrength === 'medium' ? '⚠ 密码强度：中' : '✗ 密码强度：弱'}
                                     </p>
                                 )}
                                 {/* 错误提示 */}
                                 {passwordErrors.length > 0 && (
-                                    <ul className="text-xs text-red-400 space-y-0.5">
+                                    <ul 
+                                      className="text-xs space-y-0.5"
+                                      style={{ color: 'var(--color-error)' }}
+                                    >
                                         {passwordErrors.map((error, index) => (
                                             <li key={index}>• {error}</li>
                                         ))}
@@ -682,32 +937,58 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                         )}
                         {/* 密码要求提示（当密码为空时显示） */}
                         {registerPassword.length === 0 && (
-                            <p className="text-xs text-slate-500">
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                                 密码要求：至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)
                             </p>
                         )}
                     </div>
 
                     <div className="space-y-1">
-                         <label className="text-xs font-bold text-slate-500 uppercase">确认密码</label>
+                         <label 
+                           className="text-xs font-bold uppercase"
+                           style={{ color: 'var(--text-tertiary)' }}
+                         >
+                           确认密码
+                         </label>
                          <input 
                             type="password" 
                             value={registerConfirmPassword}
                             onChange={e => setRegisterConfirmPassword(e.target.value)}
                             placeholder="请再次输入密码以确认"
-                            className={`w-full min-h-[44px] bg-slate-800 border rounded-lg py-3 px-4 text-white focus:outline-none transition-all touch-manipulation ${
-                                registerConfirmPassword.length > 0
-                                    ? registerPassword === registerConfirmPassword
-                                        ? 'border-green-500 focus:border-green-400'
-                                        : 'border-red-500 focus:border-red-400'
-                                    : 'border-slate-700 focus:border-blue-500'
-                            }`}
+                            className="w-full min-h-[44px] border rounded-lg py-3 px-4 focus:outline-none transition-all touch-manipulation"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              borderColor: registerConfirmPassword.length > 0
+                                ? registerPassword === registerConfirmPassword
+                                  ? 'var(--color-success)'
+                                  : 'var(--color-error)'
+                                : 'var(--border-color-overlay)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              if (registerConfirmPassword.length === 0) {
+                                e.currentTarget.style.borderColor = '#3b82f6';
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (registerConfirmPassword.length === 0) {
+                                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                              }
+                            }}
                         />
                         {/* 密码匹配提示 */}
                         {registerConfirmPassword.length > 0 && (
-                            <p className={`text-xs ${
-                                registerPassword === registerConfirmPassword ? 'text-green-400' : 'text-red-400'
-                            }`}>
+                            <p 
+                              className="text-xs"
+                              style={{
+                                color: registerPassword === registerConfirmPassword 
+                                  ? 'var(--color-success)' 
+                                  : 'var(--color-error)',
+                              }}
+                            >
                                 {registerPassword === registerConfirmPassword ? '✓ 密码匹配' : '✗ 密码不匹配'}
                             </p>
                         )}
@@ -715,22 +996,59 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
 
                     {inviteCodeRequired && (
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">邀请码 <span className="text-red-400">*</span></label>
+                            <label 
+                              className="text-xs font-bold uppercase"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              邀请码 <span style={{ color: 'var(--color-error, #f87171)' }}>*</span>
+                            </label>
                             <input 
                                 type="text" 
                                 value={registerInviteCode}
                                 onChange={e => setRegisterInviteCode(e.target.value.toUpperCase())}
                                 placeholder="请输入邀请码"
-                                className="w-full min-h-[44px] bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-blue-500 outline-none transition-all uppercase font-mono tracking-wider touch-manipulation"
+                                className="w-full min-h-[44px] border rounded-lg py-3 px-4 outline-none transition-all uppercase font-mono tracking-wider touch-manipulation"
                                 maxLength={8}
+                                style={{
+                                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                                  borderColor: 'var(--bg-overlay, rgba(148, 163, 184, 1))',
+                                  color: 'var(--text-primary)',
+                                }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = '#3b82f6';
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(148, 163, 184, 1))';
+                                }}
                             />
-                            <p className="text-xs text-slate-500">当前需要邀请码才能注册</p>
+                            <p 
+                              className="text-xs"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
+                              当前需要邀请码才能注册
+                            </p>
                         </div>
                     )}
                     
-                    {registerError && <p className="text-red-400 text-xs text-center animate-pulse">{registerError}</p>}
+                    {registerError && (
+                      <p 
+                        className="text-xs text-center animate-pulse"
+                        style={{ color: 'var(--color-error, #f87171)' }}
+                      >
+                        {registerError}
+                      </p>
+                    )}
 
-                    <Button onClick={handleRegisterSubmit} fullWidth className="bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-indigo-500/20 mt-2" disabled={isRegistering}>
+                    <Button 
+                      onClick={handleRegisterSubmit} 
+                      fullWidth 
+                      className="shadow-lg mt-2" 
+                      style={{
+                        background: 'var(--gradient-button)',
+                        color: 'var(--text-primary)',
+                      }}
+                      disabled={isRegistering}
+                    >
                         {isRegistering ? '注册中...' : '注册'}
                     </Button>
                 </div>
@@ -745,9 +1063,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                         'opacity-100'
                     }`}>
                         {qrStatus === 'loading' ? (
-                            <div className="w-12 h-12 border-4 border-slate-200 border-t-green-500 rounded-full animate-spin" />
+                            <div 
+                              className="w-12 h-12 border-4 rounded-full animate-spin"
+                              style={{
+                                borderColor: 'var(--bg-overlay, rgba(226, 232, 240, 1)) var(--bg-overlay, rgba(226, 232, 240, 1)) var(--bg-overlay, rgba(226, 232, 240, 1)) #22c55e',
+                              }}
+                            />
                         ) : qrStatus === 'expired' ? (
-                            <div className="text-center text-slate-500">
+                            <div 
+                              className="text-center"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -760,14 +1086,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                                 className="w-full h-full"
                             />
                         ) : (
-                            <div className="text-center text-slate-500">
+                            <div 
+                              className="text-center"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                                 <p className="text-sm">加载中...</p>
                             </div>
                         )}
                         
                         {qrStatus === 'scanned' && (
                              <div className="absolute inset-0 flex items-center justify-center z-10">
-                                 <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                                 <div 
+                                   className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg animate-bounce"
+                                   style={{ backgroundColor: 'var(--color-success)' }}
+                                 >
                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                      </svg>
@@ -776,25 +1108,48 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                         )}
 
                         {qrStatus === 'confirmed' && (
-                             <div className="absolute inset-0 flex items-center justify-center z-10 bg-green-500/20 rounded-xl">
-                                 <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                     </svg>
-                                 </div>
-                             </div>
+                            <div 
+                              className="absolute inset-0 flex items-center justify-center z-10 rounded-xl"
+                              style={{
+                                backgroundColor: 'var(--bg-success-alpha)',
+                              }}
+                            >
+                                <div 
+                                  className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
+                                  style={{
+                                    backgroundColor: 'var(--color-success)',
+                                  }}
+                                >
+                                    <svg 
+                                      xmlns="http://www.w3.org/2000/svg" 
+                                      className="h-10 w-10" 
+                                      fill="none" 
+                                      viewBox="0 0 24 24" 
+                                      stroke="currentColor"
+                                      style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
                         )}
                     </div>
                     
                     <div className="text-center">
-                        <p className="text-white font-bold mb-1">
+                        <p 
+                          className="font-bold mb-1"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
                             {qrStatus === 'loading' ? '正在生成二维码...' :
                              qrStatus === 'scanned' ? '已扫描，请在手机上确认' :
                              qrStatus === 'confirmed' ? '登录成功！' :
                              qrStatus === 'expired' ? '二维码已过期' :
                              '使用微信扫码登录'}
                         </p>
-                        <p className="text-slate-500 text-xs mt-1">
+                        <p 
+                          className="text-xs mt-1"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
                             {qrStatus === 'scanned' ? '正在同步您的心域数据...' : 
                              qrStatus === 'expired' ? '请点击刷新重新生成二维码' :
                              '安全、快捷、无需记忆密码'}
@@ -804,7 +1159,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
                     {(qrStatus === 'expired' || qrStatus === 'ready') && (
                         <button 
                             onClick={refreshQrCode}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                            className="px-6 py-2 font-bold rounded-lg transition-colors"
+                            style={{
+                              backgroundColor: 'var(--color-success, #16a34a)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-success, #15803d)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-success, #16a34a)';
+                            }}
                         >
                             {qrStatus === 'expired' ? '刷新二维码' : '重新生成'}
                         </button>
@@ -813,13 +1178,36 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess, onCancel
             )}
         </div>
         
-        <div className="bg-slate-950 p-3 sm:p-4 text-center border-t border-slate-800 flex-shrink-0">
-             <p className="text-[10px] text-slate-600">
+        <div 
+          className="p-3 sm:p-4 text-center border-t flex-shrink-0"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #020617)',
+            borderColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+          }}
+        >
+             <p 
+               className="text-[10px]"
+               style={{ color: 'var(--text-tertiary)' }}
+             >
                  登录即代表您同意 <span 
-                   className="text-indigo-400 cursor-pointer hover:underline"
+                   className="cursor-pointer hover:underline"
+                   style={{ color: 'var(--color-info)' }}
+                   onMouseEnter={(e) => {
+                     e.currentTarget.style.color = 'var(--color-info-light)';
+                   }}
+                   onMouseLeave={(e) => {
+                     e.currentTarget.style.color = 'var(--color-info)';
+                   }}
                    onClick={() => setAgreementModalType('terms')}
                  >《心域用户协议》</span> 及 <span 
-                   className="text-indigo-400 cursor-pointer hover:underline"
+                   className="cursor-pointer hover:underline"
+                   style={{ color: 'var(--color-info)' }}
+                   onMouseEnter={(e) => {
+                     e.currentTarget.style.color = 'var(--color-info-light)';
+                   }}
+                   onMouseLeave={(e) => {
+                     e.currentTarget.style.color = 'var(--color-info)';
+                   }}
                    onClick={() => setAgreementModalType('privacy')}
                  >《隐私政策》</span>
              </p>

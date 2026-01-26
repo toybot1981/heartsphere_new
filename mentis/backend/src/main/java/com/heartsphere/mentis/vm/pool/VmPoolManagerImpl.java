@@ -38,7 +38,7 @@ public class VmPoolManagerImpl implements VmPoolManager {
     
     @Override
     public VmInstance acquireVm(MentisVmService.VmConfig config) {
-        log.debug("从池中获取虚拟机");
+        log.info("从池中获取虚拟机");
         
         lock.lock();
         try {
@@ -67,7 +67,7 @@ public class VmPoolManagerImpl implements VmPoolManager {
     
     @Override
     public void releaseVm(String vmId) {
-        log.debug("归还虚拟机到池中: vmId={}", vmId);
+        log.info("归还虚拟机到池中: vmId={}", vmId);
         
         lock.lock();
         try {

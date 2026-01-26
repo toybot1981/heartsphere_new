@@ -90,7 +90,7 @@ public class SkillCheckNode implements GraphEngine.GraphNode {
         
         // 获取当前技能值
         int currentSkillValue = getSkillValue(state);
-        log.debug("[SkillCheckNode] 当前技能值: {}, 需要值: {}, 运算符: {}", 
+        log.info("[SkillCheckNode] 当前技能值: {}, 需要值: {}, 运算符: {}", 
                 currentSkillValue, requiredValue, operator);
         
         // 执行检查
@@ -108,7 +108,7 @@ public class SkillCheckNode implements GraphEngine.GraphNode {
         state.setData("skill_check_required_value", requiredValue);
         state.setData("next_node", nextNodeId);
         
-        log.debug("[SkillCheckNode] 下一个节点: {}", nextNodeId);
+        log.info("[SkillCheckNode] 下一个节点: {}", nextNodeId);
         
         return state;
     }

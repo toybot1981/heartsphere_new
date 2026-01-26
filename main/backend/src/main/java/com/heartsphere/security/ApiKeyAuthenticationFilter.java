@@ -42,7 +42,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             String apiKey = parseApiKey(request);
             
             if (apiKey != null) {
-                log.debug("API Key found in request: {}...", apiKey.substring(0, Math.min(10, apiKey.length())));
+                log.info("API Key found in request: {}...", apiKey.substring(0, Math.min(10, apiKey.length())));
                 
                 try {
                     // 验证API Key
@@ -66,7 +66,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
                     
                     // 设置认证信息到SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    log.debug("API Key authentication successful for key: {}", key.getKeyName());
+                    log.info("API Key authentication successful for key: {}", key.getKeyName());
                     
                     // 记录API Key使用
                     apiKeyService.recordApiKeyUsage(apiKey);
@@ -77,7 +77,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.clearContext();
                 }
             } else {
-                log.debug("No API Key found in request headers");
+                log.info("No API Key found in request headers");
             }
         } catch (Exception e) {
             log.error("Cannot set API Key authentication: {}", e.getMessage(), e);

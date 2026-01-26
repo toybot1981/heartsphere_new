@@ -57,7 +57,7 @@ public class CostStatisticsService {
                 startDateTime, endDateTime);
 
         if (records.isEmpty()) {
-            log.debug("日期 {} 没有使用记录，跳过汇总", date);
+            log.info("日期 {} 没有使用记录，跳过汇总", date);
             return;
         }
 
@@ -103,7 +103,7 @@ public class CostStatisticsService {
             costDailyRepository.save(costDaily);
             aggregatedCount++;
 
-            log.debug("汇总完成: date={}, providerId={}, modelId={}, usageType={}, " +
+            log.info("汇总完成: date={}, providerId={}, modelId={}, usageType={}, " +
                     "totalUsage={}, totalCost={}, callCount={}",
                     date, providerId, modelId, usageType, totalUsage, totalCost, callCount);
         }

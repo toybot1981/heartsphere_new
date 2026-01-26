@@ -337,16 +337,39 @@ public class AIServiceController {
             )
             @RequestBody AudioRequest request,
             @Parameter(hidden = true) Authentication authentication) {
+        log.info("[AIServiceController] ========== 开始处理文本转语音请求 ==========");
+        log.info("[AIServiceController] 请求参数: provider={}, model={}, textLength={}, voice={}, baseUrl={}", 
+            request.getProvider(), request.getModel(), 
+            request.getText() != null ? request.getText().length() : 0,
+            request.getVoice(), request.getBaseUrl());
+        
         try {
             Long userId = getCurrentUserId(authentication);
+            log.info("[AIServiceController] 用户ID获取成功: userId={}", userId);
+            
+            log.info("[AIServiceController] 调用 AIService.textToSpeech");
             AudioResponse response = aiService.textToSpeech(userId, request);
+            
+            log.info("[AIServiceController] ✅ 文本转语音成功: provider={}, model={}, hasAudio={}, audioLength={}", 
+                response.getProvider(), response.getModel(), 
+                response.getAudioBase64() != null || response.getContent() != null,
+                response.getAudioBase64() != null ? response.getAudioBase64().length() : 0);
+            log.info("[AIServiceController] ========== 文本转语音请求完成 ==========");
+            
             return ResponseEntity.ok(ApiResponse.success("文本转语音成功", response));
         } catch (IllegalArgumentException e) {
-            log.error("文本转语音请求参数错误", e);
+            log.error("[AIServiceController] ❌ 文本转语音请求参数错误: provider={}, model={}, textLength={}, error={}", 
+                request.getProvider(), request.getModel(), 
+                request.getText() != null ? request.getText().length() : 0,
+                e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(400, "请求参数错误: " + e.getMessage()));
         } catch (Exception e) {
-            log.error("文本转语音失败", e);
+            log.error("[AIServiceController] ❌ 文本转语音失败: provider={}, model={}, textLength={}, error={}", 
+                request.getProvider(), request.getModel(), 
+                request.getText() != null ? request.getText().length() : 0,
+                e.getMessage(), e);
+            log.info("[AIServiceController] ========== 文本转语音请求失败 ==========");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(500, "文本转语音失败: " + e.getMessage()));
         }

@@ -28,7 +28,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
   // 调试日志：组件初始化
   useEffect(() => {
-    logger.debug('[PhotoAlbumPlugin] 组件初始化', {
+    logger.info('[PhotoAlbumPlugin] 组件初始化', {
       pluginInstanceId,
       hasToken: !!token,
       viewMode,
@@ -37,7 +37,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
   // 调试日志：viewMode 变化
   useEffect(() => {
-    logger.debug('[PhotoAlbumPlugin] viewMode 变化', {
+    logger.info('[PhotoAlbumPlugin] viewMode 变化', {
       pluginInstanceId,
       viewMode,
       selectedAlbumId: selectedAlbum?.id,
@@ -56,17 +56,17 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
   useEffect(() => {
     
-    logger.debug('[PhotoAlbumPlugin] useEffect 触发', {
+    logger.info('[PhotoAlbumPlugin] useEffect 触发', {
       pluginInstanceId,
       viewMode,
       hasSelectedAlbum: !!selectedAlbum,
     });
     
     if (viewMode === 'albums') {
-      logger.debug('[PhotoAlbumPlugin] 加载相册列表');
+      logger.info('[PhotoAlbumPlugin] 加载相册列表');
       loadAlbums();
     } else if (viewMode === 'album-detail' && selectedAlbum) {
-      logger.debug('[PhotoAlbumPlugin] 加载照片列表', {
+      logger.info('[PhotoAlbumPlugin] 加载照片列表', {
         albumId: selectedAlbum.id,
         albumName: selectedAlbum.name,
       });
@@ -75,7 +75,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   }, [viewMode, selectedAlbum]);
 
   const loadAlbums = async () => {
-    logger.debug('[PhotoAlbumPlugin] loadAlbums 开始', {
+    logger.info('[PhotoAlbumPlugin] loadAlbums 开始', {
       pluginInstanceId,
       hasToken: !!token,
     });
@@ -84,7 +84,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
     try {
       const albumList = await photoAlbumApi.getAlbums(pluginInstanceId, token);
       
-      logger.debug('[PhotoAlbumPlugin] loadAlbums 成功', {
+      logger.info('[PhotoAlbumPlugin] loadAlbums 成功', {
         pluginInstanceId,
         albumCount: albumList?.length || 0,
         albums: albumList?.map(a => ({ id: a.id, name: a.name })) || [],
@@ -101,7 +101,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
       setAlbums([]);
     } finally {
       setLoading(false);
-      logger.debug('[PhotoAlbumPlugin] loadAlbums 完成', {
+      logger.info('[PhotoAlbumPlugin] loadAlbums 完成', {
         pluginInstanceId,
         loading: false,
       });
@@ -114,7 +114,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
       return;
     }
 
-    logger.debug('[PhotoAlbumPlugin] loadPhotos 开始', {
+    logger.info('[PhotoAlbumPlugin] loadPhotos 开始', {
       albumId: selectedAlbum.id,
       albumName: selectedAlbum.name,
       hasToken: !!token,
@@ -124,7 +124,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
     try {
       const photoList = await photoAlbumApi.getPhotos(selectedAlbum.id, token);
       
-      logger.debug('[PhotoAlbumPlugin] loadPhotos 成功', {
+      logger.info('[PhotoAlbumPlugin] loadPhotos 成功', {
         albumId: selectedAlbum.id,
         photoCount: photoList?.length || 0,
       });
@@ -139,7 +139,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
       setPhotos([]);
     } finally {
       setLoading(false);
-      logger.debug('[PhotoAlbumPlugin] loadPhotos 完成', {
+      logger.info('[PhotoAlbumPlugin] loadPhotos 完成', {
         albumId: selectedAlbum.id,
         loading: false,
       });
@@ -262,10 +262,25 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   const renderAlbumsView = () => (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">我的相册</h3>
+        <h3 
+          className="text-lg font-bold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          我的相册
+        </h3>
         <button
           onClick={() => setViewMode('album-create')}
-          className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded-lg transition-colors flex items-center gap-1.5"
+          className="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+          style={{
+            background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -276,13 +291,27 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+          <div 
+            className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+            style={{
+              borderColor: 'var(--color-info, #06b6d4)',
+              borderTopColor: 'transparent',
+            }}
+          />
         </div>
       ) : albums.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+        <div 
+          className="flex-1 flex flex-col items-center justify-center"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <div className="text-4xl mb-3">📷</div>
           <p>还没有相册</p>
-          <p className="text-xs mt-2 text-slate-500">点击"新建相册"创建第一个相册</p>
+          <p 
+            className="text-xs mt-2"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            点击"新建相册"创建第一个相册
+          </p>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
@@ -294,10 +323,27 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                   setSelectedAlbum(album);
                   setViewMode('album-detail');
                 }}
-                className="bg-slate-800/50 rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 border border-slate-700 hover:border-cyan-500"
+                className="rounded-lg overflow-hidden cursor-pointer transition-all border"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 {album.coverPhotoUrl ? (
-                  <div className="aspect-square bg-slate-900">
+                  <div 
+                    className="aspect-square"
+                    style={{ backgroundColor: 'var(--bg-overlay, #0f172a)' }}
+                  >
                     <LazyImage
                       src={album.coverPhotoUrl}
                       alt={album.name}
@@ -305,17 +351,39 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="aspect-square bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <div 
+                    className="aspect-square flex items-center justify-center"
+                    style={{
+                      background: 'var(--gradient-primary, linear-gradient(to bottom right, #6366f1, #9333ea))',
+                    }}
+                  >
                     <span className="text-4xl">📷</span>
                   </div>
                 )}
                 <div className="p-2">
-                  <h4 className="text-sm font-semibold text-white truncate">{album.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{album.photoCount} 张照片</p>
+                  <h4 
+                    className="text-sm font-semibold truncate"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {album.name}
+                  </h4>
+                  <p 
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {album.photoCount} 张照片
+                  </p>
                   {album.tags && album.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {album.tags.slice(0, 2).map((tag, idx) => (
-                        <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-300">
+                        <span 
+                          key={idx} 
+                          className="text-[10px] px-1.5 py-0.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary, #334155)',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
                           {tag}
                         </span>
                       ))}
@@ -343,18 +411,40 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                 setSelectedAlbum(null);
                 setViewMode('albums');
               }}
-              className="p-1 text-slate-400 hover:text-white transition-colors"
+              className="p-1 transition-colors"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h3 className="text-lg font-bold text-white">{selectedAlbum.name}</h3>
+            <h3 
+              className="text-lg font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {selectedAlbum.name}
+            </h3>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('photo-upload')}
-              className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm rounded-lg transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -363,7 +453,14 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
             </button>
             <button
               onClick={() => handleDeleteAlbum(selectedAlbum)}
-              className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+              className="p-1.5 transition-colors"
+              style={{ color: 'var(--color-error, #f87171)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-error-light, #fca5a5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-error, #f87171)';
+              }}
               title="删除相册"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -374,18 +471,37 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
         </div>
 
         {selectedAlbum.description && (
-          <p className="text-sm text-slate-300 mb-4">{selectedAlbum.description}</p>
+          <p 
+            className="text-sm mb-4"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {selectedAlbum.description}
+          </p>
         )}
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+            <div 
+              className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+              style={{
+                borderColor: 'var(--color-info, #06b6d4)',
+                borderTopColor: 'transparent',
+              }}
+            />
           </div>
         ) : photos.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+          <div 
+            className="flex-1 flex flex-col items-center justify-center"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             <div className="text-4xl mb-3">📸</div>
             <p>相册还是空的</p>
-            <p className="text-xs mt-2 text-slate-500">点击"上传照片"添加第一张照片</p>
+            <p 
+              className="text-xs mt-2"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              点击"上传照片"添加第一张照片
+            </p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
@@ -394,7 +510,21 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                 <div
                   key={photo.id}
                   onClick={() => setSelectedPhoto(photo)}
-                  className="aspect-square bg-slate-900 rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105 hover:shadow-lg border border-slate-700 hover:border-cyan-500"
+                  className="aspect-square rounded-lg overflow-hidden cursor-pointer transition-all border"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, #0f172a)',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
                   <LazyImage
                     src={photo.thumbnailUrl || photo.photoUrl}
@@ -414,7 +544,12 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   const renderCreateAlbumView = () => (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">新建相册</h3>
+        <h3 
+          className="text-lg font-bold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          新建相册
+        </h3>
         <button
           onClick={() => {
             setViewMode('albums');
@@ -423,7 +558,14 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
             setNewAlbumTags([]);
             setTagInput('');
           }}
-          className="p-1 text-slate-400 hover:text-white transition-colors"
+          className="p-1 transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -433,29 +575,70 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
       <div className="flex-1 overflow-y-auto space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">相册名称 *</label>
+          <label 
+            className="block text-sm font-medium mb-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            相册名称 *
+          </label>
           <input
             type="text"
             value={newAlbumName}
             onChange={(e) => setNewAlbumName(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full px-3 py-2 border rounded-lg outline-none"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1e293b)',
+              borderColor: 'var(--bg-overlay, #475569)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+              e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+              e.currentTarget.style.outline = 'none';
+            }}
             placeholder="例如：恋爱纪念、宝宝成长"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">相册描述</label>
+          <label 
+            className="block text-sm font-medium mb-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            相册描述
+          </label>
           <textarea
             value={newAlbumDescription}
             onChange={(e) => setNewAlbumDescription(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full px-3 py-2 border rounded-lg outline-none"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1e293b)',
+              borderColor: 'var(--bg-overlay, #475569)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+              e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+              e.currentTarget.style.outline = 'none';
+            }}
             placeholder="描述这个相册的内容..."
             rows={3}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">标签</label>
+          <label 
+            className="block text-sm font-medium mb-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            标签
+          </label>
           <div className="flex gap-2 mb-2">
             <input
               type="text"
@@ -467,12 +650,35 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                   handleAddTag();
                 }
               }}
-              className="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="flex-1 px-3 py-2 border rounded-lg outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                e.currentTarget.style.outline = 'none';
+              }}
               placeholder="输入标签后按回车"
             />
             <button
               onClick={handleAddTag}
-              className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              className="px-3 py-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #334155)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #475569)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #334155)';
+              }}
             >
               添加
             </button>
@@ -482,12 +688,23 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
               {newAlbumTags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded text-sm"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm"
+                  style={{
+                    backgroundColor: 'var(--color-primary, rgba(79, 70, 229, 0.2))',
+                    color: 'var(--color-primary, #c7d2fe)',
+                  }}
                 >
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(tag)}
-                    className="text-indigo-400 hover:text-indigo-300"
+                    className="transition-colors"
+                    style={{ color: 'var(--color-primary, #818cf8)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--color-primary-light, #a5b4fc)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--color-primary, #818cf8)';
+                    }}
                   >
                     ×
                   </button>
@@ -498,7 +715,10 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
+      <div 
+        className="flex items-center justify-end gap-3 pt-4 border-t"
+        style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+      >
         <button
           onClick={() => {
             setViewMode('albums');
@@ -507,14 +727,35 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
             setNewAlbumTags([]);
             setTagInput('');
           }}
-          className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+          className="px-4 py-2 transition-colors"
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
         >
           取消
         </button>
         <button
           onClick={handleCreateAlbum}
           disabled={loading || !newAlbumName.trim()}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            if (!loading && newAlbumName.trim()) {
+              e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading && newAlbumName.trim()) {
+              e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+            }
+          }}
         >
           {loading ? '创建中...' : '创建相册'}
         </button>
@@ -536,47 +777,98 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
                 setUploadFiles([]);
                 setUploadProgress({});
               }}
-              className="p-1 text-slate-400 hover:text-white transition-colors"
+              className="p-1 transition-colors"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h3 className="text-lg font-bold text-white">上传照片到 {selectedAlbum.name}</h3>
+            <h3 
+              className="text-lg font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              上传照片到 {selectedAlbum.name}
+            </h3>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">选择照片</label>
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              选择照片
+            </label>
             <input
               type="file"
               multiple
               accept="image/*"
               onChange={handleFileSelect}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-400"
+              className="w-full px-3 py-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
             />
           </div>
 
           {uploadFiles.length > 0 && (
             <div>
-              <p className="text-sm text-slate-300 mb-2">已选择 {uploadFiles.length} 张照片</p>
+              <p 
+                className="text-sm mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                已选择 {uploadFiles.length} 张照片
+              </p>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {uploadFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-2 bg-slate-800/50 rounded">
-                    <div className="w-12 h-12 bg-slate-700 rounded flex items-center justify-center">
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-2 p-2 rounded"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                    }}
+                  >
+                    <div 
+                      className="w-12 h-12 rounded flex items-center justify-center"
+                      style={{
+                        backgroundColor: 'var(--bg-secondary, #334155)',
+                      }}
+                    >
                       <span className="text-2xl">📷</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{file.name}</p>
-                      <p className="text-xs text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p 
+                        className="text-sm truncate"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        {file.name}
+                      </p>
+                      <p 
+                        className="text-xs"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
                     </div>
                     {uploadProgress[idx] !== undefined && (
-                      <div className="text-xs text-slate-400">
+                      <div 
+                        className="text-xs"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
                         {uploadProgress[idx] === -1 ? (
-                          <span className="text-red-400">失败</span>
+                          <span style={{ color: 'var(--color-error, #f87171)' }}>失败</span>
                         ) : uploadProgress[idx] === 100 ? (
-                          <span className="text-green-400">✓ 完成</span>
+                          <span style={{ color: 'var(--color-success, #4ade80)' }}>✓ 完成</span>
                         ) : (
                           <span>{uploadProgress[idx]}%</span>
                         )}
@@ -589,21 +881,45 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
+        <div 
+          className="flex items-center justify-end gap-3 pt-4 border-t"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <button
             onClick={() => {
               setViewMode('album-detail');
               setUploadFiles([]);
               setUploadProgress({});
             }}
-            className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+            className="px-4 py-2 transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             取消
           </button>
           <button
             onClick={handleUploadPhotos}
             disabled={uploading || uploadFiles.length === 0}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!uploading && uploadFiles.length > 0) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!uploading && uploadFiles.length > 0) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+              }
+            }}
           >
             {uploading ? '上传中...' : '开始上传'}
           </button>
@@ -621,11 +937,24 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
     const hasNext = currentIndex < photos.length - 1;
 
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+      <div 
+        className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm"
+        style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.9))' }}
+      >
         <div className="relative max-w-5xl max-h-[90vh] p-4 w-full">
           <button
             onClick={() => setSelectedPhoto(null)}
-            className="absolute top-4 right-4 z-10 text-white hover:text-cyan-400 transition-colors p-2 bg-black/50 rounded-full"
+            className="absolute top-4 right-4 z-10 transition-colors p-2 rounded-full"
+            style={{
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-info, #22d3ee)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -635,7 +964,17 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
           {hasPrev && (
             <button
               onClick={() => setSelectedPhoto(photos[currentIndex - 1])}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-cyan-400 transition-colors p-2 bg-black/50 rounded-full"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-colors p-2 rounded-full"
+              style={{
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-info, #22d3ee)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -646,7 +985,17 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
           {hasNext && (
             <button
               onClick={() => setSelectedPhoto(photos[currentIndex + 1])}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-cyan-400 transition-colors p-2 bg-black/50 rounded-full"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-colors p-2 rounded-full"
+              style={{
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-info, #22d3ee)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -654,16 +1003,39 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
             </button>
           )}
 
-          <div className="bg-slate-900 rounded-xl p-4 border border-slate-700">
+          <div 
+            className="rounded-xl p-4 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, #0f172a)',
+              borderColor: 'var(--bg-overlay, #475569)',
+            }}
+          >
             <LazyImage
               src={selectedPhoto.photoUrl}
               alt={selectedPhoto.title || '照片'}
               className="max-w-full max-h-[70vh] object-contain rounded-lg mx-auto"
             />
-            <div className="mt-4 text-white">
-              {selectedPhoto.title && <h3 className="font-semibold text-lg mb-2">{selectedPhoto.title}</h3>}
-              {selectedPhoto.description && <p className="text-sm text-slate-300 mb-2">{selectedPhoto.description}</p>}
-              <div className="flex items-center gap-4 text-xs text-slate-400">
+            <div className="mt-4">
+              {selectedPhoto.title && (
+                <h3 
+                  className="font-semibold text-lg mb-2"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {selectedPhoto.title}
+                </h3>
+              )}
+              {selectedPhoto.description && (
+                <p 
+                  className="text-sm mb-2"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {selectedPhoto.description}
+                </p>
+              )}
+              <div 
+                className="flex items-center gap-4 text-xs"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 {selectedPhoto.takenAt && <span>拍摄时间: {new Date(selectedPhoto.takenAt).toLocaleDateString('zh-CN')}</span>}
                 {selectedPhoto.location && <span>地点: {selectedPhoto.location}</span>}
               </div>
@@ -676,7 +1048,7 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
 
   // 调试日志：组件渲染
   useEffect(() => {
-    logger.debug('[PhotoAlbumPlugin] 组件渲染', {
+    logger.info('[PhotoAlbumPlugin] 组件渲染', {
       pluginInstanceId,
       viewMode,
       albumsCount: albums.length,
@@ -694,7 +1066,10 @@ export const PhotoAlbumPlugin: React.FC<PhotoAlbumPluginProps> = ({
   }, [pluginInstanceId, viewMode, albums.length, photos.length, selectedAlbum, selectedPhoto, loading, uploading]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-slate-900 rounded-lg overflow-hidden">
+    <div 
+      className="h-full w-full flex flex-col rounded-lg overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-overlay, #0f172a)' }}
+    >
       {viewMode === 'albums' && renderAlbumsView()}
       {viewMode === 'album-detail' && renderAlbumDetailView()}
       {viewMode === 'album-create' && renderCreateAlbumView()}

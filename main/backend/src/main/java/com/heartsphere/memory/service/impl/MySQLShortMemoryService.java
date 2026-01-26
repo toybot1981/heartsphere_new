@@ -51,45 +51,81 @@ public class MySQLShortMemoryService implements ShortMemoryService {
     @Override
     @Transactional
     public void saveMessage(String sessionId, ChatMessage message) {
+        log.info("[MySQLShortMemoryService] ========== 开始保存消息到短期记忆 ==========");
+        log.info("[MySQLShortMemoryService] 输入参数: sessionId={}, messageId={}, userId={}, role={}, contentLength={}", 
+            sessionId, message.getId(), message.getUserId(), message.getRole(),
+            message.getContent() != null ? message.getContent().length() : 0);
+        
         try {
-            // 如果没有ID，生成一个
+            // 1. 生成消息ID（如果没有）
             if (message.getId() == null || message.getId().isEmpty()) {
-                message.setId(UUID.randomUUID().toString());
+                String newId = UUID.randomUUID().toString();
+                message.setId(newId);
+                log.info("[MySQLShortMemoryService] 步骤1: 生成消息ID: messageId={}", newId);
+            } else {
+                log.info("[MySQLShortMemoryService] 步骤1: 使用已有消息ID: messageId={}", message.getId());
             }
             
-            // 如果没有时间戳，设置当前时间
+            // 2. 设置时间戳（如果没有）
             if (message.getTimestamp() == null) {
-                message.setTimestamp(System.currentTimeMillis());
+                Long timestamp = System.currentTimeMillis();
+                message.setTimestamp(timestamp);
+                log.info("[MySQLShortMemoryService] 步骤2: 设置时间戳: timestamp={}", timestamp);
+            } else {
+                log.info("[MySQLShortMemoryService] 步骤2: 使用已有时间戳: timestamp={}", message.getTimestamp());
             }
             
-            // 设置会话ID
+            // 3. 设置会话ID
             message.setSessionId(sessionId);
+            log.info("[MySQLShortMemoryService] 步骤3: 设置会话ID: sessionId={}", sessionId);
             
-            // 转换为实体并保存
+            // 4. 转换为实体
+            log.info("[MySQLShortMemoryService] 步骤4: 转换为实体");
             ChatMessageEntity entity = MemoryEntityConverter.toEntity(message);
             if (entity == null) {
+                log.error("[MySQLShortMemoryService] ❌ 转换消息实体失败: messageId={}, sessionId={}", 
+                    message.getId(), sessionId);
                 throw new RuntimeException("转换消息实体失败");
             }
+            log.info("[MySQLShortMemoryService] ✅ 实体转换成功: entityId={}, sessionId={}, userId={}, role={}", 
+                entity.getId(), entity.getSessionId(), entity.getUserId(), entity.getRole());
             
-            chatMessageRepository.save(entity);
+            // 5. 保存到数据库
+            log.info("[MySQLShortMemoryService] 步骤5: 保存到数据库");
+            ChatMessageEntity savedEntity = chatMessageRepository.save(entity);
+            log.info("[MySQLShortMemoryService] ✅ 消息已保存到数据库: entityId={}, sessionId={}, userId={}, role={}, timestamp={}, createdAt={}", 
+                savedEntity.getId(), savedEntity.getSessionId(), savedEntity.getUserId(), 
+                savedEntity.getRole(), savedEntity.getTimestamp(), savedEntity.getCreatedAt());
             
-            // 限制消息数量（遵循容量限制原则）
+            // 6. 限制消息数量（遵循容量限制原则）
+            log.info("[MySQLShortMemoryService] 步骤6: 检查消息数量限制");
             long count = chatMessageRepository.countBySessionId(sessionId);
+            log.info("[MySQLShortMemoryService] 当前会话消息数量: sessionId={}, count={}, max={}", 
+                sessionId, count, MAX_MESSAGES_PER_SESSION);
             if (count > MAX_MESSAGES_PER_SESSION) {
-                // 删除最旧的消息
-                Pageable pageable = PageRequest.of(0, (int)(count - MAX_MESSAGES_PER_SESSION));
+                int deleteCount = (int)(count - MAX_MESSAGES_PER_SESSION);
+                Pageable pageable = PageRequest.of(0, deleteCount);
                 List<ChatMessageEntity> oldMessages = chatMessageRepository
                     .findBySessionIdOrderByTimestampDesc(sessionId, pageable);
                 chatMessageRepository.deleteAll(oldMessages);
-                log.debug("会话 {} 消息数量超过限制，删除最旧消息", sessionId);
+                log.info("[MySQLShortMemoryService] ✅ 删除最旧消息: sessionId={}, deletedCount={}", sessionId, oldMessages.size());
             }
             
-            // 更新或创建会话索引
+            // 7. 更新或创建会话索引
+            log.info("[MySQLShortMemoryService] 步骤7: 更新会话索引");
             updateSessionIndex(sessionId, message.getUserId());
+            log.info("[MySQLShortMemoryService] ✅ 会话索引已更新: sessionId={}, userId={}", sessionId, message.getUserId());
             
-            log.debug("保存消息到短期记忆: sessionId={}, messageId={}", sessionId, message.getId());
+            log.info("[MySQLShortMemoryService] ✅ 保存消息到短期记忆成功: sessionId={}, messageId={}, userId={}, role={}", 
+                sessionId, message.getId(), message.getUserId(), message.getRole());
+            log.info("[MySQLShortMemoryService] ========== 保存消息到短期记忆完成 ==========");
         } catch (Exception e) {
-            log.error("保存消息失败: sessionId={}", sessionId, e);
+            log.error("[MySQLShortMemoryService] ❌ 保存消息失败: sessionId={}, messageId={}, userId={}, role={}, error={}", 
+                sessionId, message != null ? message.getId() : "null", 
+                message != null ? message.getUserId() : "null",
+                message != null ? message.getRole() : "null", 
+                e.getMessage(), e);
+            log.info("[MySQLShortMemoryService] ========== 保存消息到短期记忆失败 ==========");
             throw new RuntimeException("保存消息失败", e);
         }
     }
@@ -135,7 +171,7 @@ public class MySQLShortMemoryService implements ShortMemoryService {
     public void deleteMessage(String sessionId, String messageId) {
         try {
             chatMessageRepository.deleteBySessionIdAndId(sessionId, messageId);
-            log.debug("删除消息: sessionId={}, messageId={}", sessionId, messageId);
+            log.info("删除消息: sessionId={}, messageId={}", sessionId, messageId);
         } catch (Exception e) {
             log.error("删除消息失败: sessionId={}, messageId={}", sessionId, messageId, e);
         }
@@ -151,7 +187,7 @@ public class MySQLShortMemoryService implements ShortMemoryService {
             // 删除所有工作记忆
             workingMemoryRepository.deleteBySessionId(sessionId);
             
-            log.debug("清空会话记忆: sessionId={}", sessionId);
+            log.info("清空会话记忆: sessionId={}", sessionId);
         } catch (Exception e) {
             log.error("清空会话记忆失败: sessionId={}", sessionId, e);
         }
@@ -184,7 +220,7 @@ public class MySQLShortMemoryService implements ShortMemoryService {
                 workingMemoryRepository.save(entity);
             }
             
-            log.debug("保存工作记忆: sessionId={}, key={}", sessionId, key);
+            log.info("保存工作记忆: sessionId={}, key={}", sessionId, key);
         } catch (Exception e) {
             log.error("保存工作记忆失败: sessionId={}, key={}", sessionId, key, e);
         }
@@ -228,7 +264,7 @@ public class MySQLShortMemoryService implements ShortMemoryService {
             
             if (entityOpt.isPresent()) {
                 workingMemoryRepository.delete(entityOpt.get());
-                log.debug("删除工作记忆: sessionId={}, key={}", sessionId, key);
+                log.info("删除工作记忆: sessionId={}, key={}", sessionId, key);
             }
         } catch (Exception e) {
             log.error("删除工作记忆失败: sessionId={}, key={}", sessionId, key, e);

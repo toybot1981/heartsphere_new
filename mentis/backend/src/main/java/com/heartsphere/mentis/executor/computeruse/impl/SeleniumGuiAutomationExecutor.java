@@ -261,7 +261,7 @@ public class SeleniumGuiAutomationExecutor implements GuiAutomationExecutor {
 
     @Override
     public String captureScreenshot(String sessionId) {
-        log.debug("捕获屏幕截图: sessionId={}", sessionId);
+        log.info("捕获屏幕截图: sessionId={}", sessionId);
         
         try {
             WebDriver driver = getOrCreateDriver(sessionId);
@@ -280,7 +280,7 @@ public class SeleniumGuiAutomationExecutor implements GuiAutomationExecutor {
 
     @Override
     public ElementInfo findElement(String sessionId, String selector) {
-        log.debug("查找元素: sessionId={}, selector={}", sessionId, selector);
+        log.info("查找元素: sessionId={}, selector={}", sessionId, selector);
         
         ElementInfo info = new ElementInfo();
         
@@ -311,7 +311,7 @@ public class SeleniumGuiAutomationExecutor implements GuiAutomationExecutor {
             }
             
         } catch (NoSuchElementException | TimeoutException e) {
-            log.debug("元素未找到: selector={}", selector);
+            log.info("元素未找到: selector={}", selector);
             info.setFound(false);
         } catch (Exception e) {
             log.error("查找元素失败: sessionId={}, selector={}", sessionId, selector, e);

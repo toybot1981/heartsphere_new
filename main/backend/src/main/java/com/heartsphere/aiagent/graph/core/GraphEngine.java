@@ -204,7 +204,7 @@ public class GraphEngine {
                 }
                 
                 // 执行节点
-                log.debug("[GraphEngine] 执行节点: {}", currentNodeId);
+                log.info("[GraphEngine] 执行节点: {}", currentNodeId);
                 try {
                     currentState = currentNode.execute(currentState);
                 } catch (Exception e) {
@@ -228,7 +228,7 @@ public class GraphEngine {
                 }
                 
                 currentNodeId = nextEdge.getTargetNodeId();
-                log.debug("[GraphEngine] 选择下一个节点: {}", currentNodeId);
+                log.info("[GraphEngine] 选择下一个节点: {}", currentNodeId);
             }
             
             if (stepCount >= maxSteps) {

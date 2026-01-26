@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 public @interface DataSource {
     /**
      * 数据源键
-     * 可选值：admin（默认，也是main和company使用的数据源）, mentis, edu
+     * 可选值：admin（默认，也是main和company使用的数据源）, mentis, edu, agent-mind
      * @return 数据源键
      */
     String value() default "admin";

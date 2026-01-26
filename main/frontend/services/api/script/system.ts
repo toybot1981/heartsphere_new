@@ -16,8 +16,8 @@ export const systemScriptApi = {
    * 请使用 presetScriptApi.getAll() 代替
    */
   getAll: async (token: string): Promise<SystemScript[]> => {
-    // 改用 main 项目的 API 路径
-    return request<SystemScript[]>('/api/system/scripts', {
+    // 改用 main 项目的 API 路径（注意：不包含 /api，因为 request.ts 中的 API_BASE_URL 已经包含了 /api）
+    return request<SystemScript[]>('/system/scripts', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

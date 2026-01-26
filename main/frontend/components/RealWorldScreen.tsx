@@ -42,7 +42,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const { state: gameState } = useGameState();
   // 日志：从缓存获取的entries
   useEffect(() => {
-    logger.debug(`[RealWorldScreen] 加载日记条目，数量: ${entries.length}`);
+    logger.info(`[RealWorldScreen] 加载日记条目，数量: ${entries.length}`);
   }, [entries]);
   // State for View Mode
   const [isCreating, setIsCreating] = useState(false);
@@ -90,7 +90,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   // 当 showNoteSync prop 变化时，更新按钮显示状态
   useEffect(() => {
     setSyncButtonEnabled(showNoteSync);
-    logger.debug(`[RealWorldScreen] 笔记同步按钮显示状态: ${showNoteSync}`);
+    logger.info(`[RealWorldScreen] 笔记同步按钮显示状态: ${showNoteSync}`);
   }, [showNoteSync]);
 
   // 加载场景插件列表（只在组件挂载时加载一次）
@@ -111,16 +111,16 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       const token = localStorage.getItem('auth_token');
       const plugins = await scenePluginApi.getScenePlugins(SCENE_ID, token || undefined);
       setScenePlugins(plugins || []);
-      logger.debug(`[RealWorldScreen] 加载场景插件: ${plugins.length}个`);
+      logger.info(`[RealWorldScreen] 加载场景插件: ${plugins.length}个`);
     } catch (error) {
       // 如果API不存在（404），静默失败（后端可能还未实现）
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
-        logger.debug('[RealWorldScreen] 后端API未实现（404），保留本地模拟数据', errorMessage);
+        logger.info('[RealWorldScreen] 后端API未实现（404），保留本地模拟数据', errorMessage);
         // 404错误时不重置插件列表，保留本地模拟数据
         // setScenePlugins((prev) => prev); // 保持不变
       } else {
-        logger.debug('[RealWorldScreen] 加载场景插件失败', error);
+        logger.info('[RealWorldScreen] 加载场景插件失败', error);
         // 其他错误才重置为空
         setScenePlugins([]);
       }
@@ -149,11 +149,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         config: {},
       };
       
-      logger.debug('[RealWorldScreen] 开始添加插件到场景', { pluginId: plugin.pluginId, sceneId: SCENE_ID });
+      logger.info('[RealWorldScreen] 开始添加插件到场景', { pluginId: plugin.pluginId, sceneId: SCENE_ID });
       
       try {
         const addedPlugin = await scenePluginApi.addPluginToScene(SCENE_ID, plugin.pluginId, defaultPosition, token || undefined);
-        logger.debug('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
+        logger.info('[RealWorldScreen] 插件添加成功（后端API）', addedPlugin);
         // 重新加载插件列表
         await loadScenePlugins();
         showAlert('插件已添加到现实世界', '成功', 'success');
@@ -167,7 +167,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           // 检查是否已存在相同的插件
           const existingIndex = prevPlugins.findIndex(p => p.pluginId === plugin.pluginId);
           if (existingIndex >= 0) {
-            logger.debug('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId });
+            logger.info('[RealWorldScreen] 插件已存在，跳过添加', { pluginId: plugin.pluginId });
             return prevPlugins;
           }
           
@@ -189,7 +189,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           };
           
           const updatedPlugins = [...prevPlugins, newPlugin];
-          logger.debug('[RealWorldScreen] 插件已添加到本地状态', { 
+          logger.info('[RealWorldScreen] 插件已添加到本地状态', { 
             pluginId: plugin.pluginId, 
             pluginName: plugin.name,
             previousCount: prevPlugins.length,
@@ -265,7 +265,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         await loadScenePlugins();
       } catch (apiError) {
         // 如果后端API还没有实现，使用前端模拟（已经更新了本地状态）
-        logger.debug('[RealWorldScreen] 后端API可能未实现，使用前端模拟更新位置');
+        logger.info('[RealWorldScreen] 后端API可能未实现，使用前端模拟更新位置');
       }
     } catch (error) {
       logger.error('[RealWorldScreen] 更新插件位置失败', error);
@@ -349,7 +349,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       return;
     }
     
-    logger.debug("[RealWorldScreen] 开始保存日志");
+    logger.info("[RealWorldScreen] 开始保存日志");
     
     // 表单验证
     if (!newContent.trim()) {
@@ -375,7 +375,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
 
     // 图片处理
     if (finalImageUrl && finalImageUrl.startsWith('data:')) {
-        logger.debug("[RealWorldScreen] 上传base64图片");
+        logger.info("[RealWorldScreen] 上传base64图片");
         setIsGeneratingImage(true);
         try {
             const token = localStorage.getItem('auth_token');
@@ -401,7 +401,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           finalImageUrl.startsWith('https://127.0.0.1');
         
         if (!isLocalUrl) {
-            logger.debug("[RealWorldScreen] 处理外部URL图片");
+            logger.info("[RealWorldScreen] 处理外部URL图片");
             setIsGeneratingImage(true);
             try {
                 const proxyResult = await imageApi.proxyDownload(finalImageUrl);
@@ -412,7 +412,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                     
                     if (uploadResult.success && uploadResult.url) {
                         finalImageUrl = uploadResult.url;
-                        logger.debug("[RealWorldScreen] 外部图片处理成功");
+                        logger.info("[RealWorldScreen] 外部图片处理成功");
                     } else {
                         logger.error("[RealWorldScreen] 图片上传失败", uploadResult.error);
                         throw new Error(`图片上传失败: ${uploadResult.error || '未知错误'}`);
@@ -432,7 +432,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     
     // 如果还没有图片且启用了自动生成
     if (!finalImageUrl && autoGenerateImage) {
-        logger.debug("[RealWorldScreen] 开始自动生成图片");
+        logger.info("[RealWorldScreen] 开始自动生成图片");
         setIsGeneratingImage(true);
         try {
             const generated = await aiService.generateMoodImage(newContent, worldStyle);
@@ -501,7 +501,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
             tags: tagsString
         };
         
-        logger.debug(`[RealWorldScreen] 更新日志条目: ${updatedEntry.id}`);
+        logger.info(`[RealWorldScreen] 更新日志条目: ${updatedEntry.id}`);
         try {
           await handleUpdateJournalEntry(updatedEntry);
           
@@ -518,7 +518,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         }
     } else {
         const tagsString = newTags.length > 0 ? newTags.join(',') : undefined;
-        logger.debug("[RealWorldScreen] 创建新日志条目");
+        logger.info("[RealWorldScreen] 创建新日志条目");
         try {
           await handleAddJournalEntry(finalTitle, newContent, finalImageUrl, mirrorInsight || undefined, tagsString);
           
@@ -565,7 +565,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
         if (result.variants) {
           setUploadedImageVariants(result.variants);
         }
-        logger.debug('图片上传成功，variants:', result.variants);
+        logger.info('图片上传成功，variants:', result.variants);
       } else {
         throw new Error(result.error || '上传失败');
       }
@@ -727,22 +727,57 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           animation: shimmer 2s infinite;
         }
       `}</style>
-      <div className="h-full flex flex-col p-8 bg-slate-900 text-white relative">
+      <div 
+        className="h-full flex flex-col p-8 relative"
+        style={{
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
+        }}
+      >
       
       {/* Header */}
       <div className="flex justify-between items-center mb-6 shrink-0">
           <div className="flex items-center gap-4">
-              <button onClick={onBack} className="text-white hover:text-cyan-400 transition-colors">
+              <button 
+                onClick={onBack} 
+                className="transition-colors"
+                style={{ color: 'var(--text-primary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+              >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
               </button>
               <div>
-                  <h1 className="text-2xl font-bold text-white">记忆中枢</h1>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider">REALITY DATABASE</p>
+                  <h1 
+                    className="text-2xl font-bold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    记忆中枢
+                  </h1>
+                  <p 
+                    className="text-xs uppercase tracking-wider"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    REALITY DATABASE
+                  </p>
               </div>
           </div>
           <div className="flex items-center gap-3">
               {/* Grid Icon */}
-              <button className="p-2 text-slate-400 hover:text-white transition-colors">
+              <button 
+                className="p-2 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }}
+              >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
@@ -754,15 +789,40 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="检索记忆/#标签"
-                      className="bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-2 pl-8 text-sm text-white placeholder-slate-500 focus:border-cyan-500 outline-none w-48"
+                      className="border rounded-lg px-4 py-2 pl-8 text-sm outline-none w-48"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                      }}
                   />
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   {searchQuery && (
                       <button
                           onClick={() => setSearchQuery('')}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                          className="absolute right-2 top-1/2 -translate-y-1/2"
+                          style={{ color: 'var(--text-tertiary)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = 'var(--text-primary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--text-tertiary)';
+                          }}
                       >
                           ×
                       </button>
@@ -784,7 +844,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       let token = localStorageToken || sessionStorageToken;
                       
                       if (!token) {
-                          logger.debug('[RealWorldScreen] 未在存储中找到 token，尝试从 tokenStorage 获取');
+                          logger.info('[RealWorldScreen] 未在存储中找到 token，尝试从 tokenStorage 获取');
                           try {
                               token = await tokenStorage.getToken();
                           } catch (e) {
@@ -798,7 +858,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       
                       setShowNoteSyncModal(true);
                   }}
-                  className="bg-gradient-to-r from-indigo-600 to-blue-600 shadow-lg shadow-indigo-900/20"
+                  className="shadow-lg gradient-button"
+                  style={{ boxShadow: 'var(--shadow-primary)' }}
               >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -836,7 +897,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                           userId = typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
                                       }
                                   } catch (e) {
-                                      logger.debug('[RealWorldScreen] 解析HEARTSPHERE_MEMORY_CORE_V1失败', e);
+                                      logger.info('[RealWorldScreen] 解析HEARTSPHERE_MEMORY_CORE_V1失败', e);
                                   }
                               }
                           }
@@ -867,14 +928,19 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           showAlert('无法获取用户信息', '提示', 'warning');
                       }
                   }}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-900/20"
+                  className="shadow-lg gradient-primary"
+                  style={{ boxShadow: 'var(--shadow-primary)' }}
                   title="查看从日记中提取的记忆"
               >
                   🧠 我的记忆
               </Button>
               )}
               {/* New Record Button */}
-              <Button onClick={handleCreateClick} className="bg-gradient-to-r from-pink-600 to-purple-600 shadow-lg shadow-purple-900/20">
+              <Button 
+                onClick={handleCreateClick} 
+                className="shadow-lg gradient-button"
+                style={{ boxShadow: 'var(--shadow-primary)' }}
+              >
                   + 新记录
               </Button>
           </div>
@@ -888,11 +954,23 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       <button
                           key={tag}
                           onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                              selectedTag === tag
-                                  ? 'bg-cyan-500 text-white'
-                                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-cyan-300'
-                          }`}
+                          className="px-3 py-1 text-xs rounded-full transition-colors"
+                          style={{
+                            backgroundColor: selectedTag === tag ? 'var(--color-primary)' : 'var(--bg-card)',
+                            color: selectedTag === tag ? 'white' : 'var(--text-secondary)',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedTag !== tag) {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                              e.currentTarget.style.color = 'var(--color-primary)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedTag !== tag) {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
+                          }}
                       >
                           {tag}
                       </button>
@@ -906,11 +984,21 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               {scenePlugins.length > 0 && (
                 <button
                   onClick={() => setIsEditMode(!isEditMode)}
-                  className={`px-3 py-1 text-xs rounded-lg transition-colors flex items-center gap-1.5 ${
-                    isEditMode
-                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  className="px-3 py-1 text-xs rounded-lg transition-colors flex items-center gap-1.5"
+                  style={{
+                    backgroundColor: isEditMode ? 'var(--color-primary)' : 'var(--bg-card)',
+                    color: isEditMode ? 'white' : 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isEditMode) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isEditMode) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                    }
+                  }}
                   title={isEditMode ? '退出编辑模式' : '编辑插件位置'}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -921,7 +1009,8 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
               )}
               <button
                 onClick={handleAddPlugin}
-                className="px-3 py-1 text-xs rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition-colors flex items-center gap-1.5"
+                className="px-3 py-1 text-xs rounded-lg transition-colors flex items-center gap-1.5 gradient-button"
+                style={{ color: 'white' }}
                 title="添加插件到现实世界"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -935,22 +1024,54 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
 
       {/* Hero Section: DAILY RESONANCE */}
       {dailyGreeting && (
-          <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950/30 border border-indigo-500/20 relative overflow-visible group hover:border-indigo-500/40 transition-colors w-full">
+          <div 
+            className="mb-6 p-5 rounded-2xl border relative overflow-visible group transition-colors w-full"
+            style={{
+              background: 'var(--gradient-bg)',
+              borderColor: 'var(--color-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+            }}
+          >
               <div className="relative z-10 flex flex-row justify-between items-start gap-4">
                   <div className="flex-1 min-w-0 pr-2" style={{ maxWidth: 'calc(100% - 60px)' }}>
                       {/* 顶部标签与呼吸点 */}
-                      <div className="flex items-center gap-2 mb-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                      <div 
+                        className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: 'var(--color-primary)' }}
+                      >
+                          <span 
+                            className="w-1.5 h-1.5 rounded-full animate-pulse"
+                            style={{ backgroundColor: 'var(--color-primary)' }}
+                          />
                           Daily Resonance
                       </div>
                       
                       {/* 问候语 */}
-                      <h2 className="text-lg font-bold text-white/90 mb-2 break-words whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <h2 
+                        className="text-lg font-bold mb-2 break-words whitespace-normal" 
+                        style={{ 
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word',
+                          color: 'var(--text-primary)',
+                        }}
+                      >
                           {dailyGreeting.greeting || "你好，旅人。"}
                       </h2>
                       
                       {/* 引导问题 */}
-                      <p className="text-sm text-indigo-200/70 italic break-words whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <p 
+                        className="text-sm italic break-words whitespace-normal" 
+                        style={{ 
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
                           "{dailyGreeting.prompt || dailyGreeting.question || "今天的风带给你什么感觉？"}"
                       </p>
                   </div>
@@ -958,7 +1079,19 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   {/* 回应按钮 */}
                   <button 
                     onClick={handleGreetingQuestionClick}
-                    className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white p-2 rounded-lg transition-all flex-shrink-0"
+                    className="p-2 rounded-lg transition-all flex-shrink-0"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--color-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                      e.currentTarget.style.color = 'var(--color-primary)';
+                    }}
                     title="回应"
                   >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -998,11 +1131,18 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           
           {/* Debug: 显示插件数量（已隐藏） */}
           {false && process.env.NODE_ENV === 'development' && (
-            <div className={`absolute top-4 left-4 rounded-lg p-3 text-xs z-[9999] border-2 ${
-              scenePlugins.length > 0 
-                ? 'bg-green-500/30 border-green-500/70 text-green-300' 
-                : 'bg-yellow-500/30 border-yellow-500/70 text-yellow-300'
-            }`}>
+            <div
+              className="absolute top-4 left-4 rounded-lg p-3 text-xs z-[9999] border-2"
+              style={scenePlugins.length > 0 ? {
+                backgroundColor: 'var(--bg-success-alpha)',
+                borderColor: 'var(--border-success-alpha)',
+                color: 'var(--text-success)',
+              } : {
+                backgroundColor: 'var(--bg-warning-alpha)',
+                borderColor: 'var(--border-warning-alpha)',
+                color: 'var(--text-warning)',
+              }}
+            >
               <p className="font-bold mb-1">
                 {scenePlugins.length > 0 ? '✅' : '⚠️'} 插件状态
               </p>
@@ -1028,9 +1168,16 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
           {/* Left: Entries Grid */}
           <div className={`flex-1 overflow-y-auto pr-2 custom-scrollbar transition-all duration-300 ${isCreating ? 'w-1/2 hidden md:block' : 'w-full'}`}>
               {sortedEntries.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-600/50 rounded-xl bg-slate-800/30">
+                  <div 
+                    className="h-full flex flex-col items-center justify-center border-2 border-dashed rounded-xl"
+                    style={{
+                      color: 'var(--text-tertiary)',
+                      borderColor: 'var(--bg-secondary)',
+                      backgroundColor: 'var(--bg-card)',
+                    }}
+                  >
                       <div className="text-3xl mb-3">📓</div>
-                      <p className="text-slate-400">暂无记录</p>
+                      <p style={{ color: 'var(--text-secondary)' }}>暂无记录</p>
                   </div>
               ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
@@ -1042,56 +1189,122 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               setPreviewEntry(entry);
                               setShowPreview(true);
                             }}
-                            className="group relative bg-slate-800/80 rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                            className="group relative rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02]"
                             style={{
-                                border: '1px solid transparent',
-                                backgroundImage: 'linear-gradient(slate-800, slate-800), linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3), rgba(6, 182, 212, 0.3))',
-                                backgroundOrigin: 'border-box',
-                                backgroundClip: 'padding-box, border-box',
+                                backgroundColor: 'var(--bg-card)',
+                                border: '1px solid var(--bg-secondary)',
+                                boxShadow: 'var(--shadow-md)',
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.borderImage = 'linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(59, 130, 246, 0.5), rgba(6, 182, 212, 0.5)) 1';
+                                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.borderImage = 'none';
+                                e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                             }}
                           >
                               {/* Memory Slice Effect - Gradient Border */}
-                              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/20 via-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                              <div 
+                                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                style={{
+                                  background: 'var(--gradient-primary)',
+                                  opacity: 0.2,
+                                }}
+                              />
                               
                               {entry.imageUrl ? (
                                   <div className="h-40 w-full overflow-hidden relative">
                                       <img src={entry.imageUrl} alt="Visual" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/60 to-transparent" />
+                                      <div 
+                                        className="absolute inset-0"
+                                        style={{
+                                          background: 'linear-gradient(to top, var(--bg-primary) 90%, var(--bg-primary) 60%, transparent)',
+                                        }}
+                                      />
                                   </div>
                               ) : (
-                                  <div className="h-40 w-full bg-gradient-to-br from-purple-900/30 via-blue-900/30 to-cyan-900/30 flex items-center justify-center relative overflow-hidden">
-                                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.2),transparent_70%)] opacity-50" />
+                                  <div 
+                                    className="h-40 w-full flex items-center justify-center relative overflow-hidden"
+                                    style={{
+                                      background: 'var(--gradient-bg)',
+                                    }}
+                                  >
+                                      <div 
+                                        className="absolute inset-0 opacity-50"
+                                        style={{
+                                          background: 'radial-gradient(circle at 50% 50%, var(--color-primary) 20%, transparent 70%)',
+                                        }}
+                                      />
                                       <div className="text-4xl opacity-40 group-hover:opacity-60 transition-opacity">📝</div>
                                   </div>
                               )}
                               
                               <div className="p-5 flex-1 flex flex-col relative z-10">
                                   <div className="flex justify-between items-start mb-2">
-                                      <h3 className="font-bold text-lg text-slate-100 line-clamp-1 group-hover:text-cyan-200 transition-colors">{entry.title}</h3>
+                                      <h3 
+                                        className="font-bold text-lg line-clamp-1 transition-colors"
+                                        style={{ color: 'var(--text-primary)' }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.color = 'var(--color-primary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.color = 'var(--text-primary)';
+                                        }}
+                                      >
+                                        {entry.title}
+                                      </h3>
                                       {entry.insight && (
-                                          <span className="text-[10px] bg-cyan-900/40 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/50 shadow-lg shadow-cyan-500/20">
+                                          <span 
+                                            className="text-[10px] px-2 py-0.5 rounded-full border shadow-lg"
+                                            style={{
+                                              backgroundColor: 'var(--bg-secondary)',
+                                              color: 'var(--color-primary)',
+                                              borderColor: 'var(--color-primary)',
+                                              boxShadow: 'var(--shadow-primary)',
+                                            }}
+                                          >
                                               🔮 已解析
                                           </span>
                                       )}
                                   </div>
-                                  <p className="text-slate-300 text-sm line-clamp-3 mb-3 flex-1 leading-relaxed group-hover:text-slate-200 transition-colors">
+                                  <p 
+                                    className="text-sm line-clamp-3 mb-3 flex-1 leading-relaxed transition-colors"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color = 'var(--text-primary)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = 'var(--text-secondary)';
+                                    }}
+                                  >
                                       {entry.content}
                                   </p>
                                   
                                   {/* Mirror Insight Display */}
                                   {entry.insight && (
-                                      <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-800/50 rounded-lg p-3 mb-3">
+                                      <div 
+                                        className="border rounded-lg p-3 mb-3"
+                                        style={{
+                                          backgroundColor: 'var(--bg-secondary)',
+                                          borderColor: 'var(--color-primary)',
+                                        }}
+                                      >
                                           <div className="flex items-center gap-2 mb-1">
                                               <span className="text-sm">🔮</span>
-                                              <h4 className="text-cyan-400 font-bold text-xs uppercase tracking-wider">Mirror of Truth</h4>
+                                              <h4 
+                                                className="font-bold text-xs uppercase tracking-wider"
+                                                style={{ color: 'var(--color-primary)' }}
+                                              >
+                                                Mirror of Truth
+                                              </h4>
                                           </div>
-                                          <p className="text-cyan-100 text-xs italic leading-relaxed">"{entry.insight}"</p>
+                                          <p 
+                                            className="text-xs italic leading-relaxed"
+                                            style={{ color: 'var(--text-secondary)' }}
+                                          >
+                                            "{entry.insight}"
+                                          </p>
                                       </div>
                                   )}
                                   
@@ -1109,7 +1322,20 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                                           setSelectedTag(trimmedTag);
                                                           setIsCreating(false);
                                                       }}
-                                                      className="text-[10px] px-2 py-0.5 bg-cyan-900/20 text-cyan-400 rounded-full border border-cyan-700/30 hover:bg-cyan-900/30 cursor-pointer transition-colors"
+                                                      className="text-[10px] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                                                      style={{
+                                                        backgroundColor: 'var(--bg-secondary)',
+                                                        color: 'var(--color-primary)',
+                                                        borderColor: 'var(--color-primary)',
+                                                      }}
+                                                      onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                                        e.currentTarget.style.color = 'white';
+                                                      }}
+                                                      onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                                        e.currentTarget.style.color = 'var(--color-primary)';
+                                                      }}
                                                   >
                                                       {trimmedTag}
                                                   </span>
@@ -1118,8 +1344,20 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                       </div>
                                   )}
                                   
-                                  <div className="flex items-center justify-between pt-4 border-t border-slate-700/50 mt-auto">
-                                      <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
+                                  <div 
+                                    className="flex items-center justify-between pt-4 border-t mt-auto"
+                                    style={{ borderColor: 'var(--bg-secondary)' }}
+                                  >
+                                      <span 
+                                        className="text-xs transition-colors"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.color = 'var(--text-secondary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.color = 'var(--text-tertiary)';
+                                        }}
+                                      >
                                           {new Date(entry.timestamp).toLocaleDateString('zh-CN', { 
                                               year: 'numeric', 
                                               month: 'long', 
@@ -1133,7 +1371,14 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                               setPreviewEntry(entry);
                                               setShowPreview(true);
                                             }} 
-                                            className="p-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl hover:shadow-cyan-500/30 transition-all"
+                                            className="p-2 rounded-full shadow-lg transition-all gradient-button"
+                                            style={{ color: 'white' }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                            }}
                                             title="预览详情"
                                           >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1149,7 +1394,14 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                                 // 可以传递日志内容给插件使用
                                                 showAlert(`可以使用插件处理这篇日志: ${entry.title}`, '提示', 'info');
                                               }} 
-                                              className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full hover:from-indigo-400 hover:to-purple-400 text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
+                                              className="p-2 rounded-full shadow-lg transition-all gradient-primary"
+                                              style={{ color: 'white' }}
+                                              onMouseEnter={(e) => {
+                                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                              }}
+                                              onMouseLeave={(e) => {
+                                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                              }}
                                               title="使用插件处理此日志"
                                             >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1159,14 +1411,33 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                           )}
                                           <button 
                                             onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
-                                            className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl hover:shadow-purple-500/30 transition-all"
+                                            className="p-2 rounded-full shadow-lg transition-all gradient-button"
+                                            style={{ color: 'white' }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                            }}
                                             title="带着问题进入心域"
                                           >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                           </button>
                                           <button 
                                             onClick={(e: MouseEvent<HTMLButtonElement>) => handleDeleteClick(entry.id, e)} 
-                                            className="p-2 bg-slate-700/80 rounded-full hover:bg-red-900/60 hover:text-red-300 text-slate-400 transition-all"
+                                            className="p-2 rounded-full transition-all"
+                                            style={{
+                                              backgroundColor: 'var(--bg-secondary)',
+                                              color: 'var(--text-secondary)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.6)';
+                                              e.currentTarget.style.color = '#FCA5A5';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                              e.currentTarget.style.color = 'var(--text-secondary)';
+                                            }}
                                           >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                                           </button>
@@ -1175,7 +1446,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               </div>
                               
                               {/* Shimmer Effect on Hover */}
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" 
+                              <div 
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                                style={{
+                                  background: 'linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent)',
+                                }} 
                                    style={{
                                        transform: 'translateX(-100%)',
                                        animation: 'shimmer 2s infinite'
@@ -1189,41 +1464,93 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
 
           {/* Right: Editor Panel (Slide in) */}
           {isCreating && (
-              <div className="w-full md:w-[450px] bg-slate-800 rounded-xl border border-slate-700 p-6 flex flex-col shadow-2xl animate-fade-in shrink-0 h-full max-h-full overflow-hidden">
+              <div 
+                className="w-full md:w-[450px] rounded-xl border p-6 flex flex-col shadow-2xl animate-fade-in shrink-0 h-full max-h-full overflow-hidden"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  borderColor: 'var(--bg-secondary)',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
                   <div className="flex justify-between items-center mb-4 shrink-0">
                       <div className="flex items-center gap-3">
-                          <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-white text-xl">&times;</button>
-                          <h2 className="text-base font-bold text-white">{isEditing ? '编辑日记' : '新思维'}</h2>
+                          <button 
+                            onClick={() => setIsCreating(false)} 
+                            className="text-xl transition-colors"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                            }}
+                          >
+                            &times;
+                          </button>
+                          <h2 
+                            className="text-base font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {isEditing ? '编辑日记' : '新思维'}
+                          </h2>
                       </div>
                       <div className="flex gap-2">
                           {/* 星星图标 - 晨间意图 */}
-                          <button 
+                          <button
                               onClick={() => applyTemplate('morning-intention')}
-                              className="p-1.5 text-yellow-400 hover:text-yellow-300 transition-colors"
+                              className="p-1.5 transition-colors"
+                              style={{ color: 'var(--color-warning)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-warning)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--color-warning)';
+                              }}
                               title="晨间意图"
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                           </button>
                           {/* 方块图标 - 晚间回顾 */}
-                          <button 
+                          <button
                               onClick={() => applyTemplate('evening-review')}
-                              className="p-1.5 text-blue-400 hover:text-blue-300 transition-colors"
+                              className="p-1.5 transition-colors"
+                              style={{ color: 'var(--color-info)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-info)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--color-info)';
+                              }}
                               title="晚间回顾"
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clipRule="evenodd" /></svg>
                           </button>
                           {/* 闪电图标 - 灵感闪念 */}
-                          <button 
+                          <button
                               onClick={() => applyTemplate('inspiration-flash')}
-                              className="p-1.5 text-yellow-400 hover:text-yellow-300 transition-colors"
+                              className="p-1.5 transition-colors"
+                              style={{ color: 'var(--color-warning)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-warning)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--color-warning)';
+                              }}
                               title="灵感闪念"
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
                           </button>
                           {/* 人物图标 - 情绪追踪 */}
-                          <button 
+                          <button
                               onClick={() => applyTemplate('emotion-tracking')}
-                              className="p-1.5 text-pink-400 hover:text-pink-300 transition-colors"
+                              className="p-1.5 transition-colors"
+                              style={{ color: 'var(--color-pink)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-pink)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--color-pink)';
+                              }}
                               title="情绪追踪"
                           >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
@@ -1232,7 +1559,14 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           {!isGuest && (
                             <button 
                                 onClick={handleAddPlugin}
-                                className="p-1.5 text-indigo-400 hover:text-indigo-300 transition-colors"
+                                className="p-1.5 transition-colors"
+                                style={{ color: 'var(--color-primary)' }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = 'var(--color-primary-light)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = 'var(--color-primary)';
+                                }}
                                 title="添加插件到现实世界"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1249,20 +1583,42 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           value={newTitle} 
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value)} 
                           placeholder="标题（可选，默认为日期）"
-                          className="w-full bg-transparent border-none outline-none text-lg font-bold text-white placeholder-slate-500 focus:placeholder-slate-600"
+                          className="w-full bg-transparent border-none outline-none text-lg font-bold"
+                          style={{
+                            color: 'var(--text-primary)',
+                          }}
+                          placeholder="标题（可选，默认为日期）"
                       />
                       
                       {/* Tags Section - 在标题下方 */}
-                      <div className="flex flex-wrap gap-2 min-h-[36px] p-2 bg-slate-900/30 border border-slate-600/50 rounded-lg">
+                      <div 
+                        className="flex flex-wrap gap-2 min-h-[36px] p-2 border rounded-lg"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          borderColor: 'var(--bg-secondary)',
+                        }}
+                      >
                           {newTags.map((tag, idx) => (
                               <span 
                                   key={idx}
-                                  className="inline-flex items-center gap-1 px-2 py-1 bg-cyan-900/20 text-cyan-300 text-xs rounded border border-cyan-700/30"
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border"
+                                  style={{
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    color: 'var(--color-primary)',
+                                    borderColor: 'var(--color-primary)',
+                                  }}
                               >
                                   {tag}
                                   <button
                                       onClick={() => removeTag(tag)}
-                                      className="hover:text-red-400 transition-colors text-xs"
+                                      className="transition-colors text-xs"
+                                      style={{ color: 'var(--text-tertiary)' }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = 'var(--color-error)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                                      }}
                                   >
                                       ×
                                   </button>
@@ -1274,7 +1630,11 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               onChange={(e) => setTagInput(e.target.value)}
                               onKeyDown={handleTagInputKeyDown}
                               placeholder="添加标签(Enter)..."
-                              className="flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-slate-300 placeholder-slate-500"
+                              className="flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm"
+                              style={{
+                                color: 'var(--text-primary)',
+                              }}
+                              placeholder="输入标签后按回车"
                           />
                       </div>
                       
@@ -1283,18 +1643,49 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           value={newContent} 
                           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewContent(e.target.value)} 
                           placeholder={newTitle === '晨间意图' || (!newTitle && !isEditing) ? "今天,我想要专注于...\n\n我期待..." : "在这里写下你的想法、困惑或梦境..."}
-                          className="w-full min-h-[180px] max-h-[300px] bg-slate-900/30 border border-slate-600/50 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:border-cyan-500/50 outline-none resize-y leading-relaxed text-sm"
+                          className="w-full min-h-[180px] max-h-[300px] border rounded-lg p-4 outline-none resize-y leading-relaxed text-sm"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderColor: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--color-primary)';
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                          }}
+                          placeholder="写下你的想法..."
                       />
 
                       {/* Mirror Insight Section */}
                       {mirrorInsight && (
-                          <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-800/50 rounded-xl p-4 relative overflow-hidden group">
-                              <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
+                          <div 
+                            className="border rounded-xl p-4 relative overflow-hidden group"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary)',
+                              borderColor: 'var(--color-primary)',
+                            }}
+                          >
+                              <div 
+                                className="absolute top-0 left-0 w-1 h-full"
+                                style={{ backgroundColor: 'var(--color-primary)' }}
+                              />
                               <div className="flex items-center gap-2 mb-2">
                                   <span className="text-lg">🔮</span>
-                                  <h4 className="text-cyan-400 font-bold text-xs uppercase tracking-wider">Mirror of Truth</h4>
+                                  <h4 
+                                    className="font-bold text-xs uppercase tracking-wider"
+                                    style={{ color: 'var(--color-primary)' }}
+                                  >
+                                    Mirror of Truth
+                                  </h4>
                               </div>
-                              <p className="text-cyan-100 text-sm italic leading-relaxed">"{mirrorInsight}"</p>
+                              <p 
+                                className="text-sm italic leading-relaxed"
+                                style={{ color: 'var(--text-secondary)' }}
+                              >
+                                "{mirrorInsight}"
+                              </p>
                           </div>
                       )}
 
@@ -1303,7 +1694,22 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           <button 
                             onClick={handleConsultMirrorClick}
                             disabled={isConsultingMirror || !newContent.trim()}
-                            className="flex-1 bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-700 text-cyan-300 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 min-w-[120px]"
+                            className="flex-1 border text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 min-w-[120px]"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary)',
+                              borderColor: 'var(--color-primary)',
+                              color: 'var(--color-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!e.currentTarget.disabled) {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                e.currentTarget.style.color = 'white';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                              e.currentTarget.style.color = 'var(--color-primary)';
+                            }}
                           >
                               {isConsultingMirror ? (
                                   <span className="animate-pulse">Analyzing...</span>
@@ -1316,16 +1722,33 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               <button 
                                 onClick={() => !isUploadingImage && fileInputRef.current?.click()}
                                 disabled={isUploadingImage}
-                                className="w-full bg-transparent hover:bg-slate-700/20 border-none text-slate-400 text-xs py-2 rounded transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+                                className="w-full bg-transparent border-none text-xs py-2 rounded transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+                                style={{ color: 'var(--text-secondary)' }}
+                                onMouseEnter={(e) => {
+                                  if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = 'var(--text-secondary)';
+                                }}
                               >
                                   {isUploadingImage ? (
                                       <>
-                                          <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
+                                          <div
+                                              className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                                              style={{
+                                                borderColor: 'var(--border-color-overlay)',
+                                                borderTopColor: 'transparent',
+                                              }}
+                                          />
                                           <span>上传中...</span>
                                       </>
                                   ) : (
                                       <>
-                                          <span className="text-slate-500">+</span> <span>添加图片(或根据内容自动生成)</span>
+                                          <span style={{ color: 'var(--text-tertiary)' }}>+</span> <span>添加图片(或根据内容自动生成)</span>
                                       </>
                                   )}
                               </button>
@@ -1335,7 +1758,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                           {/* 插件快捷入口 - 与日志功能融合 */}
                           {!isGuest && scenePlugins.length > 0 && (
                             <div className="flex gap-1 items-center">
-                              <span className="text-xs text-slate-500">插件:</span>
+                              <span 
+                                className="text-xs"
+                                style={{ color: 'var(--text-tertiary)' }}
+                              >
+                                插件:
+                              </span>
                               {scenePlugins.slice(0, 3).map((plugin) => (
                                 <button
                                   key={plugin.pluginInstanceId}
@@ -1343,7 +1771,20 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                     // TODO: 可以传递当前日志内容给插件
                                     showAlert(`打开插件: ${plugin.pluginName}`, '提示', 'info');
                                   }}
-                                  className="px-2 py-1 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-700 text-indigo-300 text-xs rounded transition-colors"
+                                  className="px-2 py-1 border text-xs rounded transition-colors"
+                                  style={{
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    borderColor: 'var(--color-primary)',
+                                    color: 'var(--color-primary)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                    e.currentTarget.style.color = 'white';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                    e.currentTarget.style.color = 'var(--color-primary)';
+                                  }}
                                   title={plugin.pluginName}
                                 >
                                   {plugin.pluginName.length > 6 ? plugin.pluginName.substring(0, 6) + '...' : plugin.pluginName}
@@ -1352,7 +1793,17 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               {scenePlugins.length > 3 && (
                                 <button
                                   onClick={handleAddPlugin}
-                                  className="px-2 py-1 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 text-xs rounded transition-colors"
+                                  className="px-2 py-1 text-xs rounded transition-colors"
+                                  style={{
+                                    backgroundColor: 'var(--bg-card)',
+                                    color: 'var(--text-secondary)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                                  }}
                                   title="查看更多插件"
                                 >
                                   +{scenePlugins.length - 3}
@@ -1363,7 +1814,10 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       </div>
 
                       {uploadedImageUrl && (
-                          <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-600">
+                          <div 
+                            className="relative w-full h-32 rounded-lg overflow-hidden border"
+                            style={{ borderColor: 'var(--bg-secondary)' }}
+                          >
                               <LazyImage 
                                   src={uploadedImageUrl} 
                                   alt="Preview" 
@@ -1376,35 +1830,60 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                                       setUploadedImageUrl(undefined);
                                       setUploadedImageVariants(undefined);
                                   }} 
-                                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
+                                  className="absolute top-2 right-2 rounded-full p-1 transition-colors z-10"
+                                  style={{
+                                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                    color: 'white',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#EF4444';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                                  }}
                               >
                                   ×
                               </button>
                           </div>
                       )}
-                      {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
+                      {uploadError && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{uploadError}</p>}
                   </div>
 
-                  <div className="pt-3 mt-2 border-t border-slate-700 flex justify-between items-center shrink-0">
+                  <div 
+                    className="pt-3 mt-2 border-t flex justify-between items-center shrink-0"
+                    style={{ borderColor: 'var(--bg-secondary)' }}
+                  >
                       <div className="flex gap-2">
                           {isEditing && (
-                              <button 
+                              <button
                                 onClick={(e) => { if(selectedEntry) handleDeleteClick(selectedEntry.id, e); }}
-                                className="text-red-400 text-sm hover:underline px-2 py-1"
+                                className="text-sm hover:underline px-2 py-1"
+                                style={{ color: 'var(--color-error)' }}
                               >
                                   删除
                               </button>
                           )}
                           <button 
                               onClick={() => setIsCreating(false)} 
-                              className="px-3 py-1.5 text-slate-300 hover:text-white text-sm transition-colors"
+                              className="px-3 py-1.5 text-sm transition-colors"
+                              style={{ color: 'var(--text-secondary)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-primary)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                              }}
                           >
                               取消
                           </button>
-                          <button 
-                              onClick={handleSave} 
+                          <button
+                              onClick={handleSave}
                               disabled={isGeneratingImage || isSaving}
-                              className="px-4 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-sm rounded-lg hover:from-pink-500 hover:to-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-4 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed gradient-button"
+                              style={{
+                                background: 'var(--gradient-primary-button)',
+                                color: 'var(--text-primary)',
+                              }}
                               type="button"
                           >
                               {isGeneratingImage ? '生成配图中...' : isSaving ? '保存中...' : '保存'}
@@ -1418,12 +1897,12 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       {/* Note Sync Modal */}
       {showNoteSyncModal && (() => {
           const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
-          logger.debug('[RealWorldScreen] 打开 NoteSyncModal');
+          logger.info('[RealWorldScreen] 打开 NoteSyncModal');
           return (
               <NoteSyncModal
                   token={token}
                   onClose={() => {
-                      logger.debug('[RealWorldScreen] 关闭 NoteSyncModal');
+                      logger.info('[RealWorldScreen] 关闭 NoteSyncModal');
                       setShowNoteSyncModal(false);
                   }}
               />

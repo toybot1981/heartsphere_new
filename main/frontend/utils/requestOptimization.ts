@@ -169,7 +169,7 @@ export class RequestDeduplicator {
     // 检查是否有正在进行的相同请求
     const pending = this.pendingRequests.get(key);
     if (pending && (now - pending.timestamp) < this.maxAge) {
-      logger.debug(`[RequestDeduplicator] 复用正在进行的请求: ${key}`);
+      logger.info(`[RequestDeduplicator] 复用正在进行的请求: ${key}`);
       return pending.promise;
     }
 
@@ -360,7 +360,7 @@ export async function retryRequest<T>(
 
       // 计算延迟时间（指数退避）
       const delay = opts.retryDelay * Math.pow(opts.retryDelayMultiplier, attempt);
-      logger.debug(
+      logger.info(
         `[retryRequest] 请求失败，${delay}ms后重试 (${attempt + 1}/${opts.maxRetries})`,
         lastError
       );

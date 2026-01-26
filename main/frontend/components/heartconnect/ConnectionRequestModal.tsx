@@ -46,19 +46,36 @@ export const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
   
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.7))' }}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-card, #111827)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">请求连接心域</h2>
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
+          <h2 
+            className="text-xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            请求连接心域
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -69,38 +86,89 @@ export const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
         {/* 内容 */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+            <div 
+              className="mb-4 p-4 border rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+                borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+                color: 'var(--color-error, #fca5a5)',
+              }}
+            >
               {error}
             </div>
           )}
           
           <div className="mb-4">
-            <label className="block text-white font-medium mb-2">请求消息（可选）</label>
+            <label 
+              className="block font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              请求消息（可选）
+            </label>
             <textarea
               value={requestMessage}
               onChange={(e) => setRequestMessage(e.target.value)}
               placeholder="向心域主人打个招呼..."
               maxLength={200}
-              className="w-full h-24 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              className="w-full h-24 px-4 py-2 border rounded-lg focus:outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #3b82f6)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+              }}
             />
-            <div className="text-right text-sm text-gray-400 mt-1">
+            <div 
+              className="text-right text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               {requestMessage.length}/200 字
             </div>
           </div>
         </div>
         
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-700">
+        <div 
+          className="flex items-center justify-end gap-3 p-6 border-t"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+            }}
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'var(--color-primary, #3b82f6)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+            }}
           >
             {loading ? '发送中...' : '发送请求'}
           </button>

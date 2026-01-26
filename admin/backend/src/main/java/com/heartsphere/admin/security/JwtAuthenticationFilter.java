@@ -29,16 +29,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             
             if (jwt != null) {
-                logger.debug("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
+                logger.info("JWT token found in request: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
                 
                 // 2. 验证令牌
                 if (jwtUtils.validateJwtToken(jwt)) {
-                    logger.debug("JWT token is valid");
+                    logger.info("JWT token is valid");
                     
                     try {
                         // 3. 从令牌中获取用户名
                         String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                        logger.debug("Extracted username from token: " + username);
+                        logger.info("Extracted username from token: " + username);
                         
                         // 4. 加载用户信息
                         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         
                         // 6. 将认证对象设置到SecurityContextHolder中
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("Authentication set in SecurityContext for user: " + username);
+                        logger.info("Authentication set in SecurityContext for user: " + username);
                     } catch (Exception e) {
                         logger.warn("Failed to load user details for token: " + e.getMessage());
                         // 清除可能已设置的认证信息
@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.clearContext();
                 }
             } else {
-                logger.debug("No JWT token found in request headers");
+                logger.info("No JWT token found in request headers");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: " + e.getMessage(), e);

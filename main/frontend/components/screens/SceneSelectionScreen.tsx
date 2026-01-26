@@ -39,7 +39,12 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
   dispatch,
 }) => {
   return (
-    <div className="h-full flex flex-col p-8 bg-gradient-to-br from-gray-900 to-black">
+    <div 
+      className="h-full flex flex-col p-8"
+      style={{
+        background: 'var(--gradient-bg)',
+      }}
+    >
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={onEnterNexus} className="!p-2">
@@ -48,13 +53,29 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
             </svg>
           </Button>
           <div>
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+            <h2 
+              className="text-3xl font-bold"
+              style={{
+                color: 'var(--text-primary)',
+              }}
+            >
               {APP_TITLE}
             </h2>
-            <p className="text-gray-400 text-sm flex items-center gap-2">
+            <p 
+              className="text-sm flex items-center gap-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               选择一个场景切片进行连接
               {gameState.userProfile?.isGuest && (
-                <span className="text-[10px] bg-gray-700 px-1 rounded text-gray-300">GUEST MODE</span>
+                <span 
+                  className="text-[10px] px-1 rounded"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  GUEST MODE
+                </span>
               )}
             </p>
           </div>
@@ -63,18 +84,44 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() => dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'connectionSpace' })}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-900 to-indigo-900 border border-blue-500/30 text-blue-200 hover:text-white hover:border-blue-400 transition-all shadow-lg hover:shadow-blue-500/20"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all shadow-lg"
+            style={{
+              background: 'var(--gradient-primary)',
+              borderColor: 'var(--color-primary)',
+              color: 'white',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
           >
             <span className="animate-pulse">✨</span> 查看共享心域
           </button>
 
           <button
             onClick={onOpenMailbox}
-            className="relative p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all"
+            className="relative p-3 rounded-full border transition-all"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            }}
           >
             <span className="text-xl">📬</span>
             {gameState.mailbox.some(m => !m.isRead) && (
-              <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-bounce" />
+              <span
+                className="absolute top-0 right-0 w-3 h-3 rounded-full animate-bounce"
+                style={{ backgroundColor: 'var(--color-error)' }}
+              />
             )}
           </button>
           {onOpenSceneCreationWizard && (
@@ -84,7 +131,17 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
                   onOpenSceneCreationWizard();
                 });
               }}
-              className="text-sm bg-indigo-600 hover:bg-indigo-500"
+              className="text-sm"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'white',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+              }}
             >
               ➕ 创建场景
             </Button>
@@ -93,19 +150,40 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
       </div>
 
       {gameState.activeJournalEntryId && (
-        <div className="mb-6 p-4 bg-indigo-900/40 border border-indigo-500/50 rounded-xl flex items-center justify-between">
+        <div 
+          className="mb-6 p-4 border rounded-xl flex items-center justify-between"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--color-primary)',
+          }}
+        >
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎒</span>
             <div>
-              <p className="text-indigo-200 font-bold text-sm">你正在带着问题旅行</p>
-              <p className="text-white text-xs opacity-80 truncate max-w-md">
+              <p 
+                className="font-bold text-sm"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                你正在带着问题旅行
+              </p>
+              <p 
+                className="text-xs opacity-80 truncate max-w-md"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {gameState.journalEntries.find(e => e.id === gameState.activeJournalEntryId)?.title}
               </p>
             </div>
           </div>
           <button
             onClick={() => dispatch({ type: 'SET_ACTIVE_JOURNAL_ENTRY_ID', payload: null })}
-            className="text-xs text-indigo-300 hover:text-white underline"
+            className="text-xs underline transition-colors"
+            style={{ color: 'var(--color-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-primary)';
+            }}
           >
             放下问题
           </button>
@@ -134,7 +212,20 @@ export const SceneSelectionScreen: React.FC<SceneSelectionScreenProps> = ({
 
               <button
                 onClick={(e) => onOpenMemoryModal(e, scene)}
-                className="absolute bottom-4 right-4 z-20 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-xs font-bold text-white hover:bg-pink-600 hover:border-pink-400 transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                className="absolute bottom-4 right-4 z-20 px-3 py-1 backdrop-blur-md rounded-full border text-xs font-bold transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                  e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
               >
                 <span>📷</span> 我的回忆
               </button>

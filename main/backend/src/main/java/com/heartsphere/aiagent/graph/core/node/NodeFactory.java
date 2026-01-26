@@ -35,7 +35,7 @@ public class NodeFactory {
      */
     @SuppressWarnings("unchecked")
     public GraphEngine.GraphNode createNode(String nodeType, Object config) {
-        log.debug("[NodeFactory] 创建节点，类型: {}", nodeType);
+        log.info("[NodeFactory] 创建节点，类型: {}", nodeType);
         
         try {
             Map<String, Object> configMap;
@@ -58,7 +58,7 @@ public class NodeFactory {
      * 根据节点类型和配置Map创建节点
      */
     public GraphEngine.GraphNode createNode(String nodeType, Map<String, Object> config) {
-        log.debug("[NodeFactory] 创建节点，类型: {}, 配置: {}", nodeType, config);
+        log.info("[NodeFactory] 创建节点，类型: {}, 配置: {}", nodeType, config);
         
         switch (nodeType.toLowerCase()) {
             case "start":

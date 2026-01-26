@@ -32,25 +32,51 @@ export const SharedModeBanner: React.FC<SharedModeBannerProps> = ({
   
   if (isCollapsed) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-50 to-blue-50 border-t-2 border-blue-300 shadow-md backdrop-blur-sm">
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-50 border-t-2 shadow-md backdrop-blur-sm"
+        style={{
+          background: 'linear-gradient(to right, var(--bg-card, #fffbeb), var(--bg-card, #eff6ff))',
+          borderColor: 'var(--color-primary, #93c5fd)',
+        }}
+      >
         <div className="flex items-center justify-between px-4 py-2 gap-3">
           <div className="flex items-center gap-3 flex-1">
             <button
               onClick={() => setIsCollapsed(false)}
-              className="flex items-center gap-2 px-3 py-1 bg-white/80 rounded-lg hover:bg-white transition-colors text-sm font-medium text-gray-700"
+              className="flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm font-medium"
+              style={{
+                backgroundColor: 'var(--bg-card, rgba(255, 255, 255, 0.8))',
+                color: 'var(--text-primary, #374151)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, #ffffff)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(255, 255, 255, 0.8))';
+              }}
               title="展开共享模式标识"
             >
               <span className="text-lg">🌟</span>
               <span>共享模式</span>
             </button>
-            <div className="text-amber-700 text-xs flex items-center gap-1 flex-1">
+            <div 
+              className="text-xs flex items-center gap-1 flex-1"
+              style={{ color: 'var(--color-warning, #b45309)' }}
+            >
               <span>⚠️</span>
               <span>共享模式下，内容不会保存到主人的心域</span>
             </div>
           </div>
           <button
             onClick={handleLeave}
-            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors whitespace-nowrap"
+            className="px-3 py-1 text-sm transition-colors whitespace-nowrap"
+            style={{ color: 'var(--text-secondary, #4b5563)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary, #1f2937)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary, #4b5563)';
+            }}
           >
             离开
           </button>
@@ -60,19 +86,36 @@ export const SharedModeBanner: React.FC<SharedModeBannerProps> = ({
   }
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-50/95 to-blue-50/95 border-t-2 border-blue-300 shadow-md backdrop-blur-sm">
+    <div 
+      className="fixed bottom-0 left-0 right-0 z-50 border-t-2 shadow-md backdrop-blur-sm"
+      style={{
+        background: 'linear-gradient(to right, var(--bg-card, rgba(255, 251, 235, 0.95)), var(--bg-card, rgba(239, 246, 255, 0.95)))',
+        borderColor: 'var(--color-primary, #93c5fd)',
+      }}
+    >
       <div className="px-6 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4 flex-1">
             <div className="text-2xl">🌟</div>
             <div className="flex-1">
-              <div className="text-gray-800 font-semibold mb-1">
-                正在查看 <span className="text-blue-600">{heartSphereName}</span> 的共享心域
+              <div 
+                className="font-semibold mb-1"
+                style={{ color: 'var(--text-primary, #1f2937)' }}
+              >
+                正在查看 <span style={{ color: 'var(--color-primary, #2563eb)' }}>{heartSphereName}</span> 的共享心域
                 {ownerName && (
-                  <span className="text-gray-600 text-sm ml-2">（主人：{ownerName}）</span>
+                  <span 
+                    className="text-sm ml-2"
+                    style={{ color: 'var(--text-secondary, #4b5563)' }}
+                  >
+                    （主人：{ownerName}）
+                  </span>
                 )}
               </div>
-              <div className="text-amber-700 text-sm flex items-center gap-1">
+              <div 
+                className="text-sm flex items-center gap-1"
+                style={{ color: 'var(--color-warning, #b45309)' }}
+              >
                 <span>⚠️</span>
                 <span>共享模式下，内容不会保存到主人的心域</span>
               </div>
@@ -81,13 +124,33 @@ export const SharedModeBanner: React.FC<SharedModeBannerProps> = ({
           <div className="flex items-center gap-2 ml-4">
             <button
               onClick={handleCollapse}
-              className="px-4 py-2 bg-white/80 rounded-lg hover:bg-white transition-colors text-sm font-medium text-gray-700"
+              className="px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+              style={{
+                backgroundColor: 'var(--bg-card, rgba(255, 255, 255, 0.8))',
+                color: 'var(--text-primary, #374151)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, #ffffff)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(255, 255, 255, 0.8))';
+              }}
             >
               收起
             </button>
             <button
               onClick={handleLeave}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+              className="px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+              style={{
+                backgroundColor: 'var(--color-error, #ef4444)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error-light, #dc2626)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error, #ef4444)';
+              }}
             >
               离开
             </button>

@@ -128,7 +128,12 @@ export const MobileSharedCharacterSelectionScreen: React.FC<MobileSharedCharacte
       {/* 场景头部 */}
       <div className="relative h-64 shrink-0 pt-20">
         <MobileLazyImage src={currentScene.imageUrl} alt="Scene Cover" className="w-full h-full object-cover opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black" />
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, transparent, var(--bg-overlay-alpha))',
+          }}
+        />
         
         <MobileBackButton
           onClick={onBack}
@@ -172,7 +177,12 @@ export const MobileSharedCharacterSelectionScreen: React.FC<MobileSharedCharacte
                 aria-label={`选择角色: ${char.name}`}
               >
                 <MobileLazyImage src={char.avatarUrl} alt={char.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+                  }}
+                />
                 <div className="absolute bottom-3 left-3">
                   <p className={`${MobileColors.text.primary} font-bold text-sm`}>{char.name}</p>
                   {char.role && (

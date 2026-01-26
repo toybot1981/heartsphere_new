@@ -61,17 +61,46 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-4xl max-h-[80vh] flex flex-col shadow-2xl">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))' }}
+    >
+      <div 
+        className="rounded-2xl border w-full max-w-4xl max-h-[80vh] flex flex-col shadow-2xl"
+        style={{
+          backgroundColor: 'var(--bg-card, #1e293b)',
+          borderColor: 'var(--bg-overlay, #475569)',
+        }}
+      >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-slate-700">
+        <div 
+          className="flex justify-between items-center p-6 border-b"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <div>
-            <h2 className="text-2xl font-bold text-white">添加插件</h2>
-            <p className="text-sm text-slate-400 mt-1">选择要添加到现实世界的插件</p>
+            <h2 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              添加插件
+            </h2>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              选择要添加到现实世界的插件
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-2"
+            className="transition-colors p-2"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -80,7 +109,10 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
         </div>
 
         {/* Search and Filter */}
-        <div className="p-4 border-b border-slate-700">
+        <div 
+          className="p-4 border-b"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <input
@@ -93,15 +125,43 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
                   }
                 }}
                 placeholder="搜索插件..."
-                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 pl-10 text-white placeholder-slate-500 focus:border-cyan-500 outline-none"
+                className="w-full border rounded-lg px-4 py-2 pl-10 outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, #0f172a)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                }}
               />
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+                style={{ color: 'var(--text-disabled)' }}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <button
               onClick={loadPlugins}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+              className="px-4 py-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--color-primary, #4f46e5)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #6366f1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+              }}
             >
               搜索
             </button>
@@ -114,11 +174,25 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
                   setSelectedCategory(null);
                   loadPlugins();
                 }}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  selectedCategory === null
-                    ? 'bg-cyan-500 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
+                className="px-3 py-1 text-xs rounded-full transition-colors"
+                style={{
+                  backgroundColor: selectedCategory === null
+                    ? 'var(--color-info, #06b6d4)'
+                    : 'var(--bg-secondary, #334155)',
+                  color: selectedCategory === null
+                    ? 'var(--text-primary)'
+                    : 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== null) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, #475569)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== null) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #334155)';
+                  }
+                }}
               >
                 全部
               </button>
@@ -129,11 +203,25 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
                     setSelectedCategory(cat || null);
                     loadPlugins();
                   }}
-                  className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                    selectedCategory === cat
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  className="px-3 py-1 text-xs rounded-full transition-colors"
+                  style={{
+                    backgroundColor: selectedCategory === cat
+                      ? 'var(--color-info, #06b6d4)'
+                      : 'var(--bg-secondary, #334155)',
+                    color: selectedCategory === cat
+                      ? 'var(--text-primary)'
+                      : 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedCategory !== cat) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-hover, #475569)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedCategory !== cat) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #334155)';
+                    }
+                  }}
                 >
                   {cat}
                 </button>
@@ -146,10 +234,19 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+              <div 
+                className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+                style={{
+                  borderColor: 'var(--color-info, #06b6d4)',
+                  borderTopColor: 'transparent',
+                }}
+              />
             </div>
           ) : plugins.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
+            <div 
+              className="text-center py-12"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               <p>暂无可用插件</p>
             </div>
           ) : (
@@ -157,32 +254,75 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
               {plugins.map((plugin) => (
                 <div
                   key={plugin.id}
-                  className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 hover:border-cyan-500 transition-all hover:shadow-lg hover:shadow-cyan-500/20 flex flex-col"
+                  className="border rounded-xl p-4 transition-all flex flex-col"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
                   <div className="flex items-start gap-3 mb-3">
                     {plugin.iconUrl ? (
                       <img src={plugin.iconUrl} alt={plugin.name} className="w-12 h-12 rounded-lg" />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to bottom right, #6366f1, #9333ea))',
+                        }}
+                      >
                         <span className="text-2xl">🔌</span>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white truncate">{plugin.name}</h3>
-                      <p className="text-xs text-slate-400">v{plugin.version}</p>
+                      <h3 
+                        className="font-semibold truncate"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        {plugin.name}
+                      </h3>
+                      <p 
+                        className="text-xs"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        v{plugin.version}
+                      </p>
                     </div>
                   </div>
                   
                   {plugin.description && (
-                    <p className="text-sm text-slate-300 line-clamp-2 mb-3 flex-1">{plugin.description}</p>
+                    <p 
+                      className="text-sm line-clamp-2 mb-3 flex-1"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {plugin.description}
+                    </p>
                   )}
                   
-                  <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
+                  <div className="flex items-center justify-between text-xs mb-3">
                     {plugin.category && (
-                      <span className="px-2 py-1 bg-slate-800 rounded">{plugin.category}</span>
+                      <span 
+                        className="px-2 py-1 rounded"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary, #1e293b)',
+                          color: 'var(--text-tertiary)',
+                        }}
+                      >
+                        {plugin.category}
+                      </span>
                     )}
                     {plugin.rating && (
-                      <span className="flex items-center gap-1">
+                      <span 
+                        className="flex items-center gap-1"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
                         ⭐ {plugin.rating}
                       </span>
                     )}
@@ -194,7 +334,27 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
                       e.stopPropagation();
                       handleSelect(plugin);
                     }}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                    className="w-full px-4 py-2 font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+                    style={{
+                      background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = 'scale(0.95)';
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -208,10 +368,23 @@ export const PluginSelectorModal: React.FC<PluginSelectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-700 flex justify-end">
+        <div 
+          className="p-4 border-t flex justify-end"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #334155)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #475569)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #334155)';
+            }}
           >
             取消
           </button>

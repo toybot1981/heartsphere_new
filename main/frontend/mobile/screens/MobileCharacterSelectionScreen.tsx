@@ -39,7 +39,10 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
     }, [scene.imageUrl]);
 
     return (
-        <div className="h-full bg-black flex flex-col">
+        <div 
+          className="h-full flex flex-col"
+          style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+        >
             {/* Header / Hero */}
             <div className="relative h-64 shrink-0">
                 <MobileLazyImage 
@@ -49,7 +52,12 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                     variants={sceneImageVariants}
                     displayPurpose="detail"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black" />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(to bottom, transparent, var(--bg-overlay-alpha))',
+                  }}
+                />
                 
                 <MobileBackButton
                     onClick={onBack}
@@ -58,8 +66,18 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                 />
 
                 <div className="absolute bottom-0 left-0 w-full p-6">
-                    <h1 className="text-3xl font-bold text-white mb-2 shadow-black drop-shadow-md">{scene.name}</h1>
-                    <p className="text-sm text-gray-300 line-clamp-2">{scene.description}</p>
+                    <h1 
+                      className="text-3xl font-bold mb-2 shadow-black drop-shadow-md"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {scene.name}
+                    </h1>
+                    <p 
+                      className="text-sm line-clamp-2"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {scene.description}
+                    </p>
                 </div>
             </div>
 
@@ -87,7 +105,15 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                         >
                             <div className="flex justify-between items-start">
                                 <div className="flex-1">
-                                    <span className={`text-[10px] ${MobileColors.primary.gradient} text-white px-2 py-0.5 rounded-full font-bold`}>Main Story</span>
+                                    <span 
+                                      className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                      style={{
+                                        background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-primary, #6366f1), var(--color-primary, #9333ea)))',
+                                        color: 'var(--text-primary)',
+                                      }}
+                                    >
+                                      Main Story
+                                    </span>
                                     <h4 className={`${MobileColors.text.primary} font-bold mt-2`}>{scene.mainStory.name}</h4>
                                     <p className={`text-xs ${MobileColors.text.muted} mt-2 line-clamp-2`}>{scene.mainStory.bio}</p>
                                 </div>
@@ -142,7 +168,12 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                                 aria-label={`选择角色: ${char.name}`}
                             >
                                 <CharacterAvatarImage avatarUrl={char.avatarUrl} name={char.name} />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                                <div 
+                                  className="absolute inset-0"
+                                  style={{
+                                    background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+                                  }}
+                                />
                                 <div className="absolute bottom-3 left-3">
                                     <p className={`${MobileColors.text.primary} font-black text-sm drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]`}
                                        style={{ 
@@ -152,10 +183,13 @@ export const MobileCharacterSelection: React.FC<MobileCharacterSelectionProps> =
                                        }}>
                                         {char.name}
                                     </p>
-                                    <p className={`text-[10px] font-semibold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]`}
-                                       style={{ 
-                                         textShadow: '0 1px 5px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.6)'
-                                       }}>
+                                    <p 
+                                      className="text-[10px] font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                                      style={{ 
+                                        color: 'var(--text-primary)',
+                                        textShadow: '0 1px 5px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.6)'
+                                      }}
+                                    >
                                         {char.role}
                                     </p>
                                 </div>

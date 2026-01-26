@@ -98,6 +98,7 @@
 - **代码分割**: 使用 React.lazy 进行代码分割
 - **路由**: 使用 React Router，需要认证的路由使用路由守卫
 - **UX设计规范**: ⭐ **所有页面开发必须遵循UX设计规范**，确保设计一致性
+- **主题系统**: ⭐ **main 项目必须支持多风格（主题/皮肤）切换**，使用 CSS 变量和 React Context 实现
 - **PC与Mobile版本规则**: ⭐ **UI独立，业务逻辑复用**
   - **UI独立**: PC和Mobile版本的UI组件必须独立开发，按照各自的风格完成（PC端：桌面交互、复杂布局；Mobile端：触摸优化、简洁布局）
   - **业务逻辑复用**: 网络请求、数据验证、状态管理等业务逻辑必须通过Hooks、Services或Utils层复用，避免重复实现
@@ -134,6 +135,53 @@
   - URL命名: 小写字母+连字符（如：`/api/user-profiles`）
   - HTTP方法: GET（查询）、POST（创建）、PUT（完整更新）、PATCH（部分更新）、DELETE（删除）
   - 版本控制: URL中包含版本号（如：`/api/v1/user-profiles`）
+- **API URL 定义标准** ⭐ **重要：避免 URL 路径重复**
+  - **后端 Controller 路径定义**:
+    - Controller 的 `@RequestMapping` 或 `@RestController` 注解中定义的路径**必须包含完整的 API 前缀**
+    - 示例：
+      ```java
+      @RestController
+      @RequestMapping("/api/admin/multi-agent")  // ✅ 正确：包含完整路径
+      public class MultiAgentCollaborationAdminController {
+          @GetMapping("/collaborations")  // 完整路径: /api/admin/multi-agent/collaborations
+          public ResponseEntity<?> getCollaborations() { ... }
+      }
+      ```
+  - **前端 API 服务路径定义**:
+    - 前端 API 服务文件中定义的路径**不得包含 `API_BASE_URL` 中已有的前缀**
+    - `API_BASE_URL` 通常为 `http://localhost:8085/api/admin`（已包含 `/api/admin`）
+    - 前端路径应该从 `/` 开始，但**不包含** `/api/admin` 前缀
+    - 示例：
+      ```typescript
+      // ✅ 正确：路径不包含 /api/admin 前缀
+      export const multiAgentApi = {
+        getAllAgents: async () => {
+          return request<MultiAgentAgentDTO[]>(
+            '/multi-agent/agents',  // 正确：不包含 /api/admin
+            { method: 'GET' }
+          );
+        }
+      };
+      
+      // ❌ 错误：路径包含 /api/admin 前缀（会导致重复）
+      export const multiAgentApi = {
+        getAllAgents: async () => {
+          return request<MultiAgentAgentDTO[]>(
+            '/api/admin/multi-agent/agents',  // 错误：会导致 /api/admin/api/admin/multi-agent/agents
+            { method: 'GET' }
+          );
+        }
+      };
+      ```
+  - **检查清单**:
+    - ✅ 后端 Controller 路径包含完整前缀（如 `/api/admin/...`）
+    - ✅ 前端 API 路径不包含 `API_BASE_URL` 中已有的前缀
+    - ✅ 前端路径以 `/` 开头，但不包含 `/api/admin`
+    - ✅ 最终请求 URL = `API_BASE_URL` + 前端路径（如：`http://localhost:8085/api/admin` + `/multi-agent/agents` = `http://localhost:8085/api/admin/multi-agent/agents`）
+  - **常见错误**:
+    - ❌ 前端路径包含 `/api/admin`，导致最终 URL 变成 `/api/admin/api/admin/...`
+    - ❌ 后端路径不完整，缺少 `/api/admin` 前缀
+    - ❌ 前后端路径不一致，导致 404 错误
 - **请求规范**: 
   - Content-Type: `application/json`
   - 认证: Bearer Token（`Authorization: Bearer {token}`）
@@ -270,11 +318,37 @@
 - **扁平化**: 简化视觉层次，提高可读性和性能
 - **温馨**: 使用柔和色彩和圆角，营造温暖友好的氛围
 
+#### 多风格支持 ⭐
+- **主题系统**: ⭐ **main 项目 UI 设计必须支持多风格（主题/皮肤）切换**
+  - **实现方式**: 使用 CSS 变量（CSS Custom Properties）实现动态主题切换
+  - **主题管理**: 通过 React Context API 管理主题状态，使用 localStorage 持久化用户偏好
+  - **主题定义**: 每个主题包含完整的颜色、阴影、圆角、渐变等设计令牌（Design Tokens）
+  - **平台支持**: PC 端和 Mobile 端都必须支持主题切换
+  - **默认主题**: 保持"科技风格"（Tech Style）作为默认主题，确保向后兼容
+  - **主题扩展**: 支持添加新主题，如"海天宁静"（Serene Horizon）等
+  - **实现要求**:
+    - ✅ 所有颜色值必须使用 CSS 变量（`var(--color-name)`），禁止硬编码颜色
+    - ✅ 所有组件必须使用主题变量，确保主题切换时正确更新
+    - ✅ 渐变、阴影、圆角等设计属性也应通过 CSS 变量定义
+    - ✅ 移动端特殊效果（云纹背景、星空背景等）应支持主题切换
+    - ✅ 主题切换应平滑过渡，使用 CSS transition 实现动画效果
+    - ✅ 主题选择器应在设置界面中提供，PC 和 Mobile 端都应支持
+  - **技术实现**:
+    - 主题定义文件: `main/frontend/src/themes/` 目录下定义各主题的设计令牌
+    - CSS 变量文件: `main/frontend/src/tokens.css` 中定义所有主题的 CSS 变量
+    - 主题上下文: `main/frontend/contexts/ThemeContext.tsx` 提供主题管理功能
+    - 主题选择器: PC 端使用 `components/ThemeSelector.tsx`，Mobile 端使用 `mobile/components/MobileThemeSelector.tsx`
+  - **迁移要求**:
+    - 现有组件应逐步迁移到使用 CSS 变量，替换硬编码的颜色值
+    - 新开发的组件必须从一开始就使用主题变量
+    - 迁移优先级: 入口页面 → 主要功能页面 → 辅助组件 → 模态框
+  - **参考文档**: 详细实现请参考 `openspec/changes/add-theme-skin-management-system/` 目录下的设计文档和实现报告
+
 #### 规范内容
-- **色彩系统**: 主色、辅助色、语义色、渐变色规范
+- **色彩系统**: 主色、辅助色、语义色、渐变色规范（通过主题系统实现）
 - **字体系统**: 字体族、字号、字重、行高规范
 - **间距系统**: 8px基准，统一间距等级
-- **组件设计**: 按钮、表单、卡片、导航等组件规范
+- **组件设计**: 按钮、表单、卡片、导航等组件规范（支持主题切换）
 - **交互设计**: 动画、反馈、状态规范
 - **PC端规范**: 布局、导航、响应式、键盘操作
 - **Mobile端规范**: 触摸优化、手势、底部导航、安全区域
@@ -282,9 +356,10 @@
 
 #### 开发要求
 - **必须遵循**: 所有新页面和组件必须符合UX设计规范
-- **代码审查**: 代码审查时检查是否符合UX规范
-- **Tailwind CSS**: 使用规范中提供的Tailwind CSS类名
-- **渐进改进**: 现有页面逐步改进以符合规范
+- **主题支持**: ⭐ **所有新组件必须使用 CSS 变量，支持主题切换**
+- **代码审查**: 代码审查时检查是否符合UX规范和主题系统要求
+- **Tailwind CSS**: 使用规范中提供的Tailwind CSS类名，结合 CSS 变量实现主题支持
+- **渐进改进**: 现有页面逐步改进以符合规范和主题系统
 
 **参考文档**：详细UX设计规范请参考 `docs/12-开发指南/开发规范/心域开发指南.md` 第3.5节（UX设计规范）
 
@@ -485,3 +560,10 @@ Closes #123
 **最后更新**: 2025-01-09  
 **参考文档**: `docs/12-开发指南/开发规范/心域开发指南.md`  
 **维护者**: HeartSphere开发团队
+
+---
+
+## 更新日志
+
+### 2025-01-09
+- 添加 **API URL 定义标准**，明确前后端路径定义规范，避免 URL 路径重复问题

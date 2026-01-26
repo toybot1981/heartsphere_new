@@ -16,7 +16,10 @@ import { MobilePageTransition } from '../components/MobilePageTransition';
  * 加载中的占位组件
  */
 const ScreenLoadingFallback: React.FC = () => (
-  <div className="h-full flex items-center justify-center bg-black">
+  <div 
+    className="h-full flex items-center justify-center"
+    style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+  >
     <MobileLoadingSpinner size="lg" text="加载中..." />
   </div>
 );
@@ -40,10 +43,23 @@ export const renderCurrentScreen = (
   if (!isValidScreen(currentScreen)) {
     console.warn(`[MobileApp] 无效的screen: ${currentScreen}`);
     return (
-      <div className="h-full flex items-center justify-center text-white">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ color: 'var(--text-primary)' }}
+      >
         <div className="text-center">
-          <p className="text-xl mb-2">未知的页面</p>
-          <p className="text-gray-400">Screen: {currentScreen}</p>
+          <p 
+            className="text-xl mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            未知的页面
+          </p>
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            Screen: {currentScreen}
+          </p>
         </div>
       </div>
     );
@@ -53,10 +69,23 @@ export const renderCurrentScreen = (
   const ScreenComponent = getScreenComponent(currentScreen);
   if (!ScreenComponent) {
     return (
-      <div className="h-full flex items-center justify-center text-white">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ color: 'var(--text-primary)' }}
+      >
         <div className="text-center">
-          <p className="text-xl mb-2">页面未实现</p>
-          <p className="text-gray-400">Screen: {currentScreen}</p>
+          <p 
+            className="text-xl mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            页面未实现
+          </p>
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            Screen: {currentScreen}
+          </p>
         </div>
       </div>
     );
@@ -69,32 +98,80 @@ export const renderCurrentScreen = (
     // 显示友好的错误提示，而不是返回null
     if (currentScreen === 'mobileProfile' || currentScreen === 'profile') {
       return (
-        <div className="h-full flex items-center justify-center bg-black text-white relative">
+        <div 
+          className="h-full flex items-center justify-center relative"
+          style={{
+            backgroundColor: 'var(--bg-primary, #000000)',
+            color: 'var(--text-primary)',
+          }}
+        >
           {/* 关闭按钮 */}
           <button
             onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
-            className="absolute top-4 left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/10"
+            className="absolute top-4 left-4 p-2 rounded-full transition-all border"
+            style={{
+              backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))',
+              borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.2))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))';
+            }}
             aria-label="返回"
             title="返回"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-6 w-6" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           
           <div className="text-center p-6 max-w-sm mx-auto">
-            <p className="text-xl mb-2">需要登录</p>
-            <p className="text-gray-400 mb-6">请先登录或创建访客档案</p>
+            <p 
+              className="text-xl mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              需要登录
+            </p>
+            <p 
+              className="mb-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              请先登录或创建访客档案
+            </p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'profileSetup' })}
-                className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg text-white font-semibold"
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{
+                  background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-pink, #db2777), var(--color-primary, #9333ea)))',
+                  color: 'var(--text-primary)',
+                }}
               >
                 前往登录
               </button>
               <button
                 onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-semibold border border-white/20 transition-all"
+                className="px-4 py-2 rounded-lg font-semibold border transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))',
+                  borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.2))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))';
+                }}
               >
                 返回
               </button>
@@ -106,32 +183,80 @@ export const renderCurrentScreen = (
     // 对于connectionSpace，如果没有userProfile，显示提示
     if (currentScreen === 'connectionSpace') {
       return (
-        <div className="h-full flex items-center justify-center bg-black text-white relative">
+        <div 
+          className="h-full flex items-center justify-center relative"
+          style={{
+            backgroundColor: 'var(--bg-primary, #000000)',
+            color: 'var(--text-primary)',
+          }}
+        >
           {/* 关闭按钮 */}
           <button
             onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
-            className="absolute top-4 left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/10"
+            className="absolute top-4 left-4 p-2 rounded-full transition-all border"
+            style={{
+              backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))',
+              borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.2))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))';
+            }}
             aria-label="返回"
             title="返回"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-6 w-6" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           
           <div className="text-center p-6 max-w-sm mx-auto">
-            <p className="text-xl mb-2">需要登录</p>
-            <p className="text-gray-400 mb-6">请先登录以使用心域连接功能</p>
+            <p 
+              className="text-xl mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              需要登录
+            </p>
+            <p 
+              className="mb-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              请先登录以使用心域连接功能
+            </p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => builder.handlers.handleOpenLoginModal()}
-                className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg text-white font-semibold"
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{
+                  background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-pink, #db2777), var(--color-primary, #9333ea)))',
+                  color: 'var(--text-primary)',
+                }}
               >
                 前往登录
               </button>
               <button
                 onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-semibold border border-white/20 transition-all"
+                className="px-4 py-2 rounded-lg font-semibold border transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))',
+                  borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.2))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))';
+                }}
               >
                 返回
               </button>
@@ -143,13 +268,33 @@ export const renderCurrentScreen = (
     // 对于characterSelection，如果没有currentScene，显示提示
     if (currentScreen === 'characterSelection') {
       return (
-        <div className="h-full flex items-center justify-center bg-black text-white">
+        <div 
+          className="h-full flex items-center justify-center"
+          style={{
+            backgroundColor: 'var(--bg-primary, #000000)',
+            color: 'var(--text-primary)',
+          }}
+        >
           <div className="text-center p-6">
-            <p className="text-xl mb-2">请先选择场景</p>
-            <p className="text-gray-400 mb-4">需要先选择一个场景才能选择角色</p>
+            <p 
+              className="text-xl mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              请先选择场景
+            </p>
+            <p 
+              className="mb-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              需要先选择一个场景才能选择角色
+            </p>
             <button
               onClick={() => builder.dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'sceneSelection' })}
-              className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg text-white font-semibold"
+              className="px-4 py-2 rounded-lg font-semibold"
+              style={{
+                background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-pink, #db2777), var(--color-primary, #9333ea)))',
+                color: 'var(--text-primary)',
+              }}
             >
               前往选择场景
             </button>

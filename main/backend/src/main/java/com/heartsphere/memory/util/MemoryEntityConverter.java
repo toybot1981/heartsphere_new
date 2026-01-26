@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.UUID;
 
 /**
  * 记忆实体转换工具类
@@ -32,15 +33,15 @@ public class MemoryEntityConverter {
         
         try {
             ChatMessageEntity entity = ChatMessageEntity.builder()
-                .id(message.getId())
+                .id(message.getId() != null ? message.getId() : UUID.randomUUID().toString().replace("-", ""))
                 .sessionId(message.getSessionId())
                 .userId(message.getUserId())
                 .role(message.getRole())
                 .content(message.getContent())
-                .timestamp(message.getTimestamp())
+                .timestamp(message.getTimestamp() != null ? message.getTimestamp() : System.currentTimeMillis())
                 .importance(message.getImportance() != null ? message.getImportance().toString() : null)
                 .metadata(message.getMetadata() != null ? objectMapper.writeValueAsString(message.getMetadata()) : null)
-                .expiresAt(calculateExpiresAt(message.getTimestamp()))
+                .expiresAt(calculateExpiresAt(message.getTimestamp() != null ? message.getTimestamp() : System.currentTimeMillis()))
                 .build();
             
             return entity;

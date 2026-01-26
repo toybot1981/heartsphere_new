@@ -31,13 +31,13 @@ public class ExecutionMonitorServiceImpl implements ExecutionMonitorService {
     
     @Override
     public void recordTaskStart(String taskId, String sessionId) {
-        log.debug("记录任务开始: taskId={}, sessionId={}", taskId, sessionId);
+        log.info("记录任务开始: taskId={}, sessionId={}", taskId, sessionId);
         totalTasks.incrementAndGet();
     }
     
     @Override
     public void recordTaskComplete(String taskId, boolean success, long duration) {
-        log.debug("记录任务完成: taskId={}, success={}, duration={}ms", taskId, success, duration);
+        log.info("记录任务完成: taskId={}, success={}, duration={}ms", taskId, success, duration);
         
         if (success) {
             successfulTasks.incrementAndGet();
@@ -50,13 +50,13 @@ public class ExecutionMonitorServiceImpl implements ExecutionMonitorService {
     
     @Override
     public void recordMetrics(String taskId, Map<String, Object> metrics) {
-        log.debug("记录执行指标: taskId={}, metrics={}", taskId, metrics);
+        log.info("记录执行指标: taskId={}, metrics={}", taskId, metrics);
         // TODO: 存储指标数据
     }
     
     @Override
     public ExecutionStatistics getStatistics(String sessionId, LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("获取执行统计: sessionId={}", sessionId);
+        log.info("获取执行统计: sessionId={}", sessionId);
         
         ExecutionStatistics stats = new ExecutionStatistics();
         stats.setTotalTasks(totalTasks.get());

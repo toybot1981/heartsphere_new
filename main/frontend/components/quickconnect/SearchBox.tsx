@@ -57,18 +57,24 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
   return (
     <div className="relative w-full">
       <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-          isFocused
-            ? 'border-blue-500 bg-white/15 shadow-lg'
-            : 'border-white/20 bg-white/10'
-        }`}
+        className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200"
+        style={{
+          borderColor: isFocused 
+            ? 'var(--color-primary, #3b82f6)' 
+            : 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+          backgroundColor: isFocused 
+            ? 'var(--bg-overlay, rgba(255, 255, 255, 0.15))' 
+            : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+          boxShadow: isFocused ? 'var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.5))' : 'none',
+        }}
       >
         {/* 搜索图标 */}
         <svg
-          className="w-5 h-5 text-gray-400"
+          className="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          style={{ color: 'var(--text-tertiary)' }}
         >
           <path
             strokeLinecap="round"
@@ -86,15 +92,25 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm"
+          className="flex-1 bg-transparent outline-none text-sm"
+          style={{
+            color: 'var(--text-primary)',
+          }}
         />
         
         {/* 清除按钮 */}
         {value && (
           <button
             onClick={handleClear}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
             type="button"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg
               className="w-5 h-5"

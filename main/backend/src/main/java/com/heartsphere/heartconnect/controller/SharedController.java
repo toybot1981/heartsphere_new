@@ -417,8 +417,8 @@ public class SharedController {
             @RequestParam(defaultValue = "100") int limit,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         // 改为DEBUG级别，避免频繁请求时产生大量日志
-        log.debug("========== 共享模式：获取聊天消息历史 ==========");
-        log.debug("sessionId: {}, limit: {}", sessionId, limit);
+        log.info("========== 共享模式：获取聊天消息历史 ==========");
+        log.info("sessionId: {}, limit: {}", sessionId, limit);
         
         // 验证共享模式是否激活
         if (!SharedModeContext.isActive()) {
@@ -456,7 +456,7 @@ public class SharedController {
                 .collect(Collectors.toList());
             
             // 改为DEBUG级别，避免频繁请求时产生大量日志
-            log.debug("✅ 获取共享模式消息成功: sessionId={}, 消息数量={}", sessionId, sessionMessages.size());
+            log.info("✅ 获取共享模式消息成功: sessionId={}, 消息数量={}", sessionId, sessionMessages.size());
             
             Map<String, Object> result = new HashMap<>();
             result.put("messages", sessionMessages);

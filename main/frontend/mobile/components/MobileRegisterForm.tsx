@@ -218,29 +218,39 @@ export const MobileRegisterForm: React.FC<MobileRegisterFormProps> = memo(({
   };
 
   // 获取密码输入框的样式
-  const getPasswordInputStyle = (password: string): string => {
+  const getPasswordInputStyle = (password: string): React.CSSProperties => {
     if (password.length === 0) {
-      return MobileInputStyles;
+      return {};
     }
     if (passwordStrength === 'strong') {
-      return `${MobileInputStyles} border-green-500/50 focus:border-green-400 focus:ring-green-500/20`;
+      return {
+        borderColor: 'var(--color-success)',
+      };
     } else if (passwordStrength === 'medium') {
-      return `${MobileInputStyles} border-yellow-500/50 focus:border-yellow-400 focus:ring-yellow-500/20`;
+      return {
+        borderColor: 'var(--color-warning)',
+      };
     } else if (passwordErrors.length > 0) {
-      return `${MobileInputStyles} border-red-500/50 focus:border-red-400 focus:ring-red-500/20`;
+      return {
+        borderColor: 'var(--color-error)',
+      };
     }
-    return MobileInputStyles;
+    return {};
   };
 
   // 获取确认密码输入框的样式
-  const getConfirmPasswordInputStyle = (): string => {
+  const getConfirmPasswordInputStyle = (): React.CSSProperties => {
     if (registerConfirmPassword.length === 0) {
-      return MobileInputStyles;
+      return {};
     }
     if (validatePasswordMatch(registerPassword, registerConfirmPassword)) {
-      return `${MobileInputStyles} border-green-500/50 focus:border-green-400 focus:ring-green-500/20`;
+      return {
+        borderColor: 'var(--color-success)',
+      };
     }
-    return `${MobileInputStyles} border-red-500/50 focus:border-red-400 focus:ring-red-500/20`;
+    return {
+      borderColor: 'var(--color-error)',
+    };
   };
 
   return (
@@ -351,7 +361,8 @@ export const MobileRegisterForm: React.FC<MobileRegisterFormProps> = memo(({
           value={registerPassword}
           onChange={(e) => handlePasswordChange(e.target.value)}
           placeholder="至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)"
-          className={getPasswordInputStyle(registerPassword)}
+          className={MobileInputStyles}
+          style={getPasswordInputStyle(registerPassword)}
           autoComplete="new-password"
           aria-label="密码"
           disabled={isRegistering}
@@ -369,7 +380,8 @@ export const MobileRegisterForm: React.FC<MobileRegisterFormProps> = memo(({
           value={registerConfirmPassword}
           onChange={(e) => setRegisterConfirmPassword(e.target.value)}
           placeholder="请再次输入密码以确认"
-          className={getConfirmPasswordInputStyle()}
+          className={MobileInputStyles}
+          style={getConfirmPasswordInputStyle()}
           autoComplete="new-password"
           aria-label="确认密码"
           disabled={isRegistering}

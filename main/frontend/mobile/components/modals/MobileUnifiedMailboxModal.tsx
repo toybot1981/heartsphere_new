@@ -169,35 +169,56 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col"
+      className="fixed inset-0 z-50 backdrop-blur-sm flex flex-col"
+      style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.6))' }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mailbox-modal-title"
     >
       <div
-        className="flex-1 flex flex-col bg-slate-900/95 backdrop-blur-xl animate-scale-in"
+        className="flex-1 flex flex-col backdrop-blur-xl animate-scale-in"
+        style={{
+          backgroundColor: 'var(--bg-modal, rgba(15, 23, 42, 0.95))',
+          animationDuration: '200ms',
+          animationTimingFunction: 'ease-out',
+        }}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.stopPropagation();
           }
         }}
-        style={{
-          animationDuration: '200ms',
-          animationTimingFunction: 'ease-out',
-        }}
       >
         {/* 头部 - 移动端优化 */}
-        <div className="sticky top-0 z-20 pt-[calc(1rem+env(safe-area-inset-top))] bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-md border-b border-white/10 px-4 py-3">
+        <div 
+          className="sticky top-0 z-20 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md border-b px-4 py-3"
+          style={{
+            background: 'linear-gradient(to bottom, var(--bg-modal, rgba(15, 23, 42, 0.95)), var(--bg-primary, rgba(2, 6, 23, 0.95)))',
+            borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+          }}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <h2 id="mailbox-modal-title" className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+              <h2 
+                id="mailbox-modal-title" 
+                className="text-xl font-bold"
+                style={{
+                  background: 'var(--gradient-text-primary, linear-gradient(to right, var(--color-primary, #818cf8), var(--color-primary, #c084fc)))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
                 📬 跨时空信箱
               </h2>
               {unreadCount > 0 && (
                 <span 
-                  className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center"
+                  className="text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center"
+                  style={{
+                    backgroundColor: 'var(--color-error, #ef4444)',
+                    color: 'var(--text-primary)',
+                  }}
                   aria-label={`${unreadCount} 条未读消息`}
                   role="status"
                   aria-live="polite"
@@ -220,7 +241,7 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
                 onClick={onClose}
                 variant="ghost"
                 size="sm"
-                className="text-slate-400"
+                style={{ color: 'var(--text-tertiary)' }}
                 aria-label="关闭"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -241,10 +262,11 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
               aria-label="搜索消息"
             />
             <svg 
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
+              style={{ color: 'var(--text-tertiary)' }}
               aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -253,18 +275,28 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
         </div>
 
         {/* 标签栏 - 移动端优化 */}
-        <div className="sticky top-[88px] z-10 flex border-b border-white/10 bg-slate-900/80 backdrop-blur-sm">
+        <div 
+          className="sticky top-[88px] z-10 flex border-b backdrop-blur-sm"
+          style={{
+            borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+            backgroundColor: 'var(--bg-modal, rgba(15, 23, 42, 0.8))',
+          }}
+        >
           <button
             onClick={() => {
               setViewMode('inbox');
               setSelectedMessage(null);
               setInboxView('list');
             }}
-            className={`flex-1 py-3 font-semibold text-sm transition-all active:opacity-70 touch-manipulation min-h-[44px] ${
-              viewMode === 'inbox'
-                ? 'text-purple-400 border-b-2 border-purple-500/50'
-                : 'text-slate-400'
-            }`}
+            className="flex-1 py-3 font-semibold text-sm transition-all active:opacity-70 touch-manipulation min-h-[44px] border-b-2"
+            style={{
+              color: viewMode === 'inbox'
+                ? 'var(--color-primary, #c084fc)'
+                : 'var(--text-tertiary)',
+              borderBottomColor: viewMode === 'inbox'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+                : 'transparent',
+            }}
             aria-label="收件箱"
             aria-pressed={viewMode === 'inbox'}
             role="tab"
@@ -277,11 +309,15 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
               setSelectedConversation(null);
               setConversationView('list');
             }}
-            className={`flex-1 py-3 font-semibold text-sm transition-all active:opacity-70 touch-manipulation min-h-[44px] ${
-              viewMode === 'conversations'
-                ? 'text-purple-400 border-b-2 border-purple-500/50'
-                : 'text-slate-400'
-            }`}
+            className="flex-1 py-3 font-semibold text-sm transition-all active:opacity-70 touch-manipulation min-h-[44px] border-b-2"
+            style={{
+              color: viewMode === 'conversations'
+                ? 'var(--color-primary, #c084fc)'
+                : 'var(--text-tertiary)',
+              borderBottomColor: viewMode === 'conversations'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+                : 'transparent',
+            }}
             aria-label="对话"
             aria-pressed={viewMode === 'conversations'}
             role="tab"
@@ -296,7 +332,13 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
           <>
             {/* 分类选择 - 移动端横向滚动 */}
             {inboxView === 'list' && (
-              <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700/50 px-4 py-2 overflow-x-auto">
+              <div 
+                className="sticky top-0 z-10 backdrop-blur-sm border-b px-4 py-2 overflow-x-auto"
+                style={{
+                  backgroundColor: 'var(--bg-modal, rgba(15, 23, 42, 0.9))',
+                  borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 0.5))',
+                }}
+              >
                 <div className="flex gap-2 min-w-max">
                   <MobileTouchableButton
                     onClick={() => handleCategoryChange(undefined)}
@@ -376,21 +418,45 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
                           handleMessageClick(message);
                         }
                       }}
-                      className="bg-slate-800/80 backdrop-blur-md border border-white/10 rounded-xl p-4 active:scale-[0.97] active:bg-slate-700/80 transition-all cursor-pointer touch-manipulation"
+                      className="backdrop-blur-md border rounded-xl p-4 active:scale-[0.97] transition-all cursor-pointer touch-manipulation"
+                      style={{
+                        backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 0.8))',
+                        borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-card-hover, rgba(51, 65, 85, 0.8))';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(30, 41, 59, 0.8))';
+                      }}
                       role="button"
                       tabIndex={0}
                       aria-label={`打开消息: ${message.subject || '无标题'}`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-white font-semibold text-sm flex-1">{message.subject || '无标题'}</h3>
+                        <h3 
+                          className="font-semibold text-sm flex-1"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {message.subject || '无标题'}
+                        </h3>
                         {!message.isRead && (
-                          <span className="w-2 h-2 bg-purple-500 rounded-full ml-2"></span>
+                          <span 
+                            className="w-2 h-2 rounded-full ml-2"
+                            style={{ backgroundColor: 'var(--color-primary, #a855f7)' }}
+                          />
                         )}
                       </div>
-                      <p className="text-slate-400 text-xs line-clamp-2 mb-2">
+                      <p 
+                        className="text-xs line-clamp-2 mb-2"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
                         {message.content || ''}
                       </p>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
+                      <div 
+                        className="flex items-center justify-between text-xs"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
                         <span>{message.category}</span>
                         <span>{new Date(message.createdAt).toLocaleDateString()}</span>
                       </div>
@@ -405,12 +471,29 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
                   className="mb-4"
                   aria-label="返回消息列表"
                 />
-                <div className="bg-slate-800/80 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-lg shadow-purple-500/10">
-                  <h2 className="text-white font-bold text-lg mb-2">{selectedMessage.subject || '无标题'}</h2>
-                  <div className="text-slate-400 text-xs mb-4">
+                <div 
+                  className="backdrop-blur-md border rounded-xl p-4 shadow-lg"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-color-overlay)',
+                  }}
+                >
+                  <h2 
+                    className="font-bold text-lg mb-2"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {selectedMessage.subject || '无标题'}
+                  </h2>
+                  <div 
+                    className="text-xs mb-4"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     {new Date(selectedMessage.createdAt).toLocaleString()}
                   </div>
-                  <div className="text-slate-300 whitespace-pre-wrap">
+                  <div 
+                    className="whitespace-pre-wrap"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {selectedMessage.content || ''}
                   </div>
                 </div>
@@ -443,23 +526,50 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
                           handleConversationClick(conversation);
                         }
                       }}
-                      className="bg-slate-800/80 backdrop-blur-md border border-white/10 rounded-xl p-4 active:scale-[0.97] active:bg-slate-700/80 transition-all cursor-pointer touch-manipulation"
+                      className="backdrop-blur-md border rounded-xl p-4 active:scale-[0.97] transition-all cursor-pointer touch-manipulation"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-color-overlay)',
+                      }}
+                      onMouseDown={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                      }}
+                      onMouseUp={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                      }}
                       role="button"
                       tabIndex={0}
                       aria-label={`打开与${conversation.participantName || '未知用户'}的对话`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-white font-semibold">{conversation.participantName || '未知用户'}</h3>
+                        <h3 
+                          className="font-semibold"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {conversation.participantName || '未知用户'}
+                        </h3>
                         {conversation.unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          <span 
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: 'var(--color-error)',
+                              color: 'var(--text-primary)',
+                            }}
+                          >
                             {conversation.unreadCount}
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-400 text-xs line-clamp-2">
+                      <p 
+                        className="text-xs line-clamp-2"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
                         {conversation.lastMessage?.content || ''}
                       </p>
-                      <div className="text-slate-500 text-xs mt-2">
+                      <div 
+                        className="text-xs mt-2"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
                         {conversation.lastMessage?.createdAt 
                           ? new Date(conversation.lastMessage.createdAt).toLocaleDateString()
                           : ''}
@@ -472,12 +582,22 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
               <div>
                 <button
                   onClick={handleBackToConversationList}
-                  className="mb-4 text-purple-400 text-sm flex items-center gap-2"
+                  className="mb-4 text-sm flex items-center gap-2"
+                  style={{ color: 'var(--color-primary)' }}
                 >
                   ← 返回
                 </button>
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-                  <div className="text-white font-semibold mb-4">
+                <div 
+                  className="border rounded-xl p-4"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-color-overlay)',
+                  }}
+                >
+                  <div 
+                    className="font-semibold mb-4"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {selectedConversation.participantName || '未知用户'}
                   </div>
                   <div className="space-y-3">
@@ -486,12 +606,25 @@ export const MobileUnifiedMailboxModal: React.FC<MobileUnifiedMailboxModalProps>
                         key={msg.id}
                         className={`p-3 rounded-lg ${
                           msg.senderId === currentUserId
-                            ? 'bg-purple-600/30 ml-auto text-right'
-                            : 'bg-slate-700/50'
+                            ? 'ml-auto text-right'
+                            : ''
                         }`}
+                        style={{
+                          backgroundColor: msg.senderId === currentUserId
+                            ? 'var(--bg-secondary-alpha)'
+                            : 'var(--bg-overlay-alpha)',
+                        }}
                       >
-                        <div className="text-slate-300 text-sm">{msg.content}</div>
-                        <div className="text-slate-500 text-xs mt-1">
+                        <div 
+                          className="text-sm"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {msg.content}
+                        </div>
+                        <div 
+                          className="text-xs mt-1"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
                           {new Date(msg.createdAt).toLocaleTimeString()}
                         </div>
                       </div>

@@ -121,12 +121,32 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
     : conversation.participant1Id;
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-950">
+    <div 
+      className="flex flex-col h-full"
+      style={{
+        background: 'var(--gradient-bg, linear-gradient(to bottom, #0f172a, #020617))',
+      }}
+    >
       {/* 头部 */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-950/80 to-slate-900/80 backdrop-blur-sm relative z-10">
+      <div 
+        className="flex items-center justify-between px-6 py-4 border-b backdrop-blur-sm relative z-10"
+        style={{
+          borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+          background: 'var(--gradient-bg, linear-gradient(to right, #020617, #0f172a))',
+        }}
+      >
         <button
           onClick={onBack}
-          className="text-slate-400 hover:text-white transition-all duration-200 mr-4 p-2 rounded-lg hover:bg-slate-800/50 active:scale-95"
+          className="transition-all duration-200 mr-4 p-2 rounded-lg active:scale-95"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -138,18 +158,36 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             <img
               src={(conversation as any).participant2Avatar}
               alt={(conversation as any).participant2Name || '用户'}
-              className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30 shadow-lg"
+              className="w-12 h-12 rounded-full object-cover border-2 shadow-lg"
+              style={{
+                borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+              }}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg border-2 border-white/20">
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-lg border-2"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to bottom right, #9333ea, #ec4899, #6366f1))',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+              }}
+            >
               {(conversation as any).participant2Name?.charAt(0) || '?'}
             </div>
           )}
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 
+              className="text-lg font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {(conversation as any).participant2Name || '未知用户'}
             </h2>
-            <p className="text-xs text-slate-400">在线</p>
+            <p 
+              className="text-xs"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              在线
+            </p>
           </div>
         </div>
       </div>
@@ -157,10 +195,11 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
       {/* 消息列表 */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent"
         style={{
-          backgroundImage: `radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
-                           radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.03) 0%, transparent 50%)`
+          background: 'var(--gradient-bg, linear-gradient(to bottom, #0f172a, #0f172a, #020617))',
+          backgroundImage: `radial-gradient(circle at 20% 50%, var(--color-primary, rgba(139, 92, 246, 0.03)) 0%, transparent 50%),
+                           radial-gradient(circle at 80% 80%, var(--color-primary, rgba(236, 72, 153, 0.03)) 0%, transparent 50%)`
         }}
       >
         {hasMore && (
@@ -168,11 +207,34 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             <button
               onClick={handleLoadMore}
               disabled={loading}
-              className="text-slate-400 hover:text-white text-sm px-5 py-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-700/70 transition-all duration-200 disabled:opacity-50 border border-slate-700/30 font-medium"
+              className="text-sm px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50 border font-medium"
+              style={{
+                color: 'var(--text-tertiary)',
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                }
+              }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-slate-500/30 border-t-slate-400 rounded-full animate-spin"></div>
+                  <div 
+                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{
+                      borderColor: 'var(--text-disabled, rgba(148, 163, 184, 0.3))',
+                      borderTopColor: 'var(--text-tertiary, #94a3b8)',
+                    }}
+                  />
                   加载中...
                 </span>
               ) : (
@@ -184,14 +246,33 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
 
         {loading && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-slate-400">加载中...</p>
+            <div 
+              className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mb-4"
+              style={{
+                borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+                borderTopColor: 'var(--color-primary, #9333ea)',
+              }}
+            />
+            <p style={{ color: 'var(--text-tertiary)' }}>加载中...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500">
+          <div 
+            className="flex flex-col items-center justify-center h-full"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             <div className="text-6xl mb-6 animate-bounce">💬</div>
-            <p className="text-lg font-medium mb-2">暂无消息</p>
-            <p className="text-sm text-slate-600">开始对话吧！</p>
+            <p 
+              className="text-lg font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              暂无消息
+            </p>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              开始对话吧！
+            </p>
           </div>
         ) : (
           messages.map(message => (
@@ -207,7 +288,13 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
       </div>
 
       {/* 输入框 */}
-      <div className="px-6 py-4 border-t border-slate-700/50 bg-gradient-to-r from-slate-950/80 to-slate-900/80 backdrop-blur-sm">
+      <div 
+        className="px-6 py-4 border-t backdrop-blur-sm"
+        style={{
+          borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+          background: 'var(--gradient-bg, linear-gradient(to right, #020617, #0f172a))',
+        }}
+      >
         <div className="flex gap-3">
           <div className="flex-1 relative">
             <textarea
@@ -215,7 +302,20 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="输入消息... (Enter发送，Shift+Enter换行)"
-              className="w-full px-5 py-3 bg-slate-800/80 text-white rounded-2xl border border-slate-700/50 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 focus:outline-none resize-none transition-all placeholder-slate-500"
+              className="w-full px-5 py-3 rounded-2xl border outline-none resize-none transition-all"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                e.currentTarget.style.outline = 'none';
+              }}
               rows={1}
               disabled={sending}
             />
@@ -223,11 +323,45 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl hover:from-purple-500 hover:to-pink-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 active:scale-95 disabled:hover:scale-100"
+            className="px-8 py-3 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
+            style={{
+              background: 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!sending && input.trim()) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #a855f7, #f472b6))';
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!sending && input.trim()) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))';
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+              }
+            }}
+            onMouseDown={(e) => {
+              if (!sending && input.trim()) {
+                e.currentTarget.style.transform = 'scale(0.95)';
+              }
+            }}
+            onMouseUp={(e) => {
+              if (!sending && input.trim()) {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }
+            }}
           >
             {sending ? (
               <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div
+                  className="w-4 h-4 border-2 rounded-full animate-spin"
+                  style={{
+                    borderColor: 'var(--border-color-overlay)',
+                    borderTopColor: 'var(--text-primary)',
+                  }}
+                />
                 发送中
               </span>
             ) : (
@@ -253,23 +387,48 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}>
       <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'} flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
         {!isOwn && (
-          <div className="text-xs text-slate-500 mb-1.5 ml-2 font-medium">
+          <div 
+            className="text-xs mb-1.5 ml-2 font-medium"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             {message.senderType === 'system' ? '系统' : '用户'}
           </div>
         )}
         <div
-          className={`px-5 py-3 rounded-2xl shadow-lg transition-all duration-200 hover:scale-[1.02] ${
-            isOwn
-              ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-br-sm'
-              : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-bl-sm backdrop-blur-sm'
-          }`}
+          className="px-5 py-3 rounded-2xl shadow-lg transition-all duration-200 border backdrop-blur-sm"
+          style={{
+            background: isOwn
+              ? 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899, #9333ea))'
+              : 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+            color: isOwn
+              ? 'var(--text-primary)'
+              : 'var(--text-secondary)',
+            borderColor: isOwn
+              ? 'transparent'
+              : 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+            borderRadius: isOwn ? '0.75rem 0.75rem 0.25rem 0.75rem' : '0.75rem 0.75rem 0.75rem 0.25rem',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.02)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
           <div className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</div>
           {message.isEdited && (
-            <div className="text-xs opacity-70 mt-1.5 italic">(已编辑)</div>
+            <div 
+              className="text-xs opacity-70 mt-1.5 italic"
+              style={{ color: 'inherit' }}
+            >
+              (已编辑)
+            </div>
           )}
         </div>
-        <div className={`text-xs text-slate-500 mt-1.5 ${isOwn ? 'mr-2' : 'ml-2'} flex items-center gap-1`}>
+        <div 
+          className={`text-xs mt-1.5 ${isOwn ? 'mr-2' : 'ml-2'} flex items-center gap-1`}
+          style={{ color: 'var(--text-disabled)' }}
+        >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>

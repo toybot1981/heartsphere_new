@@ -289,16 +289,42 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div 
+      className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+      }}
+    >
+      <div 
+        className="rounded-2xl border w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #1f2937)',
+          borderColor: 'var(--border-color-overlay, #374151)',
+        }}
+      >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #374151)' }}
+        >
           <div>
-            <h2 className="text-2xl font-bold text-white">编辑主线剧情</h2>
+            <h2 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              编辑主线剧情
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors text-2xl"
+            className="transition-colors text-2xl"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             ×
           </button>
@@ -308,86 +334,186 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* 所属场景 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">
-              所属场景 <span className="text-red-500">*</span>
+            <label 
+              className="text-sm block mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              所属场景 <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <input
               value={scene.name}
               disabled
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-gray-400 cursor-not-allowed"
+              className="w-full rounded-lg px-4 py-2 border cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                borderColor: 'var(--border-color-overlay, #374151)',
+                color: 'var(--text-tertiary)',
+              }}
             />
           </div>
 
           {/* 剧情名称 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">
-              剧情名称 <span className="text-red-500">*</span>
+            <label 
+              className="text-sm block mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              剧情名称 <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <input
               value={mainStory.name}
               onChange={e => updateField('name', e.target.value)}
               placeholder="请输入剧情名称"
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+              className="w-full rounded-lg px-4 py-2 border outline-none"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                borderColor: 'var(--border-color-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+              }}
             />
           </div>
 
           {/* 叙事者年龄和角色定位 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-300 block mb-2">叙事者年龄</label>
+              <label 
+                className="text-sm block mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                叙事者年龄
+              </label>
               <input
                 type="number"
                 value={mainStory.age || ''}
                 onChange={e => updateField('age', parseInt(e.target.value) || 0)}
-                className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+                className="w-full rounded-lg px-4 py-2 border outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                  borderColor: 'var(--border-color-overlay, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+                }}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-300 block mb-2">角色定位</label>
+              <label 
+                className="text-sm block mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                角色定位
+              </label>
               <input
                 value={mainStory.role || '叙事者'}
                 onChange={e => updateField('role', e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+                className="w-full rounded-lg px-4 py-2 border outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                  borderColor: 'var(--border-color-overlay, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+                }}
               />
             </div>
           </div>
 
           {/* 剧情简介 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">剧情简介</label>
+            <label 
+              className="text-sm block mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              剧情简介
+            </label>
             <textarea
               value={mainStory.bio || ''}
               onChange={e => updateField('bio', e.target.value)}
               placeholder="请输入剧情简介"
               rows={4}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 border outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                borderColor: 'var(--border-color-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+              }}
             />
           </div>
 
           {/* 开场白 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">
-              开场白（第一句问候） <span className="text-red-500">*</span>
+            <label 
+              className="text-sm block mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              开场白（第一句问候） <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <textarea
               value={mainStory.firstMessage || ''}
               onChange={e => updateField('firstMessage', e.target.value)}
               placeholder="请输入开场白"
               rows={6}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 border outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                borderColor: 'var(--border-color-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+              }}
             />
           </div>
 
           {/* 叙事者头像 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">叙事者头像</label>
+            <label 
+              className="text-sm block mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              叙事者头像
+            </label>
             <div className="space-y-2">
               <div className="flex gap-2">
                 <input
                   value={mainStory.avatarUrl || ''}
                   onChange={e => updateField('avatarUrl', e.target.value)}
                   placeholder="头像URL或点击上传"
-                  className="flex-1 bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+                  className="flex-1 rounded-lg px-4 py-2 border outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(31, 41, 55, 1))',
+                    borderColor: 'var(--border-color-overlay, #374151)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay, #374151)';
+                  }}
                 />
                 <button
                   onClick={() => {
@@ -398,21 +524,59 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                       showAlert('请先登录', '提示', 'warning');
                     }
                   }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm"
+                  className="px-4 py-2 rounded-lg text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #6366f1)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+                  }}
                 >
                   选择资源
                 </button>
                 <button
                   onClick={handleGenerateAvatar}
                   disabled={!mainStory.name || !mainStory.role || !mainStory.bio || isGeneratingAvatar || isUploadingAvatar}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm disabled:opacity-50 transition-colors"
+                  style={{
+                    background: 'var(--gradient-primary, linear-gradient(to right, #6366f1, #9333ea))',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isGeneratingAvatar && !isUploadingAvatar) {
+                      e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #7c3aed))';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isGeneratingAvatar && !isUploadingAvatar) {
+                      e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #9333ea))';
+                    }
+                  }}
                 >
                   {isGeneratingAvatar ? '生成中...' : '🤖 AI生成'}
                 </button>
                 <button
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={isUploadingAvatar || isGeneratingAvatar}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm disabled:opacity-50 transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #6366f1)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isUploadingAvatar && !isGeneratingAvatar) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isUploadingAvatar && !isGeneratingAvatar) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+                    }
+                  }}
                 >
                   {isUploadingAvatar ? '上传中...' : '上传'}
                 </button>
@@ -425,11 +589,24 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                 className="hidden"
               />
               {mainStory.avatarUrl && (
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-700">
+                <div 
+                  className="relative w-24 h-24 rounded-lg overflow-hidden border"
+                  style={{ borderColor: 'var(--border-color-overlay, #374151)' }}
+                >
                   <AvatarPreviewImage src={mainStory.avatarUrl} />
                   <button
                     onClick={() => updateField('avatarUrl', '')}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs z-10"
+                    className="absolute top-1 right-1 rounded-full p-1 transition-colors text-xs z-10"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-error, #ef4444)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(0, 0, 0, 0.6))';
+                    }}
                   >
                     ×
                   </button>
@@ -440,14 +617,25 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
 
           {/* 背景图 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">背景图</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>背景图</label>
             <div className="space-y-2">
               <div className="flex gap-2">
                 <input
                   value={mainStory.backgroundUrl || ''}
                   onChange={e => updateField('backgroundUrl', e.target.value)}
                   placeholder="背景图URL或点击上传"
-                  className="flex-1 bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+                  className="flex-1 rounded-lg px-4 py-2 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
                 <button
                   onClick={() => {
@@ -458,21 +646,47 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                       showAlert('请先登录', '提示', 'warning');
                     }
                   }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm"
+                  className="px-4 py-2 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: 'var(--color-info)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                  }}
                 >
                   选择资源
                 </button>
                 <button
                   onClick={handleGenerateBackground}
                   disabled={!mainStory.name || !mainStory.bio || !scene.name || isGeneratingBackground || isUploadingBackground}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                  style={{
+                    background: 'var(--gradient-primary-button)',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   {isGeneratingBackground ? '生成中...' : '🤖 AI生成'}
                 </button>
                 <button
                   onClick={() => bgInputRef.current?.click()}
                   disabled={isUploadingBackground || isGeneratingBackground}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                  style={{
+                    backgroundColor: 'var(--color-info)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isUploadingBackground && !isGeneratingBackground) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                  }}
                 >
                   {isUploadingBackground ? '上传中...' : '上传'}
                 </button>
@@ -485,11 +699,24 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                 className="hidden"
               />
               {mainStory.backgroundUrl && (
-                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-700">
+                <div
+                  className="relative w-full h-32 rounded-lg overflow-hidden border"
+                  style={{ borderColor: 'var(--border-color-overlay)' }}
+                >
                   <BackgroundPreviewImage src={mainStory.backgroundUrl} />
                   <button
                     onClick={() => updateField('backgroundUrl', '')}
-                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
+                    className="absolute top-2 right-2 rounded-full p-1 transition-colors z-10"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay-alpha)',
+                      color: 'var(--text-primary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-error)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha)';
+                    }}
                   >
                     ×
                   </button>
@@ -501,50 +728,93 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
           {/* 主题色和强调色 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-300 block mb-2">主题色</label>
+              <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>主题色</label>
               <input
                 value={mainStory.themeColor || 'indigo-500'}
                 onChange={e => updateField('themeColor', e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+                className="w-full rounded-lg px-4 py-2 outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  borderColor: 'var(--border-color-overlay)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-info)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                }}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-300 block mb-2">强调色</label>
+              <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>强调色</label>
               <input
                 type="color"
                 value={mainStory.colorAccent || '#6366f1'}
                 onChange={e => updateField('colorAccent', e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none h-10"
+                className="w-full rounded-lg px-4 py-2 outline-none h-10"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  borderColor: 'var(--border-color-overlay)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-info)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                }}
               />
             </div>
           </div>
 
           {/* 系统指令 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">系统指令</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>系统指令</label>
             <textarea
               value={mainStory.systemInstruction || ''}
               onChange={e => updateField('systemInstruction', e.target.value)}
               placeholder="请输入系统指令"
               rows={6}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 语音名称 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">语音名称</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>语音名称</label>
             <input
               value={mainStory.voiceName || ''}
               onChange={e => updateField('voiceName', e.target.value)}
               placeholder="例如: Charon"
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+              className="w-full rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 标签 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">标签（逗号分隔）</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>标签（逗号分隔）</label>
             <input
               value={Array.isArray(mainStory.tags) ? mainStory.tags.join(',') : (mainStory.tags || '')}
               onChange={e => {
@@ -552,25 +822,47 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                 updateField('tags', tagsArray);
               }}
               placeholder="例如: Narrator,Story"
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+              className="w-full rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 语言风格 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">语言风格</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>语言风格</label>
             <textarea
               value={mainStory.speechStyle || ''}
               onChange={e => updateField('speechStyle', e.target.value)}
               placeholder="请输入语言风格"
               rows={2}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 口头禅 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">口头禅（逗号分隔）</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>口头禅（逗号分隔）</label>
             <input
               value={Array.isArray(mainStory.catchphrases) ? mainStory.catchphrases.join(',') : (mainStory.catchphrases || '')}
               onChange={e => {
@@ -578,37 +870,73 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
                 updateField('catchphrases', catchphrasesArray);
               }}
               placeholder="例如: 你知道吗,真的吗"
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none"
+              className="w-full rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 动机 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">动机</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>动机</label>
             <textarea
               value={mainStory.motivations || ''}
               onChange={e => updateField('motivations', e.target.value)}
               placeholder="请输入动机"
               rows={2}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
 
           {/* 秘密 */}
           <div>
-            <label className="text-sm text-gray-300 block mb-2">秘密</label>
+            <label className="text-sm block mb-2" style={{ color: 'var(--text-secondary)' }}>秘密</label>
             <textarea
               value={mainStory.secrets || ''}
               onChange={e => updateField('secrets', e.target.value)}
               placeholder="请输入秘密"
               rows={2}
-              className="w-full bg-gray-800 rounded-lg px-4 py-2 border border-gray-700 text-white focus:border-indigo-500 outline-none resize-none"
+              className="w-full rounded-lg px-4 py-2 outline-none resize-none"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }}
             />
           </div>
         </div>
 
         {/* 底部按钮 */}
-        <div className="flex justify-end gap-4 p-6 border-t border-gray-700">
+        <div 
+          className="flex justify-end gap-4 p-6 border-t"
+          style={{ borderColor: 'var(--border-color-overlay, #374151)' }}
+        >
           <Button
             onClick={onClose}
             variant="secondary"
@@ -618,7 +946,16 @@ export const MainStoryEditor: React.FC<MainStoryEditorProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500"
+            className="px-6 py-2 transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #6366f1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+            }}
           >
             保存修改
           </Button>

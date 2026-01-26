@@ -87,7 +87,7 @@ public class WaitNode implements GraphEngine.GraphNode {
         state.setData("wait_timeout", timeout);
         state.setData("next_node", nextNodeId);
         
-        log.debug("[WaitNode] 流程暂停，等待条件: {}", waitCondition);
+        log.info("[WaitNode] 流程暂停，等待条件: {}", waitCondition);
         return state;
     }
     

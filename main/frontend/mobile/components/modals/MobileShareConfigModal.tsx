@@ -83,15 +83,17 @@ export const MobileShareConfigModal: React.FC<MobileShareConfigModalProps> = mem
             </div>
             <div className="flex gap-2">
               <div
-                className={`w-2 h-2 rounded-full transition-all ${
-                  step >= 1 ? 'bg-purple-500' : 'bg-slate-600'
-                }`}
+                className="w-2 h-2 rounded-full transition-all"
+                style={{
+                  backgroundColor: step >= 1 ? 'var(--color-primary, #a855f7)' : 'var(--bg-card, rgba(71, 85, 105, 1))',
+                }}
                 aria-label="步骤1"
               />
               <div
-                className={`w-2 h-2 rounded-full transition-all ${
-                  step >= 2 ? 'bg-purple-500' : 'bg-slate-600'
-                }`}
+                className="w-2 h-2 rounded-full transition-all"
+                style={{
+                  backgroundColor: step >= 2 ? 'var(--color-primary, #a855f7)' : 'var(--bg-card, rgba(71, 85, 105, 1))',
+                }}
                 aria-label="步骤2"
               />
             </div>

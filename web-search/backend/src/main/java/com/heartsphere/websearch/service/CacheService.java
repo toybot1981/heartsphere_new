@@ -38,7 +38,7 @@ public class CacheService {
      */
     public void recordAccess(String query) {
         accessTimes.put(query, System.currentTimeMillis());
-        log.debug("记录缓存访问: query={}", query);
+        log.info("记录缓存访问: query={}", query);
     }
 
     /**

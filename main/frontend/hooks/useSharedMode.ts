@@ -70,7 +70,7 @@ export const useSharedMode = () => {
     // 通知所有监听器
     notifyListeners();
     
-    logger.debug('[useSharedMode] 进入共享模式:', shareConfig.id, visitorId, shareConfig);
+    logger.info('[useSharedMode] 进入共享模式:', shareConfig.id, visitorId, shareConfig);
   };
   
   /**
@@ -90,7 +90,7 @@ export const useSharedMode = () => {
     // 通知所有监听器
     notifyListeners();
     
-    logger.debug('[useSharedMode] 离开共享模式');
+    logger.info('[useSharedMode] 离开共享模式');
   };
   
   /**

@@ -112,16 +112,33 @@ export const MemoryList: React.FC<MemoryListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48 bg-slate-900/50 rounded-lg">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div 
+        className="flex items-center justify-center h-48 rounded-lg"
+        style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+      >
+        <div 
+          className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+          style={{
+            borderColor: 'var(--color-primary, #6366f1)',
+            borderTopColor: 'transparent',
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-900/50 rounded-lg p-4">
+    <div 
+      className="rounded-lg p-4"
+      style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+    >
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-white mb-4">我的记忆</h3>
+        <h3 
+          className="text-lg font-bold mb-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          我的记忆
+        </h3>
         
         {/* 筛选器 */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -130,13 +147,30 @@ export const MemoryList: React.FC<MemoryListProps> = ({
             placeholder="搜索记忆..."
             value={filter.keyword || ''}
             onChange={(e) => setFilter({ ...filter, keyword: e.target.value })}
-            className="flex-1 min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="flex-1 min-w-[200px] rounded-lg px-3 py-2 outline-none transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #1e293b)',
+              borderColor: 'var(--border-color-overlay, #334155)',
+              borderWidth: '1px',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+              e.currentTarget.style.outline = '1px solid var(--color-primary, rgba(99, 102, 241, 0.5))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color-overlay, #334155)';
+              e.currentTarget.style.outline = 'none';
+            }}
           />
         </div>
       </div>
 
       {memories.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-slate-400">
+        <div 
+          className="flex items-center justify-center h-48"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <p>暂无记忆</p>
         </div>
       ) : (
@@ -144,8 +178,17 @@ export const MemoryList: React.FC<MemoryListProps> = ({
           {memories.map((memory) => (
             <div
               key={memory.id}
-              className="p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-4 rounded-lg transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--bg-secondary, rgba(30, 41, 59, 0.5))',
+              }}
               onClick={() => onMemoryClick?.(memory)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 1))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 0.5))';
+              }}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -153,7 +196,10 @@ export const MemoryList: React.FC<MemoryListProps> = ({
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: importanceColorMap[memory.importance] }}
                   />
-                  <span className="text-xs text-slate-400">
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                     {memoryTypeNames[memory.memoryType]}
                   </span>
                   <span
@@ -167,7 +213,10 @@ export const MemoryList: React.FC<MemoryListProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
                     {new Date(memory.timestamp).toLocaleDateString()}
                   </span>
                   <button
@@ -175,7 +224,14 @@ export const MemoryList: React.FC<MemoryListProps> = ({
                       e.stopPropagation();
                       handleDelete(memory.id);
                     }}
-                    className="text-slate-500 hover:text-red-400 transition-colors"
+                    className="transition-colors"
+                    style={{ color: 'var(--text-disabled)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-disabled)';
+                    }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -184,10 +240,18 @@ export const MemoryList: React.FC<MemoryListProps> = ({
                 </div>
               </div>
               
-              <p className="text-white mb-2">{memory.content}</p>
+              <p 
+                className="mb-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {memory.content}
+              </p>
               
               {memory.structuredData && (
-                <div className="text-xs text-slate-400 mb-2">
+                <div 
+                  className="text-xs mb-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   {memory.structuredData.key && (
                     <span className="mr-2">
                       {memory.structuredData.key}: {String(memory.structuredData.value)}
@@ -196,7 +260,10 @@ export const MemoryList: React.FC<MemoryListProps> = ({
                 </div>
               )}
               
-              <div className="flex items-center gap-4 text-xs text-slate-500">
+              <div 
+                className="flex items-center gap-4 text-xs"
+                style={{ color: 'var(--text-disabled)' }}
+              >
                 <span>使用次数: {memory.usageCount}</span>
                 <span>置信度: {(memory.confidence * 100).toFixed(0)}%</span>
                 {memory.lastUsedAt && (

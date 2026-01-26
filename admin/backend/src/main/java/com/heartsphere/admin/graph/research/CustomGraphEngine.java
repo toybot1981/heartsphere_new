@@ -187,7 +187,7 @@ public class CustomGraphEngine {
                 }
                 
                 // 执行节点
-                log.debug("[CustomGraphEngine] 执行节点: {}", currentNodeId);
+                log.info("[CustomGraphEngine] 执行节点: {}", currentNodeId);
                 currentState = currentNode.execute(currentState);
                 
                 // 查找下一个节点
@@ -206,7 +206,7 @@ public class CustomGraphEngine {
                 }
                 
                 currentNodeId = nextEdge.getTargetNodeId();
-                log.debug("[CustomGraphEngine] 选择下一个节点: {}", currentNodeId);
+                log.info("[CustomGraphEngine] 选择下一个节点: {}", currentNodeId);
             }
             
             if (stepCount >= maxSteps) {

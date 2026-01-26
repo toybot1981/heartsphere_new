@@ -61,5 +61,59 @@
       "document"
     ],
     "created_at": "2026-01-16T00:24:26.948823"
+  },
+  "55f36e4c-c897-46cc-8bf7-f39152a59bd7": {
+    "resource_id": "dea0ddcf-2086-461f-a073-fd7f146423dc",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-23T06:33:56.235838"
+  },
+  "96173508-7085-46ce-ad97-5572eabb1092": {
+    "resource_id": "9d6ce45d-ce2a-4d7a-8eb3-d4e496634363",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-23T06:34:21.530161"
+  },
+  "a89a15be-02b5-421c-9dad-f69e69e87080": {
+    "resource_id": "66043291-1e20-4479-bafc-ad8c872c3bae",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-23T06:34:45.516563"
+  },
+  "cc2bbc58-2c78-4631-90dd-c7511e666961": {
+    "resource_id": "74404ec8-23cf-44e3-ad6d-41304acb5621",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-23T06:35:55.010338"
+  },
+  "e88c6b3e-8fe4-4385-8f2f-335e72f7c97d": {
+    "resource_id": "b80d301c-5f9c-4026-8048-6de0b0186fbc",
+    "memory_type": "preference",
+    "categories": [
+      "preferences",
+      "user_profile"
+    ],
+    "created_at": "2026-01-23T06:36:07.502476"
+  },
+  "f4c1a16b-0641-484f-9bca-c46ce00e8b35": {
+    "resource_id": "9cec47b4-b052-4504-ba26-1dd00663c171",
+    "memory_type": "habit",
+    "categories": [
+      "habits",
+      "behavior"
+    ],
+    "created_at": "2026-01-26T03:34:00.194588"
   }
 }

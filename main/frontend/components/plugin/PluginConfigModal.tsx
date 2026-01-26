@@ -131,11 +131,19 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
       case 'boolean':
         return (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {title}
             </label>
             {description && (
-              <p className="text-xs text-slate-400 mb-2">{description}</p>
+              <p 
+                className="text-xs mb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {description}
+              </p>
             )}
             <label className="inline-flex items-center cursor-pointer">
               <input
@@ -143,9 +151,34 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                 checked={!!value}
                 onChange={(e) => handleConfigChange(key, e.target.checked)}
                 className="sr-only peer"
+                style={{
+                  accentColor: 'var(--color-info, #06b6d4)',
+                }}
               />
-              <div className="relative w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
-              <span className="ml-3 text-sm text-slate-300">{value ? '启用' : '禁用'}</span>
+              <div
+                className="relative w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                style={{
+                  backgroundColor: value ? 'var(--color-info, #06b6d4)' : 'var(--bg-secondary, #334155)',
+                  borderColor: value ? 'var(--color-info, #06b6d4)' : 'var(--bg-overlay, #475569)',
+                }}
+              >
+                <style>{`
+                  .peer:checked ~ div::after {
+                    border-color: var(--text-primary) !important;
+                    background-color: var(--text-primary) !important;
+                  }
+                  .peer:not(:checked) ~ div::after {
+                    border-color: var(--border-color-overlay) !important;
+                    background-color: var(--bg-card) !important;
+                  }
+                `}</style>
+              </div>
+              <span 
+                className="ml-3 text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {value ? '启用' : '禁用'}
+              </span>
             </label>
           </div>
         );
@@ -153,17 +186,38 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
       case 'number':
         return (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {title}
             </label>
             {description && (
-              <p className="text-xs text-slate-400 mb-2">{description}</p>
+              <p 
+                className="text-xs mb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {description}
+              </p>
             )}
             <input
               type="number"
               value={value}
               onChange={(e) => handleConfigChange(key, parseFloat(e.target.value) || 0)}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full px-3 py-2 border rounded-lg outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                e.currentTarget.style.outline = 'none';
+              }}
               placeholder={schema.default?.toString() || '0'}
               min={schema.minimum}
               max={schema.maximum}
@@ -175,17 +229,38 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
       case 'integer':
         return (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {title}
             </label>
             {description && (
-              <p className="text-xs text-slate-400 mb-2">{description}</p>
+              <p 
+                className="text-xs mb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {description}
+              </p>
             )}
             <input
               type="number"
               value={value}
               onChange={(e) => handleConfigChange(key, parseInt(e.target.value, 10) || 0)}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full px-3 py-2 border rounded-lg outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                e.currentTarget.style.outline = 'none';
+              }}
               placeholder={schema.default?.toString() || '0'}
               min={schema.minimum}
               max={schema.maximum}
@@ -196,11 +271,19 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
       case 'array':
         return (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {title}
             </label>
             {description && (
-              <p className="text-xs text-slate-400 mb-2">{description}</p>
+              <p 
+                className="text-xs mb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {description}
+              </p>
             )}
             <textarea
               value={Array.isArray(value) ? JSON.stringify(value, null, 2) : ''}
@@ -214,22 +297,48 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                   // 如果解析失败，保留原始值
                 }
               }}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-mono text-sm"
+              className="w-full px-3 py-2 border rounded-lg outline-none font-mono text-sm"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                e.currentTarget.style.outline = 'none';
+              }}
               placeholder="[]"
               rows={4}
             />
-            <p className="text-xs text-slate-500 mt-1">请输入JSON数组格式，例如: ["item1", "item2"]</p>
+            <p 
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              请输入JSON数组格式，例如: ["item1", "item2"]
+            </p>
           </div>
         );
 
       case 'object':
         return (
           <div key={key} className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               {title}
             </label>
             {description && (
-              <p className="text-xs text-slate-400 mb-2">{description}</p>
+              <p 
+                className="text-xs mb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {description}
+              </p>
             )}
             <textarea
               value={typeof value === 'object' ? JSON.stringify(value, null, 2) : ''}
@@ -243,11 +352,29 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                   // 如果解析失败，保留原始值
                 }
               }}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent font-mono text-sm"
+              className="w-full px-3 py-2 border rounded-lg outline-none font-mono text-sm"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e293b)',
+                borderColor: 'var(--bg-overlay, #475569)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                e.currentTarget.style.outline = 'none';
+              }}
               placeholder="{}"
               rows={6}
             />
-            <p className="text-xs text-slate-500 mt-1">请输入JSON对象格式，例如: {"{ \"key\": \"value\" }"}</p>
+            <p 
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              请输入JSON对象格式，例如: {"{ \"key\": \"value\" }"}
+            </p>
           </div>
         );
 
@@ -256,16 +383,37 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
           // 下拉选择
           return (
             <div key={key} className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {title}
               </label>
               {description && (
-                <p className="text-xs text-slate-400 mb-2">{description}</p>
+                <p 
+                  className="text-xs mb-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {description}
+                </p>
               )}
               <select
                 value={value}
                 onChange={(e) => handleConfigChange(key, e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                  e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                  e.currentTarget.style.outline = 'none';
+                }}
               >
                 {schema.enum.map((option: string) => (
                   <option key={option} value={option}>
@@ -279,17 +427,38 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
           // 文本输入
           return (
             <div key={key} className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {title}
               </label>
               {description && (
-                <p className="text-xs text-slate-400 mb-2">{description}</p>
+                <p 
+                  className="text-xs mb-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {description}
+                </p>
               )}
               {schema.format === 'textarea' || (schema.maxLength && schema.maxLength > 100) ? (
                 <textarea
                   value={value}
                   onChange={(e) => handleConfigChange(key, e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary, #1e293b)',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                    e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                    e.currentTarget.style.outline = 'none';
+                  }}
                   placeholder={schema.default || ''}
                   rows={4}
                   maxLength={schema.maxLength}
@@ -299,7 +468,20 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                   type="text"
                   value={value}
                   onChange={(e) => handleConfigChange(key, e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary, #1e293b)',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info, #06b6d4)';
+                    e.currentTarget.style.outline = '2px solid var(--color-info, rgba(6, 182, 212, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                    e.currentTarget.style.outline = 'none';
+                  }}
                   placeholder={schema.default || ''}
                   maxLength={schema.maxLength}
                 />
@@ -316,12 +498,34 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
   const schemaProperties = schema?.properties || {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col m-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))' }}
+    >
+      <div 
+        className="rounded-xl shadow-2xl border w-full max-w-2xl max-h-[90vh] flex flex-col m-4"
+        style={{
+          backgroundColor: 'var(--bg-overlay, #0f172a)',
+          borderColor: 'var(--bg-overlay, #475569)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div 
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
+          <h2 
+            className="text-lg font-bold flex items-center gap-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+              style={{ color: 'var(--color-info, #22d3ee)' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -329,7 +533,14 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-1"
+            className="transition-colors p-1"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -341,13 +552,30 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+              <div 
+                className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+                style={{
+                  borderColor: 'var(--color-info, #06b6d4)',
+                  borderTopColor: 'transparent',
+                }}
+              />
             </div>
           ) : (
             <>
               {pluginInfo?.description && (
-                <div className="mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                  <p className="text-sm text-slate-300">{pluginInfo.description}</p>
+                <div 
+                  className="mb-4 p-3 rounded-lg border"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                  }}
+                >
+                  <p 
+                    className="text-sm"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {pluginInfo.description}
+                  </p>
                 </div>
               )}
 
@@ -356,17 +584,39 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                   {Object.keys(schemaProperties).map((key) => renderConfigField(key, schemaProperties[key]))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-400">
+                <div 
+                  className="text-center py-8"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   <p>该插件暂无配置项</p>
-                  <p className="text-xs mt-2 text-slate-500">如果需要配置，请联系插件开发者添加配置schema</p>
+                  <p 
+                    className="text-xs mt-2"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
+                    如果需要配置，请联系插件开发者添加配置schema
+                  </p>
                 </div>
               )}
 
               {/* 显示当前配置的JSON（用于调试） */}
               {Object.keys(config).length > 0 && (
-                <div className="mt-6 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                  <p className="text-xs text-slate-400 mb-2">当前配置（JSON）:</p>
-                  <pre className="text-xs text-slate-300 overflow-x-auto">
+                <div 
+                  className="mt-6 p-3 rounded-lg border"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                    borderColor: 'var(--bg-overlay, #475569)',
+                  }}
+                >
+                  <p 
+                    className="text-xs mb-2"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    当前配置（JSON）:
+                  </p>
+                  <pre 
+                    className="text-xs overflow-x-auto"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     {JSON.stringify(config, null, 2)}
                   </pre>
                 </div>
@@ -376,18 +626,46 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700">
+        <div 
+          className="flex items-center justify-end gap-3 p-4 border-t"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+            className="px-4 py-2 transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
             disabled={saving}
+            onMouseEnter={(e) => {
+              if (!saving) {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!saving) {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
           >
             取消
           </button>
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            style={{
+              background: 'var(--gradient-primary, linear-gradient(to right, #06b6d4, #3b82f6))',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!saving && !loading) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #22d3ee, #60a5fa))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!saving && !loading) {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #06b6d4, #3b82f6))';
+              }
+            }}
           >
             {saving ? (
               <>

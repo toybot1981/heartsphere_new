@@ -40,13 +40,13 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
   if (needsSharedMode && !excludesSharedMode) {
     try {
       const sharedModeState = getSharedModeState();
-      logger.debug('[request] 共享模式检查:', { url, needsSharedMode, shareConfigId: sharedModeState.shareConfigId });
+      logger.info('[request] 共享模式检查:', { url, needsSharedMode, shareConfigId: sharedModeState.shareConfigId });
       if (sharedModeState.shareConfigId) {
         // 将 shareConfigId 添加到 URL 查询参数中
         // 使用更可靠的方式处理相对路径和查询参数
         const separator = url.includes('?') ? '&' : '?';
         finalUrl = `${url}${separator}shareConfigId=${sharedModeState.shareConfigId}`;
-        logger.debug('[request] 已添加 shareConfigId 查询参数:', finalUrl);
+        logger.info('[request] 已添加 shareConfigId 查询参数:', finalUrl);
       } else {
         logger.warn('[request] 需要共享模式但 shareConfigId 为空:', { url, sharedModeState });
       }
@@ -100,16 +100,16 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         const token = localStorage.getItem('auth_token');
         if (token && token.trim()) {
           headers.set('Authorization', `Bearer ${token.trim()}`);
-          logger.debug(`[request] 从 localStorage 添加 Authorization header: Bearer ${token.substring(0, Math.min(20, token.length))}...`);
+          logger.info(`[request] 从 localStorage 添加 Authorization header: Bearer ${token.substring(0, Math.min(20, token.length))}...`);
         } else {
           logger.warn(`[request] localStorage 中没有找到有效的 auth_token (token=${token})`);
         }
       } catch (err) {
         // 静默处理，不影响正常请求
-        logger.debug('获取认证token失败:', err);
+        logger.info('获取认证token失败:', err);
       }
     } else {
-      logger.debug(`[request] 检测到自定义 Authorization header，跳过从 localStorage 读取`);
+      logger.info(`[request] 检测到自定义 Authorization header，跳过从 localStorage 读取`);
     }
     
     // 3. 合并自定义headers
@@ -141,25 +141,25 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
     }
     
     // 3.5. 在实际调用API之前打印传输参数和请求头
-    logger.debug(`[request] ========== API调用信息 ==========`);
-    logger.debug(`[request] URL: ${fullUrl}`);
-    logger.debug(`[request] Method: ${method}`);
-    logger.debug(`[request] 请求头:`, Object.fromEntries(headers.entries()));
+    logger.info(`[request] ========== API调用信息 ==========`);
+    logger.info(`[request] URL: ${fullUrl}`);
+    logger.info(`[request] Method: ${method}`);
+    logger.info(`[request] 请求头:`, Object.fromEntries(headers.entries()));
     if (requestBody) {
       if (requestBody instanceof FormData) {
-        logger.debug(`[request] Body: FormData (${requestBody instanceof FormData ? '是' : '否'})`);
+        logger.info(`[request] Body: FormData (${requestBody instanceof FormData ? '是' : '否'})`);
       } else {
         try {
           const bodyStr = typeof requestBody === 'string' ? requestBody : JSON.stringify(requestBody);
-          logger.debug(`[request] Body:`, bodyStr.length > 500 ? bodyStr.substring(0, 500) + '...' : bodyStr);
+          logger.info(`[request] Body:`, bodyStr.length > 500 ? bodyStr.substring(0, 500) + '...' : bodyStr);
         } catch (e) {
-          logger.debug(`[request] Body: [无法序列化]`);
+          logger.info(`[request] Body: [无法序列化]`);
         }
       }
     } else {
-      logger.debug(`[request] Body: null`);
+      logger.info(`[request] Body: null`);
     }
-    logger.debug(`[request] ========== API调用信息结束 ==========`);
+    logger.info(`[request] ========== API调用信息结束 ==========`);
 
     // 4. 发送请求
     const response = await fetch(fullUrl, {
@@ -240,7 +240,7 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
         );
         if (isShareConfigNotFound) {
           // 静默处理，不输出错误日志
-          logger.debug(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
+          logger.info(`[${requestId}] 资源不存在（正常情况）:`, errorMessage);
         } else {
           errorMessage = errorMessage || '资源不存在或已被删除';
         }

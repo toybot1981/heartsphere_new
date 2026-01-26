@@ -19,65 +19,106 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
 }) => {
   if (!open) return null;
 
-  const typeStyles = {
-    info: {
-      icon: 'ℹ️',
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-500/50',
-      text: 'text-blue-400'
-    },
-    success: {
-      icon: '✅',
-      bg: 'bg-green-500/20',
-      border: 'border-green-500/50',
-      text: 'text-green-400'
-    },
-    warning: {
-      icon: '⚠️',
-      bg: 'bg-yellow-500/20',
-      border: 'border-yellow-500/50',
-      text: 'text-yellow-400'
-    },
-    error: {
-      icon: '❌',
-      bg: 'bg-red-500/20',
-      border: 'border-red-500/50',
-      text: 'text-red-400'
-    }
+  const getTypeStyles = (type: 'info' | 'success' | 'warning' | 'error') => {
+    const styles = {
+      info: {
+        icon: 'ℹ️',
+        bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+        border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+        text: 'var(--color-info, #60a5fa)',
+        buttonBg: 'var(--color-info, #3b82f6)',
+        buttonHover: 'var(--color-info, #2563eb)',
+      },
+      success: {
+        icon: '✅',
+        bg: 'var(--color-success, rgba(34, 197, 94, 0.2))',
+        border: 'var(--color-success, rgba(34, 197, 94, 0.5))',
+        text: 'var(--color-success, #4ade80)',
+        buttonBg: 'var(--color-success, #16a34a)',
+        buttonHover: 'var(--color-success, #15803d)',
+      },
+      warning: {
+        icon: '⚠️',
+        bg: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+        border: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+        text: 'var(--color-warning, #fbbf24)',
+        buttonBg: 'var(--color-warning, #ca8a04)',
+        buttonHover: 'var(--color-warning, #a16207)',
+      },
+      error: {
+        icon: '❌',
+        bg: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+        border: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+        text: 'var(--color-error, #f87171)',
+        buttonBg: 'var(--color-error, #dc2626)',
+        buttonHover: 'var(--color-error, #b91c1c)',
+      }
+    };
+    return styles[type];
   };
 
-  const style = typeStyles[type];
+  const style = getTypeStyles(type);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className={`bg-slate-900 border ${style.border} rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in`}>
-        <div className={`p-6 ${style.bg} border-b ${style.border}`}>
+    <div 
+      className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4 animate-fade-in"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+      }}
+    >
+      <div 
+        className="border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #0f172a)',
+          borderColor: style.border,
+        }}
+      >
+        <div 
+          className="p-6 border-b"
+          style={{
+            backgroundColor: style.bg,
+            borderColor: style.border,
+          }}
+        >
           <div className="flex items-start gap-4">
             <div className="text-3xl">{style.icon}</div>
             <div className="flex-1">
               {title && (
-                <h3 className={`text-xl font-bold ${style.text} mb-2`}>
+                <h3 
+                  className="text-xl font-bold mb-2"
+                  style={{ color: style.text }}
+                >
                   {title}
                 </h3>
               )}
-              <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+              <p 
+                className="text-sm leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {message}
               </p>
             </div>
           </div>
         </div>
-        <div className="p-4 bg-slate-950/50 flex justify-end">
+        <div 
+          className="p-4 flex justify-end"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+          }}
+        >
           <button
             onClick={onClose}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              type === 'error' 
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : type === 'warning'
-                ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                : type === 'success'
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}
+            className="px-6 py-2 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: style.buttonBg,
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = style.buttonHover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = style.buttonBg;
+            }}
           >
             {confirmText}
           </button>
@@ -110,60 +151,114 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
   if (!open) return null;
 
-  const typeStyles = {
-    info: {
-      icon: 'ℹ️',
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-500/50',
-      text: 'text-blue-400',
-      confirmBg: 'bg-blue-600 hover:bg-blue-700'
-    },
-    warning: {
-      icon: '⚠️',
-      bg: 'bg-yellow-500/20',
-      border: 'border-yellow-500/50',
-      text: 'text-yellow-400',
-      confirmBg: 'bg-yellow-600 hover:bg-yellow-700'
-    },
-    danger: {
-      icon: '🗑️',
-      bg: 'bg-red-500/20',
-      border: 'border-red-500/50',
-      text: 'text-red-400',
-      confirmBg: 'bg-red-600 hover:bg-red-700'
-    }
+  const getTypeStyles = (type: 'info' | 'warning' | 'danger') => {
+    const styles = {
+      info: {
+        icon: 'ℹ️',
+        bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+        border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+        text: 'var(--color-info, #60a5fa)',
+        confirmBg: 'var(--color-info, #3b82f6)',
+        confirmHover: 'var(--color-info, #2563eb)',
+      },
+      warning: {
+        icon: '⚠️',
+        bg: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+        border: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+        text: 'var(--color-warning, #fbbf24)',
+        confirmBg: 'var(--color-warning, #ca8a04)',
+        confirmHover: 'var(--color-warning, #a16207)',
+      },
+      danger: {
+        icon: '🗑️',
+        bg: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+        border: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+        text: 'var(--color-error, #f87171)',
+        confirmBg: 'var(--color-error, #dc2626)',
+        confirmHover: 'var(--color-error, #b91c1c)',
+      }
+    };
+    return styles[type];
   };
 
-  const style = typeStyles[type];
+  const style = getTypeStyles(type);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className={`bg-slate-900 border ${style.border} rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in`}>
-        <div className={`p-6 ${style.bg} border-b ${style.border}`}>
+    <div 
+      className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4 animate-fade-in"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+      }}
+    >
+      <div 
+        className="border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #0f172a)',
+          borderColor: style.border,
+        }}
+      >
+        <div 
+          className="p-6 border-b"
+          style={{
+            backgroundColor: style.bg,
+            borderColor: style.border,
+          }}
+        >
           <div className="flex items-start gap-4">
             <div className="text-3xl">{style.icon}</div>
             <div className="flex-1">
               {title && (
-                <h3 className={`text-xl font-bold ${style.text} mb-2`}>
+                <h3 
+                  className="text-xl font-bold mb-2"
+                  style={{ color: style.text }}
+                >
                   {title}
                 </h3>
               )}
-              <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+              <p 
+                className="text-sm leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {message}
               </p>
             </div>
           </div>
         </div>
-        <div className="p-4 bg-slate-950/50 flex justify-end gap-3">
+        <div 
+          className="p-4 flex justify-end gap-3"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+          }}
+        >
           <button
             onClick={onCancel}
-            className="px-6 py-2 rounded-lg font-medium bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+            className="px-6 py-2 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(51, 65, 85, 1))',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(71, 85, 105, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(51, 65, 85, 1))';
+            }}
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${style.confirmBg}`}
+            className="px-6 py-2 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: style.confirmBg,
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = style.confirmHover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = style.confirmBg;
+            }}
           >
             {confirmText}
           </button>

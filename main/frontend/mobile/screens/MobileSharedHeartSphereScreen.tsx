@@ -232,7 +232,10 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
 
   if (loading) {
     return (
-      <div className="h-full bg-black flex items-center justify-center">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+      >
         <MobileLoadingSpinner size="lg" text="加载共享心域中..." />
       </div>
     );
@@ -240,8 +243,18 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
 
   if (error) {
     return (
-      <div className="h-full bg-black flex flex-col items-center justify-center p-6">
-        <div className={`${MobileColors.semantic.error.text} mb-4`} role="alert" aria-live="assertive">{error}</div>
+      <div 
+        className="h-full flex flex-col items-center justify-center p-6"
+        style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+      >
+        <div 
+          className="mb-4"
+          style={{ color: 'var(--color-error, #f87171)' }}
+          role="alert" 
+          aria-live="assertive"
+        >
+          {error}
+        </div>
         <MobileTouchableButton
           onClick={onBack}
           variant="primary"
@@ -256,7 +269,10 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
 
   return (
     <>
-      <div className="h-full bg-black flex flex-col overflow-hidden">
+      <div 
+        className="h-full flex flex-col overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+      >
         {/* 共享模式标识栏 */}
         {shareConfig && (
           <MobileSharedModeBanner
@@ -270,11 +286,28 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
         {shareConfig && (
           <button
             onClick={() => setShowPortalSelection(true)}
-            className="fixed top-20 right-4 z-30 p-3 bg-indigo-600/90 hover:bg-indigo-500 rounded-full shadow-lg backdrop-blur-sm transition-all"
+            className="fixed top-20 right-4 z-30 p-3 rounded-full shadow-lg backdrop-blur-sm transition-all"
+            style={{
+              backgroundColor: 'var(--bg-info-alpha, rgba(99, 102, 241, 0.9))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-info, rgba(99, 102, 241, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha, rgba(99, 102, 241, 0.9))';
+            }}
             aria-label="传送"
             title="传送到其他共享心域"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-white">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              strokeWidth={1.5} 
+              stroke="currentColor" 
+              className="w-5 h-5"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </button>
@@ -311,7 +344,12 @@ export const MobileSharedHeartSphereScreen: React.FC<MobileSharedHeartSphereScre
                 aria-label={`选择场景: ${scene.name}`}
               >
                 <MobileLazyImage src={scene.imageUrl} alt={scene.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+                  }}
+                />
                 <div className="absolute bottom-0 left-0 w-full p-5">
                   <h3 className={`text-2xl font-bold ${MobileColors.text.primary} mb-1 shadow-black drop-shadow-md`}>{scene.name}</h3>
                   <p className={`text-xs ${MobileColors.text.secondary} line-clamp-2 opacity-90`}>{scene.description}</p>

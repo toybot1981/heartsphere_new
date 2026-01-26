@@ -653,13 +653,28 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
 
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.9))' }}
+    >
+      <div 
+        className="rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+        style={{
+          backgroundColor: 'var(--bg-card, #1e293b)',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 mb-2">
+          <h2 
+            className="text-2xl font-bold text-transparent bg-clip-text mb-2"
+            style={{ backgroundImage: 'var(--gradient-text)' }}
+          >
             欢迎来到心域 🌟
           </h2>
-          <p className="text-gray-400 text-sm">
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             让我们为你设置第一个场景、角色和剧本，开始你的心域之旅
           </p>
         </div>
@@ -667,19 +682,58 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         {/* 进度指示器 */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center gap-2">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-pink-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+              style={{
+                backgroundColor: step >= 1 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                color: step >= 1 ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              }}
+            >
               1
             </div>
-            <div className={`w-16 h-1 ${step >= 2 ? 'bg-pink-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-pink-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            <div 
+              className="w-16 h-1"
+              style={{
+                backgroundColor: step >= 2 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+              }}
+            />
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+              style={{
+                backgroundColor: step >= 2 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                color: step >= 2 ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              }}
+            >
               2
             </div>
-            <div className={`w-16 h-1 ${step >= 3 ? 'bg-pink-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 3 ? 'bg-pink-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            <div 
+              className="w-16 h-1"
+              style={{
+                backgroundColor: step >= 3 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+              }}
+            />
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+              style={{
+                backgroundColor: step >= 3 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                color: step >= 3 ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              }}
+            >
               3
             </div>
-            <div className={`w-16 h-1 ${step >= 4 ? 'bg-pink-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= 4 ? 'bg-pink-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            <div 
+              className="w-16 h-1"
+              style={{
+                backgroundColor: step >= 4 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+              }}
+            />
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+              style={{
+                backgroundColor: step >= 4 ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                color: step >= 4 ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              }}
+            >
               4
             </div>
           </div>
@@ -688,8 +742,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         {/* 步骤1：场景选择（支持多选） */}
         {step === 1 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">选择场景（可多选）</h3>
-            <p className="text-sm text-gray-400">你可以选择多个场景，并为它们自定义名称</p>
+            <h3 
+              className="text-xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              选择场景（可多选）
+            </h3>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              你可以选择多个场景，并为它们自定义名称
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {presetEras.map(era => {
                 const isSelected = selectedEras.has(era.id);
@@ -698,11 +762,21 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                 return (
                   <div
                     key={era.id}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-pink-500 bg-pink-500/10'
-                        : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                    }`}
+                    className="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                    style={{
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                      backgroundColor: isSelected ? 'var(--bg-secondary-alpha)' : 'var(--bg-overlay-alpha)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }
+                    }}
                   >
                     <div className="flex items-start gap-2 mb-2">
                       <input
@@ -733,14 +807,32 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                             })()}
                           </div>
                         )}
-                        <h4 className="font-bold text-white mb-1">{era.name}</h4>                                                                               
-                        <p className="text-xs text-gray-400 line-clamp-2 mb-2">{era.description}</p>                                                            
+                        <h4 
+                          className="font-bold mb-1"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {era.name}
+                        </h4>                                                                               
+                        <p 
+                          className="text-xs line-clamp-2 mb-2"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {era.description}
+                        </p>                                                            
                       </div>
                     </div>
                     
                     {isSelected && (
-                      <div className="mt-2 pt-2 border-t border-gray-700">
-                        <label className="block text-xs text-gray-400 mb-1">自定义名称</label>
+                      <div 
+                        className="mt-2 pt-2 border-t"
+                        style={{ borderColor: 'var(--border-color-overlay)' }}
+                      >
+                        <label 
+                          className="block text-xs mb-1"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          自定义名称
+                        </label>
                         <div className="flex gap-1">
                           <input
                             type="text"
@@ -755,7 +847,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               }
                             }}
                             placeholder={era.name}
-                            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-pink-500 outline-none"
+                            className="flex-1 border rounded px-2 py-1 text-xs outline-none"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              borderColor: 'var(--border-color-overlay)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--color-primary)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                            }}
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
@@ -763,7 +866,17 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               e.stopPropagation();
                               handleEraRename(era.id, 'ai');
                             }}
-                            className="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-xs hover:bg-pink-500/30"
+                            className="px-2 py-1 rounded text-xs transition-colors"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary-alpha)',
+                              color: 'var(--color-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                            }}
                             title="AI生成名字"
                           >
                             ✨
@@ -795,8 +908,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         {/* 步骤2：角色选择（按场景分组显示） */}
         {step === 2 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">选择角色</h3>
-            <p className="text-sm text-gray-400">你可以选择多个角色，并为它们自定义名称</p>
+            <h3 
+              className="text-xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              选择角色
+            </h3>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              你可以选择多个角色，并为它们自定义名称
+            </p>
             
             {/* 按场景分组显示角色 */}
             {Array.from(presetCharacters.entries()).map(([eraId, characters]) => {
@@ -805,7 +928,13 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
               
               return (
                 <div key={eraId} className="space-y-3">
-                  <h4 className="text-lg font-semibold text-pink-400 border-b border-gray-700 pb-2">
+                  <h4 
+                    className="text-lg font-semibold border-b pb-2"
+                    style={{
+                      color: 'var(--color-primary)',
+                      borderColor: 'var(--border-color-overlay)',
+                    }}
+                  >
                     {eraItem.customName || eraItem.originalName}
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -816,11 +945,21 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                       return (
                         <div
                           key={character.id}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                            isSelected
-                              ? 'border-pink-500 bg-pink-500/10'
-                              : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                          }`}
+                          className="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                          style={{
+                            borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                            backgroundColor: isSelected ? 'var(--bg-secondary-alpha)' : 'var(--bg-overlay-alpha)',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                            }
+                          }}
                         >
                           <div className="flex items-start gap-3 mb-2">
                             {character.avatarUrl && (
@@ -833,9 +972,19 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-white">{character.name}</h4>
+                              <h4 
+                                className="font-bold"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {character.name}
+                              </h4>
                               {character.role && (
-                                <p className="text-xs text-gray-400">{character.role}</p>
+                                <p 
+                                  className="text-xs"
+                                  style={{ color: 'var(--text-secondary)' }}
+                                >
+                                  {character.role}
+                                </p>
                               )}
                             </div>
                             <input
@@ -843,16 +992,30 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               checked={isSelected}
                               onChange={() => handleCharacterToggle(character)}
                               className="w-5 h-5 flex-shrink-0"
+                              style={{ accentColor: 'var(--color-primary)' }}
                             />
                           </div>
                           
                           {character.bio && (
-                            <p className="text-xs text-gray-400 mb-2 line-clamp-2">{character.bio}</p>
+                            <p 
+                              className="text-xs mb-2 line-clamp-2"
+                              style={{ color: 'var(--text-secondary)' }}
+                            >
+                              {character.bio}
+                            </p>
                           )}
 
                           {isSelected && (
-                            <div className="mt-2 pt-2 border-t border-gray-700">
-                              <label className="block text-xs text-gray-400 mb-1">自定义名称</label>
+                            <div 
+                              className="mt-2 pt-2 border-t"
+                              style={{ borderColor: 'var(--border-color-overlay)' }}
+                            >
+                              <label 
+                                className="block text-xs mb-1"
+                                style={{ color: 'var(--text-secondary)' }}
+                              >
+                                自定义名称
+                              </label>
                               <div className="flex gap-1">
                                 <input
                                   type="text"
@@ -867,11 +1030,32 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                                     }
                                   }}
                                   placeholder={character.name}
-                                  className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-pink-500 outline-none"
+                                  className="flex-1 border rounded px-2 py-1 text-xs outline-none"
+                                  style={{
+                                    backgroundColor: 'var(--bg-card)',
+                                    borderColor: 'var(--border-color-overlay)',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onFocus={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                  }}
+                                  onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                                  }}
                                 />
                                 <button
                                   onClick={() => handleCharacterRename(character.id, 'ai')}
-                                  className="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-xs hover:bg-pink-500/30"
+                                  className="px-2 py-1 rounded text-xs transition-colors"
+                                  style={{
+                                    backgroundColor: 'var(--bg-secondary-alpha)',
+                                    color: 'var(--color-primary)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                                  }}
                                   title="AI生成名字"
                                 >
                                   ✨
@@ -904,8 +1088,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         {/* 步骤3：主线剧情选择（按场景分组显示） */}
         {step === 3 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">选择主线剧情（可选）</h3>
-            <p className="text-sm text-gray-400">每个场景可以选择一个主线剧情，并为它自定义名称</p>
+            <h3 
+              className="text-xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              选择主线剧情（可选）
+            </h3>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              每个场景可以选择一个主线剧情，并为它自定义名称
+            </p>
             
             {/* 按场景分组显示主线剧情 */}
             {Array.from(presetMainStories.entries()).map(([eraId, mainStory]) => {
@@ -917,15 +1111,31 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
               
               return (
                 <div key={eraId} className="space-y-3">
-                  <h4 className="text-lg font-semibold text-pink-400 border-b border-gray-700 pb-2">
+                  <h4 
+                    className="text-lg font-semibold border-b pb-2"
+                    style={{
+                      color: 'var(--color-primary)',
+                      borderColor: 'var(--border-color-overlay)',
+                    }}
+                  >
                     {eraItem.customName || eraItem.originalName}
                   </h4>
                   <div
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-pink-500 bg-pink-500/10'
-                        : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                    }`}
+                    className="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                    style={{
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                      backgroundColor: isSelected ? 'var(--bg-secondary-alpha)' : 'var(--bg-overlay-alpha)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }
+                    }}
                     onClick={() => handleMainStoryToggle(eraId, mainStory)}
                   >
                     <div className="flex items-start gap-3 mb-2">
@@ -950,9 +1160,19 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-white">{mainStory.name}</h4>
+                        <h4 
+                          className="font-bold"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {mainStory.name}
+                        </h4>
                         {mainStory.description && (
-                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{mainStory.description}</p>
+                          <p 
+                            className="text-xs mt-1 line-clamp-2"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            {mainStory.description}
+                          </p>
                         )}
                       </div>
                       <input
@@ -960,13 +1180,22 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                         checked={isSelected}
                         onChange={() => handleMainStoryToggle(eraId, mainStory)}
                         className="w-5 h-5 flex-shrink-0"
+                        style={{ accentColor: 'var(--color-primary)' }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
 
                     {isSelected && (
-                      <div className="mt-2 pt-2 border-t border-gray-700">
-                        <label className="block text-xs text-gray-400 mb-1">自定义名称</label>
+                      <div 
+                        className="mt-2 pt-2 border-t"
+                        style={{ borderColor: 'var(--border-color-overlay)' }}
+                      >
+                        <label 
+                          className="block text-xs mb-1"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          自定义名称
+                        </label>
                         <div className="flex gap-1">
                           <input
                             type="text"
@@ -981,7 +1210,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               }
                             }}
                             placeholder={mainStory.name}
-                            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-pink-500 outline-none"
+                            className="flex-1 border rounded px-2 py-1 text-xs outline-none"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              borderColor: 'var(--border-color-overlay)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--color-primary)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                            }}
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
@@ -989,7 +1229,17 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                               e.stopPropagation();
                               handleMainStoryRename(eraId, 'ai');
                             }}
-                            className="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-xs hover:bg-pink-500/30"
+                            className="px-2 py-1 rounded text-xs transition-colors"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary-alpha)',
+                              color: 'var(--color-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                            }}
                             title="AI生成名字"
                           >
                             ✨
@@ -1003,7 +1253,10 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
             })}
 
             {presetMainStories.size === 0 && (
-              <div className="text-center py-12 text-gray-400">
+              <div 
+                className="text-center py-12"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 <p>选中的场景暂无预置主线剧情</p>
                 <p className="text-xs mt-2">你可以稍后在场景中创建主线剧情</p>
               </div>
@@ -1026,8 +1279,18 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
         {/* 步骤4：剧本选择（按场景分组显示） */}
         {step === 4 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">选择剧本（可选）</h3>
-            <p className="text-sm text-gray-400">你可以选择多个剧本，并为它们自定义标题</p>
+            <h3 
+              className="text-xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              选择剧本（可选）
+            </h3>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              你可以选择多个剧本，并为它们自定义标题
+            </p>
             
             {/* 按场景分组显示剧本 */}
             {Array.from(presetScripts.entries()).map(([eraId, scripts]) => {
@@ -1038,19 +1301,34 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
               if (!scripts || scripts.length === 0) {
                 return (
                   <div key={eraId} className="space-y-3">
-                    <h4 className="text-lg font-semibold text-pink-400 border-b border-gray-700 pb-2">
+                    <h4 
+                      className="text-lg font-semibold border-b pb-2"
+                      style={{
+                        color: 'var(--color-primary)',
+                        borderColor: 'var(--border-color-overlay)',
+                      }}
+                    >
                       {eraItem.customName || eraItem.originalName}
                     </h4>
-                    <div className="text-center py-6 text-gray-400 text-sm">
-                <p>该场景暂无预置剧本</p>
-              </div>
+                    <div 
+                      className="text-center py-6 text-sm"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <p>该场景暂无预置剧本</p>
+                    </div>
                   </div>
                 );
               }
               
               return (
                 <div key={eraId} className="space-y-3">
-                  <h4 className="text-lg font-semibold text-pink-400 border-b border-gray-700 pb-2">
+                  <h4 
+                    className="text-lg font-semibold border-b pb-2"
+                    style={{
+                      color: 'var(--color-primary)',
+                      borderColor: 'var(--border-color-overlay)',
+                    }}
+                  >
                     {eraItem.customName || eraItem.originalName}
                   </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1061,27 +1339,51 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                   return (
                     <div
                       key={script.id}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-pink-500 bg-pink-500/10'
-                          : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                      }`}
+                      className="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                      style={{
+                        borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                        backgroundColor: isSelected ? 'var(--bg-secondary-alpha)' : 'var(--bg-overlay-alpha)',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }
+                      }}
                     >
                       <div className="flex items-start gap-3 mb-2">
                         <div className="flex-1">
-                          <h4 className="font-bold text-white">{script.title}</h4>
+                          <h4 
+                            className="font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {script.title}
+                          </h4>
                         </div>
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => handleScriptToggle(script)}
                           className="w-5 h-5"
+                          style={{ accentColor: 'var(--color-primary)' }}
                         />
                       </div>
 
                       {isSelected && (
-                        <div className="mt-2 pt-2 border-t border-gray-700">
-                          <label className="block text-xs text-gray-400 mb-1">自定义标题</label>
+                        <div 
+                          className="mt-2 pt-2 border-t"
+                          style={{ borderColor: 'var(--border-color-overlay)' }}
+                        >
+                          <label 
+                            className="block text-xs mb-1"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            自定义标题
+                          </label>
                           <div className="flex gap-1">
                             <input
                               type="text"
@@ -1096,11 +1398,32 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
                                 }
                               }}
                               placeholder={script.title}
-                              className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-pink-500 outline-none"
+                              className="flex-1 border rounded px-2 py-1 text-xs outline-none"
+                              style={{
+                                backgroundColor: 'var(--bg-card)',
+                                borderColor: 'var(--border-color-overlay)',
+                                color: 'var(--text-primary)',
+                              }}
+                              onFocus={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                              }}
                             />
                             <button
                               onClick={() => handleScriptRename(script.id, 'ai')}
-                              className="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-xs hover:bg-pink-500/30"
+                              className="px-2 py-1 rounded text-xs transition-colors"
+                              style={{
+                                backgroundColor: 'var(--bg-secondary-alpha)',
+                                color: 'var(--color-primary)',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                              }}
                               title="AI生成标题"
                             >
                               ✨
@@ -1118,9 +1441,17 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
 
             {/* 检查是否所有场景都没有剧本 */}
             {Array.from(presetScripts.entries()).every(([_, scripts]) => !scripts || scripts.length === 0) && (
-              <div className="text-center py-12 text-gray-400">
+              <div 
+                className="text-center py-12"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 <p>选中的场景暂无预置剧本</p>
-                <p className="text-xs mt-2">你可以稍后在场景中创建剧本</p>
+                <p 
+                  className="text-xs mt-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  你可以稍后在场景中创建剧本
+                </p>
               </div>
             )}
 
@@ -1131,7 +1462,10 @@ export const InitializationWizard: React.FC<InitializationWizardProps> = ({
               <Button
                 onClick={handleComplete}
                 disabled={loading}
-                className="bg-gradient-to-r from-pink-600 to-purple-600"
+                style={{
+                  background: 'var(--gradient-button)',
+                  color: 'var(--text-primary)',
+                }}
               >
                 {loading ? '初始化中...' : '完成设置'}
               </Button>

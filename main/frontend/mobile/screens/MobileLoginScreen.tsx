@@ -74,14 +74,29 @@ export const MobileLoginScreen: React.FC<MobileLoginScreenProps> = ({
         </div>
 
         {/* 标签页切换 */}
-        <div className={`flex border-b ${MobileColors.border.default}`} role="tablist" aria-label="登录方式选择">
+        <div 
+          className="flex border-b"
+          style={{ borderColor: 'var(--border-color-overlay)' }}
+          role="tablist" 
+          aria-label="登录方式选择"
+        >
           <button
             onClick={() => handleTabChange('login')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'login'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'login' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'login' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'login') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'login') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="登录"
             aria-selected={activeTab === 'login'}
             role="tab"
@@ -90,11 +105,21 @@ export const MobileLoginScreen: React.FC<MobileLoginScreenProps> = ({
           </button>
           <button
             onClick={() => handleTabChange('register')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'register'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'register' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'register' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'register') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'register') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="注册"
             aria-selected={activeTab === 'register'}
             role="tab"
@@ -103,11 +128,21 @@ export const MobileLoginScreen: React.FC<MobileLoginScreenProps> = ({
           </button>
           <button
             onClick={() => handleTabChange('wechat')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'wechat'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'wechat' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'wechat' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'wechat') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'wechat') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="微信登录"
             aria-selected={activeTab === 'wechat'}
             role="tab"

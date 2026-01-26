@@ -95,7 +95,7 @@ public class EraNode implements GraphEngine.GraphNode {
                 if (eraName != null) {
                     state.setData("current_era_name", eraName);
                 }
-                log.debug("[EraNode] 设置当前场景: {}", eraId);
+                log.info("[EraNode] 设置当前场景: {}", eraId);
                 break;
                 
             case TRIGGER_EVENT:
@@ -110,7 +110,7 @@ public class EraNode implements GraphEngine.GraphNode {
                     }
                     if (!triggeredEvents.contains(eventId)) {
                         triggeredEvents.add(eventId);
-                        log.debug("[EraNode] 触发场景事件: {}", eventId);
+                        log.info("[EraNode] 触发场景事件: {}", eventId);
                     }
                 }
                 break;
@@ -126,7 +126,7 @@ public class EraNode implements GraphEngine.GraphNode {
                         state.setData("era_state", eraState);
                     }
                     eraState.putAll(stateUpdates);
-                    log.debug("[EraNode] 更新场景状态: {}", stateUpdates);
+                    log.info("[EraNode] 更新场景状态: {}", stateUpdates);
                 }
                 break;
         }

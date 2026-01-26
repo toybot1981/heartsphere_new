@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './src/index.css';
 import { MobileApp } from './mobile/MobileApp';
 import { GameStateProvider } from './contexts/GameStateContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { MobileErrorBoundary } from './mobile/components/MobileErrorBoundary';
 import { MUIProvider } from './components/MUIProvider';
 
@@ -13,11 +14,13 @@ const MobileAppWrapper: React.FC = () => {
   };
 
   return (
-    <MobileErrorBoundary>
-      <GameStateProvider>
-        <MobileApp onSwitchToPC={handleSwitchToPC} />
-      </GameStateProvider>
-    </MobileErrorBoundary>
+    <ThemeProvider>
+      <MobileErrorBoundary>
+        <GameStateProvider>
+          <MobileApp onSwitchToPC={handleSwitchToPC} />
+        </GameStateProvider>
+      </MobileErrorBoundary>
+    </ThemeProvider>
   );
 };
 

@@ -400,7 +400,7 @@ public class EmotionService {
                     "emotion",
                     record
                 );
-                log.debug("共享模式：保存情绪记录到临时存储: shareConfigId={}, visitorId={}", 
+                log.info("共享模式：保存情绪记录到临时存储: shareConfigId={}, visitorId={}", 
                     shareConfigId, visitorId);
                 
                 return record; // 返回记录但不保存到数据库

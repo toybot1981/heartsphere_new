@@ -298,7 +298,7 @@ export const memoryApi = {
    * HSMem 记忆化对话请求
    */
   memorizeConversation: async (
-    request: {
+    memorizeRequest: {
       messages: Array<{ role: string; content: string | { text: string } }>;
       user_id?: string;
       agent_id?: string;
@@ -316,8 +316,8 @@ export const memoryApi = {
         throw new Error('认证 token 无效');
       }
       
-      logger.debug('[memoryApi] 记忆化对话请求', { 
-        messageCount: request.messages?.length || 0,
+      logger.info('[memoryApi] 记忆化对话请求', { 
+        messageCount: memorizeRequest.messages?.length || 0,
         tokenLength: token.length,
         tokenPrefix: token.substring(0, Math.min(20, token.length))
       });
@@ -333,7 +333,7 @@ export const memoryApi = {
           Authorization: `Bearer ${token.trim()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(memorizeRequest),
       });
       
       return result;
@@ -347,7 +347,7 @@ export const memoryApi = {
    * HSMem 记忆化文本
    */
   memorizeText: async (
-    request: {
+    textRequest: {
       text: string;
       context?: Record<string, any>;
       user_id?: string;
@@ -369,7 +369,7 @@ export const memoryApi = {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(textRequest),
       });
       
       return result;
@@ -383,7 +383,7 @@ export const memoryApi = {
    * HSMem 记忆化文档
    */
   memorizeDocument: async (
-    request: {
+    documentRequest: {
       title: string;
       content: string;
       author?: string;
@@ -406,7 +406,7 @@ export const memoryApi = {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(documentRequest),
       });
       
       return result;
@@ -420,7 +420,7 @@ export const memoryApi = {
    * HSMem 检索记忆
    */
   retrieve: async (
-    request: {
+    retrieveRequest: {
       queries: Array<{ role: string; content: string | { text: string } }>;
       where?: Record<string, any>;
       limit?: number;
@@ -440,12 +440,27 @@ export const memoryApi = {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(retrieveRequest),
       });
       
       return result;
     } catch (error) {
-      logger.error('[memoryApi] 检索记忆失败', { error });
+      // 改进错误处理，显示更详细的错误信息
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorDetails = error instanceof Error ? {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+      } : error;
+      
+      logger.error('[memoryApi] 检索记忆失败', { 
+        error: errorMessage,
+        details: errorDetails,
+        request: {
+          queriesCount: retrieveRequest.queries?.length || 0,
+          limit: retrieveRequest.limit,
+        },
+      });
       throw error;
     }
   },
@@ -560,5 +575,408 @@ export const memoryApi = {
       throw error;
     }
   },
+  
+  /**
+   * 保存聊天消息到数据库
+   */
+  saveChatMessage: async (
+    sessionId: string,
+    role: 'USER' | 'ASSISTANT' | 'SYSTEM',
+    content: string,
+    token: string,
+    metadata?: Record<string, any>,
+    importance?: number
+  ): Promise<{
+    id: string;
+    sessionId: string;
+    userId: string;
+    role: string;
+    content: string;
+    timestamp: number;
+  }> => {
+    logger.info('[memoryApi] ========== 开始保存聊天消息 ==========');
+    logger.info('[memoryApi] 请求参数:', {
+      sessionId,
+      role,
+      contentLength: content?.length || 0,
+      hasMetadata: !!metadata,
+      metadataKeys: metadata ? Object.keys(metadata) : [],
+      importance,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+    });
+    
+    try {
+      const requestBody = {
+        sessionId,
+        role,
+        content,
+        metadata,
+        importance,
+      };
+      
+      logger.info('[memoryApi] 准备发送请求: url=/memory/v1/chat/messages, method=POST');
+      logger.info('[memoryApi] 请求体:', {
+        sessionId,
+        role,
+        contentLength: content?.length || 0,
+        contentPreview: content ? (content.length > 100 ? content.substring(0, 100) + '...' : content) : null,
+        metadata,
+        importance,
+      });
+      
+      const result = await request<{
+        id: string;
+        sessionId: string;
+        userId: string;
+        role: string;
+        content: string;
+        timestamp: number;
+      }>('/memory/v1/chat/messages', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      logger.info('[memoryApi] ✅ 保存聊天消息成功:', {
+        messageId: result?.id,
+        sessionId: result?.sessionId,
+        userId: result?.userId,
+        role: result?.role,
+        contentLength: result?.content?.length || 0,
+        timestamp: result?.timestamp,
+      });
+      logger.info('[memoryApi] ========== 保存聊天消息完成 ==========');
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorDetails = error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+      } : error;
+      
+      logger.error('[memoryApi] ❌ 保存聊天消息失败:', {
+        sessionId,
+        role,
+        contentLength: content?.length || 0,
+        error: errorMessage,
+        details: errorDetails,
+      });
+      logger.info('[memoryApi] ========== 保存聊天消息失败 ==========');
+      throw error;
+    }
+  },
+  
+  /**
+   * 获取聊天消息历史
+   */
+  getChatMessages: async (
+    sessionId: string,
+    token: string,
+    limit: number = 10,
+    beforeTimestamp?: number
+  ): Promise<Array<{
+    id: string;
+    sessionId: string;
+    userId: string;
+    role: string;
+    content: string;
+    timestamp: number;
+    metadata?: Record<string, any>;
+    importance?: number;
+  }>> => {
+    logger.info('[memoryApi] ========== 开始获取聊天消息历史 ==========');
+    logger.info('[memoryApi] 请求参数: sessionId={}, limit={}, beforeTimestamp={}', 
+      sessionId, limit, beforeTimestamp);
+    
+    try {
+      const params = new URLSearchParams();
+      params.append('sessionId', sessionId);
+      params.append('limit', String(limit));
+      if (beforeTimestamp) {
+        params.append('beforeTimestamp', String(beforeTimestamp));
+      }
+      
+      const url = `/memory/v1/chat/messages?${params.toString()}`;
+      logger.info('[memoryApi] 准备发送请求: url={}, method=GET', url);
+      
+      const result = await request<Array<{
+        id: string;
+        sessionId: string;
+        userId: string;
+        role: string;
+        content: string;
+        timestamp: number;
+        metadata?: Record<string, any>;
+        importance?: number;
+      }>>(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // 确保返回数组（即使后端返回 null 或 undefined）
+      const messages = Array.isArray(result) ? result : [];
+      const userCount = messages.filter(m => m.role === 'USER').length;
+      const assistantCount = messages.filter(m => m.role === 'ASSISTANT').length;
+      
+      logger.info('[memoryApi] ✅ 获取聊天消息历史成功:', {
+        sessionId,
+        total: messages.length,
+        userCount,
+        assistantCount,
+        messageIds: messages.map(m => m.id),
+      });
+      logger.info('[memoryApi] ========== 获取聊天消息历史完成 ==========');
+      
+      return messages;
+    } catch (error) {
+      // 改进错误处理，显示更详细的错误信息
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorDetails = error instanceof Error ? {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+      } : error;
+      
+      logger.error('[memoryApi] ❌ 获取聊天消息历史失败:', { 
+        sessionId, 
+        limit,
+        beforeTimestamp,
+        error: errorMessage,
+        details: errorDetails,
+      });
+      
+      // 如果是404，返回空数组而不是抛出错误（表示没有历史消息）
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        logger.info('[memoryApi] 没有历史消息（404），返回空数组');
+        logger.info('[memoryApi] ========== 获取聊天消息历史完成（无消息） ==========');
+        return [];
+      }
+      
+      logger.info('[memoryApi] ========== 获取聊天消息历史失败 ==========');
+      throw error;
+    }
+  },
+
+  // ========== 角色成长系统 API ==========
+
+  /**
+   * 获取角色成长信息
+   */
+  getCharacterGrowth: async (
+    characterId: number,
+    userId: number,
+    token: string
+  ): Promise<any> => {
+    try {
+      const growth = await request<any>(`/memory/v1/character/${characterId}/growth?userId=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return growth;
+    } catch (error) {
+      logger.error('[memoryApi] 获取角色成长信息失败', { characterId, userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 获取成长轨迹
+   * @param characterId - 角色ID（数字）
+   * @param userId - 用户ID（数字或字符串，会自动转换为数字）
+   * @param token - 认证token
+   */
+  getGrowthTrajectory: async (
+    characterId: number,
+    userId: number | string,
+    token: string
+  ): Promise<any> => {
+    try {
+      // 确保 userId 是数字类型
+      const userIdNum = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+      if (isNaN(userIdNum) || userIdNum <= 0) {
+        const errorMsg = `无效的用户ID: ${userId} (转换为数字: ${userIdNum})`;
+        logger.warn('[memoryApi] ' + errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      const trajectory = await request<any>(`/memory/v1/character/${characterId}/growth/trajectory?userId=${userIdNum}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return trajectory;
+    } catch (error) {
+      logger.error('[memoryApi] 获取成长轨迹失败', { characterId, userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 触发自我反思
+   * @param characterId - 角色ID（数字或字符串，使用统一的ID映射）
+   * @param userId - 用户ID
+   * @param reflectionType - 反思类型
+   * @param token - 认证token
+   */
+  triggerSelfReflection: async (
+    characterId: number | string,
+    userId: number,
+    reflectionType: string,
+    token: string
+  ): Promise<string> => {
+    try {
+      // 使用统一的ID映射工具
+      const { normalizeCharacterId, isValidCharacterId } = await import('../../../utils/characterIdMapper');
+      const characterIdNum = normalizeCharacterId(characterId);
+      
+      // 验证 characterId 是否有效（只有正数ID才支持成长系统）
+      if (!isValidCharacterId(characterId)) {
+        const errorMsg = `系统角色不支持自我反思: ${characterId} (normalized: ${characterIdNum})`;
+        logger.info('[memoryApi] ' + errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      if (characterIdNum === null || characterIdNum <= 0) {
+        const errorMsg = `无效的角色ID: ${characterId}`;
+        logger.warn('[memoryApi] ' + errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      const result = await request<{ message: string }>(`/memory/v1/character/${characterIdNum}/growth/reflect?userId=${userId}&reflectionType=${reflectionType}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return result.message || '自我反思已触发';
+    } catch (error) {
+      logger.error('[memoryApi] 触发自我反思失败', { characterId, userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 获取关系信息
+   */
+  getRelationshipInfo: async (
+    characterId: number,
+    userId: number,
+    token: string
+  ): Promise<any> => {
+    try {
+      const info = await request<any>(`/memory/v1/character/${characterId}/relationship?userId=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return info;
+    } catch (error) {
+      logger.error('[memoryApi] 获取关系信息失败', { characterId, userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 获取关系里程碑
+   */
+  getRelationshipMilestones: async (
+    characterId: number,
+    userId: number,
+    token: string
+  ): Promise<any[]> => {
+    try {
+      const milestones = await request<any[]>(`/memory/v1/character/${characterId}/relationship/milestones?userId=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return milestones;
+    } catch (error) {
+      logger.error('[memoryApi] 获取关系里程碑失败', { characterId, userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 获取导师能力
+   */
+  getMentorshipCapabilities: async (
+    characterId: number,
+    token: string
+  ): Promise<any> => {
+    try {
+      const capabilities = await request<any>(`/memory/v1/character/${characterId}/mentorship/capabilities`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return capabilities;
+    } catch (error) {
+      logger.error('[memoryApi] 获取导师能力失败', { characterId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * 获取指导会话列表
+   */
+  getMentorshipSessions: async (
+    characterId: number,
+    userId: number,
+    activeOnly: boolean,
+    token: string
+  ): Promise<any[]> => {
+    try {
+      const sessions = await request<any[]>(`/memory/v1/character/${characterId}/mentorship/sessions?userId=${userId}&activeOnly=${activeOnly}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return sessions;
+    } catch (error) {
+      logger.error('[memoryApi] 获取指导会话列表失败', { characterId, userId, error });
+      throw error;
+    }
+  },
 };
 
+
+// 🆕 Phase 4: 知识资产反馈 API
+export const submitAssetFeedback = async (
+  assetId: number,
+  feedbackType: string,
+  token: string,
+  comment?: string
+): Promise<void> => {
+  try {
+    await request(`/memory/v1/assets/${assetId}/feedback`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        feedbackType,
+        comment,
+      }),
+    });
+    
+    logger.info('[memoryApi] 资产反馈已提交', { assetId, feedbackType });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('[memoryApi] 提交资产反馈失败', { 
+      assetId,
+      feedbackType,
+      error: errorMessage,
+    });
+    throw error;
+  }
+};

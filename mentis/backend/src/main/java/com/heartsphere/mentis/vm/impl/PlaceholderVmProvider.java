@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component("placeholderVmProvider")
-@ConditionalOnProperty(name = "mentis.vm.provider", havingValue = "placeholder", matchIfMissing = false)
+@ConditionalOnProperty(name = "mentis.vm.provider", havingValue = "placeholder", matchIfMissing = true)
 public class PlaceholderVmProvider implements VmProvider {
     
     @Override
@@ -32,7 +32,7 @@ public class PlaceholderVmProvider implements VmProvider {
     
     @Override
     public MentisVmService.VmStatus getVmStatus(String vmId) {
-        log.debug("PlaceholderVmProvider.getVmStatus 被调用，使用模拟实现获取虚拟机状态: vmId={}", vmId);
+        log.info("PlaceholderVmProvider.getVmStatus 被调用，使用模拟实现获取虚拟机状态: vmId={}", vmId);
         // 模拟获取虚拟机状态
         MentisVmService.VmStatus status = new MentisVmService.VmStatus();
         status.setVmId(vmId);
@@ -78,7 +78,7 @@ public class PlaceholderVmProvider implements VmProvider {
     
     @Override
     public String getScreenshot(String vmId) {
-        log.debug("PlaceholderVmProvider.getScreenshot 被调用，返回模拟截图: vmId={}", vmId);
+        log.info("PlaceholderVmProvider.getScreenshot 被调用，返回模拟截图: vmId={}", vmId);
         // 返回占位符截图
         return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
     }

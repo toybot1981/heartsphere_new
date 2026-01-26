@@ -2,7 +2,9 @@ package com.heartsphere.memory.controller;
 
 import com.heartsphere.dto.ApiResponse;
 import com.heartsphere.memory.dto.SaveMemoryRequest;
+import com.heartsphere.memory.dto.SaveChatMessageRequest;
 import com.heartsphere.memory.model.ChatMessage;
+import com.heartsphere.memory.model.MessageRole;
 import com.heartsphere.memory.model.MemorySource;
 import com.heartsphere.memory.model.UserMemory;
 import com.heartsphere.memory.dto.hsmem.*;
@@ -11,6 +13,18 @@ import com.heartsphere.memory.service.MemoryExtractor;
 import com.heartsphere.memory.service.ShortMemoryService;
 import com.heartsphere.memory.service.hsmem.HSMemClientService;
 import com.heartsphere.memory.service.impl.MySQLLongMemoryService;
+import com.heartsphere.memory.repository.jpa.ChatMessageRepository;
+import com.heartsphere.memory.entity.ChatMessageEntity;
+import com.heartsphere.memory.util.MemoryEntityConverter;
+import com.heartsphere.memory.entity.CharacterKnowledgeAssetEntity;
+import com.heartsphere.memory.dto.CreateKnowledgeAssetRequest;
+import com.heartsphere.memory.dto.KnowledgeAssetResponse;
+import com.heartsphere.memory.dto.CharacterLearningStatsResponse;
+import com.heartsphere.memory.dto.AssetFeedbackRequest;
+import com.heartsphere.memory.service.CharacterKnowledgeAssetService;
+import com.heartsphere.memory.service.CharacterLearningService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.heartsphere.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -49,6 +63,9 @@ public class MemoryController {
     private final MemoryExtractor memoryExtractor;
     private final HSMemClientService hsmemClientService;
     private final com.heartsphere.service.MembershipService membershipService;
+    private final ChatMessageRepository chatMessageRepository;
+    private final CharacterKnowledgeAssetService characterKnowledgeAssetService;
+    private final CharacterLearningService characterLearningService;
     
     /**
      * 验证用户权限
@@ -75,26 +92,26 @@ public class MemoryController {
                 && !"anonymousUser".equals(authentication.getPrincipal())) {
                 
                 Object principal = authentication.getPrincipal();
-                log.debug("[MemoryController] 从 SecurityContext 获取认证信息: principal={}", 
+                log.info("[MemoryController] 从 SecurityContext 获取认证信息: principal={}", 
                     principal != null ? principal.getClass().getSimpleName() : "null");
                 
                 if (principal instanceof UserDetailsImpl) {
                     Long id = ((UserDetailsImpl) principal).getId();
-                    log.debug("[MemoryController] 从 UserDetailsImpl 获取用户ID: {}", id);
+                    log.info("[MemoryController] 从 UserDetailsImpl 获取用户ID: {}", id);
                     return String.valueOf(id);
                 } else if (principal instanceof UserDetails) {
                     String username = ((UserDetails) principal).getUsername();
-                    log.debug("[MemoryController] 从 UserDetails 获取用户名: {}", username);
+                    log.info("[MemoryController] 从 UserDetails 获取用户名: {}", username);
                     return username;
                 } else if (principal instanceof String) {
-                    log.debug("[MemoryController] 从 String principal 获取: {}", principal);
+                    log.info("[MemoryController] 从 String principal 获取: {}", principal);
                     // 如果是 "anonymousUser"，跳过
                     if (!"anonymousUser".equals(principal)) {
                         return (String) principal;
                     }
                 }
             } else {
-                log.debug("[MemoryController] SecurityContext 中没有有效认证信息: authentication={}, authenticated={}", 
+                log.info("[MemoryController] SecurityContext 中没有有效认证信息: authentication={}, authenticated={}", 
                     authentication != null, 
                     authentication != null ? authentication.isAuthenticated() : false);
             }
@@ -173,13 +190,13 @@ public class MemoryController {
             try {
                 Long userIdLong = Long.parseLong(userId);
                 if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-                    log.debug("游客用户尝试批量保存记忆，已跳过: userId={}", userId);
+                    log.info("游客用户尝试批量保存记忆，已跳过: userId={}", userId);
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE));
                 }
             } catch (NumberFormatException e) {
                 // 如果userId不是数字，继续执行
-                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
+                log.info("用户ID格式不是数字，跳过游客检查: userId={}", userId);
             }
             
             // 转换为UserMemory列表
@@ -223,7 +240,31 @@ public class MemoryController {
         try {
             // 验证用户权限
             String authenticatedUserId = getAuthenticatedUserId(userDetails);
-            if (authenticatedUserId == null || !authenticatedUserId.equals(userId)) {
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            // 权限验证：支持数字ID和字符串ID的比较
+            // 如果 authenticatedUserId 和 userId 都是数字字符串，进行数值比较
+            // 否则进行字符串比较
+            boolean hasPermission = false;
+            try {
+                // 尝试将两者都转换为数字进行比较
+                Long authId = Long.parseLong(authenticatedUserId);
+                Long requestId = Long.parseLong(userId);
+                hasPermission = authId.equals(requestId);
+                log.debug("权限验证（数字比较）: authenticatedUserId={}, requestUserId={}, hasPermission={}", 
+                    authenticatedUserId, userId, hasPermission);
+            } catch (NumberFormatException e) {
+                // 如果无法转换为数字，进行字符串比较
+                hasPermission = authenticatedUserId.equals(userId);
+                log.debug("权限验证（字符串比较）: authenticatedUserId={}, requestUserId={}, hasPermission={}", 
+                    authenticatedUserId, userId, hasPermission);
+            }
+            
+            if (!hasPermission) {
+                log.warn("权限验证失败: authenticatedUserId={}, requestUserId={}", authenticatedUserId, userId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
@@ -232,12 +273,12 @@ public class MemoryController {
             try {
                 Long userIdLong = Long.parseLong(userId);
                 if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-                    log.debug("游客用户尝试查询记忆，返回空列表: userId={}", userId);
+                    log.info("游客用户尝试查询记忆，返回空列表: userId={}", userId);
                     return ResponseEntity.ok(ApiResponse.success(List.of()));
                 }
             } catch (NumberFormatException e) {
                 // 如果userId不是数字，继续执行
-                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
+                log.info("用户ID格式不是数字，跳过游客检查: userId={}", userId);
             }
             
             List<UserMemory> memories = longMemoryService.retrieveRelevantMemories(userId, query, limit);
@@ -399,13 +440,13 @@ public class MemoryController {
             try {
                 Long userIdLong = Long.parseLong(userId);
                 if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-                    log.debug("游客用户尝试提取记忆，已跳过: userId={}, sessionId={}", userId, sessionId);
+                    log.info("游客用户尝试提取记忆，已跳过: userId={}, sessionId={}", userId, sessionId);
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ApiResponse.error(403, com.heartsphere.util.GuestAccessChecker.GUEST_ACCESS_DENIED_MESSAGE));
                 }
             } catch (NumberFormatException e) {
                 // 如果userId不是数字，继续执行
-                log.debug("用户ID格式不是数字，跳过游客检查: userId={}", userId);
+                log.info("用户ID格式不是数字，跳过游客检查: userId={}", userId);
             }
             
             // 获取会话消息
@@ -433,7 +474,7 @@ public class MemoryController {
             // 保存提取的记忆
             mySQLLongMemoryService.saveMemories(extractedMemories);
             
-            log.debug("从会话提取记忆成功: userId={}, sessionId={}, count={}", 
+            log.info("从会话提取记忆成功: userId={}, sessionId={}, count={}", 
                 userId, sessionId, extractedMemories.size());
             
             return ResponseEntity.ok(ApiResponse.success(extractedMemories));
@@ -466,7 +507,7 @@ public class MemoryController {
             @Parameter(description = "对话记忆化请求") @RequestBody HSMemConversationRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            log.debug("[MemoryController] 收到记忆化对话请求: messages={}, userDetails={}, authentication={}", 
+            log.info("[MemoryController] 收到记忆化对话请求: messages={}, userDetails={}, authentication={}", 
                 request.getMessages() != null ? request.getMessages().size() : 0, 
                 userDetails != null ? userDetails.getUsername() : "null",
                 SecurityContextHolder.getContext().getAuthentication() != null);
@@ -480,7 +521,7 @@ public class MemoryController {
                     .body(ApiResponse.error("未登录或无法获取用户信息"));
             }
             
-            log.debug("[MemoryController] 用户认证成功: userId={}, 准备调用 HSMemClientService", authenticatedUserId);
+            log.info("[MemoryController] 用户认证成功: userId={}, 准备调用 HSMemClientService", authenticatedUserId);
             
             // 自动设置 user_id（如果请求中没有提供）
             if (request.getUser_id() == null || request.getUser_id().isEmpty()) {
@@ -495,9 +536,9 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            log.debug("[MemoryController] 调用 HSMemClientService.memorizeConversation");
+            log.info("[MemoryController] 调用 HSMemClientService.memorizeConversation");
             HSMemResponse.MemorizeData result = hsmemClientService.memorizeConversation(request);
-            log.debug("[MemoryController] HSMemClientService 调用成功: resourceId={}, itemsCount={}", 
+            log.info("[MemoryController] HSMemClientService 调用成功: resourceId={}, itemsCount={}", 
                 result.getResource_id(), result.getItems_count());
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
@@ -677,5 +718,326 @@ public class MemoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("获取资源列表失败: " + e.getMessage()));
         }
+    }
+    
+    @Operation(summary = "保存聊天消息", description = "将聊天消息保存到数据库")
+    @PostMapping("/chat/messages")
+    public ResponseEntity<ApiResponse<ChatMessage>> saveChatMessage(
+            @Parameter(description = "保存消息请求") @RequestBody SaveChatMessageRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[MemoryController] ========== 开始保存聊天消息 ==========");
+        log.info("[MemoryController] 请求参数: sessionId={}, role={}, contentLength={}, metadata={}, importance={}", 
+            request.getSessionId(), request.getRole(), 
+            request.getContent() != null ? request.getContent().length() : 0,
+            request.getMetadata(), request.getImportance());
+        
+        try {
+            // 1. 获取认证用户ID
+            log.info("[MemoryController] 步骤1: 获取认证用户ID");
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                log.warn("[MemoryController] ❌ 无法获取用户ID: userDetails={}, authentication={}", 
+                    userDetails != null ? userDetails.getUsername() : "null",
+                    SecurityContextHolder.getContext().getAuthentication());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            log.info("[MemoryController] ✅ 用户ID获取成功: userId={}", authenticatedUserId);
+            
+            // 2. 验证请求参数
+            log.info("[MemoryController] 步骤2: 验证请求参数");
+            if (request.getSessionId() == null || request.getSessionId().trim().isEmpty()) {
+                log.warn("[MemoryController] ❌ sessionId 为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("sessionId 不能为空"));
+            }
+            if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+                log.warn("[MemoryController] ❌ content 为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("消息内容不能为空"));
+            }
+            log.info("[MemoryController] ✅ 请求参数验证通过");
+            
+            // 3. 构建 ChatMessage 实体
+            log.info("[MemoryController] 步骤3: 构建 ChatMessage 实体");
+            String messageId = UUID.randomUUID().toString().replace("-", "");
+            Long timestamp = System.currentTimeMillis();
+            
+            MessageRole role;
+            try {
+                role = MessageRole.valueOf(request.getRole().toUpperCase());
+                log.info("[MemoryController] ✅ 消息角色解析成功: role={}", role);
+            } catch (IllegalArgumentException e) {
+                log.warn("[MemoryController] ❌ 无效的消息角色: role={}", request.getRole());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("无效的消息角色: " + request.getRole()));
+            }
+            
+            ChatMessage message = ChatMessage.builder()
+                .id(messageId)
+                .sessionId(request.getSessionId())
+                .userId(authenticatedUserId)
+                .role(role)
+                .content(request.getContent())
+                .metadata(request.getMetadata())
+                .timestamp(timestamp)
+                .importance(request.getImportance())
+                .build();
+            log.info("[MemoryController] ✅ ChatMessage 构建完成: messageId={}, sessionId={}, userId={}, role={}, contentLength={}", 
+                messageId, request.getSessionId(), authenticatedUserId, role, request.getContent().length());
+            
+            // 4. 转换为实体
+            log.info("[MemoryController] 步骤4: 转换为实体");
+            ChatMessageEntity entity = MemoryEntityConverter.toEntity(message);
+            if (entity == null) {
+                log.error("[MemoryController] ❌ 消息转换失败: messageId={}", messageId);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("消息转换失败"));
+            }
+            log.info("[MemoryController] ✅ 实体转换成功: entityId={}, sessionId={}, userId={}", 
+                entity.getId(), entity.getSessionId(), entity.getUserId());
+            
+            // 5. 保存到数据库
+            log.info("[MemoryController] 步骤5: 保存到数据库");
+            entity = chatMessageRepository.save(entity);
+            log.info("[MemoryController] ✅ 消息已保存到数据库: entityId={}, sessionId={}, userId={}, role={}, timestamp={}", 
+                entity.getId(), entity.getSessionId(), entity.getUserId(), entity.getRole(), entity.getTimestamp());
+            
+            // 6. 转换回模型并返回
+            log.info("[MemoryController] 步骤6: 转换回模型");
+            ChatMessage savedMessage = MemoryEntityConverter.toModel(entity);
+            if (savedMessage == null) {
+                log.error("[MemoryController] ❌ 实体转模型失败: entityId={}", entity.getId());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("实体转模型失败"));
+            }
+            log.info("[MemoryController] ✅ 保存聊天消息成功: messageId={}, sessionId={}, userId={}, role={}, contentLength={}", 
+                savedMessage.getId(), savedMessage.getSessionId(), savedMessage.getUserId(), 
+                savedMessage.getRole(), savedMessage.getContent() != null ? savedMessage.getContent().length() : 0);
+            log.info("[MemoryController] ========== 保存聊天消息完成 ==========");
+            return ResponseEntity.ok(ApiResponse.success(savedMessage));
+        } catch (Exception e) {
+            log.error("[MemoryController] ❌ 保存聊天消息失败: sessionId={}, role={}, contentLength={}, error={}", 
+                request.getSessionId(), request.getRole(), 
+                request.getContent() != null ? request.getContent().length() : 0,
+                e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("保存聊天消息失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取聊天消息历史", description = "获取指定会话的聊天消息历史（支持分页）")
+    @GetMapping("/chat/messages")
+    public ResponseEntity<ApiResponse<List<ChatMessage>>> getChatMessages(
+            @Parameter(description = "会话ID") @RequestParam String sessionId,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int limit,
+            @Parameter(description = "在此时间戳之前的消息（用于分页）") @RequestParam(required = false) Long beforeTimestamp,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[MemoryController] ========== 开始获取聊天消息历史 ==========");
+        log.info("[MemoryController] 请求参数: sessionId={}, limit={}, beforeTimestamp={}", 
+            sessionId, limit, beforeTimestamp);
+        
+        try {
+            // 1. 获取认证用户ID
+            log.info("[MemoryController] 步骤1: 获取认证用户ID");
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                log.warn("[MemoryController] ❌ 无法获取用户ID: userDetails={}", 
+                    userDetails != null ? userDetails.getUsername() : "null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            log.info("[MemoryController] ✅ 用户ID获取成功: userId={}", authenticatedUserId);
+            
+            // 2. 构建分页参数并查询消息
+            log.info("[MemoryController] 步骤2: 查询消息");
+            Pageable pageable = PageRequest.of(0, limit);
+            
+            List<ChatMessageEntity> entities;
+            if (beforeTimestamp != null) {
+                log.info("[MemoryController] 查询指定时间之前的消息: beforeTimestamp={}", beforeTimestamp);
+                entities = chatMessageRepository.findBySessionIdAndTimestampLessThanOrderByTimestampDesc(
+                    sessionId, beforeTimestamp, pageable);
+            } else {
+                log.info("[MemoryController] 查询最新消息");
+                entities = chatMessageRepository.findBySessionIdOrderByTimestampDesc(sessionId, pageable);
+            }
+            log.info("[MemoryController] ✅ 查询完成: sessionId={}, foundCount={}", sessionId, entities.size());
+            
+            // 3. 转换为模型
+            log.info("[MemoryController] 步骤3: 转换为模型");
+            List<ChatMessage> messages = entities.stream()
+                .map(MemoryEntityConverter::toModel)
+                .filter(msg -> msg != null)
+                .collect(Collectors.toList());
+            log.info("[MemoryController] ✅ 模型转换完成: sessionId={}, messageCount={}", sessionId, messages.size());
+            
+            // 4. 如果是初始加载（没有 beforeTimestamp），需要反转顺序（从旧到新）
+            if (beforeTimestamp == null) {
+                log.info("[MemoryController] 步骤4: 反转消息顺序（初始加载）");
+                java.util.Collections.reverse(messages);
+            }
+            
+            // 5. 统计消息类型
+            long userCount = messages.stream().filter(m -> m.getRole() == MessageRole.USER).count();
+            long assistantCount = messages.stream().filter(m -> m.getRole() == MessageRole.ASSISTANT).count();
+            log.info("[MemoryController] ✅ 聊天消息加载成功: sessionId={}, total={}, USER={}, ASSISTANT={}", 
+                sessionId, messages.size(), userCount, assistantCount);
+            log.info("[MemoryController] ========== 获取聊天消息历史完成 ==========");
+            
+            return ResponseEntity.ok(ApiResponse.success(messages));
+        } catch (Exception e) {
+            log.error("[MemoryController] ❌ 获取聊天消息历史失败: sessionId={}, limit={}, beforeTimestamp={}, error={}", 
+                sessionId, limit, beforeTimestamp, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取聊天消息历史失败: " + e.getMessage()));
+        }
+    }
+    
+    // ===== 角色知识资产 API (Phase 2.4) =====
+    
+    @Operation(summary = "创建知识资产", description = "为角色创建新的知识资产（通常来自对话自动升级）")
+    @PostMapping("/character/{characterId}/assets")
+    public ResponseEntity<ApiResponse<KnowledgeAssetResponse>> createAsset(
+            @Parameter(description = "角色ID") @PathVariable Long characterId,
+            @RequestBody CreateKnowledgeAssetRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            CharacterKnowledgeAssetEntity asset = characterKnowledgeAssetService.createAsset(
+                characterId,
+                request.getAssetType(),
+                request.getTitle(),
+                request.getContent(),
+                request.getSummary(),
+                request.getSourceConversationId()
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success(convertToResponse(asset)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("创建知识资产失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("创建知识资产失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取相关资产", description = "根据关键词检索相关的角色资产")
+    @GetMapping("/character/{characterId}/related-assets")
+    public ResponseEntity<ApiResponse<List<KnowledgeAssetResponse>>> getRelatedAssets(
+            @Parameter(description = "角色ID") @PathVariable Long characterId,
+            @Parameter(description = "搜索关键词") @RequestParam String query,
+            @Parameter(description = "返回数量限制") @RequestParam(defaultValue = "5") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            List<CharacterKnowledgeAssetEntity> assets = 
+                characterKnowledgeAssetService.getRelatedAssets(characterId, query, limit);
+            
+            List<KnowledgeAssetResponse> responses = assets.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            log.error("检索相关资产失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("检索相关资产失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "提交资产反馈", description = "用户对资产的有帮助/没帮助反馈")
+    @PostMapping("/assets/{assetId}/feedback")
+    public ResponseEntity<ApiResponse<String>> submitAssetFeedback(
+            @Parameter(description = "资产ID") @PathVariable Long assetId,
+            @RequestBody AssetFeedbackRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            characterKnowledgeAssetService.submitFeedback(assetId, request.getFeedbackType());
+            
+            return ResponseEntity.ok(ApiResponse.success("反馈已提交"));
+        } catch (Exception e) {
+            log.error("提交反馈失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("提交反馈失败: " + e.getMessage()));
+        }
+    }
+    
+    @Operation(summary = "获取角色学习统计", description = "获取角色的经验等级和学习统计数据")
+    @GetMapping("/character/{characterId}/stats")
+    public ResponseEntity<ApiResponse<CharacterLearningStatsResponse>> getCharacterStats(
+            @Parameter(description = "角色ID") @PathVariable Long characterId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String authenticatedUserId = getAuthenticatedUserId(userDetails);
+            if (authenticatedUserId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("未登录或无法获取用户信息"));
+            }
+            
+            java.util.Map<String, Object> stats = characterLearningService.getCharacterLearningStats(characterId);
+            
+            CharacterLearningStatsResponse response = CharacterLearningStatsResponse.builder()
+                .characterId((Long) stats.get("characterId"))
+                .experienceLevel((Integer) stats.get("experienceLevel"))
+                .experienceLevelName((String) stats.get("experienceLevelName"))
+                .totalAssets((Long) stats.get("totalAssets"))
+                .approvedAssets((Long) stats.get("approvedAssets"))
+                .pendingAssets((Long) stats.get("pendingAssets"))
+                .averageTrustScore((Double) stats.get("averageTrustScore"))
+                .levelDescription((String) stats.get("levelDescription"))
+                .nextLevelAssetRequirement((Long) stats.get("nextLevelAssetRequirement"))
+                .nextLevelTrustRequirement((Integer) stats.get("nextLevelTrustRequirement"))
+                .progressPercentage((Integer) stats.get("progressPercentage"))
+                .build();
+            
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (Exception e) {
+            log.error("获取角色统计信息失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取角色统计信息失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 将 Entity 转换为 Response DTO
+     */
+    private KnowledgeAssetResponse convertToResponse(CharacterKnowledgeAssetEntity asset) {
+        return KnowledgeAssetResponse.builder()
+            .id(asset.getId())
+            .characterId(asset.getCharacterId())
+            .assetType(asset.getAssetType())
+            .title(asset.getTitle())
+            .content(asset.getContent())
+            .summary(asset.getSummary())
+            .trustScore(asset.getTrustScore())
+            .usageCount(asset.getUsageCount())
+            .positiveFeedbackCount(asset.getPositiveFeedbackCount())
+            .negativeFeedbackCount(asset.getNegativeFeedbackCount())
+            .isAutoPromoted(asset.getIsAutoPromoted())
+            .isApproved(asset.getIsApproved())
+            .approvedBy(asset.getApprovedBy())
+            .createdAt(asset.getCreatedAt() != null ? asset.getCreatedAt().toString() : null)
+            .updatedAt(asset.getUpdatedAt() != null ? asset.getUpdatedAt().toString() : null)
+            .lastUsedAt(asset.getLastUsedAt() != null ? asset.getLastUsedAt().toString() : null)
+            .build();
     }
 }

@@ -18,10 +18,16 @@ export const ProductPage: React.FC = () => {
       <div className="py-12 pb-20">
         <ScrollReveal>
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">
+            <h1 
+              className="text-4xl md:text-5xl font-bold mb-4"
+              style={{ color: 'var(--text-primary)' }}
+            >
               核心产品
             </h1>
-            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
+            <p 
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               心域（HeartSphere）数字生命体交互系统
             </p>
           </div>

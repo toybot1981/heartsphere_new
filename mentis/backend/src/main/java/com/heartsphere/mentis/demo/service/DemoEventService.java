@@ -35,7 +35,7 @@ public class DemoEventService {
         
         // 设置超时处理
         emitter.onTimeout(() -> {
-            log.debug("SSE connection timeout for session: {}", sessionId);
+            log.info("SSE connection timeout for session: {}", sessionId);
             sessionEmitters.remove(sessionId);
         });
         
@@ -47,7 +47,7 @@ public class DemoEventService {
         
         // 设置完成处理
         emitter.onCompletion(() -> {
-            log.debug("SSE connection completed for session: {}", sessionId);
+            log.info("SSE connection completed for session: {}", sessionId);
             sessionEmitters.remove(sessionId);
         });
         
@@ -64,7 +64,7 @@ public class DemoEventService {
         SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
         
         emitter.onTimeout(() -> {
-            log.debug("Global SSE connection timeout: {}", connectionId);
+            log.info("Global SSE connection timeout: {}", connectionId);
             globalEmitters.remove(connectionId);
         });
         
@@ -74,7 +74,7 @@ public class DemoEventService {
         });
         
         emitter.onCompletion(() -> {
-            log.debug("Global SSE connection completed: {}", connectionId);
+            log.info("Global SSE connection completed: {}", connectionId);
             globalEmitters.remove(connectionId);
         });
         
@@ -126,7 +126,7 @@ public class DemoEventService {
                 emitter.send(SseEmitter.event()
                     .name(eventName)
                     .data(data));
-                log.debug("Pushed {} event to session: {}", eventName, sessionId);
+                log.info("Pushed {} event to session: {}", eventName, sessionId);
             } catch (IOException e) {
                 log.error("Failed to push {} event to session: {}", eventName, sessionId, e);
                 sessionEmitters.remove(sessionId);
@@ -135,7 +135,7 @@ public class DemoEventService {
                 sessionEmitters.remove(sessionId);
             }
         } else {
-            log.debug("No SSE emitter found for session: {}", sessionId);
+            log.info("No SSE emitter found for session: {}", sessionId);
         }
     }
     

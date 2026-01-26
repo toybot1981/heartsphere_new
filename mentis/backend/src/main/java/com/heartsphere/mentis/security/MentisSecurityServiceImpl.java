@@ -22,7 +22,7 @@ public class MentisSecurityServiceImpl implements MentisSecurityService {
     
     @Override
     public boolean hasSessionAccess(Long userId, String sessionId) {
-        log.debug("验证会话访问权限: userId={}, sessionId={}", userId, sessionId);
+        log.info("验证会话访问权限: userId={}, sessionId={}", userId, sessionId);
         
         return sessionRepository.findBySessionId(sessionId)
                 .map(session -> session.getUserId().equals(userId))
@@ -31,7 +31,7 @@ public class MentisSecurityServiceImpl implements MentisSecurityService {
     
     @Override
     public boolean hasTaskExecutePermission(Long userId, String taskId) {
-        log.debug("验证任务执行权限: userId={}, taskId={}", userId, taskId);
+        log.info("验证任务执行权限: userId={}, taskId={}", userId, taskId);
         
         return taskRepository.findByTaskId(taskId)
                 .map(task -> {
@@ -43,7 +43,7 @@ public class MentisSecurityServiceImpl implements MentisSecurityService {
     
     @Override
     public boolean hasVmManagementPermission(Long userId, String sessionId) {
-        log.debug("验证虚拟机管理权限: userId={}, sessionId={}", userId, sessionId);
+        log.info("验证虚拟机管理权限: userId={}, sessionId={}", userId, sessionId);
         
         // 有会话访问权限就有虚拟机管理权限
         return hasSessionAccess(userId, sessionId);

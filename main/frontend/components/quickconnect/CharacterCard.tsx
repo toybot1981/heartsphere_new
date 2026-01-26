@@ -56,11 +56,15 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
     relative rounded-lg border transition-all duration-300 cursor-pointer
     ${viewMode === 'grid' ? 'w-[140px] h-[180px]' : viewMode === 'compact' ? 'w-[120px] h-[160px]' : 'w-full h-16'}
     ${isHovered ? 'scale-105 -translate-y-1 shadow-xl' : 'scale-100'}
-    ${character.isFavorite ? 'border-2 border-yellow-400' : 'border border-white/20'}
-    ${character.isFavorite ? 'bg-yellow-400/25' : 'bg-white/10'}
   `;
   
   const cardStyle: React.CSSProperties = {
+    borderColor: character.isFavorite 
+      ? 'var(--color-warning, #fbbf24)' 
+      : 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+    backgroundColor: character.isFavorite 
+      ? 'var(--color-warning, rgba(251, 191, 36, 0.25))' 
+      : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
     '--delay': `${index * 50}ms`,
     '--theme-color': character.themeColor || '#3b82f6',
     '--accent-color': character.colorAccent || '#60a5fa',
@@ -70,10 +74,20 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
   if (viewMode === 'list') {
     return (
       <div
-        className="flex items-center gap-4 p-4 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20 transition-all cursor-pointer"
+        className="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
+        style={{
+          backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+          borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+        }}
         onClick={onSelect}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={(e) => {
+          setIsHovered(true);
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+        }}
+        onMouseLeave={(e) => {
+          setIsHovered(false);
+          e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+        }}
       >
         <img
           src={character.avatarUrl}
@@ -82,18 +96,27 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
           style={{ borderColor: character.themeColor }}
         />
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white">
+          <h3 
+            className="text-lg font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
             <HighlightText text={character.characterName} highlight={searchQuery} />
           </h3>
-          <p className="text-sm text-gray-400">
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             <HighlightText text={character.sceneName} highlight={searchQuery} />
           </p>
         </div>
         <button
           onClick={handleFavoriteClick}
-          className={`p-2 rounded-full transition-all ${
-            character.isFavorite ? 'text-yellow-400' : 'text-gray-400'
-          } ${isFavoriteAnimating ? 'animate-spin scale-150' : ''}`}
+          className={`p-2 rounded-full transition-all ${isFavoriteAnimating ? 'animate-spin scale-150' : ''}`}
+          style={{
+            color: character.isFavorite 
+              ? 'var(--color-warning, #fbbf24)' 
+              : 'var(--text-tertiary)',
+          }}
         >
           <svg className="w-6 h-6" fill={character.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -127,33 +150,55 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
           style={{ borderColor: character.themeColor }}
         />
         {character.isOnline && (
-          <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border border-white" />
+          <div 
+            className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border"
+            style={{
+              backgroundColor: 'var(--color-success, #22c55e)',
+              borderColor: 'var(--text-primary)',
+            }}
+          />
         )}
       </div>
       
       {/* 内容区域 */}
       <div className="px-2 pb-2">
         <div className="flex items-center gap-1 mb-0.5">
-          <h3 className="text-sm font-bold text-white truncate flex-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
-              style={{ 
-                textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)',
-                letterSpacing: '0.01em'
-              }}>
+          <h3 
+            className="text-sm font-bold truncate flex-1"
+            style={{ 
+              color: 'var(--text-primary)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)',
+              letterSpacing: '0.01em'
+            }}
+          >
             <HighlightText text={character.characterName} highlight={searchQuery} />
           </h3>
           {/* 生活助手徽章 */}
           {character.tags && (character.tags.includes('生活助手') || character.tags.split(',').some(tag => tag.trim() === '生活助手')) && (
-            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex-shrink-0">
+            <span
+              className="px-1.5 py-0.5 text-[10px] font-bold rounded flex-shrink-0"
+              style={{
+                backgroundColor: 'var(--bg-info-alpha)',
+                color: 'var(--color-info)',
+                borderColor: 'var(--border-info-alpha)',
+              }}
+            >
               助手
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-400 mb-1 truncate">
+        <p 
+          className="text-xs mb-1 truncate"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <HighlightText text={character.sceneName} highlight={searchQuery} />
         </p>
         
         {/* 状态信息 */}
-        <div className="text-[10px] text-gray-500">
+        <div 
+          className="text-[10px]"
+          style={{ color: 'var(--text-disabled)' }}
+        >
           <div>{formatLastAccessTime(character.lastAccessTime)}</div>
           {character.accessCount > 5 && (
             <div>访问 {character.accessCount} 次</div>
@@ -165,8 +210,16 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
       <button
         onClick={handleFavoriteClick}
         className={`absolute top-1.5 right-1.5 p-1 rounded-full transition-all ${
-          character.isFavorite ? 'text-yellow-400 bg-yellow-400/20' : 'text-gray-400 bg-black/20'
-        } ${isFavoriteAnimating ? 'animate-spin scale-150' : 'hover:scale-110'}`}
+          isFavoriteAnimating ? 'animate-spin scale-150' : 'hover:scale-110'
+        }`}
+        style={{
+          color: character.isFavorite 
+            ? 'var(--color-warning, #fbbf24)' 
+            : 'var(--text-tertiary)',
+          backgroundColor: character.isFavorite 
+            ? 'var(--color-warning, rgba(251, 191, 36, 0.2))' 
+            : 'var(--bg-overlay, rgba(0, 0, 0, 0.2))',
+        }}
       >
         <svg className="w-4 h-4" fill={character.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -175,7 +228,13 @@ export const CharacterCard: React.FC<CharacterCardProps> = memo(({
       
       {/* 悬停预览 */}
       {isHovered && character.bio && (
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/90 rounded-b-lg text-[10px] text-gray-300">
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-2 rounded-b-lg text-[10px]"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.9))',
+            color: 'var(--text-secondary)',
+          }}
+        >
           <p className="line-clamp-2">{character.bio}</p>
         </div>
       )}

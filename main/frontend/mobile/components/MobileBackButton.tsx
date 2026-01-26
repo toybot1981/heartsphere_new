@@ -22,7 +22,13 @@ export const MobileBackButton: React.FC<MobileBackButtonProps> = memo(({
       onClick={onClick}
       variant="ghost"
       size="sm"
-      className={`text-white bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2 ${className}`}
+      className={`backdrop-blur-sm rounded-lg px-3 py-2 ${className}`}
+      style={{
+        color: 'var(--text-primary)',
+        backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+        borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+        borderWidth: '1px',
+      }}
       aria-label={ariaLabel}
     >
       <svg 

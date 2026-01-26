@@ -62,7 +62,7 @@ springdoc:
 # Logging配置
 logging:
   level:
-    com.heartsphere.websearch: DEBUG
+    com.heartsphere.websearch: INFO
     org.springframework.web: INFO
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'

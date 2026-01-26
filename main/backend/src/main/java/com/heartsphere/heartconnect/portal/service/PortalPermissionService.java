@@ -35,7 +35,7 @@ public class PortalPermissionService {
         PortalConfig portal = portalConfigRepository.findById(portalId)
                 .orElseThrow(() -> new ResourceNotFoundException("传送门不存在"));
         
-        log.debug("[PortalPermissionService] 检查传送权限: userId={}, portalId={}, portalUserId={}, permissionType={}", 
+        log.info("[PortalPermissionService] 检查传送权限: userId={}, portalId={}, portalUserId={}, permissionType={}", 
             userId, portalId, portal.getUserId(), portal.getPermissionType());
         
         // 只检查传送门是否激活，不再检查权限

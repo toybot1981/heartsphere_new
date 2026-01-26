@@ -35,7 +35,11 @@ export const HighlightText: React.FC<HighlightTextProps> = ({
           return (
             <mark
               key={index}
-              className="bg-yellow-400/50 text-yellow-100 px-1 rounded"
+              className="px-1 rounded"
+              style={{
+                backgroundColor: 'var(--bg-warning-alpha)',
+                color: 'var(--text-warning)',
+              }}
             >
               {part}
             </mark>

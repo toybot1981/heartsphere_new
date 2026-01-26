@@ -75,9 +75,22 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
   return (
     <div 
       onClick={onSelect}
-      className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-400/50"
+      className="group relative h-96 w-full cursor-pointer overflow-hidden rounded-3xl border shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+      style={{
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        boxShadow: 'var(--shadow-lg)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--color-primary)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      }}
     >
-      <div className="absolute inset-0 bg-gray-900 pointer-events-none">
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
+      >
         {scene.imageUrl && scene.imageUrl.trim() ? (
           <LazyImage
             src={scene.imageUrl}
@@ -87,11 +100,19 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center pointer-events-none">
+          <div 
+            className="h-full w-full flex items-center justify-center pointer-events-none gradient-bg"
+            style={{ opacity: 0.5 }}
+          >
             <div className="text-6xl opacity-30">✨</div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-90 transition-opacity group-hover:opacity-75 z-0 pointer-events-none" />
+        <div 
+          className="absolute inset-0 opacity-90 transition-opacity group-hover:opacity-75 z-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, var(--bg-primary) 90%, var(--bg-primary) 60%, transparent)',
+          }}
+        />
       </div>
 
       {/* Action Buttons (Top Right) */}
@@ -100,7 +121,18 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
           {onEdit && (
             <button
               onClick={handleEditClick}
-              className="bg-black/50 backdrop-blur-md text-white p-3 rounded-full border border-white/20 transition-all duration-300 shadow-lg hover:bg-blue-500/50"
+              className="backdrop-blur-md p-3 rounded-full border transition-all duration-300 shadow-lg"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                color: 'var(--text-primary)',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+              }}
               title="编辑场景"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -111,7 +143,18 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
           {onDelete && (
             <button
               onClick={handleDeleteClick}
-              className="bg-black/50 backdrop-blur-md text-white p-3 rounded-full border border-white/20 transition-all duration-300 shadow-lg hover:bg-red-500/50"
+              className="backdrop-blur-md p-3 rounded-full border transition-all duration-300 shadow-lg"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                color: 'var(--text-primary)',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+              }}
               title="删除场景"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -123,7 +166,9 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
       )}
 
       <div className="absolute bottom-0 left-0 w-full p-6 text-center z-10 pointer-events-none">
-        <h3 className="mb-2 text-3xl font-black text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]" 
+        <h3 
+          className="mb-2 text-3xl font-black drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]"
+          style={{ color: 'var(--text-primary)' }} 
             style={{ 
               textShadow: '0 3px 15px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.7), 0 0 30px rgba(0,0,0,0.5)',
               WebkitTextStroke: '1px rgba(0,0,0,0.4)',
@@ -131,7 +176,9 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
             }}>
           {scene.name}
         </h3>
-        <p className="text-sm font-bold text-white line-clamp-2 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+        <p 
+          className="text-sm font-bold line-clamp-2 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+          style={{ color: 'var(--text-primary)' }}
            style={{ 
              textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.6)',
              letterSpacing: '0.01em'
@@ -140,7 +187,18 @@ export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSelect, onEdit, o
         </p>
       </div>
       
-      <div className="absolute inset-0 rounded-3xl border-2 border-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:border-purple-400 pointer-events-none z-0" />
+      <div 
+        className="absolute inset-0 rounded-3xl border-2 border-transparent opacity-0 transition-opacity duration-300 pointer-events-none z-0"
+        style={{
+          borderColor: 'var(--color-primary)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '1';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '0';
+        }}
+      />
     </div>
   );
 };

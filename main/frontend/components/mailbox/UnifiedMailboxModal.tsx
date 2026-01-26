@@ -91,18 +91,46 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-black/95 via-purple-900/20 to-black/95 backdrop-blur-xl p-4 animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl p-4 animate-fade-in"
+      style={{
+        background: 'var(--gradient-bg, linear-gradient(to bottom right, rgba(0, 0, 0, 0.95), rgba(88, 28, 135, 0.2), rgba(0, 0, 0, 0.95)))',
+      }}
+    >
       {/* 迁移功能已禁用，直接使用新系统 */}
 
-      <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-700/50 rounded-3xl w-full max-w-6xl h-[88vh] shadow-2xl shadow-purple-900/20 overflow-hidden flex flex-col relative before:absolute before:inset-0 before:bg-gradient-to-br before:from-purple-900/10 before:to-transparent before:pointer-events-none">
+      <div 
+        className="border rounded-3xl w-full max-w-6xl h-[88vh] shadow-2xl overflow-hidden flex flex-col relative"
+        style={{
+          background: 'var(--gradient-bg, linear-gradient(to bottom right, #0f172a, #0f172a, #020617))',
+          borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+        }}
+      >
         {/* 头部 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-950/80 to-slate-900/80 backdrop-blur-sm relative z-10">
+        <div 
+          className="flex items-center justify-between px-6 py-4 border-b backdrop-blur-sm relative z-10"
+          style={{
+            borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+            background: 'var(--gradient-bg, linear-gradient(to right, #020617, #0f172a))',
+          }}
+        >
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 blur-xl rounded-full"></div>
-              <h2 className="relative text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 flex items-center gap-3">
+              <div 
+                className="absolute inset-0 blur-xl rounded-full"
+                style={{
+                  background: 'var(--bg-secondary-alpha)',
+                }}
+              ></div>
+              <h2 
+                className="relative text-2xl font-bold text-transparent bg-clip-text flex items-center gap-3"
+                style={{ backgroundImage: 'var(--gradient-text)' }}
+              >
                 <span className="text-3xl animate-pulse">📬</span> 
-                <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                <span 
+                  className="bg-clip-text text-transparent"
+                  style={{ backgroundImage: 'var(--gradient-text)' }}
+                >
                   跨时空信箱
                 </span>
               </h2>
@@ -114,7 +142,27 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
             {/* 写信按钮 */}
             <button
               onClick={() => setShowComposeModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600/80 to-pink-600/80 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all duration-200 font-medium text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-xl transition-all duration-200 font-medium text-sm flex items-center gap-2 shadow-lg"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.8), rgba(236, 72, 153, 0.8)))',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #a855f7, #f472b6))';
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.8), rgba(236, 72, 153, 0.8)))';
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
               title="写信给管理员"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,22 +173,63 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
             
             {/* 搜索框 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div 
+                className="absolute inset-0 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  background: 'var(--bg-secondary-alpha)',
+                }}
+              ></div>
               <input
                 type="text"
                 placeholder="搜索消息..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="relative px-4 py-2.5 bg-slate-800/80 border border-slate-600/50 rounded-xl text-white text-sm placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all backdrop-blur-sm w-64"
+                className="relative px-4 py-2.5 border rounded-xl text-sm outline-none transition-all backdrop-blur-sm w-64"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.8))',
+                  borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, rgba(147, 51, 234, 0.5))';
+                  e.currentTarget.style.outline = '2px solid var(--color-primary, rgba(147, 51, 234, 0.2))';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                  e.currentTarget.style.outline = 'none';
+                }}
               />
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg 
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 rounded-xl p-2.5 backdrop-blur-sm transition-all hover:scale-110 active:scale-95 border border-slate-700/50 hover:border-slate-600"
+              className="rounded-xl p-2.5 backdrop-blur-sm transition-all active:scale-95 border"
+              style={{
+                color: 'var(--text-tertiary)',
+                backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.5))';
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.6))';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.5))';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -150,19 +239,41 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
         </div>
 
         {/* 标签栏 */}
-        <div className="flex border-b border-slate-700/50 bg-slate-900/30 backdrop-blur-sm relative">
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent"></div>
+        <div 
+          className="flex border-b backdrop-blur-sm relative"
+          style={{
+            borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+            backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.3))',
+          }}
+        >
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-[1px]"
+            style={{
+              background: 'var(--gradient-primary, linear-gradient(to right, transparent, rgba(147, 51, 234, 0.3), transparent))',
+            }}
+          />
           <button
             onClick={() => {
               setViewMode('inbox');
               setSelectedMessage(null);
               setInboxView('list');
             }}
-            className={`relative px-8 py-4 font-semibold transition-all duration-300 ${
-              viewMode === 'inbox'
-                ? 'text-purple-300'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className="relative px-8 py-4 font-semibold transition-all duration-300"
+            style={{
+              color: viewMode === 'inbox'
+                ? 'var(--color-primary, #c7d2fe)'
+                : 'var(--text-tertiary)',
+            }}
+            onMouseEnter={(e) => {
+              if (viewMode !== 'inbox') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (viewMode !== 'inbox') {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }
+            }}
           >
             <span className="relative z-10 flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,8 +283,18 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
             </span>
             {viewMode === 'inbox' && (
               <>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-t-full"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent"></div>
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
+                  style={{
+                    background: 'var(--gradient-primary, linear-gradient(to right, #ec4899, #9333ea))',
+                  }}
+                />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'var(--gradient-bg, linear-gradient(to bottom, rgba(147, 51, 234, 0.1), transparent))',
+                  }}
+                />
               </>
             )}
             {viewMode === 'inbox' && (
@@ -187,11 +308,22 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
               setSelectedConversation(null);
               setConversationView('list');
             }}
-            className={`relative px-8 py-4 font-semibold transition-all duration-300 ${
-              viewMode === 'conversations'
-                ? 'text-purple-300'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className="relative px-8 py-4 font-semibold transition-all duration-300"
+            style={{
+              color: viewMode === 'conversations'
+                ? 'var(--color-primary, #c7d2fe)'
+                : 'var(--text-tertiary)',
+            }}
+            onMouseEnter={(e) => {
+              if (viewMode !== 'conversations') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (viewMode !== 'conversations') {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }
+            }}
           >
             <span className="relative z-10 flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,8 +333,18 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
             </span>
             {viewMode === 'conversations' && (
               <>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-t-full"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent"></div>
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
+                  style={{
+                    background: 'var(--gradient-primary, linear-gradient(to right, #ec4899, #9333ea))',
+                  }}
+                />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'var(--gradient-bg, linear-gradient(to bottom, rgba(147, 51, 234, 0.1), transparent))',
+                  }}
+                />
               </>
             )}
           </button>
@@ -213,22 +355,59 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
           {viewMode === 'inbox' ? (
             <>
               {/* 分类侧边栏 */}
-              <div className="w-56 border-r border-slate-700/50 bg-gradient-to-b from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              <div 
+                className="w-56 border-r backdrop-blur-sm p-5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
+                style={{
+                  borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                  background: 'var(--gradient-bg, linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(2, 6, 23, 0.4)))',
+                }}
+              >
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-3">
+                  <div 
+                    className="text-xs font-semibold uppercase tracking-wider mb-4 px-3"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
                     消息分类
                   </div>
                   
                   <button
                     onClick={() => handleCategoryChange(undefined)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
-                      currentCategory === undefined
-                        ? 'bg-gradient-to-r from-purple-600/80 to-pink-600/80 text-white shadow-lg shadow-purple-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === undefined
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.8), rgba(236, 72, 153, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === undefined
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === undefined
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === undefined ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === undefined
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== undefined) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== undefined) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === undefined && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2)))',
+                        }}
+                      />
                     )}
                     <svg className="relative z-10 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -238,14 +417,42 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                   
                   <button
                     onClick={() => handleCategoryChange(MessageCategory.ESOUL_LETTER)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between relative overflow-hidden ${
-                      currentCategory === MessageCategory.ESOUL_LETTER
-                        ? 'bg-gradient-to-r from-purple-600/80 to-pink-600/80 text-white shadow-lg shadow-purple-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === MessageCategory.ESOUL_LETTER
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.8), rgba(236, 72, 153, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === MessageCategory.ESOUL_LETTER
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === MessageCategory.ESOUL_LETTER
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === MessageCategory.ESOUL_LETTER ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === MessageCategory.ESOUL_LETTER
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== MessageCategory.ESOUL_LETTER) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== MessageCategory.ESOUL_LETTER) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === MessageCategory.ESOUL_LETTER && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2)))',
+                        }}
+                      />
                     )}
                     <span className="relative z-10 font-medium flex items-center gap-2">
                       <span className="text-lg">✨</span>
@@ -256,14 +463,42 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                   
                   <button
                     onClick={() => handleCategoryChange(MessageCategory.RESONANCE)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
-                      currentCategory === MessageCategory.RESONANCE
-                        ? 'bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white shadow-lg shadow-cyan-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === MessageCategory.RESONANCE
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(6, 182, 212, 0.8), rgba(59, 130, 246, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === MessageCategory.RESONANCE
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === MessageCategory.RESONANCE
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === MessageCategory.RESONANCE ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === MessageCategory.RESONANCE
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== MessageCategory.RESONANCE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== MessageCategory.RESONANCE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === MessageCategory.RESONANCE && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2)))',
+                        }}
+                      />
                     )}
                     <span className="relative z-10 font-medium flex items-center gap-2">
                       <span className="text-lg">💫</span>
@@ -273,14 +508,42 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                   
                   <button
                     onClick={() => handleCategoryChange(MessageCategory.SYSTEM)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
-                      currentCategory === MessageCategory.SYSTEM
-                        ? 'bg-gradient-to-r from-yellow-600/80 to-amber-600/80 text-white shadow-lg shadow-yellow-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === MessageCategory.SYSTEM
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(234, 179, 8, 0.8), rgba(245, 158, 11, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === MessageCategory.SYSTEM
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === MessageCategory.SYSTEM
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === MessageCategory.SYSTEM ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === MessageCategory.SYSTEM
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== MessageCategory.SYSTEM) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== MessageCategory.SYSTEM) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === MessageCategory.SYSTEM && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.2)))',
+                        }}
+                      />
                     )}
                     <span className="relative z-10 font-medium flex items-center gap-2">
                       <span className="text-lg">⚙️</span>
@@ -290,14 +553,42 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                   
                   <button
                     onClick={() => handleCategoryChange(MessageCategory.USER_MESSAGE)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
-                      currentCategory === MessageCategory.USER_MESSAGE
-                        ? 'bg-gradient-to-r from-indigo-600/80 to-purple-600/80 text-white shadow-lg shadow-indigo-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === MessageCategory.USER_MESSAGE
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(147, 51, 234, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === MessageCategory.USER_MESSAGE
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === MessageCategory.USER_MESSAGE
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === MessageCategory.USER_MESSAGE ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === MessageCategory.USER_MESSAGE
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== MessageCategory.USER_MESSAGE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== MessageCategory.USER_MESSAGE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === MessageCategory.USER_MESSAGE && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(99, 102, 241, 0.2), rgba(147, 51, 234, 0.2)))',
+                        }}
+                      />
                     )}
                     <span className="relative z-10 font-medium flex items-center gap-2">
                       <span className="text-lg">👤</span>
@@ -307,14 +598,42 @@ export const UnifiedMailboxModal: React.FC<UnifiedMailboxModalProps> = ({
                   
                   <button
                     onClick={() => handleCategoryChange(MessageCategory.WARM_MESSAGE)}
-                    className={`group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden ${
-                      currentCategory === MessageCategory.WARM_MESSAGE
-                        ? 'bg-gradient-to-r from-pink-600/80 to-rose-600/80 text-white shadow-lg shadow-pink-500/20 scale-105'
-                        : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:scale-102 border border-slate-700/30'
-                    }`}
+                    className="group w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 relative overflow-hidden border"
+                    style={{
+                      background: currentCategory === MessageCategory.WARM_MESSAGE
+                        ? 'var(--gradient-primary, linear-gradient(to right, rgba(236, 72, 153, 0.8), rgba(244, 63, 94, 0.8)))'
+                        : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      color: currentCategory === MessageCategory.WARM_MESSAGE
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                      borderColor: currentCategory === MessageCategory.WARM_MESSAGE
+                        ? 'transparent'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                      transform: currentCategory === MessageCategory.WARM_MESSAGE ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: currentCategory === MessageCategory.WARM_MESSAGE
+                        ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                        : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentCategory !== MessageCategory.WARM_MESSAGE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentCategory !== MessageCategory.WARM_MESSAGE) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
                     {currentCategory === MessageCategory.WARM_MESSAGE && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-rose-500/20 animate-pulse"></div>
+                      <div 
+                        className="absolute inset-0 animate-pulse"
+                        style={{
+                          background: 'var(--gradient-primary, linear-gradient(to right, rgba(236, 72, 153, 0.2), rgba(244, 63, 94, 0.2)))',
+                        }}
+                      />
                     )}
                     <span className="relative z-10 font-medium flex items-center gap-2">
                       <span className="text-lg">💌</span>

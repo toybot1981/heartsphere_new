@@ -101,18 +101,27 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
   
   // 响应式样式
   const modalClasses = isMobile
-    ? 'fixed inset-0 z-50 bg-gray-900 flex flex-col'
-    : 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm';
+    ? 'fixed inset-0 z-50 flex flex-col'
+    : 'fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm';
+  
+  const modalStyle: React.CSSProperties = isMobile
+    ? { backgroundColor: 'var(--bg-card, #111827)' }
+    : { backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.7))' };
   
   const contentClasses = isMobile
-    ? 'relative w-full h-full bg-gray-900 flex flex-col'
-    : 'relative w-full max-w-5xl max-h-[90vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col';
+    ? 'relative w-full h-full flex flex-col'
+    : 'relative w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col';
+  
+  const contentStyle: React.CSSProperties = {
+    backgroundColor: 'var(--bg-card, #111827)',
+  };
   
   
   return (
     <QuickConnectErrorBoundary>
       <div
         className={modalClasses}
+        style={modalStyle}
         onClick={(e) => {
           // 只有点击背景区域（不是内容区域）才关闭
           if (e.target === e.currentTarget) {
@@ -122,16 +131,34 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
       >
         <div
           className={contentClasses}
+          style={contentStyle}
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">查看共享心域</h2>
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))' }}
+        >
+          <h2 
+            className="text-2xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            查看共享心域
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+            className="p-2 rounded-full transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -140,7 +167,10 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         </div>
         
         {/* 共享心域展示区域 */}
-        <div className="p-6 pb-4 border-b border-white/10">
+        <div 
+          className="p-6 pb-4 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))' }}
+        >
           <SharedHeartSphereSection 
             selectedShareCode={selectedShareCode}
             onSelectHeartSphere={async (shareCode, sharedHeartSphere) => {
@@ -214,7 +244,10 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         </div>
         
         {/* 搜索和筛选区域 */}
-        <div className="px-6 pt-4 pb-4 space-y-3 border-b border-white/10">
+        <div 
+          className="px-6 pt-4 pb-4 space-y-3 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))' }}
+        >
           {/* 搜索框 */}
           <SearchBox
             value={searchQuery}
@@ -242,7 +275,12 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 rounded-lg bg-white/10 text-white border border-white/20 text-sm"
+                  className="px-3 py-2 rounded-lg border text-sm"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                    borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   <option value="frequency">按频率</option>
                   <option value="recent">按最近</option>
@@ -250,12 +288,27 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
                   <option value="favorite">收藏优先</option>
                 </select>
                 
-                <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1">
+                <div 
+                  className="flex items-center gap-1 rounded-lg p-1"
+                  style={{ backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))' }}
+                >
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded transition-colors ${
-                      viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                    className="p-2 rounded transition-colors"
+                    style={{
+                      backgroundColor: viewMode === 'grid' ? 'var(--color-primary, #3b82f6)' : 'transparent',
+                      color: viewMode === 'grid' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (viewMode !== 'grid') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (viewMode !== 'grid') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -263,9 +316,21 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded transition-colors ${
-                      viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                    className="p-2 rounded transition-colors"
+                    style={{
+                      backgroundColor: viewMode === 'list' ? 'var(--color-primary, #3b82f6)' : 'transparent',
+                      color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (viewMode !== 'list') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (viewMode !== 'list') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -281,7 +346,14 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           {/* 错误提示 */}
           {error && (
-            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+            <div 
+              className="mb-4 p-4 border rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+                borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+                color: 'var(--color-error, #fca5a5)',
+              }}
+            >
               {error}
             </div>
           )}
@@ -289,7 +361,10 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
           {/* E-SOUL列表 */}
           {isLoading || isSearching ? (
             <div className="flex items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div 
+                className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: 'var(--color-primary, #3b82f6)' }}
+              />
             </div>
           ) : filteredCharacters.length === 0 ? (
             <EmptyState
@@ -317,8 +392,17 @@ export const QuickConnectModal: React.FC<QuickConnectModalProps> = ({
         </div>
         
         {/* 底部统计信息 */}
-        <div className="p-4 border-t border-white/10 bg-gray-800/50">
-          <p className="text-sm text-gray-400 text-center">
+        <div
+          className="p-4 border-t"
+          style={{
+            borderColor: 'var(--border-color-overlay)',
+            backgroundColor: 'var(--bg-primary-dark-alpha)',
+          }}
+        >
+          <p
+            className="text-sm text-center"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
             共找到 {totalCount} 个 E-SOUL
             {favoriteCount > 0 && ` · 收藏 ${favoriteCount} 个`}
             {recentCount > 0 && ` · 最近访问 ${recentCount} 个`}

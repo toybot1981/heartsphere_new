@@ -33,10 +33,21 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     
     // 使用简单的二维码生成算法（简化版）
     // 实际项目中建议使用 qrcode 库
-    ctx.fillStyle = '#FFFFFF';
+    // 获取主题颜色
+    const getThemeColor = (varName: string, fallback: string) => {
+      if (typeof window !== 'undefined') {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        return value || fallback;
+      }
+      return fallback;
+    };
+    const bgColor = getThemeColor('--bg-primary', '#FFFFFF');
+    const fgColor = getThemeColor('--text-primary', '#000000');
+    
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
     
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = fgColor;
     
     // 生成简单的二维码模式（实际应使用专业库）
     const moduleSize = size / 25; // 25x25 模块
@@ -57,23 +68,46 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
   };
   
   const drawFinderPattern = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
+    // 获取主题颜色
+    const getThemeColor = (varName: string, fallback: string) => {
+      if (typeof window !== 'undefined') {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        return value || fallback;
+      }
+      return fallback;
+    };
+    const fgColor = getThemeColor('--text-primary', '#000000');
+    const bgColor = getThemeColor('--bg-primary', '#FFFFFF');
+    
     // 外框
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = fgColor;
     ctx.fillRect(x, y, size, size);
     
     // 内框
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(x + size / 7, y + size / 7, size * 5 / 7, size * 5 / 7);
     
     // 中心点
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = fgColor;
     ctx.fillRect(x + size * 2 / 7, y + size * 2 / 7, size * 3 / 7, size * 3 / 7);
   };
   
   if (!text) {
     return (
-      <div className={`flex items-center justify-center bg-gray-100 ${className}`} style={{ width: size, height: size }}>
-        <span className="text-gray-400 text-sm">暂无内容</span>
+      <div 
+        className={`flex items-center justify-center ${className}`}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: 'var(--bg-card, #f3f4f6)',
+        }}
+      >
+        <span 
+          className="text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          暂无内容
+        </span>
       </div>
     );
   }
@@ -102,12 +136,23 @@ export const QRCodeGeneratorWithLibrary: React.FC<QRCodeGeneratorProps> = ({
     if (canvasRef.current && text) {
       // 动态导入qrcode库
       import('qrcode').then((QRCode) => {
+        // 获取主题颜色
+        const getThemeColor = (varName: string, fallback: string) => {
+          if (typeof window !== 'undefined') {
+            const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+            return value || fallback;
+          }
+          return fallback;
+        };
+        const darkColor = getThemeColor('--text-primary', '#000000');
+        const lightColor = getThemeColor('--bg-primary', '#FFFFFF');
+        
         QRCode.toCanvas(canvasRef.current, text, {
           width: size,
           margin: 2,
           color: {
-            dark: '#000000',
-            light: '#FFFFFF',
+            dark: darkColor,
+            light: lightColor,
           },
         }).catch((err) => {
           console.error('生成二维码失败:', err);
@@ -118,8 +163,20 @@ export const QRCodeGeneratorWithLibrary: React.FC<QRCodeGeneratorProps> = ({
   
   if (!text) {
     return (
-      <div className={`flex items-center justify-center bg-gray-100 ${className}`} style={{ width: size, height: size }}>
-        <span className="text-gray-400 text-sm">暂无内容</span>
+      <div 
+        className={`flex items-center justify-center ${className}`}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: 'var(--bg-card, #f3f4f6)',
+        }}
+      >
+        <span 
+          className="text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          暂无内容
+        </span>
       </div>
     );
   }

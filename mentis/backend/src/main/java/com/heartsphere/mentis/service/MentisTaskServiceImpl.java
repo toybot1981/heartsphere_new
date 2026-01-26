@@ -93,7 +93,7 @@ public class MentisTaskServiceImpl implements MentisTaskService {
     
     @Override
     public MentisTask getTask(String taskId) {
-        log.debug("获取任务: taskId={}", taskId);
+        log.info("获取任务: taskId={}", taskId);
         
         return taskRepository.findByTaskId(taskId)
                 .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
@@ -101,7 +101,7 @@ public class MentisTaskServiceImpl implements MentisTaskService {
     
     @Override
     public List<MentisTask> getSessionTasks(String sessionId) {
-        log.debug("获取会话任务列表: sessionId={}", sessionId);
+        log.info("获取会话任务列表: sessionId={}", sessionId);
         
         var session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -113,12 +113,12 @@ public class MentisTaskServiceImpl implements MentisTaskService {
             String latestMessageId = latestMessageIdOpt.get();
             // 返回该消息关联的所有任务，按创建时间正序排列
             List<MentisTask> tasks = taskRepository.findByMessageIdOrderByCreatedAtAsc(latestMessageId);
-            log.debug("返回当前对话的任务: messageId={}, count={}", latestMessageId, tasks.size());
+            log.info("返回当前对话的任务: messageId={}, count={}", latestMessageId, tasks.size());
             return tasks;
         }
         
         // 2. 如果没有找到用户消息，返回空列表
-        log.debug("会话没有用户消息，返回空任务列表");
+        log.info("会话没有用户消息，返回空任务列表");
         return List.of();
     }
     

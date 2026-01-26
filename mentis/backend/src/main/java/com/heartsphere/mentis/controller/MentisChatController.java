@@ -1,6 +1,8 @@
 package com.heartsphere.mentis.controller;
 
 import com.heartsphere.shared.dto.ApiResponse;
+import com.heartsphere.shared.sse.SseEmitterManager;
+import com.heartsphere.shared.sse.SseUtils;
 import com.heartsphere.mentis.dto.ChatRequestDTO;
 import com.heartsphere.mentis.dto.ChatResponseDTO;
 import com.heartsphere.mentis.entity.MentisMessage;
@@ -17,7 +19,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Mentis 对话控制器
@@ -34,6 +35,7 @@ public class MentisChatController {
     
     private final MentisAgentService agentService;
     private final MentisMessageService messageService;
+    private final SseEmitterManager sseEmitterManager;
     
     /**
      * 获取会话消息历史
@@ -100,115 +102,34 @@ public class MentisChatController {
         Long userId = getUserId(authentication);
         log.info("收到流式聊天请求: userId={}, sessionId={}", userId, request.getSessionId());
         
-        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
-        AtomicBoolean completed = new AtomicBoolean(false); // 跟踪 emitter 是否已完成
-        
-        // 安全发送 SSE 事件的辅助方法
-        java.util.function.Consumer<java.util.function.Consumer<SseEmitter>> safeSend = (sendAction) -> {
-            if (!completed.get()) {
-                try {
-                    sendAction.accept(emitter);
-                } catch (IllegalStateException e) {
-                    // Emitter 已经完成，忽略错误
-                    if (e.getMessage() != null && e.getMessage().contains("already completed")) {
-                        log.debug("SSE emitter 已完成，跳过发送: sessionId={}", request.getSessionId());
-                        completed.set(true);
-                    } else {
-                        log.warn("SSE emitter 状态异常: sessionId={}, error={}", request.getSessionId(), e.getMessage());
-                    }
-                } catch (Exception e) {
-                    log.error("发送 SSE 事件失败: sessionId={}", request.getSessionId(), e);
-                    if (!completed.get()) {
-                        try {
-                            completed.set(true);
-                            emitter.completeWithError(e);
-                        } catch (Exception ex) {
-                            log.error("完成 SSE emitter 失败: sessionId={}", request.getSessionId(), ex);
-                        }
-                    }
-                }
-            }
-        };
+        // 使用shared SSE能力
+        SseEmitter emitter = sseEmitterManager.createEmitter(300000L); // 5分钟超时
         
         // 使用异步处理，避免阻塞
         new Thread(() -> {
             try {
                 agentService.processMessageStream(userId, request, (ChatResponseDTO chunk) -> {
-                    safeSend.accept((em) -> {
-                        try {
-                            // 发送 SSE 事件
-                            log.debug("准备发送 SSE 事件: sessionId={}, responseLength={}", 
-                                    chunk.getSessionId(), 
-                                    chunk.getResponse() != null ? chunk.getResponse().length() : 0);
-                            em.send(SseEmitter.event()
-                                    .name("message")
-                                    .data(chunk));
-                            log.debug("SSE 事件已发送: sessionId={}", chunk.getSessionId());
-                        } catch (IOException e) {
-                            throw new RuntimeException("发送 SSE 事件 IO 失败", e);
-                        }
-                    });
+                    // 使用SseUtils发送消息事件
+                    log.info("准备发送 SSE 事件: sessionId={}, responseLength={}", 
+                            chunk.getSessionId(), 
+                            chunk.getResponse() != null ? chunk.getResponse().length() : 0);
+                    SseUtils.sendEvent(emitter, "message", chunk);
+                    log.info("SSE 事件已发送: sessionId={}", chunk.getSessionId());
                 });
                 
                 // 发送完成事件
-                safeSend.accept((em) -> {
-                    try {
-                        em.send(SseEmitter.event()
-                                .name("complete")
-                                .data("Stream completed"));
-                        completed.set(true);
-                        em.complete();
-                    } catch (IOException e) {
-                        throw new RuntimeException("发送完成事件 IO 失败", e);
-                    }
-                });
+                SseUtils.sendComplete(emitter, "Stream completed");
                 
             } catch (Exception e) {
                 log.error("流式处理失败: sessionId={}", request.getSessionId(), e);
-                safeSend.accept((em) -> {
-                    try {
-                        em.send(SseEmitter.event()
-                                .name("error")
-                                .data("Error: " + e.getMessage()));
-                    } catch (IOException ioException) {
-                        throw new RuntimeException("发送错误事件 IO 失败", ioException);
-                    }
-                });
-                if (!completed.get()) {
-                    try {
-                        completed.set(true);
-                        emitter.completeWithError(e);
-                    } catch (Exception ex) {
-                        log.error("完成 SSE emitter 失败: sessionId={}", request.getSessionId(), ex);
-                    }
+                SseUtils.sendError(emitter, "Error: " + e.getMessage());
+                try {
+                    emitter.completeWithError(new java.io.IOException("Stream processing failed", e));
+                } catch (Exception ex) {
+                    log.error("完成 SSE emitter 失败: sessionId={}", request.getSessionId(), ex);
                 }
             }
         }).start();
-        
-        // 设置超时和错误处理
-        emitter.onTimeout(() -> {
-            log.warn("SSE 连接超时: userId={}, sessionId={}", userId, request.getSessionId());
-            if (!completed.get()) {
-                completed.set(true);
-                try {
-                    emitter.complete();
-                } catch (Exception e) {
-                    log.error("完成超时的 SSE emitter 失败: sessionId={}", request.getSessionId(), e);
-                }
-            }
-        });
-        
-        emitter.onError((ex) -> {
-            log.error("SSE 连接错误: userId={}, sessionId={}", userId, request.getSessionId(), ex);
-            if (!completed.get()) {
-                completed.set(true);
-                try {
-                    emitter.completeWithError(ex);
-                } catch (Exception e) {
-                    log.error("完成错误的 SSE emitter 失败: sessionId={}", request.getSessionId(), e);
-                }
-            }
-        });
         
         return emitter;
     }

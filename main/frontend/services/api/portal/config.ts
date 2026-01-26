@@ -42,18 +42,18 @@ async function fetchPortalConfigFromBackend(): Promise<boolean> {
         method: 'GET',
       });
       // 如果调用成功（即使返回空列表），说明功能已启用
-      logger.debug('[PortalConfig] 通过API调用检测：功能已启用');
+      logger.info('[PortalConfig] 通过API调用检测：功能已启用');
       return true;
     } catch (testError: any) {
       // 如果返回404或特定错误，可能功能未启用
       const errorMsg = testError?.message || '';
       
       if (errorMsg.includes('404') || errorMsg.includes('not found') || testError?.status === 404) {
-        logger.debug('[PortalConfig] 通过API调用检测：功能未启用（404）');
+        logger.info('[PortalConfig] 通过API调用检测：功能未启用（404）');
         return false;
       }
       // 其他错误（如401）可能只是权限问题，功能可能已启用
-      logger.debug('[PortalConfig] 通过API调用检测：功能可能已启用（其他错误）');
+      logger.info('[PortalConfig] 通过API调用检测：功能可能已启用（其他错误）');
       return true;
     }
   } catch (error) {
@@ -68,17 +68,17 @@ async function fetchPortalConfigFromBackend(): Promise<boolean> {
  * 优先从localStorage读取缓存，然后尝试从后端API获取
  */
 export async function checkPortalEnabled(): Promise<boolean> {
-  logger.debug('[PortalConfig] checkPortalEnabled 被调用');
+  logger.info('[PortalConfig] checkPortalEnabled 被调用');
   
   // 如果已经检查过，直接返回缓存值
   if (portalEnabled !== null) {
-    logger.debug('[PortalConfig] 使用缓存值:', portalEnabled);
+    logger.info('[PortalConfig] 使用缓存值:', portalEnabled);
     return portalEnabled;
   }
 
   // 防止重复请求
   if (isChecking) {
-    logger.debug('[PortalConfig] 正在检查中，等待结果...');
+    logger.info('[PortalConfig] 正在检查中，等待结果...');
     // 等待检查完成（简单实现，最多等待2秒）
     let waitCount = 0;
     while (isChecking && waitCount < 20) {
@@ -98,12 +98,12 @@ export async function checkPortalEnabled(): Promise<boolean> {
     const cached = localStorage.getItem('portal_enabled');
     if (cached !== null) {
       portalEnabled = cached === 'true';
-      logger.debug('[PortalConfig] 从localStorage读取缓存:', portalEnabled);
+      logger.info('[PortalConfig] 从localStorage读取缓存:', portalEnabled);
       return portalEnabled;
     }
 
     // 从后端获取配置
-    logger.debug('[PortalConfig] 缓存不存在，从后端获取配置');
+    logger.info('[PortalConfig] 缓存不存在，从后端获取配置');
     portalEnabled = await fetchPortalConfigFromBackend();
     
     // 保存到缓存和localStorage
@@ -134,17 +134,17 @@ export function setPortalEnabled(enabled: boolean): void {
  * 如果还未检查过，返回默认值false，并尝试异步获取
  */
 export function isPortalEnabledSync(): boolean {
-  logger.debug('[PortalConfig] isPortalEnabledSync 被调用');
+  logger.info('[PortalConfig] isPortalEnabledSync 被调用');
   
   if (portalEnabled !== null) {
-    logger.debug('[PortalConfig] isPortalEnabledSync 返回缓存值:', portalEnabled);
+    logger.info('[PortalConfig] isPortalEnabledSync 返回缓存值:', portalEnabled);
     return portalEnabled;
   }
 
   const cached = localStorage.getItem('portal_enabled');
   if (cached !== null) {
     portalEnabled = cached === 'true';
-    logger.debug('[PortalConfig] isPortalEnabledSync 从localStorage读取:', portalEnabled);
+    logger.info('[PortalConfig] isPortalEnabledSync 从localStorage读取:', portalEnabled);
     return portalEnabled;
   }
 
@@ -154,7 +154,7 @@ export function isPortalEnabledSync(): boolean {
     logger.warn('[PortalConfig] 异步检查功能状态失败:', err);
   });
   
-  logger.debug('[PortalConfig] isPortalEnabledSync 返回默认值false，已触发异步检查');
+  logger.info('[PortalConfig] isPortalEnabledSync 返回默认值false，已触发异步检查');
   return false;
 }
 
@@ -164,7 +164,7 @@ export function isPortalEnabledSync(): boolean {
 export function resetPortalConfig(): void {
   portalEnabled = null;
   localStorage.removeItem('portal_enabled');
-  logger.debug('[PortalConfig] 配置已重置');
+  logger.info('[PortalConfig] 配置已重置');
 }
 
 /**

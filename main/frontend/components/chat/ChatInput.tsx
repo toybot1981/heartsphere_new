@@ -49,13 +49,35 @@ export const ChatInput = memo<ChatInputProps>(({
   };
 
   return (
-    <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
+    <div 
+      className="relative flex items-center rounded-2xl p-2 border animate-fade-in w-full"
+      style={{
+        backgroundColor: 'var(--bg-card, rgba(0, 0, 0, 0.9))',
+        borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+      }}
+    >
       {/* 表情按钮 */}
       {onToggleEmojiPicker && (
         <button
           onClick={onToggleEmojiPicker}
           disabled={isLoading || disabled}
-          className="mr-2 p-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mr-2 p-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+            color: 'var(--text-secondary)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isLoading && !disabled) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isLoading && !disabled) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }
+          }}
           title="选择表情"
         >
           <svg
@@ -80,7 +102,11 @@ export const ChatInput = memo<ChatInputProps>(({
         onChange={(e) => onInputChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="flex-1 bg-transparent border-none text-white placeholder-white/40 focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base"
+        className="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base"
+        style={{
+          color: 'var(--text-primary)',
+        }}
+        placeholder={placeholder}
         rows={1}
         disabled={isLoading || disabled}
       />

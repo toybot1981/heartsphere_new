@@ -31,7 +31,7 @@ public class AlertServiceImpl implements AlertService {
     
     @Override
     public void checkAndTriggerAlerts(Map<String, Object> metrics) {
-        log.debug("检查告警条件: metrics={}", metrics);
+        log.info("检查告警条件: metrics={}", metrics);
         
         // TODO: 检查各种告警条件
         // - 错误率过高
@@ -41,7 +41,7 @@ public class AlertServiceImpl implements AlertService {
     
     @Override
     public List<Alert> getAlerts(String level, Long startTime) {
-        log.debug("获取告警列表: level={}, startTime={}", level, startTime);
+        log.info("获取告警列表: level={}, startTime={}", level, startTime);
         
         // TODO: 从数据库查询告警
         return new ArrayList<>();

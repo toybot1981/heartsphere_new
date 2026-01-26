@@ -146,7 +146,7 @@ public class SystemAdminService {
             // 先删除关联的操作日志（避免外键约束问题）
             try {
                 long logCount = adminOperationLogRepository.count();
-                logger.debug("当前操作日志总数: {}", logCount);
+                logger.info("当前操作日志总数: {}", logCount);
                 
                 // 删除该管理员的所有操作日志
                 int deletedLogs = adminOperationLogRepository.deleteByAdminId(admin.getId());

@@ -43,7 +43,7 @@ public class JpaConfig implements HibernatePropertiesCustomizer {
         
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("com.heartsphere.admin.entity", "com.heartsphere.shared.entity");
+        em.setPackagesToScan("com.heartsphere.admin.entity", "com.heartsphere.shared.entity", "com.heartsphere.admin.entity.agentmind");
         
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);

@@ -62,11 +62,11 @@ public class WeChatController {
     @GetMapping("/status/{state}")
     public ResponseEntity<?> checkStatus(@PathVariable String state) {
         try {
-            logger.debug("检查微信登录状态，state: {}", state);
+            logger.info("检查微信登录状态，state: {}", state);
             Map<String, Object> status = weChatAuthService.checkLoginStatus(state);
             
             // 记录状态信息用于调试
-            logger.debug("微信登录状态检查结果: state={}, status={}, hasToken={}, hasError={}", 
+            logger.info("微信登录状态检查结果: state={}, status={}, hasToken={}, hasError={}", 
                 state, 
                 status.get("status"),
                 status.containsKey("token"),

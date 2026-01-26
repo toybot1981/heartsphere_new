@@ -38,7 +38,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public List<AuditLog> queryLogs(Long userId, String action, 
                                    LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("查询审计日志: userId={}, action={}", userId, action);
+        log.info("查询审计日志: userId={}, action={}", userId, action);
         
         // TODO: 从数据库查询
         return new ArrayList<>();
@@ -46,7 +46,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     
     @Override
     public List<AuditLog> querySensitiveLogs(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("查询敏感操作日志: userId={}", userId);
+        log.info("查询敏感操作日志: userId={}", userId);
         
         // TODO: 从数据库查询敏感操作
         return new ArrayList<>();

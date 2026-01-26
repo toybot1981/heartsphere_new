@@ -7,15 +7,20 @@
  */
 export const showSyncErrorToast = (operation: string): void => {
   const toast = document.createElement('div');
-  toast.className = 'fixed top-4 right-4 z-50 bg-red-600/90 text-white px-6 py-4 rounded-lg shadow-2xl border border-red-400/50 max-w-md animate-fade-in';
+  toast.className = 'fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl border max-w-md animate-fade-in';
+  toast.style.cssText = `
+    background-color: var(--bg-error-alpha);
+    color: var(--text-primary);
+    border-color: var(--border-error-alpha);
+  `;
   toast.innerHTML = `
     <div class="flex items-start gap-3">
       <div class="text-2xl">⚠️</div>
       <div class="flex-1">
         <div class="font-bold text-lg mb-1">远程同步失败</div>
-        <div class="text-sm text-red-100">${operation}已保存到本地，但未能同步到服务器。请检查网络连接后重试。</div>
+        <div class="text-sm" style="color: var(--text-secondary);">${operation}已保存到本地，但未能同步到服务器。请检查网络连接后重试。</div>
       </div>
-      <button onclick="this.parentElement.parentElement.remove()" class="text-white/70 hover:text-white text-xl leading-none">×</button>
+      <button onclick="this.parentElement.parentElement.remove()" class="text-xl leading-none" style="color: var(--text-tertiary);">×</button>
     </div>
   `;
   document.body.appendChild(toast);

@@ -66,11 +66,20 @@ export const UnreadBadge: React.FC<UnreadBadgeProps> = ({
   return (
     <div className={`relative inline-block ${className}`}>
       {showNumber ? (
-        <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+        <span 
+          className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full flex items-center justify-center"
+          style={{
+            backgroundColor: 'var(--color-error, #ef4444)',
+            color: 'var(--text-primary)',
+          }}
+        >
           {displayNumber}
         </span>
       ) : (
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+        <span 
+          className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+          style={{ backgroundColor: 'var(--color-error, #ef4444)' }}
+        />
       )}
     </div>
   );
@@ -109,7 +118,13 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   }
 
   return (
-    <span className={`ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full ${className}`}>
+    <span 
+      className={`ml-2 px-2 py-0.5 text-xs font-bold rounded-full ${className}`}
+      style={{
+        backgroundColor: 'var(--color-error, #ef4444)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {count > 99 ? '99+' : count}
     </span>
   );

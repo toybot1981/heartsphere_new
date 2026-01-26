@@ -7,6 +7,7 @@ com/heartsphere/mentis/executor/computeruse/impl/ShellCommandExecutor.class
 com/heartsphere/mentis/tool/system/SystemInfoTool.class
 com/heartsphere/mentis/executor/impl/InMemoryTaskQueue.class
 com/heartsphere/mentis/executor/impl/ExecutionEngineImpl.class
+com/heartsphere/mentis/service/ToolConfigIntegrationService$1.class
 com/heartsphere/mentis/security/UserDetailsImpl$UserDetailsImplBuilder.class
 com/heartsphere/mentis/vm/VmManager.class
 com/heartsphere/mentis/dto/MentisSessionDTO.class
@@ -16,6 +17,7 @@ com/heartsphere/mentis/service/MentisTaskServiceImpl.class
 com/heartsphere/mentis/config/ToolConfiguration.class
 com/heartsphere/mentis/brain/MentisBrain$BrainExecutionResult.class
 com/heartsphere/mentis/tool/mcp/McpToolAdapter$McpToolWrapper.class
+com/heartsphere/mentis/config/McpRestTemplateConfig.class
 com/heartsphere/mentis/config/McpToolInitializer.class
 com/heartsphere/mentis/service/MentisVmService.class
 com/heartsphere/mentis/agentscope/config/AgentScopeConfig$HooksConfig.class
@@ -151,6 +153,7 @@ com/heartsphere/mentis/service/MentisAgentService.class
 com/heartsphere/mentis/tool/Tool$ToolResult.class
 com/heartsphere/mentis/brain/executor/MultiModalExecutor$ExecutionPlan.class
 com/heartsphere/mentis/agentscope/multiagent/MultiAgentController.class
+com/heartsphere/mentis/service/ToolConfigIntegrationService.class
 com/heartsphere/mentis/brain/module/impl/InstructionGeneratorImpl.class
 com/heartsphere/mentis/entity/MentisSession.class
 com/heartsphere/mentis/brain/module/impl/PlanningModuleImpl.class
@@ -192,6 +195,7 @@ com/heartsphere/mentis/agent/ResponseGenerator.class
 com/heartsphere/mentis/brain/executor/ExecutionModeSelector$TaskRequirements.class
 com/heartsphere/mentis/tool/browser/BrowserExtractStockDataTool.class
 com/heartsphere/mentis/service/McpServiceTemplateService.class
+com/heartsphere/mentis/controller/ToolTestController.class
 com/heartsphere/mentis/service/SessionRealtimeService.class
 com/heartsphere/mentis/executor/ErrorRecoveryStrategy$RecoveryResult.class
 com/heartsphere/mentis/demo/controller/DemoEventController.class
@@ -201,6 +205,7 @@ com/heartsphere/mentis/service/MentisSessionServiceImpl.class
 com/heartsphere/mentis/executor/impl/TaskPlannerImpl.class
 com/heartsphere/mentis/executor/TaskPlanner$TaskStep.class
 com/heartsphere/mentis/brain/ToolScheduler$ToolInfo.class
+com/heartsphere/mentis/controller/ToolTestController$ToolTestRequest.class
 com/heartsphere/mentis/dto/ChatRequestDTO.class
 com/heartsphere/mentis/agentscope/config/AgentScopeConfig.class
 com/heartsphere/mentis/brain/BrainOrchestrator.class
@@ -240,6 +245,7 @@ com/heartsphere/mentis/executor/TaskDecomposer.class
 com/heartsphere/mentis/brain/module/FeedbackProcessor.class
 com/heartsphere/mentis/service/MentisVmServiceImpl.class
 com/heartsphere/mentis/entity/McpServerConfig.class
+com/heartsphere/mentis/service/ToolConfigInitializer.class
 com/heartsphere/mentis/demo/service/DemoEventService.class
 com/heartsphere/mentis/dto/ChatResponseDTO.class
 com/heartsphere/mentis/executor/computeruse/GuiAutomationExecutor$ElementInfo.class
@@ -250,5 +256,6 @@ com/heartsphere/mentis/repository/MentisTaskRepository.class
 com/heartsphere/mentis/service/McpIntegrationService$ToolCall.class
 com/heartsphere/mentis/executor/computeruse/impl/PlaywrightGuiAutomationExecutor.class
 com/heartsphere/mentis/service/MentisSessionService.class
+com/heartsphere/mentis/controller/ToolTestController$ToolTestResponse.class
 com/heartsphere/mentis/service/MentisAgentService$StreamResponseHandler.class
 com/heartsphere/mentis/exception/TaskNotFoundException.class

@@ -21,7 +21,12 @@ export const GrowthDashboard: React.FC<GrowthDashboardProps> = ({
     <div className={`space-y-8 ${className}`}>
       {/* 成长统计 */}
       <section>
-        <h2 className="text-2xl font-bold text-white mb-6">成长统计</h2>
+        <h2 
+          className="text-2xl font-bold mb-6"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          成长统计
+        </h2>
         <GrowthStatisticsComponent statistics={statistics} />
       </section>
 

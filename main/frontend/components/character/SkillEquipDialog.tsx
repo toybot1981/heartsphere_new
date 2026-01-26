@@ -54,19 +54,39 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))' }}
       onClick={onClose}
     >
       <div 
-        className="bg-slate-800 rounded-xl border border-slate-700 max-w-lg w-full shadow-xl"
+        className="rounded-xl max-w-lg w-full shadow-xl"
+        style={{
+          backgroundColor: 'var(--bg-card, #1e293b)',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">装备技能: {skill.name}</h2>
+        <div 
+          className="px-6 py-4 border-b flex items-center justify-between"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
+          <h2 
+            className="text-xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            装备技能: {skill.name}
+          </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-2xl leading-none transition-colors"
+            className="text-2xl leading-none transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             ×
           </button>
@@ -75,9 +95,23 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
         {/* 内容 */}
         <div className="p-6 space-y-6">
           {/* 技能信息 */}
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-300 text-sm mb-2">{skill.description || '暂无描述'}</p>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div 
+            className="rounded-lg p-4 border"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+          >
+            <p 
+              className="text-sm mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {skill.description || '暂无描述'}
+            </p>
+            <div 
+              className="flex items-center gap-3 text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
               {skill.category && (
                 <span>分类: {skill.category}</span>
               )}
@@ -95,13 +129,27 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
                 id="isEnabled"
                 checked={isEnabled}
                 onChange={(e) => setIsEnabled(e.target.checked)}
-                className="mt-1 w-4 h-4 text-indigo-600 bg-slate-700 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2"
+                className="mt-1 w-4 h-4 rounded focus:ring-2"
+                style={{
+                  accentColor: 'var(--color-primary, #4f46e5)',
+                  backgroundColor: 'var(--bg-secondary, #374151)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                }}
               />
               <div className="flex-1">
-                <label htmlFor="isEnabled" className="block text-white font-medium cursor-pointer">
+                <label 
+                  htmlFor="isEnabled" 
+                  className="block font-medium cursor-pointer"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   启用技能
                 </label>
-                <p className="text-sm text-slate-400 mt-1">技能启用后才能在对话中使用</p>
+                <p 
+                  className="text-sm mt-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  技能启用后才能在对话中使用
+                </p>
               </div>
             </div>
 
@@ -111,18 +159,36 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
                 id="autoTrigger"
                 checked={autoTrigger}
                 onChange={(e) => setAutoTrigger(e.target.checked)}
-                className="mt-1 w-4 h-4 text-indigo-600 bg-slate-700 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2"
+                className="mt-1 w-4 h-4 rounded focus:ring-2"
+                style={{
+                  accentColor: 'var(--color-primary, #4f46e5)',
+                  backgroundColor: 'var(--bg-secondary, #374151)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                }}
               />
               <div className="flex-1">
-                <label htmlFor="autoTrigger" className="block text-white font-medium cursor-pointer">
+                <label 
+                  htmlFor="autoTrigger" 
+                  className="block font-medium cursor-pointer"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   自动触发
                 </label>
-                <p className="text-sm text-slate-400 mt-1">AI 检测到相关关键词时自动使用该技能</p>
+                <p 
+                  className="text-sm mt-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  AI 检测到相关关键词时自动使用该技能
+                </p>
               </div>
             </div>
 
             <div>
-              <label htmlFor="priority" className="block text-white font-medium mb-2">
+              <label 
+                htmlFor="priority" 
+                className="block font-medium mb-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 优先级
               </label>
               <input
@@ -132,24 +198,63 @@ export const SkillEquipDialog: React.FC<SkillEquipDialogProps> = ({
                 max="100"
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, #0f172a)',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+                }}
               />
-              <p className="text-sm text-slate-400 mt-1">优先级越高，在多个技能可用时越优先使用（0-100）</p>
+              <p 
+                className="text-sm mt-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                优先级越高，在多个技能可用时越优先使用（0-100）
+              </p>
             </div>
           </div>
         </div>
 
         {/* 底部按钮 */}
-        <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-end gap-3">
+        <div 
+          className="px-6 py-4 border-t flex items-center justify-end gap-3"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+            }}
           >
             取消
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+            className="px-4 py-2 rounded-lg transition-colors font-medium"
+            style={{
+              backgroundColor: 'var(--color-primary, #4f46e5)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+            }}
           >
             确认装备
           </button>

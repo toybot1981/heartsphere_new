@@ -39,7 +39,7 @@ public class MentisVmServiceImpl implements MentisVmService {
     
     @Override
     public VmStatus getVmStatus(String sessionId) {
-        log.debug("获取虚拟机状态: sessionId={}", sessionId);
+        log.info("获取虚拟机状态: sessionId={}", sessionId);
         
         // TODO: 调用虚拟机管理器获取状态
         VmStatus status = new VmStatus();

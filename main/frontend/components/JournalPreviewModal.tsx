@@ -122,7 +122,7 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
         
         setMemories(journalMemories);
         
-        logger.debug('[JournalPreviewModal] 加载日记记忆成功', {
+        logger.info('[JournalPreviewModal] 加载日记记忆成功', {
           total: journalMemories.length,
           journalId: entry.id,
         });
@@ -149,15 +149,38 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-fade-in"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.6))',
+      }}
+    >
+      <div 
+        className="rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border overflow-hidden"
+        style={{
+          background: 'var(--gradient-bg, linear-gradient(to bottom right, #f8fafc, #f1f5f9))',
+          borderColor: 'var(--border-color-overlay, #e2e8f0)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+        <div 
+          className="flex items-center justify-between p-6 border-b backdrop-blur-sm"
+          style={{
+            borderColor: 'var(--border-color-overlay, #e2e8f0)',
+            backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.5))',
+          }}
+        >
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">
+            <h2 
+              className="text-2xl font-bold mb-1"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {entry.title}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-disabled)' }}
+            >
               {new Date(entry.timestamp).toLocaleDateString('zh-CN', {
                 year: 'numeric',
                 month: 'long',
@@ -174,7 +197,17 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                   onEdit(entry);
                   onClose();
                 }}
-                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                style={{
+                  backgroundColor: 'var(--color-primary, #6366f1)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+                }}
               >
                 编辑
               </button>
@@ -182,14 +215,33 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
             {onDelete && (
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                style={{
+                  backgroundColor: 'var(--color-error, #ef4444)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-error, #ef4444)';
+                }}
               >
                 删除
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              className="transition-colors p-2 rounded-lg"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(241, 245, 249, 1))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -202,7 +254,12 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           {/* Image */}
           {entry.imageUrl && (
-            <div className="rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20">
+            <div 
+              className="rounded-2xl overflow-hidden shadow-lg"
+              style={{
+                background: 'var(--gradient-bg, linear-gradient(to bottom right, rgba(243, 232, 255, 1), rgba(219, 234, 254, 1)))',
+              }}
+            >
               <img
                 src={entry.imageUrl}
                 alt={entry.title}
@@ -212,13 +269,25 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
           )}
 
           {/* Content */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <div 
+            className="rounded-2xl p-6 shadow-sm border"
+            style={{
+              backgroundColor: 'var(--bg-primary, #ffffff)',
+              borderColor: 'var(--border-color-overlay, #e2e8f0)',
+            }}
+          >
+            <h3 
+              className="text-lg font-semibold mb-4 flex items-center gap-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <span className="text-2xl">📝</span>
               <span>日志内容</span>
             </h3>
-            <div className="prose prose-slate dark:prose-invert max-w-none">
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+            <div className="prose prose-slate max-w-none">
+              <p 
+                className="leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {entry.content}
               </p>
             </div>
@@ -226,20 +295,41 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
 
           {/* Mirror Insight */}
           {entry.insight && (
-            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-2xl p-6 shadow-sm border border-cyan-200 dark:border-cyan-800">
+            <div 
+              className="rounded-2xl p-6 shadow-sm border"
+              style={{
+                background: 'var(--gradient-bg, linear-gradient(to bottom right, rgba(207, 250, 254, 1), rgba(219, 234, 254, 1)))',
+                borderColor: 'var(--color-info, rgba(6, 182, 212, 0.2))',
+              }}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">🔮</span>
                 <div>
-                  <h3 className="text-lg font-semibold text-cyan-800 dark:text-cyan-300">
+                  <h3 
+                    className="text-lg font-semibold"
+                    style={{ color: 'var(--color-info, #0891b2)' }}
+                  >
                     本我镜像
                   </h3>
-                  <p className="text-xs text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">
+                  <p 
+                    className="text-xs uppercase tracking-wider"
+                    style={{ color: 'var(--color-info, #06b6d4)' }}
+                  >
                     Mirror of Truth
                   </p>
                 </div>
               </div>
-              <div className="bg-white/60 dark:bg-slate-800/60 rounded-xl p-4 border border-cyan-200 dark:border-cyan-800">
-                <p className="text-cyan-900 dark:text-cyan-100 italic leading-relaxed">
+              <div 
+                className="rounded-xl p-4 border"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.6))',
+                  borderColor: 'var(--color-info, rgba(6, 182, 212, 0.2))',
+                }}
+              >
+                <p 
+                  className="italic leading-relaxed"
+                  style={{ color: 'var(--color-info, #0e7490)' }}
+                >
                   "{entry.insight}"
                 </p>
               </div>
@@ -255,7 +345,12 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                 return (
                   <span
                     key={idx}
-                    className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium border border-indigo-200 dark:border-indigo-800"
+                    className="px-3 py-1.5 rounded-full text-sm font-medium border"
+                    style={{
+                      backgroundColor: 'var(--color-primary, rgba(99, 102, 241, 0.1))',
+                      color: 'var(--color-primary, #6366f1)',
+                      borderColor: 'var(--color-primary, rgba(99, 102, 241, 0.2))',
+                    }}
                   >
                     #{trimmedTag}
                   </span>
@@ -265,14 +360,26 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
           )}
 
           {/* Memories */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+          <div 
+            className="rounded-2xl p-6 shadow-sm border"
+            style={{
+              backgroundColor: 'var(--bg-primary, #ffffff)',
+              borderColor: 'var(--border-color-overlay, #e2e8f0)',
+            }}
+          >
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🧠</span>
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                <h3 
+                  className="text-lg font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   提取的回忆
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p 
+                  className="text-xs"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
                   从这篇日记中自动提取的记忆
                 </p>
               </div>
@@ -280,10 +387,19 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
 
             {isLoadingMemories ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div 
+                  className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+                  style={{
+                    borderColor: 'var(--color-primary, #6366f1)',
+                    borderTopColor: 'transparent',
+                  }}
+                />
               </div>
             ) : memories.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+              <div 
+                className="text-center py-8"
+                style={{ color: 'var(--text-disabled)' }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -295,7 +411,11 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                 {memories.map((memory) => (
                   <div
                     key={memory.id}
-                    className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700/50 dark:to-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-600 hover:shadow-md transition-shadow"
+                    className="rounded-xl p-4 border hover:shadow-md transition-shadow"
+                    style={{
+                      background: 'var(--gradient-bg, linear-gradient(to right, #f8fafc, #f1f5f9))',
+                      borderColor: 'var(--border-color-overlay, #e2e8f0)',
+                    }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -303,7 +423,13 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                           className="w-2 h-2 rounded-full flex-shrink-0"
                           style={{ backgroundColor: importanceColorMap[memory.importance] }}
                         />
-                        <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded font-medium">
+                        <span 
+                          className="text-xs px-2 py-1 rounded font-medium"
+                          style={{
+                            color: 'var(--text-secondary)',
+                            backgroundColor: 'var(--bg-secondary, #e2e8f0)',
+                          }}
+                        >
                           {memoryTypeNames[memory.memoryType]}
                         </span>
                         <span
@@ -316,17 +442,26 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                           {importanceNames[memory.importance]}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span 
+                        className="text-xs"
+                        style={{ color: 'var(--text-disabled)' }}
+                      >
                         置信度: {(memory.confidence * 100).toFixed(0)}%
                       </span>
                     </div>
                     
-                    <p className="text-slate-700 dark:text-slate-300 mb-2 leading-relaxed">
+                    <p 
+                      className="mb-2 leading-relaxed"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
                       {memory.content}
                     </p>
                     
                     {memory.structuredData && (
-                      <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1 mt-2">
+                      <div 
+                        className="text-xs space-y-1 mt-2"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
                         {memory.structuredData.key && (
                           <div>
                             <span className="font-semibold">{memory.structuredData.key}:</span>{' '}
@@ -338,7 +473,11 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
                             {memory.structuredData.tags.map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded text-xs"
+                                className="px-2 py-0.5 rounded text-xs"
+                                style={{
+                                  backgroundColor: 'var(--color-primary, rgba(99, 102, 241, 0.1))',
+                                  color: 'var(--color-primary, #6366f1)',
+                                }}
                               >
                                 {tag}
                               </span>
@@ -355,10 +494,26 @@ export const JournalPreviewModal: React.FC<JournalPreviewModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm flex justify-end">
+        <div 
+          className="p-6 border-t backdrop-blur-sm flex justify-end"
+          style={{
+            borderColor: 'var(--border-color-overlay, #e2e8f0)',
+            backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.5))',
+          }}
+        >
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors font-medium"
+            className="px-6 py-2 rounded-lg transition-colors font-medium"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #e2e8f0)',
+              color: 'var(--text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #cbd5e1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #e2e8f0)';
+            }}
           >
             关闭
           </button>

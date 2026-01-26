@@ -35,7 +35,7 @@ public class PluginController {
             @RequestParam(defaultValue = "50") int size) {
         
         try {
-            log.debug("获取可用插件列表 - status: {}, publishStatus: {}, category: {}, keyword: {}, page: {}, size: {}", 
+            log.info("获取可用插件列表 - status: {}, publishStatus: {}, category: {}, keyword: {}, page: {}, size: {}", 
                 status, publishStatus, category, keyword, page, size);
             
             // 默认只返回已发布且启用的插件
@@ -54,7 +54,7 @@ public class PluginController {
             // 获取插件列表（直接在Repository层过滤publishStatus）
             PluginListResponse response = pluginService.getPluginList(request, finalPublishStatus);
             
-            log.debug("获取插件列表成功，共 {} 个插件", response.getTotal());
+            log.info("获取插件列表成功，共 {} 个插件", response.getTotal());
             return ResponseEntity.ok(ApiResponse.success(response));
             
         } catch (Exception e) {
@@ -71,7 +71,7 @@ public class PluginController {
             @PathVariable String pluginId) {
         
         try {
-            log.debug("获取插件详情 - pluginId: {}", pluginId);
+            log.info("获取插件详情 - pluginId: {}", pluginId);
             
             PluginDTO plugin = pluginService.getPluginById(pluginId);
             

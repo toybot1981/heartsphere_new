@@ -99,7 +99,7 @@ public class DialogueNode implements GraphEngine.GraphNode {
         }
         dialogueHistory.add(this);
         
-        log.debug("[DialogueNode] 对话节点执行完成，对话信息已存储到状态中");
+        log.info("[DialogueNode] 对话节点执行完成，对话信息已存储到状态中");
         
         return state;
     }

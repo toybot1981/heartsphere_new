@@ -50,8 +50,8 @@ public class AdminAuthService {
         }
 
         logger.info("开始验证密码...");
-        logger.debug("输入的密码长度: {}", password != null ? password.length() : 0);
-        logger.debug("数据库密码哈希前缀: {}", admin.getPassword() != null ? admin.getPassword().substring(0, Math.min(20, admin.getPassword().length())) : "null");
+        logger.info("输入的密码长度: {}", password != null ? password.length() : 0);
+        logger.info("数据库密码哈希前缀: {}", admin.getPassword() != null ? admin.getPassword().substring(0, Math.min(20, admin.getPassword().length())) : "null");
         
         boolean passwordMatches = passwordEncoder.matches(password, admin.getPassword());
         logger.info("密码验证结果: {}", passwordMatches);
@@ -103,8 +103,8 @@ public class AdminAuthService {
      * 验证管理员token
      */
     public SystemAdmin validateToken(String token) {
-        logger.debug("========== 验证管理员token ==========");
-        logger.debug("Token长度: {}", token != null ? token.length() : 0);
+        logger.info("========== 验证管理员token ==========");
+        logger.info("Token长度: {}", token != null ? token.length() : 0);
         
         try {
             if (token == null || token.trim().isEmpty()) {
@@ -112,29 +112,29 @@ public class AdminAuthService {
                 throw new RuntimeException("Token 为空");
             }
             
-            logger.debug("开始验证JWT token...");
+            logger.info("开始验证JWT token...");
             if (!jwtUtils.validateJwtToken(token)) {
                 logger.error("JWT token验证失败");
                 throw new RuntimeException("无效的管理员token: JWT验证失败");
             }
-            logger.debug("JWT token验证成功");
+            logger.info("JWT token验证成功");
             
             String username = jwtUtils.getUserNameFromJwtToken(token);
-            logger.debug("从token中提取的用户名: {}", username);
+            logger.info("从token中提取的用户名: {}", username);
             
             if (username == null || username.trim().isEmpty()) {
                 logger.error("无法从token中提取用户名");
                 throw new RuntimeException("无效的管理员token: 无法从token中提取用户名");
             }
             
-            logger.debug("开始查询管理员账户: {}", username);
+            logger.info("开始查询管理员账户: {}", username);
             SystemAdmin admin = adminRepository.findByUsername(username)
                     .orElseThrow(() -> {
                         logger.error("管理员不存在: {}", username);
                         return new RuntimeException("管理员不存在: " + username);
                     });
             
-            logger.debug("找到管理员账户: ID={}, username={}, isActive={}", 
+            logger.info("找到管理员账户: ID={}, username={}, isActive={}", 
                     admin.getId(), admin.getUsername(), admin.getIsActive());
             
             if (!admin.getIsActive()) {
@@ -142,7 +142,7 @@ public class AdminAuthService {
                 throw new RuntimeException("管理员账号已被禁用");
             }
             
-            logger.debug("========== Token验证成功 ==========");
+            logger.info("========== Token验证成功 ==========");
             return admin;
         } catch (RuntimeException e) {
             logger.error("Token验证失败: {}", e.getMessage());

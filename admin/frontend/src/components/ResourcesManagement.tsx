@@ -10,7 +10,7 @@ import { logger } from '../utils/logger';
 // 将相对路径转换为完整URL
 const getFullImageUrl = (url: string | null | undefined, resourceName?: string): string => {
   if (!url) {
-    logger.debug('[ResourcesManagement] getFullImageUrl: URL为空，使用占位符', { resourceName });
+    logger.info('[ResourcesManagement] getFullImageUrl: URL为空，使用占位符', { resourceName });
     return 'https://via.placeholder.com/300';
   }
   
@@ -22,7 +22,7 @@ const getFullImageUrl = (url: string | null | undefined, resourceName?: string):
   
   // 如果已经是完整URL（包含 http:// 或 https://），直接返回
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    logger.debug('[ResourcesManagement] getFullImageUrl: 完整URL', { 
+    logger.info('[ResourcesManagement] getFullImageUrl: 完整URL', { 
       resourceName, 
       originalUrl: url,
       finalUrl: url 
@@ -81,7 +81,7 @@ const getFullImageUrl = (url: string | null | undefined, resourceName?: string):
     return `http://${finalUrl}`;
   }
   
-  logger.debug('[ResourcesManagement] getFullImageUrl: 相对路径转换', { 
+  logger.info('[ResourcesManagement] getFullImageUrl: 相对路径转换', { 
     resourceName,
     originalUrl: url,
     baseUrl,

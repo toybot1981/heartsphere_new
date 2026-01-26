@@ -152,7 +152,7 @@ public class ConditionNode implements GraphEngine.GraphNode {
         state.setData("condition_node_id", id);
         state.setData("next_node", nextNodeId);
         
-        log.debug("[ConditionNode] 下一个节点: {}", nextNodeId);
+        log.info("[ConditionNode] 下一个节点: {}", nextNodeId);
         
         return state;
     }
@@ -176,7 +176,7 @@ public class ConditionNode implements GraphEngine.GraphNode {
             for (Condition condition : conditions) {
                 try {
                     if (!checkCondition(condition, state)) {
-                        log.debug("[ConditionNode] 条件不满足: {}", condition);
+                        log.info("[ConditionNode] 条件不满足: {}", condition);
                         return false;
                     }
                 } catch (Exception e) {
@@ -190,7 +190,7 @@ public class ConditionNode implements GraphEngine.GraphNode {
             for (Condition condition : conditions) {
                 try {
                     if (checkCondition(condition, state)) {
-                        log.debug("[ConditionNode] 条件满足: {}", condition);
+                        log.info("[ConditionNode] 条件满足: {}", condition);
                         return true;
                     }
                 } catch (Exception e) {

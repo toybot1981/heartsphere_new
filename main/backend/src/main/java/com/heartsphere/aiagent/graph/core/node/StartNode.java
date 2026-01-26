@@ -47,7 +47,7 @@ public class StartNode implements GraphEngine.GraphNode {
         state.setData("graph_started", true);
         state.setData("start_node_id", id);
         
-        log.debug("[StartNode] 流程开始");
+        log.info("[StartNode] 流程开始");
         return state;
     }
 }

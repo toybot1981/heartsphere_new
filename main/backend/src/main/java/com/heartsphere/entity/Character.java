@@ -113,4 +113,37 @@ public class Character {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // ========== 角色成长系统字段 ==========
+    
+    /**
+     * 关系阶段
+     * STRANGER - 陌生人
+     * FRIEND - 朋友
+     * CLOSE_FRIEND - 挚友
+     * MENTOR - 导师
+     */
+    @Column(name = "relationship_stage", length = 20)
+    private String relationshipStage;
+
+    /**
+     * 成长轨迹（JSON格式）
+     * 存储角色的成长事件历史
+     */
+    @Column(name = "growth_trajectory", columnDefinition = "JSON")
+    private String growthTrajectory;
+
+    /**
+     * 自我反思历史（JSON格式）
+     * 存储角色的自我反思记录
+     */
+    @Column(name = "self_reflection_history", columnDefinition = "JSON")
+    private String selfReflectionHistory;
+
+    /**
+     * 导师能力列表（JSON格式）
+     * 存储角色的导师能力评估结果
+     */
+    @Column(name = "mentorship_capabilities", columnDefinition = "JSON")
+    private String mentorshipCapabilities;
 }

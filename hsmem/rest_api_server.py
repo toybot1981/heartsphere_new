@@ -19,7 +19,17 @@ from hscore import MemoryService
 
 class Message(BaseModel):
     role: str
-    content: Dict[str, Any]  # 或者改为 Any 以支持字符串
+    content: Dict[str, Any]  # HSMem API 要求 content 必须是字典（对象），不能是字符串
+    
+    def __init__(self, **data):
+        """自定义初始化，规范化 content 字段"""
+        # 如果 content 是字符串，转换为字典格式
+        if 'content' in data and not isinstance(data['content'], dict):
+            if isinstance(data['content'], str):
+                data['content'] = {"text": data['content']}
+            else:
+                data['content'] = {"text": str(data['content'])}
+        super().__init__(**data)
 
 
 class ConversationRequest(BaseModel):

@@ -24,12 +24,21 @@ export const MobileLoadingSpinner: React.FC<MobileLoadingSpinnerProps> = memo(({
   return (
     <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
       <div
-        className={`${sizeClasses[size]} border-2 border-purple-500 border-t-transparent rounded-full animate-spin`}
+        className={`${sizeClasses[size]} border-2 border-t-transparent rounded-full animate-spin`}
+        style={{
+          borderColor: 'var(--color-primary, #a855f7)',
+          borderTopColor: 'transparent',
+        }}
         role="status"
         aria-label={text || "加载中"}
       />
       {text && (
-        <p className="text-slate-400 text-sm font-medium">{text}</p>
+        <p 
+          className="text-sm font-medium"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          {text}
+        </p>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import React, { memo, useRef } from 'react';
 import { MobileTouchableButton } from '../MobileTouchableButton';
 import { MobileFormField } from '../MobileFormField';
 import { MobileInputStyles, MobileColors, MobileTypography, MobileSpacing, MobileCardStyles } from '../MobileStyleGuide';
+import { MobileThemeSelector } from '../MobileThemeSelector';
 import type { AppSettings, UserProfile, DialogueStyle, GameState } from '../../../types';
 import { showAlert } from '../../../utils/dialog';
 import { constructUserAvatarPrompt } from '../../../utils/promptConstructors';
@@ -86,15 +87,30 @@ export const MobileSettingsGeneralTab: React.FC<MobileSettingsGeneralTabProps> =
               className="hidden"
               aria-label="选择头像图片"
             />
-            <div className={`w-16 h-16 rounded-full ${MobileColors.primary.gradient} flex items-center justify-center text-white ${MobileTypography.fontSize.xl} ${MobileTypography.fontWeight.bold} overflow-hidden border-2 ${MobileColors.border.accent} ${MobileCardStyles.shadow}`}>
+            <div 
+              className={`w-16 h-16 rounded-full flex items-center justify-center ${MobileTypography.fontSize.xl} ${MobileTypography.fontWeight.bold} overflow-hidden border-2 ${MobileCardStyles.shadow}`}
+              style={{
+                background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-info, #6366f1), var(--color-primary, #9333ea)))',
+                borderColor: 'var(--border-color-accent, rgba(168, 85, 247, 0.5))',
+                color: 'var(--text-primary)',
+              }}
+            >
               {gameState.userProfile?.avatarUrl ? (
                 <img src={gameState.userProfile.avatarUrl} className="w-full h-full object-cover" alt="用户头像" />
               ) : (
                 gameState.userProfile?.nickname?.[0] || 'G'
               )}
             </div>
-            <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className={`${MobileTypography.fontSize.xs} text-white`}>上传</span>
+            <div 
+              className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))' }}
+            >
+              <span 
+                className={`${MobileTypography.fontSize.xs}`}
+                style={{ color: 'var(--text-primary)' }}
+              >
+                上传
+              </span>
             </div>
           </div>
 
@@ -116,7 +132,10 @@ export const MobileSettingsGeneralTab: React.FC<MobileSettingsGeneralTabProps> =
         </div>
 
         {/* 账户操作按钮 */}
-        <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
+        <div 
+          className="flex flex-col gap-2 pt-4 border-t"
+          style={{ borderTopColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))' }}
+        >
           {gameState.userProfile && !gameState.userProfile.isGuest && onOpenMembership && (
             <MobileTouchableButton
               variant="secondary"
@@ -214,7 +233,13 @@ export const MobileSettingsGeneralTab: React.FC<MobileSettingsGeneralTabProps> =
             <option value="poetic">📜 诗意留白 (Poetic)</option>
           </select>
         </MobileFormField>
-        <div className={`mt-3 p-3 bg-slate-900/50 rounded-lg ${MobileTypography.fontSize.xs} ${MobileColors.text.secondary}`}>
+        <div 
+          className={`mt-3 p-3 rounded-lg ${MobileTypography.fontSize.xs}`}
+          style={{
+            backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))',
+            color: 'var(--text-secondary)',
+          }}
+        >
           {(!settings.dialogueStyle || settings.dialogueStyle === 'mobile-chat') && (
             <p>短句、Emoji、动作用 *action*，像微信聊天，快节奏。</p>
           )}
@@ -229,6 +254,9 @@ export const MobileSettingsGeneralTab: React.FC<MobileSettingsGeneralTabProps> =
           )}
         </div>
       </div>
+
+      {/* 主题选择器 */}
+      <MobileThemeSelector />
     </div>
   );
 });
@@ -257,17 +285,19 @@ const Toggle: React.FC<ToggleProps> = ({ label, description, enabled, onChange }
     </div>
     <button
       onClick={() => onChange(!enabled)}
-      className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none touch-manipulation ${
-        enabled ? 'bg-purple-500' : 'bg-slate-600'
-      }`}
+      className="relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none touch-manipulation"
+      style={{
+        backgroundColor: enabled ? 'var(--color-primary, #a855f7)' : 'var(--bg-card, rgba(71, 85, 105, 1))',
+      }}
       aria-label={enabled ? `关闭${label}` : `开启${label}`}
       role="switch"
       aria-checked={enabled}
     >
       <span
-        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
+        className={`absolute left-1 top-1 w-4 h-4 rounded-full transition-transform duration-300 ${
           enabled ? 'transform translate-x-6' : ''
         }`}
+        style={{ backgroundColor: 'var(--text-primary)' }}
       />
     </button>
   </div>

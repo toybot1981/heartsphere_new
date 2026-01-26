@@ -103,12 +103,32 @@ export const InteractionButtons: React.FC<InteractionButtonsProps> = ({
         <button
           onClick={handleLike}
           disabled={isLiking}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
-            stats.isLiked
-              ? 'bg-pink-100 text-pink-600 hover:bg-pink-200'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+          style={{
+            backgroundColor: stats.isLiked
+              ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+              : 'var(--bg-card, rgba(243, 244, 246, 1))',
+            color: stats.isLiked
+              ? 'var(--color-primary, #ec4899)'
+              : 'var(--text-secondary)',
+            opacity: isLiking ? 0.5 : 1,
+            cursor: isLiking ? 'not-allowed' : 'pointer',
+          }}
           title="点赞"
+          onMouseEnter={(e) => {
+            if (!isLiking) {
+              e.currentTarget.style.backgroundColor = stats.isLiked
+                ? 'var(--color-primary, rgba(236, 72, 153, 0.3))'
+                : 'var(--bg-hover, rgba(229, 231, 235, 1))';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isLiking) {
+              e.currentTarget.style.backgroundColor = stats.isLiked
+                ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
+                : 'var(--bg-card, rgba(243, 244, 246, 1))';
+            }
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -130,8 +150,18 @@ export const InteractionButtons: React.FC<InteractionButtonsProps> = ({
       {showComment && (
         <button
           onClick={onCommentClick}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+          style={{
+            backgroundColor: 'var(--bg-card, rgba(243, 244, 246, 1))',
+            color: 'var(--text-secondary)',
+          }}
           title="评论"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(229, 231, 235, 1))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(243, 244, 246, 1))';
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -154,8 +184,18 @@ export const InteractionButtons: React.FC<InteractionButtonsProps> = ({
       {showShare && (
         <button
           onClick={handleShare}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+          style={{
+            backgroundColor: 'var(--bg-card, rgba(243, 244, 246, 1))',
+            color: 'var(--text-secondary)',
+          }}
           title="分享"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(229, 231, 235, 1))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(243, 244, 246, 1))';
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -179,12 +219,32 @@ export const InteractionButtons: React.FC<InteractionButtonsProps> = ({
         <button
           onClick={handleFavorite}
           disabled={isFavoriting}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
-            stats.isFavorited
-              ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          } ${isFavoriting ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+          style={{
+            backgroundColor: stats.isFavorited
+              ? 'var(--color-warning, rgba(234, 179, 8, 0.2))'
+              : 'var(--bg-card, rgba(243, 244, 246, 1))',
+            color: stats.isFavorited
+              ? 'var(--color-warning, #f59e0b)'
+              : 'var(--text-secondary)',
+            opacity: isFavoriting ? 0.5 : 1,
+            cursor: isFavoriting ? 'not-allowed' : 'pointer',
+          }}
           title="收藏"
+          onMouseEnter={(e) => {
+            if (!isFavoriting) {
+              e.currentTarget.style.backgroundColor = stats.isFavorited
+                ? 'var(--color-warning, rgba(234, 179, 8, 0.3))'
+                : 'var(--bg-hover, rgba(229, 231, 235, 1))';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isFavoriting) {
+              e.currentTarget.style.backgroundColor = stats.isFavorited
+                ? 'var(--color-warning, rgba(234, 179, 8, 0.2))'
+                : 'var(--bg-card, rgba(243, 244, 246, 1))';
+            }
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -64,5 +64,5 @@ app:
 logging:
   level:
     root: INFO
-    com.heartsphere: DEBUG
-    org.springframework.web: DEBUG
+    com.heartsphere: INFO
+    org.springframework.web: INFO

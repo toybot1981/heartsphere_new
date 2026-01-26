@@ -125,13 +125,13 @@ export const useDataLoader = () => {
       
       // 获取日记列表（直接从服务器获取，不使用本地缓存）
       const journalEntries = await journalApi.getAllJournalEntries(token);
-      logger.debug(`[useDataLoader] 从服务器加载日志，数量: ${journalEntries.length}`);
+      logger.info(`[useDataLoader] 从服务器加载日志，数量: ${journalEntries.length}`);
       
       // 获取信件列表（只获取用户反馈和管理员回复，不包含AI生成的信件）
       let letters: any[] = [];
       try {
         letters = await chronosLetterApi.getAllLetters(token);
-        logger.debug(`[useDataLoader] 加载信件成功，数量: ${letters.length}`);
+        logger.info(`[useDataLoader] 加载信件成功，数量: ${letters.length}`);
       } catch (error) {
         logger.error('[useDataLoader] 加载信件失败', error);
         // 信件加载失败不影响登录流程
@@ -194,7 +194,7 @@ export const useDataLoader = () => {
         tags: entry.tags || undefined,
       }));
       
-      logger.debug(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES，数量: ${mappedEntries.length}`);
+      logger.info(`[useDataLoader] 准备dispatch SET_JOURNAL_ENTRIES，数量: ${mappedEntries.length}`);
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
       
       // 更新信件列表（只包含用户反馈和管理员回复）

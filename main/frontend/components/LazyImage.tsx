@@ -540,8 +540,19 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     <div className="relative" style={{ width: '100%', height: '100%' }}>
       {/* 占位符 - 只在加载中且没有错误时显示，且不是只有原图的情况（避免闪烁），设置为 pointer-events-none 避免阻止点击 */}
       {!isLoaded && !hasError && imageSrc && !hasNoVariants && (
-        <div className="absolute inset-0 bg-gray-800 animate-pulse flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
-          <div className="text-gray-500 text-sm">加载中...</div>
+        <div 
+          className="absolute inset-0 animate-pulse flex items-center justify-center pointer-events-none" 
+          style={{ 
+            zIndex: 1,
+            backgroundColor: 'var(--bg-secondary, #1f2937)',
+          }}
+        >
+          <div 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            加载中...
+          </div>
         </div>
       )}
       
@@ -572,8 +583,19 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       
       {/* 错误占位符 - 只在有错误时显示，且不闪烁，设置为 pointer-events-none 避免阻止点击 */}
       {hasError && (
-        <div className="absolute inset-0 bg-gray-800 flex items-center justify-center pointer-events-none" style={{ zIndex: 3 }}>
-          <div className="text-gray-500 text-sm">图片加载失败</div>
+        <div 
+          className="absolute inset-0 flex items-center justify-center pointer-events-none" 
+          style={{ 
+            zIndex: 3,
+            backgroundColor: 'var(--bg-secondary, #1f2937)',
+          }}
+        >
+          <div 
+            className="text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            图片加载失败
+          </div>
         </div>
       )}
     </div>

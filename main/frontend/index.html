@@ -21,7 +21,7 @@
         -webkit-touch-callout: none;
         user-select: none;
         -webkit-user-select: none;
-        background-color: black;
+        background-color: var(--bg-primary, #000000);
       }
       /* Allow text selection in inputs */
       input, textarea {
@@ -29,10 +29,10 @@
         -webkit-user-select: text;
       }
 
-      /* Select and option styling for dark theme */
+      /* Select and option styling - 使用主题变量 */
       select {
-        color: #ffffff !important;
-        background-color: #111827 !important;
+        color: var(--text-primary) !important;
+        background-color: var(--bg-card) !important;
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
@@ -41,13 +41,13 @@
         display: none;
       }
       select option {
-        color: #ffffff !important;
-        background-color: #111827 !important;
+        color: var(--text-primary) !important;
+        background-color: var(--bg-card) !important;
         padding: 8px;
       }
       select:focus option:checked {
-        background-color: #1f2937 !important;
-        color: #ffffff !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
       }
 
       /* Custom Scrollbar for chat */

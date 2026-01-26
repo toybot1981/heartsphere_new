@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AdminSidebarItem } from './AdminUIComponents';
-
-type SectionType = 'dashboard' | 'eras' | 'characters' | 'scenarios' | 'events' | 'items' | 'main-stories' | 'invite-codes' | 'api-keys' | 'settings' | 'resources' | 'images' | 'videos' | 'subscription-plans' | 'email-config' | 'users' | 'admins' | 'billing' | 'heartsphere-connection' | 'memory' | 'graph' | 'skills' | 'chronos-letters' | 'plugins' | 'prompts' | 'agentscope-demo' | 'edu-dashboard' | 'edu-students' | 'edu-teachers' | 'edu-content' | 'edu-content-review' | 'edu-analytics' | 'edu-settings' | 'mentis-management';
+import { SectionType } from '../contexts/AdminStateContext';
 
 interface AdminSidebarProps {
     activeSection: SectionType;
@@ -86,19 +85,54 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             ]
         },
         {
+            id: 'ai-access',
+            label: 'AI 接入与计费',
+            icon: '🔌',
+            items: [
+                { section: 'api-keys', label: 'API Key管理', icon: '🔑' },
+                { section: 'billing', label: '计费管理', icon: '💳' },
+                { section: 'subscription-plans', label: '会员配置', icon: '💎' },
+                { section: 'prompts', label: '提示词管理', icon: '💬' }
+            ]
+        },
+        {
+            id: 'ai-agents',
+            label: 'AI 智能体',
+            icon: '🤖',
+            items: [
+                { section: 'mentis-management', label: 'Mentis 管理', icon: '🤖' },
+                { section: 'agent-mind-management', label: 'Agent Mind 管理', icon: '🧠' },
+                { section: 'multi-agent-management', label: '多智能体协作', icon: '🤝' },
+                // 已禁用：AgentScope 演示管理（仅用于演示，不用于生产部署）
+                // { section: 'agentscope-demo', label: 'AgentScope 演示管理', icon: '🔧' }
+            ]
+        },
+        {
             id: 'system',
             label: '系统配置',
             icon: '⚙️',
             items: [
                 { section: 'invite-codes', label: '邀请码管理', icon: '🎫' },
-                { section: 'api-keys', label: 'API Key管理', icon: '🔑' },
                 { section: 'email-config', label: '邮箱配置', icon: '📧' },
                 { section: 'settings', label: '全局配置', icon: '⚙️' },
-                { section: 'subscription-plans', label: '会员配置', icon: '💎' },
-                { section: 'billing', label: '计费管理', icon: '💳' },
-                { section: 'plugins', label: '插件管理', icon: '🔌' },
-                { section: 'prompts', label: '提示词管理', icon: '💬' },
-                { section: 'mentis-management', label: 'Mentis 管理', icon: '🤖' }
+                { section: 'plugins', label: '插件管理', icon: '🔌' }
+            ]
+        },
+        {
+            id: 'devops',
+            label: 'DevOps 工作台',
+            icon: '🔧',
+            items: [
+                { section: 'devops-overview', label: '概览', icon: '📊' },
+                { section: 'devops-scan', label: '代码扫描', icon: '🔍' },
+                { section: 'devops-test', label: '测试', icon: '🧪' },
+                { section: 'devops-build', label: '构建部署', icon: '🚀' },
+                { section: 'devops-database', label: '数据库', icon: '💾' },
+                { section: 'devops-server', label: '服务器', icon: '🖥️' },
+                { section: 'devops-scheduled', label: '定时任务', icon: '⏰' },
+                { section: 'devops-pipeline', label: '部署流程', icon: '🔄' },
+                { section: 'devops-cmdb', label: 'CMDB', icon: '🗄️' },
+                { section: 'devops-autofix', label: '自动修复', icon: '🔧' }
             ]
         },
         {
@@ -108,14 +142,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             items: [
                 { section: 'heartsphere-connection', label: '心域连接', icon: '🔗' },
                 { section: 'memory', label: '记忆系统', icon: '🧠' }
-            ]
-        },
-        {
-            id: 'ai',
-            label: 'AI 智能体',
-            icon: '🤖',
-            items: [
-                { section: 'agentscope-demo', label: 'AgentScope 演示管理', icon: '🔧' }
             ]
         },
         {

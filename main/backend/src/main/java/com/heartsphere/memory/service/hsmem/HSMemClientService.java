@@ -1,5 +1,6 @@
 package com.heartsphere.memory.service.hsmem;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heartsphere.memory.config.MemoryProperties;
 import com.heartsphere.memory.dto.hsmem.*;
@@ -15,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,11 +87,25 @@ public class HSMemClientService {
         HSMemLogHelper.logRequest(operation, requestId, context);
         
         try {
+            // 规范化消息格式：确保 content 是对象格式（HSMem API 要求）
+            HSMemConversationRequest normalizedRequest = normalizeConversationRequest(request);
+            
+            // 记录规范化后的请求（用于调试）
+            if (log.isDebugEnabled()) {
+                try {
+                    String requestJson = objectMapper.writeValueAsString(normalizedRequest);
+                    log.debug("[HSMemClient] {} - 规范化后的请求 | requestId={}, request={}", 
+                        operation, requestId, requestJson);
+                } catch (Exception e) {
+                    log.warn("[HSMemClient] {} - 序列化请求失败 | requestId={}", operation, requestId, e);
+                }
+            }
+            
             // 调用 hsmem API
             HSMemResponse<HSMemResponse.MemorizeData> response = webClient.post()
                 .uri(getBaseUrl() + "/api/v1/memory/memorize/conversation")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
+                .bodyValue(normalizedRequest)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<HSMemResponse<HSMemResponse.MemorizeData>>() {})
                 .timeout(getTimeout())
@@ -118,12 +134,19 @@ public class HSMemClientService {
         } catch (WebClientResponseException e) {
             long durationMs = perfLogger.end(false);
             HSMemLogHelper.logError(operation, requestId, e, context, durationMs);
+            String responseBody = e.getResponseBodyAsString();
             log.error("[HSMemClient] {} - HTTP错误 | requestId={}, status={}, body={}", 
-                operation, requestId, e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("调用 hsmem 服务失败: " + e.getMessage(), e);
+                operation, requestId, e.getStatusCode(), responseBody);
+            // 提取更详细的错误信息
+            String errorDetail = responseBody != null && !responseBody.isEmpty() 
+                ? responseBody 
+                : e.getMessage();
+            throw new RuntimeException("调用 hsmem 服务失败: " + errorDetail, e);
         } catch (Exception e) {
             long durationMs = perfLogger.end(false);
             HSMemLogHelper.logError(operation, requestId, e, context, durationMs);
+            log.error("[HSMemClient] {} - 异常 | requestId={}, error={}", 
+                operation, requestId, e.getMessage(), e);
             throw new RuntimeException("记忆化对话失败: " + e.getMessage(), e);
         }
     }
@@ -543,6 +566,68 @@ public class HSMemClientService {
             HSMemLogHelper.logError(operation, requestId, e, context, durationMs);
             throw new RuntimeException("获取资源列表失败: " + e.getMessage(), e);
         }
+    }
+    
+    /**
+     * 规范化对话请求：确保消息的 content 字段是对象格式
+     * HSMem API 要求 content 必须是字典（对象），不能是字符串
+     * 
+     * @param request 原始请求
+     * @return 规范化后的请求
+     */
+    private HSMemConversationRequest normalizeConversationRequest(HSMemConversationRequest request) {
+        if (request == null || request.getMessages() == null || request.getMessages().isEmpty()) {
+            return request;
+        }
+        
+        HSMemConversationRequest normalized = new HSMemConversationRequest();
+        normalized.setUser_id(request.getUser_id());
+        normalized.setAgent_id(request.getAgent_id());
+        
+        List<HSMemMessage> normalizedMessages = new ArrayList<>();
+        for (HSMemMessage message : request.getMessages()) {
+            HSMemMessage normalizedMessage = new HSMemMessage();
+            normalizedMessage.setRole(message.getRole());
+            
+            // 规范化 content：确保是对象格式
+            Object content = message.getContent();
+            if (content == null) {
+                // content 为空，设置为空对象
+                normalizedMessage.setContent(new HashMap<String, Object>());
+            } else if (content instanceof String) {
+                // content 是字符串，转换为对象格式 {"text": "..."}
+                Map<String, Object> contentMap = new HashMap<>();
+                contentMap.put("text", content);
+                normalizedMessage.setContent(contentMap);
+                log.debug("[HSMemClient] 将字符串 content 转换为对象格式: role={}, content={}", 
+                    message.getRole(), content);
+            } else if (content instanceof Map) {
+                // content 已经是对象格式，直接使用
+                normalizedMessage.setContent(content);
+            } else {
+                // 其他类型，尝试转换为对象
+                try {
+                    String json = objectMapper.writeValueAsString(content);
+                    Map<String, Object> contentMap = objectMapper.readValue(json, 
+                        new TypeReference<Map<String, Object>>() {});
+                    normalizedMessage.setContent(contentMap);
+                    log.debug("[HSMemClient] 将 content 转换为对象格式: role={}, type={}", 
+                        message.getRole(), content.getClass().getName());
+                } catch (Exception e) {
+                    log.warn("[HSMemClient] 转换 content 失败，使用原始值: role={}, error={}", 
+                        message.getRole(), e.getMessage());
+                    // 降级：包装为对象
+                    Map<String, Object> contentMap = new HashMap<>();
+                    contentMap.put("text", content.toString());
+                    normalizedMessage.setContent(contentMap);
+                }
+            }
+            
+            normalizedMessages.add(normalizedMessage);
+        }
+        
+        normalized.setMessages(normalizedMessages);
+        return normalized;
     }
     
     /**

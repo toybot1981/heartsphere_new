@@ -77,11 +77,23 @@ export const WarmMessagesList: React.FC<WarmMessagesListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">暖心留言</h3>
+        <h3 
+          className="text-lg font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          暖心留言
+        </h3>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -91,13 +103,28 @@ export const WarmMessagesList: React.FC<WarmMessagesListProps> = ({
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">加载中...</div>
+        <div 
+          className="text-center py-8"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          加载中...
+        </div>
       ) : error ? (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+        <div 
+          className="p-4 border rounded-lg"
+          style={{
+            backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+            borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+            color: 'var(--color-error, #fca5a5)',
+          }}
+        >
           {error}
         </div>
       ) : messages.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
+        <div 
+          className="text-center py-8"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <div className="text-4xl mb-2">💌</div>
           <p>还没有收到留言</p>
           <p className="text-sm mt-1">当访问者离开你的共享心域时，可以留下暖心留言</p>
@@ -107,18 +134,47 @@ export const WarmMessagesList: React.FC<WarmMessagesListProps> = ({
           {messages.map((message) => (
             <div
               key={message.id}
-              className="p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
+              className="p-4 rounded-lg border transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-hover, #4b5563)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+              }}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-semibold"
+                    style={{
+                      backgroundColor: 'var(--color-primary, rgba(59, 130, 246, 0.2))',
+                      color: 'var(--color-primary, #60a5fa)',
+                    }}
+                  >
                     {message.visitorName?.[0]?.toUpperCase() || '?'}
                   </div>
-                  <span className="text-white font-medium">{message.visitorName || '匿名用户'}</span>
+                  <span 
+                    className="font-medium"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {message.visitorName || '匿名用户'}
+                  </span>
                 </div>
-                <span className="text-gray-400 text-xs">{formatDate(message.createdAt)}</span>
+                <span 
+                  className="text-xs"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {formatDate(message.createdAt)}
+                </span>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+              <p 
+                className="text-sm leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {message.message}
               </p>
             </div>
@@ -127,7 +183,10 @@ export const WarmMessagesList: React.FC<WarmMessagesListProps> = ({
       )}
 
       {!loading && messages.length > 0 && (
-        <div className="text-center text-sm text-gray-400">
+        <div 
+          className="text-center text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           共收到 {messages.length} 条留言
         </div>
       )}

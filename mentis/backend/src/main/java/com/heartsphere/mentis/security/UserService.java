@@ -46,7 +46,7 @@ public class UserService {
      */
     public UserDetailsImpl loadUserByUsername(String username, String token) {
         try {
-            log.debug("Loading user info from main client: username={}", username);
+            log.info("Loading user info from main client: username={}", username);
             
             // 如果有 token，调用主客户端的 /api/auth/me 端点获取当前用户信息
             if (token != null && !token.isEmpty()) {
@@ -66,7 +66,7 @@ public class UserService {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> userData = (Map<String, Object>) response.getBody().get("data");
                     if (userData != null) {
-                        log.debug("Successfully loaded user info from main client: userId={}", userData.get("id"));
+                        log.info("Successfully loaded user info from main client: userId={}", userData.get("id"));
                         return UserDetailsImpl.builder()
                                 .id(((Number) userData.getOrDefault("id", 1L)).longValue())
                                 .username((String) userData.getOrDefault("username", username))
@@ -83,7 +83,7 @@ public class UserService {
         }
         
         // 如果调用主客户端失败，返回默认用户信息（使用用户名，ID 为 1）
-        log.debug("Using default user info for username: {}", username);
+        log.info("Using default user info for username: {}", username);
         return UserDetailsImpl.builder()
                 .id(1L) // 默认用户ID，实际应该从主客户端获取
                 .username(username)

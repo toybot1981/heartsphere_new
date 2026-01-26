@@ -137,7 +137,10 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
   }, [currentScene.id, currentScene.name, currentScene.mainStory?.id, currentScene.mainStory?.backgroundUrl, currentScene.mainStory?.avatarUrl]);
 
   return (
-    <div className="h-full flex flex-col p-8 bg-gray-900">
+    <div 
+      className="h-full flex flex-col p-8"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
       {/* 头部 */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -146,7 +149,12 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Button>
-          <h2 className="text-3xl font-bold text-white">{currentScene.name}</h2>
+          <h2 
+            className="text-3xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {currentScene.name}
+          </h2>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => requireAuth(onAddCharacter)} className="text-sm">
@@ -157,31 +165,59 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
 
       {/* 筛选栏 */}
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-sm text-gray-400">角色类型：</span>
+        <span 
+          className="text-sm"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          角色类型：
+        </span>
         <div className="flex gap-2">
           <button
             onClick={() => setCharacterTypeFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              characterTypeFilter === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+            className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+            style={{
+              backgroundColor: characterTypeFilter === 'all' ? 'var(--color-primary)' : 'var(--bg-card)',
+              color: characterTypeFilter === 'all' ? 'white' : 'var(--text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              if (characterTypeFilter !== 'all') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (characterTypeFilter !== 'all') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+              }
+            }}
           >
             全部
           </button>
           <button
             onClick={() => setCharacterTypeFilter('生活助手')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              characterTypeFilter === '生活助手'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+            className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+            style={{
+              backgroundColor: characterTypeFilter === '生活助手' ? 'var(--color-primary)' : 'var(--bg-card)',
+              color: characterTypeFilter === '生活助手' ? 'white' : 'var(--text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              if (characterTypeFilter !== '生活助手') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (characterTypeFilter !== '生活助手') {
+                e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+              }
+            }}
           >
             生活助手
           </button>
         </div>
         {characterTypeFilter !== 'all' && (
-          <span className="text-sm text-gray-400">
+          <span 
+            className="text-sm"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             （共 {filteredCharacters.length} 个角色）
           </span>
         )}
@@ -200,8 +236,17 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
           const isUserOwned = isNumericId; // 如果是数字ID，说明是从后端获取的用户数据
 
           return (
-            <div key={`main-story-${currentScene.mainStory.id}-${currentScene.id}`} className="mb-10 p-1 rounded-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
-              <div className="bg-gray-900 rounded-[22px] overflow-hidden relative group">
+            <div 
+              key={`main-story-${currentScene.mainStory.id}-${currentScene.id}`} 
+              className="mb-10 p-1 rounded-3xl"
+              style={{
+                background: 'var(--gradient-primary)',
+              }}
+            >
+              <div 
+                className="rounded-[22px] overflow-hidden relative group"
+                style={{ backgroundColor: 'var(--bg-primary)' }}
+              >
                 {currentScene.mainStory.backgroundUrl && currentScene.mainStory.backgroundUrl.trim() ? (
                   <div
                     className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 group-hover:scale-105"
@@ -211,7 +256,15 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                 <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
                   <div className="flex-1 space-y-4">
                     <div className="flex items-center gap-2">
-                      <div className="inline-block px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-full">主线剧情</div>
+                      <div 
+                        className="inline-block px-3 py-1 text-xs font-bold rounded-full"
+                        style={{
+                          backgroundColor: 'var(--color-primary)',
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        主线剧情
+                      </div>
                       {isUserOwned && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -219,7 +272,14 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                               e.stopPropagation();
                               requireAuth(() => onEditMainStory(currentScene.mainStory!, currentScene.id));
                             }}
-                            className="p-1.5 hover:bg-white/10 rounded text-white"
+                            className="p-1.5 rounded transition-colors"
+                            style={{ color: 'var(--text-primary)' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
                             title="编辑"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -231,7 +291,16 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                               e.stopPropagation();
                               requireAuth(() => onDeleteMainStory(currentScene.mainStory!, currentScene.id));
                             }}
-                            className="p-1.5 hover:bg-red-900/50 rounded text-white hover:text-red-400"
+                            className="p-1.5 rounded transition-colors"
+                            style={{ color: 'var(--text-primary)' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                              e.currentTarget.style.color = '#FCA5A5';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
                             title="删除"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -241,18 +310,41 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                         </div>
                       )}
                     </div>
-                    <h3 className="text-3xl font-bold text-white">{currentScene.mainStory.name}</h3>
-                    <p className="text-gray-300 leading-relaxed">{currentScene.mainStory.bio}</p>
+                    <h3 
+                      className="text-3xl font-bold"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {currentScene.mainStory.name}
+                    </h3>
+                    <p 
+                      className="leading-relaxed"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {currentScene.mainStory.bio}
+                    </p>
                     <Button
                       onClick={() => {
                         onCharacterSelect(currentScene.mainStory!);
                       }}
-                      className="bg-white text-black hover:bg-gray-200 mt-4 px-8"
+                      className="mt-4 px-8"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                      }}
                     >
                       开始故事
                     </Button>
                   </div>
-                  <div className="w-48 h-64 shrink-0 rounded-xl overflow-hidden shadow-2xl border-4 border-white/10 rotate-3 transition-transform group-hover:rotate-0">
+                  <div 
+                    className="w-48 h-64 shrink-0 rounded-xl overflow-hidden shadow-2xl border-4 rotate-3 transition-transform group-hover:rotate-0"
+                    style={{ borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))' }}
+                  >
                     {currentScene.mainStory.avatarUrl && currentScene.mainStory.avatarUrl.trim() ? (
                       <LazyImage
                         src={currentScene.mainStory.avatarUrl}
@@ -261,7 +353,13 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-indigo-500/20 flex items-center justify-center">
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        style={{
+                          background: 'var(--gradient-primary)',
+                          opacity: 0.2,
+                        }}
+                      >
                         <div className="text-4xl opacity-50">📖</div>
                       </div>
                     )}
@@ -273,7 +371,12 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
         })()}
 
         {/* 角色列表部分 */}
-        <h3 className="text-xl font-bold text-gray-400 mb-4">登场人物</h3>
+        <h3 
+          className="text-xl font-bold mb-4"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          登场人物
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCharacters.map(char => {
             // 判断是否是用户拥有的角色
@@ -309,7 +412,12 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
         {/* 剧本分支部分 */}
         <div className="mt-12 mb-20">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-400">剧本分支</h3>
+            <h3 
+              className="text-xl font-bold"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              剧本分支
+            </h3>
             <Button onClick={() => requireAuth(onCreateScript)} variant="secondary" className="text-xs">
               + 创建剧本
             </Button>
@@ -338,18 +446,78 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                   }
 
                   return (
-                    <div key={`local-${scenario.id}-${index}`} className="group relative bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-indigo-500 transition-all cursor-pointer hover:-translate-y-1" onClick={() => onPlayScenario(scenario)}>
-                      <h4 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400">{scenario.title}</h4>
-                      <p className="text-sm text-gray-400 line-clamp-3 mb-4">{scenario.description}</p>
-                      <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-700 pt-3">
+                    <div 
+                      key={`local-${scenario.id}-${index}`} 
+                      className="group relative rounded-2xl p-6 border transition-all cursor-pointer hover:-translate-y-1" 
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--bg-secondary)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                      }}
+                      onClick={() => onPlayScenario(scenario)}
+                    >
+                      <h4 
+                        className="text-lg font-bold mb-2 transition-colors"
+                        style={{ color: 'var(--text-primary)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--color-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--text-primary)';
+                        }}
+                      >
+                        {scenario.title}
+                      </h4>
+                      <p 
+                        className="text-sm line-clamp-3 mb-4"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        {scenario.description}
+                      </p>
+                      <div 
+                        className="flex justify-between items-center text-xs pt-3 border-t"
+                        style={{
+                          color: 'var(--text-primary)',
+                          borderColor: 'var(--border-color-overlay)',
+                        }}
+                      >
                         <span>By {scenario.author}</span>
                         <span>{Object.keys(scenario.nodes || {}).length} 个节点</span>
                       </div>
                       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-                        <button onClick={(e) => { e.stopPropagation(); requireAuth(() => onEditScenario(scenario, e)); }} className="p-1.5 hover:bg-white/10 rounded text-gray-300 pointer-events-auto" title="编辑">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); requireAuth(() => onEditScenario(scenario, e)); }} 
+                          className="p-1.5 rounded transition-colors pointer-events-auto" 
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                          title="编辑"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteScenario(scenario.id, e); }} className="p-1.5 hover:bg-red-900/50 rounded text-gray-300 hover:text-red-400 pointer-events-auto" title="删除">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onDeleteScenario(scenario.id, e); }} 
+                          className="p-1.5 rounded transition-colors pointer-events-auto" 
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                            e.currentTarget.style.color = '#FCA5A5';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                          title="删除"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                         </button>
                       </div>
@@ -363,23 +531,29 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                   return null;
                 }
 
-                return (
-                  <div key={`server-${script.id}-${index}`} className="group relative bg-gradient-to-br from-indigo-900/40 to-purple-900/40 rounded-2xl p-6 border border-indigo-500/30 hover:border-indigo-400 transition-all cursor-pointer hover:-translate-y-1" onClick={() => {
+                  return (
+                    <div 
+                      key={`server-${script.id}-${index}`} 
+                      className="group relative rounded-2xl p-6 border transition-all cursor-pointer hover:-translate-y-1" 
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-color-overlay)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }}
+                      onClick={() => {
                   try {
                     if (!script.content) {
                       showAlert('剧本内容为空，无法播放', '错误', 'error');
                       return;
                     }
-                    const scenarioContent = JSON.parse(script.content);
-                    const customScenario: CustomScenario = {
-                      id: String(script.id),
-                      sceneId: currentScene.id,
-                      title: script.title || '未命名剧本',
-                      description: script.title || '未命名剧本',
-                      nodes: scenarioContent.nodes || {},
-                      startNodeId: scenarioContent.startNodeId || Object.keys(scenarioContent.nodes || {})[0] || '',
-                      author: '用户'
-                    };
+                    // 使用统一的转换函数确保 nodes 格式正确
+                    const { convertBackendScriptToScenario } = require('../../utils/dataTransformers');
+                    const customScenario = convertBackendScriptToScenario(script, currentScene.id);
                     onPlayScenario(customScenario);
                   } catch (error) {
                     console.error('[CharacterSelectionScreen] 解析剧本内容失败:', error);
@@ -387,21 +561,72 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                   }
                 }}>
                   <div className="flex items-start justify-between mb-1">
-                    <h4 className="text-indigo-200 font-bold flex-1">{script.title}</h4>
+                    <h4 
+                      className="font-bold flex-1"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {script.title}
+                    </h4>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">用户</span>
+                      <span 
+                        className="text-[10px] px-2 py-0.5 rounded-full border"
+                        style={{
+                          backgroundColor: 'var(--bg-info-alpha)',
+                          color: 'var(--color-info)',
+                          borderColor: 'var(--border-info-alpha)',
+                        }}
+                      >
+                        用户
+                      </span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={(e) => { e.stopPropagation(); onEditScript(script, e); }} className="p-1.5 hover:bg-white/10 rounded text-indigo-300 pointer-events-auto" title="编辑">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onEditScript(script, e); }} 
+                          className="p-1.5 rounded transition-colors pointer-events-auto" 
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                            e.currentTarget.style.color = 'var(--text-primary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                          title="编辑"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteScript(script, e); }} className="p-1.5 hover:bg-red-900/50 rounded text-indigo-300 hover:text-red-400 pointer-events-auto" title="删除">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onDeleteScript(script, e); }} 
+                          className="p-1.5 rounded transition-colors pointer-events-auto" 
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-error-alpha)';
+                            e.currentTarget.style.color = 'var(--color-error)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                          title="删除"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                         </button>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 line-clamp-3 mb-4 mt-2">{script.title}</p>
-                  <div className="flex justify-between items-center text-xs text-indigo-400/60 border-t border-indigo-500/20 pt-3">
+                  <p 
+                    className="text-xs line-clamp-3 mb-4 mt-2"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {script.title}
+                  </p>
+                  <div 
+                    className="flex justify-between items-center text-xs pt-3 border-t"
+                    style={{
+                      color: 'var(--text-primary)',
+                      borderColor: 'var(--border-color-overlay)',
+                    }}
+                  >
                     <span>用户创建</span>
                     <span>{script.sceneCount || 0} 个场景</span>
                   </div>
@@ -414,7 +639,10 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
             {/* 如果没有剧本，显示提示 */}
             {(!Array.isArray(currentScene.scripts) || currentScene.scripts.length === 0) &&
              gameState.customScenarios.filter(s => s.sceneId === currentScene.id).length === 0 && (
-              <div className="col-span-full text-center py-12 text-gray-500">
+              <div 
+                className="col-span-full text-center py-12"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 <p className="text-sm">暂无剧本，点击上方按钮创建第一个剧本</p>
               </div>
             )}

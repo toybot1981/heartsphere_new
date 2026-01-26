@@ -363,33 +363,79 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
         {/* 传送门名称 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
-            传送门名称 <span className="text-slate-500 text-xs">(可选，不填将自动生成)</span>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            传送门名称 <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              (可选，不填将自动生成)
+            </span>
           </label>
           <input
             type="text"
             value={formData.portalName || ''}
             onChange={(e) => setFormData({ ...formData, portalName: e.target.value })}
-            className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 ${
-              formErrors.portalName ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-            }`}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: formErrors.portalName ? 'var(--color-error)' : 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = formErrors.portalName 
+                ? 'var(--color-error)' 
+                : 'var(--color-info)';
+              e.currentTarget.style.boxShadow = formErrors.portalName
+                ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = formErrors.portalName 
+                ? 'var(--color-error)' 
+                : 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
             placeholder="不填写将自动生成名称"
             maxLength={100}
           />
           {formErrors.portalName && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.portalName}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.portalName}
+            </p>
           )}
         </div>
 
         {/* 传送门类型 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             传送门类型
           </label>
           <select
             value={formData.portalType || 'stargate'}
             onChange={(e) => setFormData({ ...formData, portalType: e.target.value as any })}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info)';
+              e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             <option value="stargate">星门 (Stargate)</option>
             <option value="wormhole">虫洞 (Wormhole)</option>
@@ -403,13 +449,21 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
         {/* 目标心域设置 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
-            目标心域 <span className="text-red-400">*</span>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            目标心域 <span style={{ color: 'var(--color-error)' }}>*</span>
           </label>
           
           {/* 共享心域选择器 */}
           {loadingSharedSpheres ? (
-            <div className="text-sm text-slate-400 py-2">加载共享心域列表...</div>
+            <div 
+              className="text-sm py-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              加载共享心域列表...
+            </div>
           ) : sharedHeartSpheres.length > 0 ? (
             <select
               value={formData.targetShareCode || ''}
@@ -421,9 +475,26 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                   targetHeartsphereId: undefined,
                 });
               }}
-              className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 ${
-                formErrors.target ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-              }`}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: formErrors.target ? 'var(--color-error)' : 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = formErrors.target 
+                  ? 'var(--color-error)' 
+                  : 'var(--color-info)';
+                e.currentTarget.style.boxShadow = formErrors.target
+                  ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                  : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = formErrors.target 
+                  ? 'var(--color-error)' 
+                  : 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <option value="">-- 选择共享心域 --</option>
               {sharedHeartSpheres.map((sphere) => (
@@ -434,12 +505,22 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
               ))}
             </select>
           ) : (
-            <div className="text-xs text-slate-400 py-2">暂无可用的共享心域</div>
+            <div 
+              className="text-xs py-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              暂无可用的共享心域
+            </div>
           )}
           
           {/* 手动输入共享码（备选） */}
           <div className="mt-2">
-            <label className="block text-xs text-slate-400 mb-1">或手动输入共享码</label>
+            <label 
+              className="block text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              或手动输入共享码
+            </label>
             <input
               type="text"
               value={formData.targetShareCode || ''}
@@ -453,65 +534,163 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                   });
                 }
               }}
-              className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 font-mono text-sm ${
-                formErrors.target || formErrors.targetShareCode ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-              }`}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 font-mono text-sm"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: (formErrors.target || formErrors.targetShareCode) 
+                  ? 'var(--color-error)' 
+                  : 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = (formErrors.target || formErrors.targetShareCode)
+                  ? 'var(--color-error)'
+                  : 'var(--color-info)';
+                e.currentTarget.style.boxShadow = (formErrors.target || formErrors.targetShareCode)
+                  ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                  : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = (formErrors.target || formErrors.targetShareCode)
+                  ? 'var(--color-error)'
+                  : 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
               placeholder="HS-ABC123"
               maxLength={9}
             />
           </div>
           
           {formErrors.target && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.target}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.target}
+            </p>
           )}
           {formErrors.targetShareCode && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.targetShareCode}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.targetShareCode}
+            </p>
           )}
         </div>
 
         {/* 高级设置（折叠，可选） */}
-        <details className="border border-slate-600 rounded-lg p-3">
-          <summary className="cursor-pointer text-sm text-slate-300 hover:text-white">
+        <details 
+          className="border rounded-lg p-3"
+          style={{ borderColor: 'var(--bg-overlay)' }}
+        >
+          <summary 
+            className="cursor-pointer text-sm"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
             ⚙️ 高级设置（可选）
           </summary>
           <div className="mt-3 space-y-4">
             {/* 位置设置 */}
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">X坐标</label>
+                <label 
+                  className="block text-xs mb-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  X坐标
+                </label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.positionX || 0}
                   onChange={(e) => setFormData({ ...formData, positionX: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-2 py-1 text-sm border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--bg-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Y坐标</label>
+                <label 
+                  className="block text-xs mb-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  Y坐标
+                </label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.positionY || 0}
                   onChange={(e) => setFormData({ ...formData, positionY: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-2 py-1 text-sm border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--bg-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Z坐标</label>
+                <label 
+                  className="block text-xs mb-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  Z坐标
+                </label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.positionZ || 0}
                   onChange={(e) => setFormData({ ...formData, positionZ: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-2 py-1 text-sm border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--bg-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
             </div>
 
             {/* 尺寸 */}
             <div>
-              <label className="block text-xs text-slate-400 mb-1">
+              <label 
+                className="block text-xs mb-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 尺寸 (米): {formData.size || 3.0}
               </label>
               <input
@@ -527,11 +706,29 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
             {/* 权限类型 */}
             <div>
-              <label className="block text-xs text-slate-400 mb-1">访问权限</label>
+              <label 
+                className="block text-xs mb-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                访问权限
+              </label>
               <select
                 value={formData.permissionType || 'approval'}
                 onChange={(e) => setFormData({ ...formData, permissionType: e.target.value as any })}
-                className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-2 py-1 text-sm border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--bg-overlay)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-info)';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 <option value="public">公开 - 所有人可访问</option>
                 <option value="approval">需审批 - 需要主人同意</option>
@@ -543,8 +740,19 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
         {/* 提交错误 */}
         {formErrors.submit && (
-          <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-            <p className="text-sm text-red-300">{formErrors.submit}</p>
+          <div 
+            className="p-3 border rounded-lg"
+            style={{
+              backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+              borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+            }}
+          >
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--color-error, #fca5a5)' }}
+            >
+              {formErrors.submit}
+            </p>
           </div>
         )}
       </div>
@@ -558,24 +766,62 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
     if (!showCreateModal) return null;
 
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col">
-          <h3 className="text-xl font-bold text-white mb-4">创建传送门</h3>
+      <div 
+        className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4"
+        style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+      >
+        <div 
+          className="rounded-xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col"
+          style={{ backgroundColor: 'var(--bg-card, #1e293b)' }}
+        >
+          <h3 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            创建传送门
+          </h3>
           
           {renderCreateForm()}
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-700">
+          <div 
+            className="flex justify-end gap-3 mt-6 pt-4 border-t"
+            style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+          >
             <button
               onClick={handleCreateCancel}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+              }}
             >
               取消
             </button>
             <button
               onClick={handleCreateSubmit}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--color-primary, #4f46e5)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+              }}
             >
               {isSubmitting ? '创建中...' : '创建'}
             </button>
@@ -595,33 +841,79 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
         {/* 传送门名称 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
-            传送门名称 <span className="text-slate-500 text-xs">(可选，不填将自动生成)</span>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            传送门名称 <span 
+              className="text-xs"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              (可选，不填将自动生成)
+            </span>
           </label>
           <input
             type="text"
             value={formData.portalName || ''}
             onChange={(e) => setFormData({ ...formData, portalName: e.target.value })}
-            className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 ${
-              formErrors.portalName ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-            }`}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: formErrors.portalName ? 'var(--color-error)' : 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = formErrors.portalName 
+                ? 'var(--color-error)' 
+                : 'var(--color-info)';
+              e.currentTarget.style.boxShadow = formErrors.portalName
+                ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = formErrors.portalName 
+                ? 'var(--color-error)' 
+                : 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
             placeholder="不填写将自动生成名称"
             maxLength={100}
           />
           {formErrors.portalName && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.portalName}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.portalName}
+            </p>
           )}
         </div>
 
         {/* 传送门类型 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             传送门类型
           </label>
           <select
             value={formData.portalType || 'stargate'}
             onChange={(e) => setFormData({ ...formData, portalType: e.target.value as any })}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info)';
+              e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             <option value="stargate">星门 (Stargate)</option>
             <option value="wormhole">虫洞 (Wormhole)</option>
@@ -635,13 +927,21 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
         {/* 目标心域设置 - 与创建页面保持一致 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
-            目标心域 <span className="text-red-400">*</span>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            目标心域 <span style={{ color: 'var(--color-error)' }}>*</span>
           </label>
           
           {/* 共享心域选择器 */}
           {loadingSharedSpheres ? (
-            <div className="text-sm text-slate-400 py-2">加载共享心域列表...</div>
+            <div 
+              className="text-sm py-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              加载共享心域列表...
+            </div>
           ) : sharedHeartSpheres.length > 0 ? (
             <select
               value={formData.targetShareCode || ''}
@@ -653,9 +953,26 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                   targetHeartsphereId: undefined,
                 });
               }}
-              className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 ${
-                formErrors.target ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-              }`}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: formErrors.target ? 'var(--color-error)' : 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = formErrors.target 
+                  ? 'var(--color-error)' 
+                  : 'var(--color-info)';
+                e.currentTarget.style.boxShadow = formErrors.target
+                  ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                  : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = formErrors.target 
+                  ? 'var(--color-error)' 
+                  : 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <option value="">-- 选择共享心域 --</option>
               {sharedHeartSpheres.map((sphere) => (
@@ -666,12 +983,22 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
               ))}
             </select>
           ) : (
-            <div className="text-xs text-slate-400 py-2">暂无可用的共享心域</div>
+            <div 
+              className="text-xs py-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              暂无可用的共享心域
+            </div>
           )}
           
           {/* 手动输入共享码（备选） */}
           <div className="mt-2">
-            <label className="block text-xs text-slate-400 mb-1">或手动输入共享码</label>
+            <label 
+              className="block text-xs mb-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              或手动输入共享码
+            </label>
             <input
               type="text"
               value={formData.targetShareCode || ''}
@@ -685,62 +1012,153 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                   });
                 }
               }}
-              className={`w-full px-3 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 font-mono text-sm ${
-                formErrors.target || formErrors.targetShareCode ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-indigo-500'
-              }`}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 font-mono text-sm"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: (formErrors.target || formErrors.targetShareCode) 
+                  ? 'var(--color-error)' 
+                  : 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = (formErrors.target || formErrors.targetShareCode)
+                  ? 'var(--color-error)'
+                  : 'var(--color-info)';
+                e.currentTarget.style.boxShadow = (formErrors.target || formErrors.targetShareCode)
+                  ? '0 0 0 2px var(--color-error, rgba(239, 68, 68, 0.2))'
+                  : '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = (formErrors.target || formErrors.targetShareCode)
+                  ? 'var(--color-error)'
+                  : 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
               placeholder="HS-ABC123"
               maxLength={9}
             />
           </div>
           
           {formErrors.target && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.target}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.target}
+            </p>
           )}
           {formErrors.targetShareCode && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.targetShareCode}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.targetShareCode}
+            </p>
           )}
         </div>
 
         {/* 位置设置 */}
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">X坐标</label>
+            <label 
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              X坐标
+            </label>
             <input
               type="number"
               step="0.1"
               value={formData.positionX || 0}
               onChange={(e) => setFormData({ ...formData, positionX: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+                e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Y坐标</label>
+            <label 
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Y坐标
+            </label>
             <input
               type="number"
               step="0.1"
               value={formData.positionY || 0}
               onChange={(e) => setFormData({ ...formData, positionY: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+                e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Z坐标</label>
+            <label 
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Z坐标
+            </label>
             <input
               type="number"
               step="0.1"
               value={formData.positionZ || 0}
               onChange={(e) => setFormData({ ...formData, positionZ: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: 'var(--bg-overlay)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info)';
+                e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
           </div>
         </div>
 
         {/* 尺寸 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             尺寸 (米)
             {formData.size !== undefined && (
-              <span className="ml-2 text-slate-400 text-xs">({formData.size})</span>
+              <span 
+                className="ml-2 text-xs"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                ({formData.size})
+              </span>
             )}
           </label>
           <input
@@ -753,17 +1171,40 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
             className="w-full"
           />
           {formErrors.size && (
-            <p className="mt-1 text-sm text-red-400">{formErrors.size}</p>
+            <p 
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {formErrors.size}
+            </p>
           )}
         </div>
 
         {/* 权限类型 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">访问权限</label>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            访问权限
+          </label>
           <select
             value={formData.permissionType || 'approval'}
             onChange={(e) => setFormData({ ...formData, permissionType: e.target.value as any })}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info)';
+              e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             <option value="public">公开 - 所有人可访问</option>
             <option value="approval">需审批 - 需要主人同意</option>
@@ -785,19 +1226,47 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                 }}
                 className="mr-2 w-4 h-4"
               />
-              <span className="text-sm text-slate-300">激活传送门</span>
+              <span 
+                className="text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                激活传送门
+              </span>
             </label>
-            <p className="text-xs text-slate-500 mt-1">禁用后传送门将不可见且无法使用</p>
+            <p 
+              className="text-xs mt-1"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              禁用后传送门将不可见且无法使用
+            </p>
           </div>
         )}
 
         {/* 描述 */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">描述（可选）</label>
+          <label 
+            className="block text-sm font-medium mb-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            描述（可选）
+          </label>
           <textarea
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--bg-overlay)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-info)';
+              e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.2))';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--bg-overlay)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
             rows={3}
             placeholder="输入传送门描述..."
             maxLength={500}
@@ -806,8 +1275,19 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
         {/* 提交错误 */}
         {formErrors.submit && (
-          <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-            <p className="text-sm text-red-300">{formErrors.submit}</p>
+          <div 
+            className="p-3 border rounded-lg"
+            style={{
+              backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+              borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+            }}
+          >
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--color-error, #fca5a5)' }}
+            >
+              {formErrors.submit}
+            </p>
           </div>
         )}
       </div>
@@ -821,24 +1301,62 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
     if (!showEditModal || !selectedPortal) return null;
 
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col">
-          <h3 className="text-xl font-bold text-white mb-4">编辑传送门</h3>
+      <div 
+        className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4"
+        style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+      >
+        <div 
+          className="rounded-xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col"
+          style={{ backgroundColor: 'var(--bg-card, #1e293b)' }}
+        >
+          <h3 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            编辑传送门
+          </h3>
           
           {renderEditForm()}
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-700">
+          <div 
+            className="flex justify-end gap-3 mt-6 pt-4 border-t"
+            style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+          >
             <button
               onClick={handleEditCancel}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+              }}
             >
               取消
             </button>
             <button
               onClick={handleEditSubmit}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--color-primary, #4f46e5)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+              }}
             >
               {isSubmitting ? '保存中...' : '保存'}
             </button>
@@ -858,16 +1376,44 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
     if (!portal) return null;
 
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full">
-          <h3 className="text-xl font-bold text-white mb-4">确认删除传送门</h3>
+      <div 
+        className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4"
+        style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+      >
+        <div 
+          className="rounded-xl p-6 max-w-md w-full"
+          style={{ backgroundColor: 'var(--bg-card, #1e293b)' }}
+        >
+          <h3 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            确认删除传送门
+          </h3>
           
           <div className="mb-6">
-            <p className="text-slate-300 mb-4">
-              确定要删除传送门 <span className="font-semibold text-white">「{portal.portalName}」</span> 吗？
+            <p 
+              className="mb-4"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              确定要删除传送门 <span 
+                className="font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                「{portal.portalName}」
+              </span> 吗？
             </p>
-            <div className="p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
-              <p className="text-sm text-yellow-300">
+            <div 
+              className="p-3 border rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+                borderColor: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+              }}
+            >
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--color-warning, #fcd34d)' }}
+              >
                 ⚠️ 此操作不可撤销。删除后，所有与此传送门相关的权限和记录也将被删除。
               </p>
             </div>
@@ -877,14 +1423,38 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
             <button
               onClick={handleDeleteCancel}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+              }}
             >
               取消
             </button>
             <button
               onClick={handleDeleteConfirm}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'var(--color-error, #dc2626)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-error-light, #b91c1c)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+              }}
             >
               {isSubmitting ? '删除中...' : '确认删除'}
             </button>
@@ -900,11 +1470,24 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
   const renderPortalList = () => {
     if (!loading && portals.length === 0) {
       return (
-        <div className="text-center py-12 text-slate-400">
+        <div 
+          className="text-center py-12"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <p className="mb-4">暂无传送门</p>
           <button
             onClick={handleCreatePortal}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #4f46e5)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+            }}
           >
             创建第一个传送门
           </button>
@@ -917,39 +1500,86 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
         {portals.map(portal => (
           <div
             key={portal.id}
-            className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:bg-slate-800/70 transition-colors"
+            className="border rounded-lg p-4 transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+              borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.7))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+            }}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 
+                    className="text-lg font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {portal.portalName}
                   </h3>
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      portal.isActive
-                        ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                        : 'bg-gray-500/20 text-gray-300 border border-gray-500/50'
-                    }`}
+                    className="px-2 py-0.5 rounded text-xs font-medium border"
+                    style={{
+                      backgroundColor: portal.isActive
+                        ? 'var(--color-success, rgba(34, 197, 94, 0.2))'
+                        : 'var(--bg-secondary, rgba(107, 114, 128, 0.2))',
+                      color: portal.isActive
+                        ? 'var(--color-success, #86efac)'
+                        : 'var(--text-tertiary)',
+                      borderColor: portal.isActive
+                        ? 'var(--color-success, rgba(34, 197, 94, 0.5))'
+                        : 'var(--bg-overlay, rgba(107, 114, 128, 0.5))',
+                    }}
                   >
                     {portal.isActive ? '激活' : '禁用'}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      portal.portalType === 'stargate'
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
+                    className="px-2 py-0.5 rounded text-xs font-medium border"
+                    style={{
+                      backgroundColor: portal.portalType === 'stargate'
+                        ? 'var(--color-info, rgba(59, 130, 246, 0.2))'
                         : portal.portalType === 'wormhole'
-                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
+                        ? 'var(--color-primary, rgba(147, 51, 234, 0.2))'
                         : portal.portalType === 'quantum'
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
+                        ? 'var(--color-info, rgba(6, 182, 212, 0.2))'
                         : portal.portalType === 'garden'
-                        ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                        ? 'var(--color-success, rgba(34, 197, 94, 0.2))'
                         : portal.portalType === 'sakura'
-                        ? 'bg-pink-500/20 text-pink-300 border border-pink-500/50'
+                        ? 'var(--color-primary, rgba(236, 72, 153, 0.2))'
                         : portal.portalType === 'butterfly'
-                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'
-                        : 'bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-purple-500/20 text-white border border-rainbow-500/50'
-                    }`}
+                        ? 'var(--color-warning, rgba(234, 179, 8, 0.2))'
+                        : 'var(--bg-overlay, rgba(239, 68, 68, 0.2))',
+                      color: portal.portalType === 'stargate'
+                        ? 'var(--color-info, #93c5fd)'
+                        : portal.portalType === 'wormhole'
+                        ? 'var(--color-primary, #c084fc)'
+                        : portal.portalType === 'quantum'
+                        ? 'var(--color-info, #67e8f9)'
+                        : portal.portalType === 'garden'
+                        ? 'var(--color-success, #86efac)'
+                        : portal.portalType === 'sakura'
+                        ? 'var(--color-primary, #f9a8d4)'
+                        : portal.portalType === 'butterfly'
+                        ? 'var(--color-warning, #fcd34d)'
+                        : 'var(--text-primary)',
+                      borderColor: portal.portalType === 'stargate'
+                        ? 'var(--color-info, rgba(59, 130, 246, 0.5))'
+                        : portal.portalType === 'wormhole'
+                        ? 'var(--color-primary, rgba(147, 51, 234, 0.5))'
+                        : portal.portalType === 'quantum'
+                        ? 'var(--color-info, rgba(6, 182, 212, 0.5))'
+                        : portal.portalType === 'garden'
+                        ? 'var(--color-success, rgba(34, 197, 94, 0.5))'
+                        : portal.portalType === 'sakura'
+                        ? 'var(--color-primary, rgba(236, 72, 153, 0.5))'
+                        : portal.portalType === 'butterfly'
+                        ? 'var(--color-warning, rgba(234, 179, 8, 0.5))'
+                        : 'var(--bg-overlay, rgba(239, 68, 68, 0.5))',
+                    }}
                   >
                     {portal.portalType === 'stargate'
                       ? '星门'
@@ -967,9 +1597,12 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-sm text-slate-400 mb-2">
+                <div 
+                  className="grid grid-cols-2 gap-2 text-sm mb-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   <div>
-                    <span className="text-slate-500">权限:</span>{' '}
+                    <span style={{ color: 'var(--text-disabled)' }}>权限:</span>{' '}
                     {portal.permissionType === 'public'
                       ? '公开'
                       : portal.permissionType === 'approval'
@@ -977,26 +1610,29 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
                       : '仅邀请'}
                   </div>
                   <div>
-                    <span className="text-slate-500">位置:</span>{' '}
+                    <span style={{ color: 'var(--text-disabled)' }}>位置:</span>{' '}
                     ({portal.positionX?.toFixed(1)}, {portal.positionY?.toFixed(1)}, {portal.positionZ?.toFixed(1)})
                   </div>
                   <div>
-                    <span className="text-slate-500">尺寸:</span> {portal.size?.toFixed(1)}m
+                    <span style={{ color: 'var(--text-disabled)' }}>尺寸:</span> {portal.size?.toFixed(1)}m
                   </div>
                   {portal.targetHeartsphereId && (
                     <div>
-                      <span className="text-slate-500">目标:</span> 心域ID {portal.targetHeartsphereId}
+                      <span style={{ color: 'var(--text-disabled)' }}>目标:</span> 心域ID {portal.targetHeartsphereId}
                     </div>
                   )}
                   {portal.targetShareCode && (
                     <div>
-                      <span className="text-slate-500">目标:</span> {portal.targetShareCode}
+                      <span style={{ color: 'var(--text-disabled)' }}>目标:</span> {portal.targetShareCode}
                     </div>
                   )}
                 </div>
 
                 {portal.description && (
-                  <p className="text-sm text-slate-400 line-clamp-2 mt-2">
+                  <p 
+                    className="text-sm line-clamp-2 mt-2"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                     {portal.description}
                   </p>
                 )}
@@ -1005,14 +1641,34 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
               <div className="flex gap-2 ml-4">
                 <button
                   onClick={() => handleEditPortal(portal)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                  className="px-3 py-1.5 rounded text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-primary, #4f46e5)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #4338ca)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                  }}
                   title="编辑传送门"
                 >
                   编辑
                 </button>
                 <button
                   onClick={() => handleDeletePortal(portal.id)}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                  className="px-3 py-1.5 rounded text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-error, #dc2626)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-error-light, #b91c1c)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+                  }}
                   title="删除传送门"
                 >
                   删除
@@ -1027,21 +1683,47 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
   // ==================== 主界面渲染 ====================
   return (
-    <div className="portal-management-container bg-slate-900/95 border border-slate-700 rounded-xl p-6 max-w-4xl mx-auto my-8">
+    <div
+      className="portal-management-container border rounded-xl p-6 max-w-4xl mx-auto my-8"
+      style={{
+        backgroundColor: 'var(--bg-primary-dark-alpha)',
+        borderColor: 'var(--border-color-overlay)',
+      }}
+    >
       {/* 头部 */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">传送门管理</h2>
+        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>传送门管理</h2>
         <div className="flex gap-3">
           <button
             onClick={handleCreatePortal}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-info)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-info)';
+            }}
           >
             + 创建传送门
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              className="px-4 py-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+              }}
             >
               关闭
             </button>
@@ -1051,14 +1733,20 @@ export const PortalManagement: React.FC<PortalManagementProps> = ({
 
       {/* 错误提示 */}
       {error && (
-        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-          <p className="text-red-300 text-sm">{error}</p>
+        <div
+          className="mb-4 p-3 rounded-lg border"
+          style={{
+            backgroundColor: 'var(--bg-error-alpha)',
+            borderColor: 'var(--border-error-alpha)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--text-error)' }}>{error}</p>
         </div>
       )}
 
       {/* 加载状态 */}
       {loading && (
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
           加载中...
         </div>
       )}

@@ -136,7 +136,7 @@ public class EmailVerificationCodeService {
         codeStorage.entrySet().removeIf(entry -> {
             boolean expired = now - entry.getValue().createTime > CODE_EXPIRY_TIME;
             if (expired) {
-                log.debug("清理过期验证码: email={}", entry.getKey());
+                log.info("清理过期验证码: email={}", entry.getKey());
             }
             return expired;
         });

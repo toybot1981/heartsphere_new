@@ -83,16 +83,37 @@ public class DataSourceConfig {
     }
     
     /**
+     * Agent Mind数据源配置属性
+     */
+    @Bean
+    @ConfigurationProperties("spring.datasource.agent-mind")
+    public DataSourceProperties agentMindDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+    
+    /**
+     * Agent Mind数据源
+     */
+    @Bean
+    public DataSource agentMindDataSource() {
+        return agentMindDataSourceProperties()
+                .initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
+    }
+    
+    /**
      * 动态数据源路由
      * 根据ThreadLocal中的key决定使用哪个数据源
-     * 支持的数据源：admin（默认）、mentis、edu
+     * 支持的数据源：admin（默认）、mentis、edu、agent-mind
      */
     @Bean
     @Primary
     public DataSource routingDataSource(
             @Qualifier("adminDataSource") DataSource adminDataSource,
             @Qualifier("mentisDataSource") DataSource mentisDataSource,
-            @Qualifier("eduDataSource") DataSource eduDataSource) {
+            @Qualifier("eduDataSource") DataSource eduDataSource,
+            @Qualifier("agentMindDataSource") DataSource agentMindDataSource) {
         
         AbstractRoutingDataSource routingDataSource = new AbstractRoutingDataSource() {
             @Override
@@ -109,6 +130,7 @@ public class DataSourceConfig {
         targetDataSources.put("admin", adminDataSource);
         targetDataSources.put("mentis", mentisDataSource);
         targetDataSources.put("edu", eduDataSource);
+        targetDataSources.put("agent-mind", agentMindDataSource);
         
         routingDataSource.setTargetDataSources(targetDataSources);
         // 设置默认数据源为admin（也是main和company使用的数据源）

@@ -75,7 +75,7 @@ export class JournalMemoryIntegration {
       const fullText = textParts.join('\n');
       
       if (!fullText.trim()) {
-        logger.debug('[JournalMemoryIntegration] 日记内容为空，跳过记忆提取');
+        logger.info('[JournalMemoryIntegration] 日记内容为空，跳过记忆提取');
         return;
       }
 
@@ -89,7 +89,7 @@ export class JournalMemoryIntegration {
         },
       });
 
-      logger.debug('[JournalMemoryIntegration] 从日记中提取记忆成功', {
+      logger.info('[JournalMemoryIntegration] 从日记中提取记忆成功', {
         journalId: entry.id,
         title: entry.title,
         extractedCount: memories.length,
@@ -155,7 +155,7 @@ export class JournalMemoryIntegration {
         // 调用 backend API 进行记忆化
         const hsmemResult = await memoryApi.memorizeDocument(documentData, token);
 
-        logger.debug('[JournalMemoryIntegration] HSMem记忆提取成功', {
+        logger.info('[JournalMemoryIntegration] HSMem记忆提取成功', {
           journalId: entry.id,
           resourceId: hsmemResult.resource_id,
           itemsCount: hsmemResult.items_count,
@@ -195,7 +195,7 @@ export class JournalMemoryIntegration {
 
       const memories = await this.memorySystem.getRelevantMemories(context, limit);
       
-      logger.debug('[JournalMemoryIntegration] 获取相关记忆成功', {
+      logger.info('[JournalMemoryIntegration] 获取相关记忆成功', {
         journalId: entry.id,
         relevantCount: memories.length,
       });

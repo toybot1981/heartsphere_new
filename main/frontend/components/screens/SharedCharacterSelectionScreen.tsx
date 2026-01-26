@@ -85,10 +85,19 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">加载角色列表中...</p>
+          <div 
+            className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+            style={{
+              borderColor: 'var(--color-info)',
+              borderTopColor: 'transparent',
+            }}
+          />
+          <p style={{ color: 'var(--text-secondary)' }}>加载角色列表中...</p>
         </div>
       </div>
     );
@@ -96,10 +105,18 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-red-400 mb-4">{error}</p>
+          <p 
+            className="mb-4"
+            style={{ color: 'var(--color-error)' }}
+          >
+            {error}
+          </p>
           <Button onClick={onBack}>返回</Button>
         </div>
       </div>
@@ -107,7 +124,10 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
   }
 
   return (
-    <div className="h-full flex flex-col p-8 bg-gray-900">
+    <div 
+      className="h-full flex flex-col p-8"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
       {/* 头部 */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -117,19 +137,43 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
             </svg>
           </Button>
           <div>
-            <h2 className="text-3xl font-bold text-white">{currentScene.name}</h2>
-            <p className="text-gray-400 text-sm">共享场景 · {characters.length} 个角色</p>
+            <h2 
+              className="text-3xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {currentScene.name}
+            </h2>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              共享场景 · {characters.length} 个角色
+            </p>
           </div>
         </div>
       </div>
 
       {/* 提示信息 */}
-      <div className="mb-6 p-4 bg-blue-900/40 border border-blue-500/50 rounded-xl">
+      <div 
+        className="mb-6 p-4 border rounded-xl"
+        style={{
+          backgroundColor: 'var(--bg-info-alpha)',
+          borderColor: 'var(--border-info-alpha)',
+        }}
+      >
         <div className="flex items-start gap-3">
           <span className="text-xl">💡</span>
           <div className="flex-1">
-            <p className="text-blue-200 font-bold text-sm mb-1">共享模式</p>
-            <p className="text-blue-300 text-xs">
+            <p 
+              className="font-bold text-sm mb-1"
+              style={{ color: 'var(--color-info)' }}
+            >
+              共享模式
+            </p>
+            <p 
+              className="text-xs"
+              style={{ color: 'var(--text-info-light)' }}
+            >
               你正在查看共享场景的角色。只能与角色对话，不能编辑或删除。
             </p>
           </div>
@@ -146,8 +190,18 @@ export const SharedCharacterSelectionScreen: React.FC<SharedCharacterSelectionSc
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="text-6xl mb-4">👤</div>
-              <p className="text-gray-400 text-lg mb-2">暂无共享的角色</p>
-              <p className="text-gray-500 text-sm">这个场景中还没有共享的角色</p>
+              <p 
+                className="text-lg mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                暂无共享的角色
+              </p>
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                这个场景中还没有共享的角色
+              </p>
             </div>
           </div>
         ) : (

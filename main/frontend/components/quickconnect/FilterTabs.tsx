@@ -41,19 +41,40 @@ export const FilterTabs: React.FC<FilterTabsProps> = ({
           <button
             key={filter.key}
             onClick={() => onFilterChange(filter.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-              isActive
-                ? 'bg-blue-500 text-white shadow-lg scale-105'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
-            }`}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+            style={{
+              backgroundColor: isActive 
+                ? 'var(--color-primary, #3b82f6)' 
+                : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+              color: isActive 
+                ? 'var(--text-primary)' 
+                : 'var(--text-secondary)',
+              transform: isActive ? 'scale(1.05)' : 'scale(1)',
+              boxShadow: isActive ? 'var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.5))' : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
           >
             <span>{filter.icon}</span>
             <span>{filter.label}</span>
             {count !== undefined && count > 0 && (
               <span
-                className={`px-2 py-0.5 rounded-full text-xs ${
-                  isActive ? 'bg-white/20' : 'bg-white/10'
-                }`}
+                className="px-2 py-0.5 rounded-full text-xs"
+                style={{
+                  backgroundColor: isActive 
+                    ? 'var(--bg-overlay, rgba(255, 255, 255, 0.2))' 
+                    : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                }}
               >
                 {count}
               </span>

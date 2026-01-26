@@ -196,7 +196,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
     private void createRelation(GraphEngine.GraphState state, Map<String, Map<String, Object>> relations, String relationKey) {
         // 检查条件
         if (condition != null && !checkCondition(state)) {
-            log.debug("[EntityRelationNode] 关系条件不满足，跳过创建");
+            log.info("[EntityRelationNode] 关系条件不满足，跳过创建");
             return;
         }
         
@@ -210,7 +210,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
         relation.put("created", true);
         
         relations.put(relationKey, relation);
-        log.debug("[EntityRelationNode] 创建关系: {}", relationKey);
+        log.info("[EntityRelationNode] 创建关系: {}", relationKey);
     }
     
     /**
@@ -224,7 +224,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
         }
         
         relation.put("strength", strength != null ? strength : 50);
-        log.debug("[EntityRelationNode] 更新关系: {}, 强度: {}", relationKey, strength);
+        log.info("[EntityRelationNode] 更新关系: {}, 强度: {}", relationKey, strength);
     }
     
     /**
@@ -239,7 +239,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
             state.setData("relation_strength_" + relationKey, relation.get("strength"));
         }
         
-        log.debug("[EntityRelationNode] 检查关系: {}, 存在: {}", relationKey, exists);
+        log.info("[EntityRelationNode] 检查关系: {}, 存在: {}", relationKey, exists);
     }
     
     /**
@@ -247,7 +247,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
      */
     private void deleteRelation(GraphEngine.GraphState state, Map<String, Map<String, Object>> relations, String relationKey) {
         relations.remove(relationKey);
-        log.debug("[EntityRelationNode] 删除关系: {}", relationKey);
+        log.info("[EntityRelationNode] 删除关系: {}", relationKey);
     }
     
     /**
@@ -263,7 +263,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
         int currentStrength = ((Number) relation.getOrDefault("strength", 50)).intValue();
         int newStrength = Math.min(100, currentStrength + strength);
         relation.put("strength", newStrength);
-        log.debug("[EntityRelationNode] 增加关系强度: {} -> {}", currentStrength, newStrength);
+        log.info("[EntityRelationNode] 增加关系强度: {} -> {}", currentStrength, newStrength);
     }
     
     /**
@@ -279,7 +279,7 @@ public class EntityRelationNode implements GraphEngine.GraphNode {
         int currentStrength = ((Number) relation.getOrDefault("strength", 50)).intValue();
         int newStrength = Math.max(0, currentStrength - strength);
         relation.put("strength", newStrength);
-        log.debug("[EntityRelationNode] 减少关系强度: {} -> {}", currentStrength, newStrength);
+        log.info("[EntityRelationNode] 减少关系强度: {} -> {}", currentStrength, newStrength);
     }
     
     /**

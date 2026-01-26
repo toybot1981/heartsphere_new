@@ -251,23 +251,56 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   // --- LIST VIEW ---
   if (view === 'list') {
       return (
-          <div className="h-full bg-slate-950 p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-24 overflow-y-auto overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div 
+            className="h-full p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-24 overflow-y-auto overscroll-behavior-contain" 
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              backgroundColor: 'var(--bg-primary-dark, #020617)',
+            }}
+          >
               <div className="flex justify-between items-center mb-6">
                   <div>
                       <div className="flex items-center gap-3">
-                          <h1 className="text-3xl font-bold text-white">日记</h1>
+                          <h1 
+                            className="text-3xl font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            日记
+                          </h1>
                           <button 
                             onClick={onSwitchToPC}
-                            className="bg-slate-800 active:bg-slate-700 text-slate-300 active:text-white px-3 py-2 rounded-full text-xs border border-slate-700 transition-all active:scale-95 touch-manipulation min-h-[44px] flex items-center gap-1"
+                            className="px-3 py-2 rounded-full text-xs border transition-all active:scale-95 touch-manipulation min-h-[44px] flex items-center gap-1"
+                            style={{
+                              backgroundColor: 'var(--bg-secondary-alpha)',
+                              color: 'var(--text-primary)',
+                              borderColor: 'var(--border-color-overlay)',
+                            }}
+                            onMouseDown={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
+                            onMouseUp={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary-alpha)';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
                           >
                              <span>💻</span> PC端
                           </button>
                       </div>
-                      <p className="text-slate-400 text-xs mt-1">记录你的现实瞬间</p>
+                      <p 
+                        className="text-xs mt-1"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        记录你的现实瞬间
+                      </p>
                   </div>
                   <button 
                     onClick={startNew} 
-                    className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white flex items-center justify-center shadow-lg font-bold text-2xl active:scale-90 transition-transform touch-manipulation"
+                    className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-full flex items-center justify-center shadow-lg font-bold text-2xl active:scale-90 transition-transform touch-manipulation"
+                    style={{
+                      background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-pink, #db2777), var(--color-primary, #9333ea)))',
+                      color: 'var(--text-primary)',
+                    }}
                     aria-label="新建日记"
                   >
                     +
@@ -281,7 +314,21 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="检索记忆/#标签"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-base min-h-[44px]"
+                      className="w-full rounded-lg px-4 py-3 focus:ring-2 outline-none text-base min-h-[44px]"
+                      style={{
+                        backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                        borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                        color: 'var(--text-primary)',
+                        '--placeholder-color': 'var(--text-disabled)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-info, #6366f1)';
+                        e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info-alpha, rgba(99, 102, 241, 0.2))';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
                       autoComplete="off"
                       inputMode="search"
                   />
@@ -294,11 +341,25 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                           <button
                               key={tag}
                               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                              className={`px-3 py-2 rounded-full text-xs font-medium transition-all min-h-[44px] active:scale-95 touch-manipulation ${
-                                  selectedTag === tag
-                                      ? 'bg-indigo-600 text-white'
-                                      : 'bg-slate-800 text-slate-300 active:bg-slate-700'
-                              }`}
+                              className="px-3 py-2 rounded-full text-xs font-medium transition-all min-h-[44px] active:scale-95 touch-manipulation"
+                              style={{
+                                backgroundColor: selectedTag === tag
+                                  ? 'var(--color-info, #6366f1)'
+                                  : 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                color: selectedTag === tag
+                                  ? 'var(--text-primary)'
+                                  : 'var(--text-secondary)',
+                              }}
+                              onMouseDown={(e) => {
+                                if (selectedTag !== tag) {
+                                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 1))';
+                                }
+                              }}
+                              onMouseUp={(e) => {
+                                if (selectedTag !== tag) {
+                                  e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(30, 41, 59, 1))';
+                                }
+                              }}
                           >
                               {tag}
                           </button>
@@ -308,21 +369,60 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
 
               {/* Daily Greeting */}
               {dailyGreeting && (
-                  <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950/30 border border-indigo-500/20 w-full overflow-visible">
-                      <div className="flex items-center gap-2 mb-2 text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                  <div 
+                    className="mb-4 p-4 rounded-xl border w-full overflow-visible"
+                    style={{
+                      background: 'linear-gradient(to right, var(--bg-card, rgba(15, 23, 42, 1)), var(--bg-info-alpha, rgba(30, 58, 138, 0.3)))',
+                      borderColor: 'var(--border-info-alpha, rgba(99, 102, 241, 0.2))',
+                    }}
+                  >
+                      <div 
+                        className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: 'var(--color-info, #818cf8)' }}
+                      >
+                          <span 
+                            className="w-1.5 h-1.5 rounded-full animate-pulse"
+                            style={{ backgroundColor: 'var(--color-info, #818cf8)' }}
+                          />
                           Daily Resonance
                       </div>
-                      <h2 className="text-base font-bold text-white/90 mb-2 break-words whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <h2 
+                        className="text-base font-bold mb-2 break-words whitespace-normal" 
+                        style={{ 
+                          wordBreak: 'break-word', 
+                          overflowWrap: 'break-word',
+                          color: 'var(--text-primary, rgba(255, 255, 255, 0.9))',
+                        }}
+                      >
                           {dailyGreeting.greeting || "你好，旅人。"}
                       </h2>
                       <div className="flex flex-row items-start justify-between gap-2">
-                          <p className="text-sm text-indigo-200/70 italic flex-1 min-w-0 break-words whitespace-normal pr-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: 'calc(100% - 50px)' }}>
+                          <p 
+                            className="text-sm italic flex-1 min-w-0 break-words whitespace-normal pr-2" 
+                            style={{ 
+                              wordBreak: 'break-word', 
+                              overflowWrap: 'break-word', 
+                              maxWidth: 'calc(100% - 50px)',
+                              color: 'var(--text-info-light, rgba(191, 219, 254, 0.7))',
+                            }}
+                          >
                               "{dailyGreeting.prompt || dailyGreeting.question || "今天的风带给你什么感觉？"}"
                           </p>
                           <button 
                             onClick={handleGreetingQuestionClick}
-                            className="bg-indigo-600/20 active:bg-indigo-600 text-indigo-300 active:text-white min-w-[44px] min-h-[44px] p-2 rounded-lg transition-all active:scale-95 touch-manipulation flex items-center justify-center flex-shrink-0"
+                            className="min-w-[44px] min-h-[44px] p-2 rounded-lg transition-all active:scale-95 touch-manipulation flex items-center justify-center flex-shrink-0"
+                            style={{
+                              backgroundColor: 'var(--bg-info-alpha, rgba(99, 102, 241, 0.2))',
+                              color: 'var(--text-info, #a5b4fc)',
+                            }}
+                            onMouseDown={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-info, #6366f1)';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
+                            onMouseUp={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha, rgba(99, 102, 241, 0.2))';
+                              e.currentTarget.style.color = 'var(--text-info, #a5b4fc)';
+                            }}
                             title="回应"
                             aria-label="回应问候"
                           >
@@ -340,13 +440,20 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                           <div className="text-6xl mb-4 opacity-50">
                               {searchQuery || selectedTag ? '🔍' : '📝'}
                           </div>
-                          <p className="text-center text-slate-400 text-base mb-4">
+                          <p 
+                            className="text-center text-base mb-4"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
                               {searchQuery || selectedTag ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
                           </p>
                           {!searchQuery && !selectedTag && (
                               <button
                                   onClick={startNew}
-                                  className="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold rounded-xl active:scale-95 transition-transform touch-manipulation"
+                                  className="px-6 py-3 font-bold rounded-xl active:scale-95 transition-transform touch-manipulation"
+                                  style={{
+                                    background: 'var(--gradient-primary-button, linear-gradient(to right, var(--color-pink, #db2777), var(--color-primary, #9333ea)))',
+                                    color: 'var(--text-primary)',
+                                  }}
                               >
                                   开始记录
                               </button>
@@ -357,7 +464,18 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                       <div 
                         key={entry.id} 
                         onClick={() => openEntry(entry)} 
-                        className="bg-slate-900 rounded-xl p-4 border border-slate-800 active:bg-slate-800 active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+                        className="rounded-xl p-4 border active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+                        style={{
+                          backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                          borderColor: 'var(--border-color-overlay, rgba(30, 41, 59, 1))',
+                          '--active-bg': 'var(--bg-hover, rgba(30, 41, 59, 1))',
+                        }}
+                        onMouseDown={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--active-bg)';
+                        }}
+                        onMouseUp={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(15, 23, 42, 1))';
+                        }}
                         role="button"
                         tabIndex={0}
                         onKeyPress={(e) => {
@@ -367,10 +485,25 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                         }}
                       >
                           <div className="flex justify-between items-start mb-2">
-                              <h3 className="text-white font-bold truncate flex-1">{entry.title}</h3>
-                              <span className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleDateString()}</span>
+                              <h3 
+                                className="font-bold truncate flex-1"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {entry.title}
+                              </h3>
+                              <span 
+                                className="text-[10px]"
+                                style={{ color: 'var(--text-disabled)' }}
+                              >
+                                {new Date(entry.timestamp).toLocaleDateString()}
+                              </span>
                           </div>
-                          <p className="text-slate-400 text-sm line-clamp-2">{entry.content}</p>
+                          <p 
+                            className="text-sm line-clamp-2"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            {entry.content}
+                          </p>
                           {entry.tags && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                   {entry.tags.split(',').map((tag, idx) => {
@@ -383,7 +516,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                                                   e.stopPropagation();
                                                   setSelectedTag(trimmedTag);
                                               }}
-                                              className="text-[10px] px-2 py-0.5 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30"
+                                              className="text-[10px] px-2 py-0.5 rounded-full border"
+                                              style={{
+                                                backgroundColor: 'var(--bg-info-alpha, rgba(99, 102, 241, 0.2))',
+                                                color: 'var(--text-info, #a5b4fc)',
+                                                borderColor: 'var(--border-info-alpha, rgba(99, 102, 241, 0.3))',
+                                              }}
                                           >
                                               {trimmedTag}
                                           </span>
@@ -402,19 +540,35 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
   // --- DETAIL VIEW ---
   if (view === 'detail' && selectedEntry) {
       return (
-          <div className="h-full bg-slate-950 flex flex-col pb-24">
-              <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-4 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
+          <div 
+            className="h-full flex flex-col pb-24"
+            style={{ backgroundColor: 'var(--bg-primary-dark, #020617)' }}
+          >
+              <div 
+                className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-4 border-b backdrop-blur-md sticky top-0 z-10"
+                style={{
+                  borderColor: 'var(--border-color-overlay, rgba(30, 41, 59, 1))',
+                  backgroundColor: 'var(--bg-primary-dark, rgba(2, 6, 23, 0.9))',
+                }}
+              >
                   <button 
                     onClick={() => setView('list')} 
-                    className="text-slate-400 min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95 transition-transform touch-manipulation"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95 transition-transform touch-manipulation"
+                    style={{ color: 'var(--text-tertiary)' }}
                     aria-label="返回"
                   >
                     &larr;
                   </button>
-                  <h2 className="text-white font-bold truncate flex-1">{selectedEntry.title}</h2>
+                  <h2 
+                    className="font-bold truncate flex-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {selectedEntry.title}
+                  </h2>
                   <button 
                     onClick={startEdit} 
-                    className="text-indigo-400 text-sm min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                    className="text-sm min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                    style={{ color: 'var(--color-info, #818cf8)' }}
                   >
                     编辑
                   </button>
@@ -423,7 +577,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                   {selectedEntry.imageUrl && (
                       <img src={selectedEntry.imageUrl} className="w-full rounded-xl mb-6 shadow-lg" alt="Mind Projection" />
                   )}
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedEntry.content}</p>
+                  <p 
+                    className="leading-relaxed whitespace-pre-wrap"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {selectedEntry.content}
+                  </p>
                   
                   {selectedEntry.tags && (
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -437,7 +596,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                                           setSelectedTag(trimmedTag);
                                           setView('list');
                                       }}
-                                      className="text-xs px-3 py-2 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                                      className="text-xs px-3 py-2 rounded-full border min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                                      style={{
+                                        backgroundColor: 'var(--bg-info-alpha, rgba(99, 102, 241, 0.2))',
+                                        color: 'var(--text-info, #a5b4fc)',
+                                        borderColor: 'var(--border-info-alpha, rgba(99, 102, 241, 0.3))',
+                                      }}
                                   >
                                       {trimmedTag}
                                   </span>
@@ -447,13 +611,32 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                   )}
                   
                   {selectedEntry.insight && (
-                      <div className="mt-6 p-4 bg-cyan-900/20 border-l-2 border-cyan-500 rounded-r-lg">
-                          <p className="text-xs text-cyan-400 font-bold uppercase mb-1">Mirror of Truth</p>
-                          <p className="text-cyan-100 text-sm italic">"{selectedEntry.insight}"</p>
+                      <div 
+                        className="mt-6 p-4 border-l-2 rounded-r-lg"
+                        style={{
+                          backgroundColor: 'var(--bg-info-alpha, rgba(6, 182, 212, 0.2))',
+                          borderLeftColor: 'var(--color-info, #06b6d4)',
+                        }}
+                      >
+                          <p 
+                            className="text-xs font-bold uppercase mb-1"
+                            style={{ color: 'var(--color-info, #06b6d4)' }}
+                          >
+                            Mirror of Truth
+                          </p>
+                          <p 
+                            className="text-sm italic"
+                            style={{ color: 'var(--text-info-light, #cffafe)' }}
+                          >
+                            "{selectedEntry.insight}"
+                          </p>
                       </div>
                   )}
 
-                  <div className="mt-8 pt-8 border-t border-slate-800">
+                  <div 
+                    className="mt-8 pt-8 border-t"
+                    style={{ borderTopColor: 'var(--border-color-overlay, rgba(30, 41, 59, 1))' }}
+                  >
                       <MobileTouchableButton 
                         variant="primary" 
                         size="lg" 
@@ -470,7 +653,16 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                             setView('list');
                           }
                         }} 
-                        className="w-full text-center text-red-400 text-sm py-3 min-h-[44px] active:scale-95 transition-transform touch-manipulation rounded-lg active:bg-red-500/10"
+                        className="w-full text-center text-sm py-3 min-h-[44px] active:scale-95 transition-transform touch-manipulation rounded-lg"
+                        style={{
+                          color: 'var(--color-error, #f87171)',
+                        }}
+                        onMouseDown={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-error-alpha, rgba(239, 68, 68, 0.1))';
+                        }}
+                        onMouseUp={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
                         删除日记
                       </button>
@@ -482,19 +674,35 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
 
   // --- EDIT VIEW ---
   return (
-      <div className="h-full bg-slate-950 flex flex-col pb-20">
-           <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
+      <div 
+        className="h-full flex flex-col pb-20"
+        style={{ backgroundColor: 'var(--bg-primary-dark, #020617)' }}
+      >
+           <div 
+             className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center justify-between border-b backdrop-blur-md sticky top-0 z-10"
+             style={{
+               borderColor: 'var(--border-color-overlay, rgba(30, 41, 59, 1))',
+               backgroundColor: 'var(--bg-primary-dark, rgba(2, 6, 23, 0.9))',
+             }}
+           >
                 <button 
                   onClick={() => setView(selectedEntry ? 'detail' : 'list')} 
-                  className="text-slate-400 min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                  className="min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation"
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   取消
                 </button>
-                <h2 className="text-white font-bold">{selectedEntry ? '编辑' : '新建'}</h2>
+                <h2 
+                  className="font-bold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {selectedEntry ? '编辑' : '新建'}
+                </h2>
                 <button 
                   onClick={handleSave} 
                   disabled={isGenerating} 
-                  className="text-pink-500 font-bold disabled:opacity-50 min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation disabled:active:scale-100"
+                  className="font-bold disabled:opacity-50 min-w-[44px] min-h-[44px] px-3 active:scale-95 transition-transform touch-manipulation disabled:active:scale-100"
+                  style={{ color: 'var(--color-pink, #ec4899)' }}
                 >
                     {isGenerating ? '保存中...' : '保存'}
                 </button>
@@ -504,24 +712,59 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                <div className="flex items-center gap-2 mb-2">
                    <button
                        onClick={() => setShowTemplates(!showTemplates)}
-                       className="text-xs flex items-center gap-1 text-indigo-400 border border-indigo-800 rounded-full px-3 py-2 bg-indigo-900/10 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                       className="text-xs flex items-center gap-1 border rounded-full px-3 py-2 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                       style={{
+                         color: 'var(--color-info, #818cf8)',
+                         borderColor: 'var(--border-info-alpha, rgba(30, 58, 138, 1))',
+                         backgroundColor: 'var(--bg-info-alpha, rgba(30, 58, 138, 0.1))',
+                       }}
                    >
                        <span>📝</span> 模板
                    </button>
                </div>
                
                {showTemplates && (
-                   <div className="bg-slate-900 rounded-lg p-3 border border-slate-700 mb-2">
-                       <div className="text-xs text-slate-400 mb-2 font-bold">选择模板</div>
+                   <div 
+                     className="rounded-lg p-3 border mb-2"
+                     style={{
+                       backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                       borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                     }}
+                   >
+                       <div 
+                         className="text-xs mb-2 font-bold"
+                         style={{ color: 'var(--text-tertiary)' }}
+                       >
+                         选择模板
+                       </div>
                        <div className="grid grid-cols-2 gap-2">
                            {getAllTemplates().slice(0, 4).map(template => (
                                <button
                                    key={template.id}
                                    onClick={() => applyTemplate(template.id)}
-                                   className="p-3 bg-slate-800 active:bg-slate-700 rounded-lg text-left transition-all active:scale-95 touch-manipulation min-h-[80px]"
+                                   className="p-3 rounded-lg text-left transition-all active:scale-95 touch-manipulation min-h-[80px]"
+                                   style={{
+                                     backgroundColor: 'var(--bg-card, rgba(30, 41, 59, 1))',
+                                   }}
+                                   onMouseDown={(e) => {
+                                     e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 1))';
+                                   }}
+                                   onMouseUp={(e) => {
+                                     e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(30, 41, 59, 1))';
+                                   }}
                                >
-                                   <div className="text-xs font-bold text-white mb-1">{template.icon} {template.name}</div>
-                                   <div className="text-[10px] text-slate-400">{template.description}</div>
+                                   <div 
+                                     className="text-xs font-bold mb-1"
+                                     style={{ color: 'var(--text-primary)' }}
+                                   >
+                                     {template.icon} {template.name}
+                                   </div>
+                                   <div 
+                                     className="text-[10px]"
+                                     style={{ color: 'var(--text-tertiary)' }}
+                                   >
+                                     {template.description}
+                                   </div>
                                </button>
                            ))}
                        </div>
@@ -532,7 +775,11 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                  value={title} 
                  onChange={e => setTitle(e.target.value)} 
                  placeholder="标题..." 
-                 className="bg-transparent text-xl font-bold text-white placeholder-slate-600 outline-none min-h-[44px] px-2" 
+                 className="bg-transparent text-xl font-bold outline-none min-h-[44px] px-2" 
+                 style={{
+                   color: 'var(--text-primary)',
+                   '--placeholder-color': 'var(--text-disabled)',
+                 }}
                  autoFocus={!selectedEntry}
                  inputMode="text"
                />
@@ -540,24 +787,45 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                  value={content} 
                  onChange={e => setContent(e.target.value)} 
                  placeholder="写下你的想法..." 
-                 className="flex-1 bg-transparent text-slate-300 placeholder-slate-600 outline-none resize-none leading-relaxed min-h-[300px] px-2 text-base" 
+                 className="flex-1 bg-transparent outline-none resize-none leading-relaxed min-h-[300px] px-2 text-base" 
+                 style={{
+                   color: 'var(--text-secondary)',
+                   '--placeholder-color': 'var(--text-disabled)',
+                 }}
                  inputMode="text"
                />
                
                {/* Tags Section */}
                <div className="space-y-2">
-                   <div className="text-xs text-slate-400 font-bold">标签</div>
+                   <div 
+                     className="text-xs font-bold"
+                     style={{ color: 'var(--text-tertiary)' }}
+                   >
+                     标签
+                   </div>
                    {newTags.length > 0 && (
                        <div className="flex flex-wrap gap-2 mb-2">
                            {newTags.map((tag, idx) => (
                                <span
                                    key={idx}
-                                   className="text-xs px-2 py-1 bg-indigo-600/20 text-indigo-300 rounded-full border border-indigo-500/30 flex items-center gap-1"
+                                   className="text-xs px-2 py-1 rounded-full border flex items-center gap-1"
+                                   style={{
+                                     backgroundColor: 'var(--bg-info-alpha, rgba(99, 102, 241, 0.2))',
+                                     color: 'var(--text-info, #a5b4fc)',
+                                     borderColor: 'var(--border-info-alpha, rgba(99, 102, 241, 0.3))',
+                                   }}
                                >
                                    {tag}
                                    <button
                                        onClick={() => removeTag(tag)}
-                                       className="text-indigo-400 active:text-white min-w-[20px] min-h-[20px] flex items-center justify-center active:scale-110 transition-transform touch-manipulation"
+                                       className="min-w-[20px] min-h-[20px] flex items-center justify-center active:scale-110 transition-transform touch-manipulation"
+                                       style={{ color: 'var(--color-info, #818cf8)' }}
+                                       onMouseDown={(e) => {
+                                         e.currentTarget.style.color = 'var(--text-primary)';
+                                       }}
+                                       onMouseUp={(e) => {
+                                         e.currentTarget.style.color = 'var(--color-info, #818cf8)';
+                                       }}
                                        aria-label="删除标签"
                                    >
                                        ×
@@ -572,13 +840,34 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                        onChange={(e) => setTagInput(e.target.value)}
                        onKeyDown={handleTagInputKeyDown}
                        placeholder="添加标签(Enter)..."
-                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-base text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none min-h-[44px]"
+                       className="w-full rounded-lg px-4 py-3 text-base outline-none min-h-[44px]"
+                       style={{
+                         backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 1))',
+                         borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 1))',
+                         color: 'var(--text-primary)',
+                         '--placeholder-color': 'var(--text-disabled)',
+                       }}
+                       onFocus={(e) => {
+                         e.currentTarget.style.borderColor = 'var(--color-info, #6366f1)';
+                         e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-info-alpha, rgba(99, 102, 241, 0.2))';
+                       }}
+                       onBlur={(e) => {
+                         e.currentTarget.style.borderColor = 'var(--border-color-overlay, rgba(51, 65, 85, 1))';
+                         e.currentTarget.style.boxShadow = 'none';
+                       }}
                        inputMode="text"
                    />
                </div>
                
                {insight && (
-                   <div className="p-3 bg-cyan-900/20 rounded border border-cyan-900 text-cyan-200 text-xs">
+                   <div 
+                     className="p-3 rounded border text-xs"
+                     style={{
+                       backgroundColor: 'var(--bg-info-alpha, rgba(6, 182, 212, 0.2))',
+                       borderColor: 'var(--border-info-alpha, rgba(6, 182, 212, 1))',
+                       color: 'var(--text-info-light, #cffafe)',
+                     }}
+                   >
                        {insight}
                    </div>
                )}
@@ -586,7 +875,12 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = ({
                <div className="flex justify-end gap-2">
                    <button 
                      onClick={handleMirror} 
-                     className="text-xs flex items-center gap-1 text-cyan-400 border border-cyan-800 rounded-full px-3 py-2 bg-cyan-900/10 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                     className="text-xs flex items-center gap-1 border rounded-full px-3 py-2 min-h-[44px] active:scale-95 transition-transform touch-manipulation"
+                     style={{
+                       color: 'var(--color-info, #06b6d4)',
+                       borderColor: 'var(--border-info-alpha, rgba(6, 182, 212, 1))',
+                       backgroundColor: 'var(--bg-info-alpha, rgba(6, 182, 212, 0.1))',
+                     }}
                      disabled={!content.trim()}
                    >
                        <span>🔮</span> 本我镜像分析

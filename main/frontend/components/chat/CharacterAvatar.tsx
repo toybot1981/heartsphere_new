@@ -32,7 +32,12 @@ export const CharacterAvatar = memo<CharacterAvatarProps>(({
   // 小尺寸头像（用于头部栏）- 使用缩略图
   if (size === 'small') {
     return (
-      <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 flex-shrink-0">
+      <div 
+        className="relative w-10 h-10 rounded-full overflow-hidden border-2 flex-shrink-0"
+        style={{
+          borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+        }}
+      >
         <LazyImage
           src={character.avatarUrl}
           alt={character.name}
@@ -53,7 +58,10 @@ export const CharacterAvatar = memo<CharacterAvatarProps>(({
           alt={character.name}
           variants={avatarVariants}
           purpose="detail"
-          className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+          className="w-full h-full object-contain"
+          style={{
+            filter: 'drop-shadow(0 0 30px var(--shadow-color-overlay, rgba(255, 255, 255, 0.3)))',
+          }}
         />
       </div>
     );
@@ -65,13 +73,19 @@ export const CharacterAvatar = memo<CharacterAvatarProps>(({
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" style={{ top: '80px' }}>
-      <div className="relative h-[60vh] w-[60vh] max-w-[90vw] flex items-center justify-center">
+    <div 
+      className="fixed top-0 left-0 right-0 flex items-start justify-center pointer-events-none z-10" 
+      style={{ 
+        top: '0',
+        paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))',
+      }}
+    >
+      <div className="relative h-[560px] w-[560px] max-w-[80vw] max-h-[80vh] flex items-center justify-center">
         <div
-          className="absolute inset-0 opacity-40 rounded-full blur-3xl transition-opacity duration-300"
+          className="absolute inset-0 opacity-8 rounded-full blur-3xl transition-opacity duration-300"
           style={{
-            background: `radial-gradient(circle, ${character.colorAccent}66 0%, transparent 70%)`,
-            opacity: loaded ? 0.4 : 0.2,
+            background: `radial-gradient(circle, ${character.colorAccent}33 0%, transparent 70%)`,
+            opacity: loaded ? 0.08 : 0.04,
           }}
         />
         <LazyImage
@@ -80,13 +94,21 @@ export const CharacterAvatar = memo<CharacterAvatarProps>(({
           variants={avatarVariants}
           purpose="detail"
           onLoad={() => setLoaded(true)}
-          className={`h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.2)] transition-opacity duration-300 ${
-            loaded ? 'opacity-100' : 'opacity-0'
+          className={`h-full w-full object-contain transition-opacity duration-300 ${
+            loaded ? 'opacity-20' : 'opacity-0'
           }`}
-          style={{ maxHeight: '100%', maxWidth: '100%' }}
+          style={{
+            maxHeight: '100%',
+            maxWidth: '100%',
+            filter: 'drop-shadow(0 4px 20px rgba(0, 0, 0, 0.15)) grayscale(40%) brightness(1.15) contrast(0.9)',
+            mixBlendMode: 'soft-light',
+          }}
         />
         {!loaded && (
-          <div className="absolute inset-0 bg-gray-800/50 animate-pulse rounded-full" />
+          <div 
+            className="absolute inset-0 animate-pulse rounded-full"
+            style={{ backgroundColor: 'var(--bg-secondary, rgba(31, 41, 55, 0.15))' }}
+          />
         )}
       </div>
     </div>

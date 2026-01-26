@@ -61,7 +61,7 @@ public class ExecutionLogService {
         }
         
         logRepository.save(executionLog);
-        log.debug("记录节点开始执行日志: executionId={}, nodeId={}", executionId, nodeId);
+        log.info("记录节点开始执行日志: executionId={}, nodeId={}", executionId, nodeId);
     }
     
     /**
@@ -90,7 +90,7 @@ public class ExecutionLogService {
         }
         
         logRepository.save(executionLog);
-        logger.debug("记录节点执行结束日志: executionId={}, nodeId={}, time={}ms", executionId, nodeId, executionTimeMs);
+        logger.info("记录节点执行结束日志: executionId={}, nodeId={}, time={}ms", executionId, nodeId, executionTimeMs);
     }
     
     /**
@@ -147,7 +147,7 @@ public class ExecutionLogService {
         }
         
         logRepository.save(executionLog);
-        logger.debug("记录状态变更日志: executionId={}, nodeId={}, message={}", executionId, nodeId, message);
+        logger.info("记录状态变更日志: executionId={}, nodeId={}, message={}", executionId, nodeId, message);
     }
     
     /**
@@ -166,7 +166,7 @@ public class ExecutionLogService {
         executionLog.setStepNumber(stepNumber);
         
         logRepository.save(executionLog);
-        logger.debug("记录用户操作日志: executionId={}, nodeId={}, action={}", executionId, nodeId, action);
+        logger.info("记录用户操作日志: executionId={}, nodeId={}, action={}", executionId, nodeId, action);
     }
     
     /**
@@ -183,14 +183,14 @@ public class ExecutionLogService {
         executionLog.setMessage(message);
         
         logRepository.save(executionLog);
-        logger.debug("记录执行控制日志: executionId={}, type={}, message={}", executionId, logType, message);
+        logger.info("记录执行控制日志: executionId={}, type={}, message={}", executionId, logType, message);
     }
     
     /**
      * 查询执行日志
      */
     public ExecutionLogListResponse queryLogs(ExecutionLogQueryRequest request) {
-        log.debug("查询执行日志: {}", request);
+        log.info("查询执行日志: {}", request);
         
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
         

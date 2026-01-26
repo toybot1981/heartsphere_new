@@ -31,30 +31,62 @@ export const CareMessageNotification: React.FC<CareMessageNotificationProps> = (
     return null;
   }
 
-  const priorityColors = {
-    low: 'bg-blue-500/20 border-blue-400/50',
-    medium: 'bg-purple-500/20 border-purple-400/50',
-    high: 'bg-pink-500/20 border-pink-400/50',
+  const priorityStyles = {
+    low: {
+      bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+      border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+    },
+    medium: {
+      bg: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+      border: 'var(--color-primary, rgba(168, 85, 247, 0.5))',
+    },
+    high: {
+      bg: 'var(--color-primary, rgba(236, 72, 153, 0.2))',
+      border: 'var(--color-primary, rgba(236, 72, 153, 0.5))',
+    },
   };
+
+  const style = priorityStyles[message.priority];
 
   return (
     <div
-      className={`fixed top-20 right-4 z-50 max-w-sm rounded-lg p-4 border backdrop-blur-md ${priorityColors[message.priority]} transition-all animate-slide-in-right`}
+      className="fixed top-20 right-4 z-50 max-w-sm rounded-lg p-4 border backdrop-blur-md transition-all animate-slide-in-right"
+      style={{
+        backgroundColor: style.bg,
+        borderColor: style.border,
+      }}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-2">
             <span className="text-xl">💝</span>
-            <span className="text-sm font-semibold text-white">关怀消息</span>
+            <span 
+              className="text-sm font-semibold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              关怀消息
+            </span>
           </div>
-          <p className="text-sm text-white/90">{message.content}</p>
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-primary, rgba(255, 255, 255, 0.9))' }}
+          >
+            {message.content}
+          </p>
         </div>
         <button
           onClick={() => {
             setIsVisible(false);
             setTimeout(() => onDismiss(message.id), 300);
           }}
-          className="ml-2 text-white/50 hover:text-white transition-colors"
+          className="ml-2 transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

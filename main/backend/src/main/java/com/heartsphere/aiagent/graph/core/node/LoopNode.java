@@ -167,7 +167,7 @@ public class LoopNode implements GraphEngine.GraphNode {
             state.setData("loop_condition", conditionMap);
         }
         
-        log.debug("[LoopNode] 循环节点执行完成，等待执行器处理循环体");
+        log.info("[LoopNode] 循环节点执行完成，等待执行器处理循环体");
         return state;
     }
     

@@ -115,7 +115,7 @@ public class VmManagerImpl implements VmManager {
     
     @Override
     public VmInstance getVmForSession(String sessionId) {
-        log.debug("获取会话的虚拟机: sessionId={}", sessionId);
+        log.info("获取会话的虚拟机: sessionId={}", sessionId);
         
         String vmId = sessionToVmMap.get(sessionId);
         if (vmId == null) {
@@ -169,7 +169,7 @@ public class VmManagerImpl implements VmManager {
                 }
             } catch (Exception e) {
                 // 状态检查失败，可能是沙箱已停止，但不立即清除，等待下次执行命令时处理
-                log.debug("检查虚拟机状态失败（可能是沙箱已停止）: sessionId={}, vmId={}", sessionId, vmId, e);
+                log.info("检查虚拟机状态失败（可能是沙箱已停止）: sessionId={}, vmId={}", sessionId, vmId, e);
             }
         }
         
@@ -285,7 +285,7 @@ public class VmManagerImpl implements VmManager {
     
     @Override
     public String getVmScreenshot(String vmId) {
-        log.debug("获取虚拟机截图（已禁用）: vmId={}", vmId);
+        log.info("获取虚拟机截图（已禁用）: vmId={}", vmId);
         // 截图功能已禁用，直接返回 null
         return null;
         
@@ -301,7 +301,7 @@ public class VmManagerImpl implements VmManager {
     
     @Override
     public Map<String, Object> getVncInfo(String vmId) {
-        log.debug("获取虚拟机 VNC 连接信息: vmId={}", vmId);
+        log.info("获取虚拟机 VNC 连接信息: vmId={}", vmId);
         try {
             // 检查是否是 E2B Provider
             if (vmProvider instanceof com.heartsphere.mentis.vm.impl.E2BVmProviderImpl) {
@@ -422,7 +422,7 @@ public class VmManagerImpl implements VmManager {
             statusData.put("timestamp", System.currentTimeMillis());
             
             sessionRealtimeService.sendEvent(sessionId, "vm_status_changed", statusData);
-            log.debug("发送虚拟机状态更新事件: sessionId={}, vmId={}, status={}", sessionId, vmId, status);
+            log.info("发送虚拟机状态更新事件: sessionId={}, vmId={}, status={}", sessionId, vmId, status);
         } catch (Exception e) {
             log.warn("发送虚拟机状态更新事件失败: sessionId={}, vmId={}", sessionId, vmId, e);
         }
@@ -496,7 +496,7 @@ public class VmManagerImpl implements VmManager {
      */
     private void registerMcpToolsAsync(String sessionId) {
         // MCP Gateway 相关逻辑已禁用，直接返回，避免阻塞
-        log.debug("MCP 工具注册已禁用: sessionId={}", sessionId);
+        log.info("MCP 工具注册已禁用: sessionId={}", sessionId);
         return;
         
         /* 原代码已注释
@@ -538,14 +538,14 @@ public class VmManagerImpl implements VmManager {
      * 等待虚拟机初始化完成（最多等待指定时间）
      */
     public void waitForVmInitialization(String vmId, int maxWaitSeconds) {
-        log.debug("等待虚拟机初始化完成: vmId={}, maxWaitSeconds={}", vmId, maxWaitSeconds);
+        log.info("等待虚拟机初始化完成: vmId={}, maxWaitSeconds={}", vmId, maxWaitSeconds);
         
         long startTime = System.currentTimeMillis();
         long timeout = maxWaitSeconds * 1000L;
         
         while (System.currentTimeMillis() - startTime < timeout) {
             if (isVmInitialized(vmId)) {
-                log.debug("虚拟机初始化已完成: vmId={}", vmId);
+                log.info("虚拟机初始化已完成: vmId={}", vmId);
                 return;
             }
             

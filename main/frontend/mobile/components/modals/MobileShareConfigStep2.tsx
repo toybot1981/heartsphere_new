@@ -49,11 +49,15 @@ export const MobileShareConfigStep2: React.FC<MobileShareConfigStep2Props> = mem
         <div className="space-y-3">
           {/* 需要审批 */}
           <div
-            className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${
-              accessPermission === 'approval'
-                ? 'border-purple-500/50 bg-purple-500/10'
-                : 'hover:border-purple-500/30'
-            } ${MobileCardStyles.interactive}`}
+            className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+            style={{
+              borderColor: accessPermission === 'approval'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+                : 'var(--border-color-overlay)',
+              backgroundColor: accessPermission === 'approval'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                : undefined,
+            }}
             onClick={() => handlePermissionChange('approval')}
             role="button"
             aria-label="需要我审批"
@@ -64,15 +68,34 @@ export const MobileShareConfigStep2: React.FC<MobileShareConfigStep2Props> = mem
                 handlePermissionChange('approval');
               }
             }}
+            onMouseEnter={(e) => {
+              if (accessPermission !== 'approval') {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (accessPermission !== 'approval') {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }
+            }}
           >
             <div className="flex items-start gap-3">
               <div
-                className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all ${
-                  accessPermission === 'approval' ? 'border-purple-500 bg-purple-500' : 'border-slate-600 bg-transparent'
-                }`}
+                className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all"
+                style={{
+                  borderColor: accessPermission === 'approval' 
+                    ? 'var(--color-primary, #a855f7)' 
+                    : 'var(--border-color-overlay, #475569)',
+                  backgroundColor: accessPermission === 'approval' 
+                    ? 'var(--color-primary, #a855f7)' 
+                    : 'transparent',
+                }}
               >
                 {accessPermission === 'approval' && (
-                  <div className="w-2 h-2 rounded-full bg-white" />
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: 'var(--text-primary)' }}
+                  />
                 )}
               </div>
               <div className="flex-1">
@@ -90,14 +113,28 @@ export const MobileShareConfigStep2: React.FC<MobileShareConfigStep2Props> = mem
 
           {/* 自由连接 */}
           <div
-            className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${
-              accessPermission === 'free'
-                ? 'border-purple-500/50 bg-purple-500/10'
-                : 'hover:border-purple-500/30'
-            } ${MobileCardStyles.interactive}`}
+            className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+            style={{
+              borderColor: accessPermission === 'free'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+                : 'var(--border-color-overlay)',
+              backgroundColor: accessPermission === 'free'
+                ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                : undefined,
+            }}
             onClick={() => handlePermissionChange('free')}
             role="button"
             aria-label="自由连接"
+            onMouseEnter={(e) => {
+              if (accessPermission !== 'free') {
+                e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (accessPermission !== 'free') {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+              }
+            }}
             tabIndex={0}
             onKeyPress={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -108,9 +145,15 @@ export const MobileShareConfigStep2: React.FC<MobileShareConfigStep2Props> = mem
           >
             <div className="flex items-start gap-3">
               <div
-                className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all ${
-                  accessPermission === 'free' ? 'border-purple-500 bg-purple-500' : 'border-slate-600 bg-transparent'
-                }`}
+                className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all"
+                style={{
+                  borderColor: accessPermission === 'free' 
+                    ? 'var(--color-primary)' 
+                    : 'var(--border-color-overlay)',
+                  backgroundColor: accessPermission === 'free' 
+                    ? 'var(--color-primary)' 
+                    : 'transparent',
+                }}
               >
                 {accessPermission === 'free' && (
                   <div className="w-2 h-2 rounded-full bg-white" />
@@ -170,7 +213,12 @@ export const MobileShareConfigStep2: React.FC<MobileShareConfigStep2Props> = mem
         <label className={`block ${MobileTypography.fontSize.base} ${MobileTypography.fontWeight.semibold} ${MobileColors.text.primary} mb-3`}>
           预览效果
         </label>
-        <div className={`${MobileCardStyles.default} p-4 bg-slate-800/50`}>
+        <div 
+          className={`${MobileCardStyles.default} p-4`}
+          style={{
+            backgroundColor: 'var(--bg-card)',
+          }}
+        >
           <div className={`${MobileTypography.fontSize.sm} ${MobileColors.text.secondary} mb-2`}>
             共享范围：{shareType === 'all' ? '全部' : `${selectedScopes.filter(s => s.scopeType === shareType).length}个${shareType === 'world' ? '世界' : '场景'}`}
           </div>

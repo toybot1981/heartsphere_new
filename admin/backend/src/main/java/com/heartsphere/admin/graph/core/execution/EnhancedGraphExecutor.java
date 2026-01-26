@@ -115,12 +115,12 @@ public class EnhancedGraphExecutor {
             boolean skipExecute = false;
             if (currentNode instanceof ChoiceNode && context.getUserChoiceOptionId() != null) {
                 skipExecute = true;
-                log.debug("[EnhancedGraphExecutor] 跳过ChoiceNode执行，直接处理用户选择");
+                log.info("[EnhancedGraphExecutor] 跳过ChoiceNode执行，直接处理用户选择");
             }
             
             // 执行节点（如果不需要跳过）
             if (!skipExecute) {
-                log.debug("[EnhancedGraphExecutor] 执行节点: {} (步骤: {})", currentNodeId, context.getStepCount());
+                log.info("[EnhancedGraphExecutor] 执行节点: {} (步骤: {})", currentNodeId, context.getStepCount());
                 try {
                     currentState = currentNode.execute(currentState);
                     context.setState(currentState);
@@ -211,7 +211,7 @@ public class EnhancedGraphExecutor {
             
             currentNodeId = nextEdge.getTargetNodeId();
             context.setCurrentNodeId(currentNodeId);
-            log.debug("[EnhancedGraphExecutor] 选择下一个节点: {}", currentNodeId);
+            log.info("[EnhancedGraphExecutor] 选择下一个节点: {}", currentNodeId);
         }
         
         // 检查是否达到最大步骤数
@@ -251,12 +251,12 @@ public class EnhancedGraphExecutor {
             for (GraphEngine.GraphEdge edge : routedEdges) {
                 String targetNodeId = edge.getRouter().route(state);
                 if (targetNodeId != null && targetNodeId.equals(edge.getTargetNodeId())) {
-                    log.debug("[EnhancedGraphExecutor] 路由选择边: {} -> {}", edge.getSourceNodeId(), edge.getTargetNodeId());
+                    log.info("[EnhancedGraphExecutor] 路由选择边: {} -> {}", edge.getSourceNodeId(), edge.getTargetNodeId());
                     return edge;
                 }
             }
             // 如果所有路由条件都不满足，返回null
-            log.debug("[EnhancedGraphExecutor] 所有路由条件都不满足");
+            log.info("[EnhancedGraphExecutor] 所有路由条件都不满足");
             return null;
         }
         
@@ -265,7 +265,7 @@ public class EnhancedGraphExecutor {
         if (nextNodeId != null) {
             for (GraphEngine.GraphEdge edge : edges) {
                 if (nextNodeId.equals(edge.getTargetNodeId())) {
-                    log.debug("[EnhancedGraphExecutor] 使用状态中的next_node选择边: {} -> {}", 
+                    log.info("[EnhancedGraphExecutor] 使用状态中的next_node选择边: {} -> {}", 
                             edge.getSourceNodeId(), edge.getTargetNodeId());
                     return edge;
                 }
@@ -273,7 +273,7 @@ public class EnhancedGraphExecutor {
         }
         
         // 3. 默认选择第一条边
-        log.debug("[EnhancedGraphExecutor] 默认选择第一条边: {} -> {}", 
+        log.info("[EnhancedGraphExecutor] 默认选择第一条边: {} -> {}", 
                 edges.get(0).getSourceNodeId(), edges.get(0).getTargetNodeId());
         return edges.get(0);
     }

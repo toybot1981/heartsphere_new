@@ -58,10 +58,13 @@ export const RichTextRenderer = memo<RichTextRendererProps>(({ text, colorAccent
             return (
               <span
                 key={uniqueKey}
-                className="font-bold text-lg px-1.5 py-0.5 rounded bg-gradient-to-r from-yellow-400/30 to-orange-400/30 border border-yellow-400/50 shadow-lg shadow-yellow-500/20"
+                className="font-bold text-lg px-1.5 py-0.5 rounded border"
                 style={{
-                  color: '#FFD700',
-                  textShadow: '0 0 8px rgba(255, 215, 0, 0.6), 0 0 16px rgba(255, 165, 0, 0.4)',
+                  background: 'var(--gradient-skill, linear-gradient(to right, rgba(234, 179, 8, 0.3), rgba(251, 191, 36, 0.3)))',
+                  borderColor: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+                  color: 'var(--color-warning, #fbbf24)',
+                  boxShadow: 'var(--shadow-skill, 0 10px 15px -3px rgba(234, 179, 8, 0.2))',
+                  textShadow: '0 0 8px var(--color-warning, rgba(251, 191, 36, 0.6)), 0 0 16px var(--color-warning, rgba(251, 191, 36, 0.4))',
                 }}
               >
                 {skillText}
@@ -75,7 +78,7 @@ export const RichTextRenderer = memo<RichTextRendererProps>(({ text, colorAccent
               <span 
                 key={uniqueKey} 
                 className="italic opacity-70 text-sm mx-1 block my-1" 
-                style={{ color: '#e5e7eb' }}
+                style={{ color: 'var(--text-secondary)' }}
               >
                 {part.slice(1, -1)}
               </span>
@@ -93,17 +96,29 @@ export const RichTextRenderer = memo<RichTextRendererProps>(({ text, colorAccent
             );
           } else {
             // Standard dialogue
-            return <span key={uniqueKey}>{part}</span>;
+            return (
+              <span 
+                key={uniqueKey}
+                style={{
+                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                {part}
+              </span>
+            );
           }
         })}
       </span>
       {/* 如果有技能，在文本末尾显示技能信息 */}
       {skillName && (
         <span
-          className="inline-block ml-2 mt-1 font-bold text-base px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-400/30 via-blue-400/30 to-purple-400/30 border-2 border-cyan-400/60 shadow-xl shadow-cyan-500/30 animate-pulse"
+          className="inline-block ml-2 mt-1 font-bold text-base px-3 py-1.5 rounded-lg border-2 animate-pulse"
           style={{
-            color: '#00FFFF',
-            textShadow: '0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 200, 255, 0.6), 0 0 30px rgba(100, 150, 255, 0.4)',
+            background: 'var(--gradient-skill-info, linear-gradient(to right, rgba(6, 182, 212, 0.3), rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.3)))',
+            borderColor: 'var(--color-info, rgba(6, 182, 212, 0.6))',
+            color: 'var(--color-info, #22d3ee)',
+            boxShadow: 'var(--shadow-skill-info, 0 20px 25px -5px rgba(6, 182, 212, 0.3))',
+            textShadow: '0 0 10px var(--color-info, rgba(34, 211, 238, 0.8)), 0 0 20px var(--color-info, rgba(34, 211, 238, 0.6)), 0 0 30px var(--color-info, rgba(34, 211, 238, 0.4))',
           }}
         >
           ✨ 应用了 {skillName} 技能

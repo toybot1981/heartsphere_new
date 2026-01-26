@@ -15,6 +15,8 @@ interface BackgroundLayerProps {
   isStoryMode: boolean;
   isCinematic: boolean;
   backgroundVariants?: ImageVariants; // 可选的背景多分辨率版本
+  useAvatarAsBackground?: boolean; // 是否使用头像作为背景
+  avatarVariants?: ImageVariants; // 可选的头像多分辨率版本
 }
 
 /**
@@ -28,33 +30,39 @@ export const BackgroundLayer = memo<BackgroundLayerProps>(({
   isStoryMode,
   isCinematic,
   backgroundVariants,
+  useAvatarAsBackground = true, // 默认使用头像作为背景
+  avatarVariants,
 }) => {
   // 根据设备类型和场景选择合适的分辨率
   const isMobile = isMobileDevice();
   
+  // 如果使用头像作为背景，使用角色头像
+  const imageToUse = useAvatarAsBackground ? character.avatarUrl : backgroundImage;
+  const variantsToUse = useAvatarAsBackground ? avatarVariants : backgroundVariants;
+  
   // 构建回退链：PC端 highQuality → src，移动端 medium → src
   const fallbackChain = React.useMemo(() => {
-    if (!backgroundImage || !backgroundVariants) {
-      return backgroundImage ? [backgroundImage] : [];
+    if (!imageToUse || !variantsToUse) {
+      return imageToUse ? [imageToUse] : [];
     }
     
     const chain: string[] = [];
     if (!isMobile) {
       // PC端：highQuality → src
-      if (backgroundVariants.highQuality) {
-        chain.push(backgroundVariants.highQuality);
+      if (variantsToUse.highQuality) {
+        chain.push(variantsToUse.highQuality);
       }
     } else {
       // 移动端：medium → src
-      if (backgroundVariants.medium) {
-        chain.push(backgroundVariants.medium);
+      if (variantsToUse.medium) {
+        chain.push(variantsToUse.medium);
       }
     }
     // 原图始终在回退链中
-    chain.push(backgroundImage);
+    chain.push(imageToUse);
     
     return chain.filter(url => url && url.trim());
-  }, [backgroundImage, backgroundVariants, isMobile]);
+  }, [imageToUse, variantsToUse, isMobile]);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentImageUrl = fallbackChain[currentIndex] || null;
@@ -75,38 +83,65 @@ export const BackgroundLayer = memo<BackgroundLayerProps>(({
     }
   }, [bgError, currentIndex, fallbackChain, currentImageUrl, backgroundImage]);
   
-  // 当 backgroundImage 或 variants 变化时，重置回退索引
+  // 当 imageToUse 或 variants 变化时，重置回退索引
   useEffect(() => {
     setCurrentIndex(0);
-  }, [backgroundImage, backgroundVariants]);
+  }, [imageToUse, variantsToUse]);
 
-  const filterStyle = isCinematic
+  // 如果使用头像作为背景，使用不同的滤镜效果
+  const filterStyle = useAvatarAsBackground
+    ? isCinematic
+      ? 'brightness(0.7) saturate(1.1)' // 沉浸模式：稍暗，保持饱和度
+      : 'brightness(0.6) saturate(1.2) blur(2px)' // 正常模式：更暗，增强饱和度，轻微模糊
+    : isCinematic
     ? 'brightness(0.9)'
     : isStoryMode
     ? 'blur(0px) brightness(0.6)'
     : 'blur(4px) opacity(0.6)';
 
   return (
-    <div
-      className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000"
-      style={{
-        backgroundImage: bgLoaded && currentImageUrl ? `url(${currentImageUrl})` : 'none',
-        filter: filterStyle,
-        zIndex: 0,
-      }}
-    >
-      {!bgLoaded && !bgError && currentImageUrl && (
-        <div className="absolute inset-0 bg-gray-900 animate-pulse" />
+    <>
+      <div
+        className="absolute inset-0 z-0 transition-all duration-1000"
+        style={{
+          backgroundImage: bgLoaded && currentImageUrl ? `url(${currentImageUrl})` : 'none',
+          backgroundSize: useAvatarAsBackground ? 'cover' : 'cover',
+          backgroundPosition: useAvatarAsBackground ? 'center center' : 'center',
+          backgroundRepeat: 'no-repeat',
+          filter: filterStyle,
+          zIndex: 0,
+        }}
+      >
+        {!bgLoaded && !bgError && currentImageUrl && (
+          <div 
+            className="absolute inset-0 animate-pulse"
+            style={{ backgroundColor: 'var(--bg-secondary, #1e293b)' }}
+          />
+        )}
+      </div>
+      {/* 添加遮罩层，确保文字清晰可见 */}
+      {useAvatarAsBackground && (
+        <div
+          className="absolute inset-0 z-[1] transition-all duration-1000"
+          style={{
+            background: isCinematic
+              ? 'linear-gradient(to top, var(--bg-primary, #000000) 0%, transparent 30%, transparent 70%, var(--bg-primary, #000000) 100%)'
+              : 'linear-gradient(to top, var(--bg-primary, #000000) 0%, rgba(0, 0, 0, 0.3) 20%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.3) 80%, var(--bg-primary, #000000) 100%)',
+            zIndex: 1,
+          }}
+        />
       )}
-    </div>
+    </>
   );
 }, (prevProps, nextProps) => {
   // 自定义比较函数
   return (
     prevProps.backgroundImage === nextProps.backgroundImage &&
     prevProps.character.id === nextProps.character.id &&
+    prevProps.character.avatarUrl === nextProps.character.avatarUrl &&
     prevProps.isStoryMode === nextProps.isStoryMode &&
-    prevProps.isCinematic === nextProps.isCinematic
+    prevProps.isCinematic === nextProps.isCinematic &&
+    prevProps.useAvatarAsBackground === nextProps.useAvatarAsBackground
   );
 });
 

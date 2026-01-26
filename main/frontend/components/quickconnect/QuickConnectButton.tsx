@@ -18,9 +18,25 @@ export const QuickConnectButton: React.FC<QuickConnectButtonProps> = ({
 }) => {
   const baseClasses = 'flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 cursor-pointer';
   
+  // 使用主题变量的样式
+  const getVariantStyle = (variant: 'default' | 'floating'): React.CSSProperties => {
+    if (variant === 'floating') {
+      return {
+        backgroundColor: 'var(--color-primary, #3b82f6)',
+        color: 'var(--text-primary)',
+        boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.5))',
+      };
+    }
+    return {
+      backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+      borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+      color: 'var(--text-primary)',
+    };
+  };
+  
   const variantClasses = {
-    default: 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:scale-105',
-    floating: 'bg-blue-500 text-white shadow-lg hover:bg-blue-600 hover:shadow-xl hover:scale-110',
+    default: 'backdrop-blur-md border hover:scale-105',
+    floating: 'shadow-lg hover:shadow-xl hover:scale-110',
   };
   
   const positionClasses = {
@@ -31,8 +47,24 @@ export const QuickConnectButton: React.FC<QuickConnectButtonProps> = ({
   
   const classes = `${baseClasses} ${variantClasses[variant]} ${positionClasses[position]}`;
   
+  const buttonStyle = getVariantStyle(variant);
+  
   return (
-    <div className={classes} onClick={onClick}>
+    <div 
+      className={classes} 
+      style={buttonStyle}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        if (variant === 'floating') {
+          e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+        } else {
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+        }
+      }}
+      onMouseLeave={(e) => {
+        Object.assign(e.currentTarget.style, buttonStyle);
+      }}
+    >
       <svg
         className="w-5 h-5"
         fill="none"
@@ -49,7 +81,13 @@ export const QuickConnectButton: React.FC<QuickConnectButtonProps> = ({
       </svg>
       <span className="text-sm font-medium">快速连接</span>
       {badgeCount > 0 && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+        <span 
+          className="absolute -top-2 -right-2 text-xs rounded-full w-5 h-5 flex items-center justify-center"
+          style={{
+            backgroundColor: 'var(--color-error, #ef4444)',
+            color: 'var(--text-primary)',
+          }}
+        >
           {badgeCount > 9 ? '9+' : badgeCount}
         </span>
       )}

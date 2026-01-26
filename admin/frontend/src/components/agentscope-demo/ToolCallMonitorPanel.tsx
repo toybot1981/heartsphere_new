@@ -24,11 +24,20 @@ export const ToolCallMonitorPanel: React.FC<ToolCallMonitorPanelProps> = ({ admi
   });
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // 订阅全局事件流
+  // 订阅全局事件流（仅在 mentis 后端可用时）
   useEffect(() => {
     if (!adminToken) return;
 
-    const eventSource = new EventSource('/api/demo/events/global');
+    // 禁用 demo 功能 - 仅用于演示，不用于生产部署
+    // 如果需要真实的部署能力，请使用 DevOps 工作台的流程执行功能
+    return;
+
+    // 使用 mentis 后端的完整 URL（端口 8082）
+    // 注意：EventSource 不支持自定义 headers，如果后端需要认证，需要通过查询参数传递
+    const mentisBaseUrl = import.meta.env.VITE_MENTIS_API_BASE_URL || 'http://localhost:8082';
+    // 暂时不使用 token，因为 EventSource 不支持 headers
+    // 如果后端需要认证，需要在后端 Controller 中添加查询参数支持
+    const eventSource = new EventSource(`${mentisBaseUrl}/api/demo/events/global`);
     eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
@@ -39,49 +48,31 @@ export const ToolCallMonitorPanel: React.FC<ToolCallMonitorPanelProps> = ({ admi
           loadToolCalls();
         }
       } catch (e) {
-        console.error('Failed to parse SSE event:', e);
+        // 静默处理错误，不显示在控制台
       }
     };
 
     eventSource.onerror = (error) => {
-      console.error('SSE connection error:', error);
+      // 完全禁用 - 这是演示功能，不用于生产部署
+      // 如果需要真实的部署能力，请使用 DevOps 工作台的流程执行功能
+      // 静默处理，不显示错误
     };
 
     return () => {
-      eventSource.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
     };
   }, [adminToken]);
 
-  // 加载工具调用列表
+  // 加载工具调用列表 - 已禁用
+  // 注意：这是演示功能，不用于生产部署
+  // 如果需要真实的部署能力，请使用 DevOps 工作台的流程执行功能
   const loadToolCalls = async () => {
-    if (!adminToken) return;
-    
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.sessionId) params.append('sessionId', filters.sessionId);
-      if (filters.toolName) params.append('toolName', filters.toolName);
-      if (filters.startTime) params.append('startTime', filters.startTime);
-      if (filters.endTime) params.append('endTime', filters.endTime);
-
-      const response = await fetch(`/api/demo/tool-calls?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to load tool calls');
-      
-      const result = await response.json();
-      if (result.success && result.data) {
-        setToolCalls(result.data);
-        calculateStatistics(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to load tool calls:', error);
-    } finally {
-      setLoading(false);
-    }
+    // 完全禁用 API 调用，避免连接错误
+    // 真实的部署能力通过 DevOps 工作台的 Pipeline、CMDB、AutoFix 等功能提供
+    setLoading(false);
+    setToolCalls([]);
   };
 
   // 计算统计信息

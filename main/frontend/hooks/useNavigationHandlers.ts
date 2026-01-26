@@ -46,7 +46,7 @@ export const useNavigationHandlers = () => {
             const worldId = (selectedScene as { worldId?: number })?.worldId;
             
             if (worldId) {
-              logger.debug(`[useNavigationHandlers] 按世界ID加载场景数据: worldId=${worldId}, sceneId=${sceneId}`);
+              logger.info(`[useNavigationHandlers] 按世界ID加载场景数据: worldId=${worldId}, sceneId=${sceneId}`);
               
               // 异步加载数据
               (async () => {
@@ -62,11 +62,11 @@ export const useNavigationHandlers = () => {
                   const eras = isSharedMode
                     ? await sharedApi.getSharedErasByWorldId(worldId, token)
                     : await eraApi.getErasByWorldId(worldId, token);
-                  logger.debug(`[useNavigationHandlers] 获取到场景数据:`, eras);
+                  logger.info(`[useNavigationHandlers] 获取到场景数据:`, eras);
                   
                   // 按世界ID获取角色列表
                   const characters = await characterApi.getCharactersByWorldId(worldId, token);
-                  logger.debug(`[useNavigationHandlers] 获取到角色数据:`, characters);
+                  logger.info(`[useNavigationHandlers] 获取到角色数据:`, characters);
                   
                   // 加载用户主线故事
                   const userMainStories = await userMainStoryApi.getAll(token);
@@ -92,13 +92,13 @@ export const useNavigationHandlers = () => {
                       });
                       if (matchingEra) {
                         eraId = matchingEra.id;
-                        logger.debug(`[useNavigationHandlers] 为角色 ${char.id} 推断eraId: ${eraId}`);
+                        logger.info(`[useNavigationHandlers] 为角色 ${char.id} 推断eraId: ${eraId}`);
                       } else {
                         // 如果无法推断，使用当前选中的场景ID（如果它是数字）
                         const sceneIdNum = sceneId ? (isNaN(parseInt(sceneId)) ? null : parseInt(sceneId)) : null;
                         if (sceneIdNum) {
                           eraId = sceneIdNum;
-                          logger.debug(`[useNavigationHandlers] 为角色 ${char.id} 使用当前场景ID作为eraId: ${eraId}`);
+                          logger.info(`[useNavigationHandlers] 为角色 ${char.id} 使用当前场景ID作为eraId: ${eraId}`);
                         }
                       }
                     }
@@ -130,7 +130,7 @@ export const useNavigationHandlers = () => {
                     return scene;
                   });
                   
-                  logger.debug(`[useNavigationHandlers] 场景数据更新完成，更新了 ${updatedScenes.length} 个场景`);
+                  logger.info(`[useNavigationHandlers] 场景数据更新完成，更新了 ${updatedScenes.length} 个场景`);
                   
                   dispatch({ type: 'SET_USER_WORLD_SCENES', payload: updatedScenes });
                 } catch (error) {
@@ -150,7 +150,7 @@ export const useNavigationHandlers = () => {
    * 选择场景
    */
   const handleSceneSelect = useCallback((sceneId: string): void => {
-    logger.debug('[useNavigationHandlers] 选择场景:', sceneId, '当前选中:', gameState.selectedSceneId);
+    logger.info('[useNavigationHandlers] 选择场景:', sceneId, '当前选中:', gameState.selectedSceneId);
     performSceneSwitch(sceneId);
   }, [gameState.selectedSceneId, performSceneSwitch]);
 
@@ -256,7 +256,7 @@ export const useNavigationHandlers = () => {
     if (typeof msgs === 'function') {
       // 获取当前的历史记录（使用最新的state，避免闭包问题）
       const currentHistory = gameState.history[characterId] || [];
-      logger.debug('[handleUpdateHistory] 函数式更新 - 当前history:', {
+      logger.info('[handleUpdateHistory] 函数式更新 - 当前history:', {
         characterId,
         currentHistoryLength: currentHistory.length,
         currentHistory: currentHistory.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
@@ -270,7 +270,7 @@ export const useNavigationHandlers = () => {
         messagesToSave = [];
       }
       
-      logger.debug('[handleUpdateHistory] 函数式更新 - 新history:', {
+      logger.info('[handleUpdateHistory] 函数式更新 - 新history:', {
         characterId,
         newHistoryLength: messagesToSave.length,
         newHistory: messagesToSave.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
@@ -284,7 +284,7 @@ export const useNavigationHandlers = () => {
         messagesToSave = [];
       }
       
-      logger.debug('[handleUpdateHistory] 直接更新 - 新history:', {
+      logger.info('[handleUpdateHistory] 直接更新 - 新history:', {
         characterId,
         newHistoryLength: messagesToSave.length,
         newHistory: messagesToSave.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
@@ -304,7 +304,7 @@ export const useNavigationHandlers = () => {
       return true;
     }) as Message[];
     
-    logger.debug('[handleUpdateHistory] 清理后的消息:', {
+    logger.info('[handleUpdateHistory] 清理后的消息:', {
       characterId,
       cleanedLength: cleanedMessages.length,
       cleanedMessages: cleanedMessages.map(m => ({ id: m.id, role: m.role, textPreview: m.text?.substring(0, 30) }))
@@ -312,7 +312,7 @@ export const useNavigationHandlers = () => {
     
     // 更新对话历史
     const newHistory = { ...gameState.history, [characterId]: cleanedMessages };
-    logger.debug('[handleUpdateHistory] 最终保存的history:', {
+    logger.info('[handleUpdateHistory] 最终保存的history:', {
       characterId,
       allCharacterIds: Object.keys(newHistory),
       messagesForCharacter: newHistory[characterId]?.length || 0,

@@ -149,7 +149,7 @@ public class LLMIntentRecognizer implements IntentRecognizer {
                 result.setConfidence(0.7);
             }
             
-            log.debug("解析意图识别结果: taskType={}, intent={}, confidence={}", 
+            log.info("解析意图识别结果: taskType={}, intent={}, confidence={}", 
                     result.getTaskType(), result.getIntent(), result.getConfidence());
             
             return result;
@@ -240,7 +240,7 @@ public class LLMIntentRecognizer implements IntentRecognizer {
         result.setParameters(new HashMap<>());
         result.setConfidence(0.7);
         
-        log.debug("使用默认意图识别结果: taskType={}, intent={}, message={}", 
+        log.info("使用默认意图识别结果: taskType={}, intent={}, message={}", 
                 result.getTaskType(), result.getIntent(), userMessage);
         
         return result;

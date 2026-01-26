@@ -39,19 +39,37 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
   };
   
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center p-4 pb-32 bg-slate-950 overflow-hidden">
+    <div 
+      className="relative h-full w-full flex flex-col items-center justify-center p-4 pb-32 overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
       {/* Background Effect */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-slate-900/50 to-slate-950" />
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5" />
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `var(--gradient-bg)`,
+          }}
+        />
       </div>
 
       {/* Admin Access (Top Left) */}
       <div className="absolute top-6 left-6 z-20">
         <button
           onClick={() => window.open('/admin.html', '_blank')}
-          className="p-3 text-slate-400 hover:text-red-400 bg-slate-900/30 hover:bg-slate-800/50 rounded-full transition-all opacity-50 hover:opacity-100 group backdrop-blur-sm"
+          className="p-3 rounded-full transition-all opacity-50 hover:opacity-100 group backdrop-blur-sm"
+          style={{
+            color: 'var(--text-secondary)',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#EF4444'; // red-400
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+          }}
           title="系统管理 System Admin"
         >
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -65,7 +83,22 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
         {/* Mobile Switch Button */}
         <button
           onClick={onSwitchToMobile}
-          className="p-3 text-slate-200 hover:text-white bg-slate-800/50 hover:bg-slate-700/60 backdrop-blur-md rounded-full transition-all border border-white/20 hover:border-white/40 shadow-lg hover:scale-105 flex items-center gap-2 px-4"
+          className="p-3 backdrop-blur-md rounded-full transition-all border shadow-lg hover:scale-105 flex items-center gap-2 px-4"
+          style={{
+            color: 'var(--text-primary)',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }}
           title="切换手机版 Switch to Mobile"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -77,7 +110,22 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
         {/* Settings Button */}
         <button
           onClick={onOpenSettings}
-          className="p-3 text-slate-300 hover:text-white bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full transition-all border border-white/10 hover:border-white/30 shadow-lg hover:rotate-90"
+          className="p-3 backdrop-blur-md rounded-full transition-all border shadow-lg hover:rotate-90"
+          style={{
+            color: 'var(--text-secondary)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          }}
           title="设置 Settings"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -90,15 +138,29 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-fade-in mb-32">
         <div className="space-y-2">
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+            <h1 
+              className="text-6xl md:text-8xl font-black tracking-tighter"
+              style={{
+                color: 'var(--text-primary)',
+                textShadow: '0 0 30px rgba(0, 0, 0, 0.3), 0 2px 10px rgba(0, 0, 0, 0.2)',
+              }}
+            >
             HEARTSPHERE
             </h1>
-            <p className="text-sm md:text-base text-indigo-300/80 tracking-[0.5em] uppercase font-light">
+            <p 
+              className="text-sm md:text-base tracking-[0.5em] uppercase font-light"
+              style={{ color: 'var(--text-secondary)' }}
+            >
             Digital Soul Interface
             </p>
         </div>
 
-        <div className="w-16 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+        <div 
+          className="w-16 h-1 opacity-50"
+          style={{
+            background: 'linear-gradient(to right, transparent, var(--color-primary), transparent)',
+          }}
+        />
 
         <div className="space-y-2">
             {isGuest ? (
@@ -110,26 +172,59 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
                     title="个人资料"
                   >
                     {avatarUrl ? (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer">
-                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                      <div 
+                        className="w-12 h-12 rounded-full p-[2px] hover:scale-110 transition-transform cursor-pointer gradient-button"
+                        style={{ padding: '2px' }}
+                      >
+                        <div 
+                          className="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
+                          style={{ backgroundColor: 'var(--bg-primary)' }}
+                        >
                           <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
-                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                          <span className="text-xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'G'}</span>
+                      <div 
+                        className="w-12 h-12 rounded-full p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center gradient-button"
+                        style={{ padding: '2px' }}
+                      >
+                        <div 
+                          className="w-full h-full rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: 'var(--bg-primary)' }}
+                        >
+                          <span 
+                            className="text-xl font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {nickname?.[0]?.toUpperCase() || 'G'}
+                          </span>
                         </div>
                       </div>
                     )}
                     {/* 提示文字 */}
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                      <span className="text-xs text-slate-400 bg-slate-900/90 px-2 py-1 rounded">个人资料</span>
+                      <span 
+                        className="text-xs px-2 py-1 rounded"
+                        style={{
+                          color: 'var(--text-secondary)',
+                          backgroundColor: 'var(--bg-card)',
+                        }}
+                      >
+                        个人资料
+                      </span>
                     </div>
                   </button>
-                  <p className="text-xl text-white font-medium">欢迎，{nickname || '访客'}</p>
+                  <p 
+                    className="text-xl font-medium"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    欢迎，{nickname || '访客'}
+                  </p>
                 </div>
-                <p className="text-sm text-slate-300">
+                <p 
+                  className="text-sm"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   以游客身份体验，或登录账户同步数据
                 </p>
               </>
@@ -142,26 +237,59 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
                     title="个人资料"
                   >
                     {avatarUrl ? (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer">
-                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                      <div 
+                        className="w-12 h-12 rounded-full p-[2px] hover:scale-110 transition-transform cursor-pointer gradient-button"
+                        style={{ padding: '2px' }}
+                      >
+                        <div 
+                          className="w-full h-full rounded-full flex items-center justify-center overflow-hidden"
+                          style={{ backgroundColor: 'var(--bg-primary)' }}
+                        >
                           <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
-                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                          <span className="text-xl font-bold text-white">{nickname?.[0]?.toUpperCase() || 'U'}</span>
+                      <div 
+                        className="w-12 h-12 rounded-full p-[2px] hover:scale-110 transition-transform cursor-pointer flex items-center justify-center gradient-button"
+                        style={{ padding: '2px' }}
+                      >
+                        <div 
+                          className="w-full h-full rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: 'var(--bg-primary)' }}
+                        >
+                          <span 
+                            className="text-xl font-bold"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {nickname?.[0]?.toUpperCase() || 'U'}
+                          </span>
                         </div>
                       </div>
                     )}
                     {/* 提示文字 */}
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                      <span className="text-xs text-slate-400 bg-slate-900/90 px-2 py-1 rounded">个人资料</span>
+                      <span 
+                        className="text-xs px-2 py-1 rounded"
+                        style={{
+                          color: 'var(--text-secondary)',
+                          backgroundColor: 'var(--bg-card)',
+                        }}
+                      >
+                        个人资料
+                      </span>
                     </div>
                   </button>
-                  <p className="text-xl text-white font-medium">欢迎回来，{nickname}</p>
+                  <p 
+                    className="text-xl font-medium"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    欢迎回来，{nickname}
+                  </p>
                 </div>
-                <p className="text-sm text-slate-400">
+                <p 
+                  className="text-sm"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                     系统已就绪，等待神经链接... 
                     <span className="block sm:inline opacity-60 text-xs ml-0 sm:ml-2">System Ready. Waiting for Neural Link...</span>
                 </p>
@@ -175,7 +303,17 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
             {onLoginSuccess && (
               <Button
                 onClick={() => setShowLoginModal(true)}
-                className="px-6 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-full"
+                className="px-6 py-2 text-sm rounded-full"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'white',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                }}
               >
                 登录账户
               </Button>
@@ -184,7 +322,16 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
               <Button
                 onClick={() => setShowGuestInput(true)}
                 variant="secondary"
-                className="px-6 py-2 text-sm border-white/20 hover:bg-white/10 rounded-full"
+                className="px-6 py-2 text-sm rounded-full"
+                style={{
+                  borderColor: 'var(--border-color-overlay)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 游客体验
               </Button>
@@ -194,24 +341,67 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
 
         {/* 游客昵称输入弹窗 */}
         {showGuestInput && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-xl font-bold text-white mb-4">游客体验</h3>
-              <p className="text-sm text-slate-400 mb-6">输入你的昵称，以游客身份进入体验</p>
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+            style={{ backgroundColor: 'var(--bg-overlay)' }}
+          >
+            <div 
+              className="rounded-2xl border p-8 max-w-md w-full mx-4 shadow-2xl"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--bg-secondary)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <h3 
+                className="text-xl font-bold mb-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                游客体验
+              </h3>
+              <p 
+                className="text-sm mb-6"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                输入你的昵称，以游客身份进入体验
+              </p>
               <input
                 type="text"
                 value={guestNickname}
                 onChange={(e) => setGuestNickname(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleGuestSubmit()}
                 placeholder="请输入昵称"
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-4"
+                className="w-full border rounded-lg px-4 py-3 outline-none mb-4"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                }}
                 autoFocus
               />
               <div className="flex gap-3">
                 <Button
                   onClick={handleGuestSubmit}
                   disabled={!guestNickname.trim()}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
+                  className="flex-1 disabled:opacity-50"
+                  style={{
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'white',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                  }}
                 >
                   进入
                 </Button>
@@ -235,7 +425,19 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
           <div className="flex flex-col sm:flex-row gap-4 mt-8 animate-fade-in">
               <Button 
                   onClick={() => onNavigate('realWorld')} 
-                  className="group relative px-10 py-4 text-lg bg-white text-black hover:bg-indigo-50 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all transform hover:-translate-y-1 rounded-full font-bold tracking-wider overflow-hidden"
+                  className="group relative px-10 py-4 text-lg transition-all transform hover:-translate-y-1 rounded-full font-bold tracking-wider overflow-hidden"
+                  style={{
+                    backgroundColor: 'white',
+                    color: '#0a1f3b',  // 深灰黑色，确保在白色背景上清晰
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
               >
                   <div className="relative z-10 flex flex-col items-center leading-none gap-1">
                       <span>进入现实</span>
@@ -246,7 +448,19 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
               <Button 
                   onClick={() => onNavigate('sceneSelection')} 
                   variant="secondary"
-                  className="group relative px-10 py-4 text-lg border-white/20 hover:bg-white/10 hover:border-white/40 rounded-full font-bold tracking-wider backdrop-blur-md overflow-hidden"
+                  className="group relative px-10 py-4 text-lg rounded-full font-bold tracking-wider backdrop-blur-md overflow-hidden"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  }}
               >
                   <div className="relative z-10 flex flex-col items-center leading-none gap-1">
                       <span>潜入心域</span>
@@ -275,7 +489,13 @@ export const EntryPoint: React.FC<EntryPointProps> = ({
       </div>
       
       {/* Footer Decoration - 调整位置避免与Footer重叠 */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-[10px] text-white/30 tracking-widest font-mono z-10">
+      <div 
+        className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-[10px] tracking-widest font-mono z-10 px-3 py-1 rounded backdrop-blur-sm"
+        style={{ 
+          color: 'var(--text-secondary)',
+          backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.1))',
+        }}
+      >
         SYSTEM VERSION 2.5.0 // CONNECTED // 已连接
       </div>
     </div>

@@ -178,24 +178,58 @@ const TestContent: React.FC = () => {
   const allPassed = totalCount > 0 && passedCount === totalCount;
 
   return (
-    <div className="p-6 bg-gray-900 text-white min-h-screen">
+    <div 
+      className="p-6 min-h-screen"
+      style={{
+        backgroundColor: 'var(--bg-primary, #111827)',
+        color: 'var(--text-primary)',
+      }}
+    >
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">状态管理测试</h1>
+        <h1 
+          className="text-3xl font-bold mb-6"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          状态管理测试
+        </h1>
         
         <div className="mb-6">
           <button
             onClick={runAllTests}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold"
+            className="px-4 py-2 rounded-lg font-semibold transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #2563eb)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-hover, #1d4ed8)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #2563eb)';
+            }}
           >
             运行所有测试
           </button>
           
           {totalCount > 0 && (
-            <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-              <div className="text-lg font-semibold mb-2">
+            <div 
+              className="mt-4 p-4 rounded-lg"
+              style={{ backgroundColor: 'var(--bg-card, #1f2937)' }}
+            >
+              <div 
+                className="text-lg font-semibold mb-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 测试结果: {passedCount}/{totalCount}
               </div>
-              <div className={`text-xl font-bold ${allPassed ? 'text-green-400' : 'text-yellow-400'}`}>
+              <div 
+                className="text-xl font-bold"
+                style={{
+                  color: allPassed 
+                    ? 'var(--color-success, #4ade80)' 
+                    : 'var(--color-warning, #fbbf24)',
+                }}
+              >
                 {allPassed ? '✅ 所有测试通过' : '⚠️ 部分测试未通过'}
               </div>
             </div>
@@ -203,9 +237,20 @@ const TestContent: React.FC = () => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-3">当前状态</h2>
-          <div className="bg-gray-800 p-4 rounded-lg overflow-auto max-h-64">
-            <pre className="text-sm">
+          <h2 
+            className="text-xl font-semibold mb-3"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            当前状态
+          </h2>
+          <div 
+            className="p-4 rounded-lg overflow-auto max-h-64"
+            style={{ backgroundColor: 'var(--bg-card, #1f2937)' }}
+          >
+            <pre 
+              className="text-sm"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {JSON.stringify({
                 currentScreen: state.currentScreen,
                 userProfile: state.userProfile,
@@ -224,14 +269,26 @@ const TestContent: React.FC = () => {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-3">测试日志</h2>
-          <div className="bg-gray-800 p-4 rounded-lg">
+          <h2 
+            className="text-xl font-semibold mb-3"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            测试日志
+          </h2>
+          <div 
+            className="p-4 rounded-lg"
+            style={{ backgroundColor: 'var(--bg-card, #1f2937)' }}
+          >
             {logs.length === 0 ? (
-              <p className="text-gray-400">点击"运行所有测试"开始测试</p>
+              <p style={{ color: 'var(--text-tertiary)' }}>点击"运行所有测试"开始测试</p>
             ) : (
               <ul className="space-y-1">
                 {logs.map((log, index) => (
-                  <li key={index} className="text-sm font-mono">
+                  <li 
+                    key={index} 
+                    className="text-sm font-mono"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {log}
                   </li>
                 ))}
@@ -240,9 +297,22 @@ const TestContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-blue-900/30 rounded-lg">
-          <h3 className="font-semibold mb-2">测试说明</h3>
-          <ul className="text-sm space-y-1 text-gray-300">
+        <div 
+          className="mt-6 p-4 rounded-lg"
+          style={{
+            backgroundColor: 'var(--color-info, rgba(30, 58, 138, 0.3))',
+          }}
+        >
+          <h3 
+            className="font-semibold mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            测试说明
+          </h3>
+          <ul 
+            className="text-sm space-y-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             <li>• 测试Context和Provider的基本功能</li>
             <li>• 测试屏幕导航功能</li>
             <li>• 测试用户资料管理</li>

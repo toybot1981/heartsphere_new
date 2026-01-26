@@ -47,7 +47,7 @@ public class SharedModeAspect {
                         "memory",
                         data
                     );
-                    log.debug("共享模式：保存记忆到临时存储: shareConfigId={}, visitorId={}", 
+                    log.info("共享模式：保存记忆到临时存储: shareConfigId={}, visitorId={}", 
                         shareConfigId, visitorId);
                 }
                 
@@ -80,7 +80,7 @@ public class SharedModeAspect {
                         "emotion",
                         data
                     );
-                    log.debug("共享模式：保存情绪到临时存储: shareConfigId={}, visitorId={}", 
+                    log.info("共享模式：保存情绪到临时存储: shareConfigId={}, visitorId={}", 
                         shareConfigId, visitorId);
                 }
                 return null;

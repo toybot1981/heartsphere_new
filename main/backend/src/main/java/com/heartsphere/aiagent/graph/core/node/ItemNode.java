@@ -107,7 +107,7 @@ public class ItemNode implements GraphEngine.GraphNode {
                         items.add(itemId);
                     }
                 }
-                log.debug("[ItemNode] 添加物品: {} x{}", itemId, quantity);
+                log.info("[ItemNode] 添加物品: {} x{}", itemId, quantity);
                 break;
                 
             case REMOVE:
@@ -115,14 +115,14 @@ public class ItemNode implements GraphEngine.GraphNode {
                 for (int i = 0; i < quantity; i++) {
                     items.remove(itemId);
                 }
-                log.debug("[ItemNode] 移除物品: {} x{}", itemId, quantity);
+                log.info("[ItemNode] 移除物品: {} x{}", itemId, quantity);
                 break;
                 
             case USE:
                 // 使用物品
                 if (items.contains(itemId)) {
                     items.remove(itemId);
-                    log.debug("[ItemNode] 使用物品: {}", itemId);
+                    log.info("[ItemNode] 使用物品: {}", itemId);
                     
                     // 应用物品效果
                     if (effect != null) {
@@ -137,7 +137,7 @@ public class ItemNode implements GraphEngine.GraphNode {
                 // 检查物品拥有情况
                 boolean hasItem = items.contains(itemId);
                 state.setData("has_item_" + itemId, hasItem);
-                log.debug("[ItemNode] 检查物品 {} 拥有情况: {}", itemId, hasItem);
+                log.info("[ItemNode] 检查物品 {} 拥有情况: {}", itemId, hasItem);
                 break;
         }
         
@@ -170,7 +170,7 @@ public class ItemNode implements GraphEngine.GraphNode {
             favorabilityChange.forEach((charId, change) -> {
                 int current = finalFavorability.getOrDefault(charId, 0);
                 finalFavorability.put(charId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[ItemNode] 物品效果：角色 {} 好感度变化: {} -> {}", 
+                log.info("[ItemNode] 物品效果：角色 {} 好感度变化: {} -> {}", 
                     charId, current, finalFavorability.get(charId));
             });
         }
@@ -193,7 +193,7 @@ public class ItemNode implements GraphEngine.GraphNode {
             skillChange.forEach((skillId, change) -> {
                 int current = finalSkills.getOrDefault(skillId, 0);
                 finalSkills.put(skillId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[ItemNode] 物品效果：技能 {} 值变化: {} -> {}", 
+                log.info("[ItemNode] 物品效果：技能 {} 值变化: {} -> {}", 
                     skillId, current, finalSkills.get(skillId));
             });
         }
@@ -202,7 +202,7 @@ public class ItemNode implements GraphEngine.GraphNode {
         effect.forEach((key, value) -> {
             if (!"favorabilityChange".equals(key) && !"skillChange".equals(key)) {
                 state.setData("item_effect_" + key, value);
-                log.debug("[ItemNode] 物品效果：{} = {}", key, value);
+                log.info("[ItemNode] 物品效果：{} = {}", key, value);
             }
         });
     }

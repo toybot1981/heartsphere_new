@@ -62,7 +62,7 @@ public class PlaywrightGuiAutomationExecutor implements GuiAutomationExecutor {
 
     @Override
     public String captureScreenshot(String sessionId) {
-        log.debug("捕获屏幕截图 (Playwright): sessionId={}", sessionId);
+        log.info("捕获屏幕截图 (Playwright): sessionId={}", sessionId);
         
         try {
             // TODO: 实现 Playwright 截图
@@ -76,7 +76,7 @@ public class PlaywrightGuiAutomationExecutor implements GuiAutomationExecutor {
 
     @Override
     public ElementInfo findElement(String sessionId, String selector) {
-        log.debug("查找元素 (Playwright): sessionId={}, selector={}", sessionId, selector);
+        log.info("查找元素 (Playwright): sessionId={}, selector={}", sessionId, selector);
         
         ElementInfo info = new ElementInfo();
         info.setFound(false);

@@ -52,7 +52,7 @@ public class LLMResponseParser {
         Matcher codeBlockMatcher = JSON_CODE_BLOCK_PATTERN.matcher(responseContent);
         if (codeBlockMatcher.find()) {
             String jsonContent = codeBlockMatcher.group(1).trim();
-            log.debug("从代码块中提取 JSON: {}", jsonContent.substring(0, Math.min(100, jsonContent.length())));
+            log.info("从代码块中提取 JSON: {}", jsonContent.substring(0, Math.min(100, jsonContent.length())));
             return jsonContent;
         }
         
@@ -60,14 +60,14 @@ public class LLMResponseParser {
         Matcher jsonObjectMatcher = JSON_OBJECT_PATTERN.matcher(responseContent);
         if (jsonObjectMatcher.find()) {
             String jsonContent = jsonObjectMatcher.group(0).trim();
-            log.debug("从文本中提取 JSON 对象: {}", jsonContent.substring(0, Math.min(100, jsonContent.length())));
+            log.info("从文本中提取 JSON 对象: {}", jsonContent.substring(0, Math.min(100, jsonContent.length())));
             return jsonContent;
         }
         
         // 3. 如果都没有找到，尝试直接使用原文本（可能是纯 JSON）
         String trimmed = responseContent.trim();
         if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-            log.debug("使用原始文本作为 JSON");
+            log.info("使用原始文本作为 JSON");
             return trimmed;
         }
         

@@ -88,15 +88,30 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48 bg-slate-900/50 rounded-lg">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div 
+        className="flex items-center justify-center h-48 rounded-lg"
+        style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+      >
+        <div 
+          className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+          style={{
+            borderColor: 'var(--color-primary, #6366f1)',
+            borderTopColor: 'transparent',
+          }}
+        />
       </div>
     );
   }
 
   if (!statistics || statistics.total === 0) {
     return (
-      <div className="flex items-center justify-center h-48 bg-slate-900/50 rounded-lg text-slate-400">
+      <div 
+        className="flex items-center justify-center h-48 rounded-lg"
+        style={{
+          backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))',
+          color: 'var(--text-tertiary)',
+        }}
+      >
         <p>暂无统计数据</p>
       </div>
     );
@@ -132,10 +147,16 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
     
     const largeArcFlag = angle > 180 ? 1 : 0;
     
+    // 验证并格式化数值
+    const formatValue = (val: number) => {
+      if (!isFinite(val)) return '0';
+      return val.toFixed(2);
+    };
+    
     const pathData = [
-      `M ${centerX} ${centerY}`,
-      `L ${x1} ${y1}`,
-      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+      `M ${formatValue(centerX)} ${formatValue(centerY)}`,
+      `L ${formatValue(x1)} ${formatValue(y1)}`,
+      `A ${formatValue(radius)} ${formatValue(radius)} 0 ${largeArcFlag} 1 ${formatValue(x2)} ${formatValue(y2)}`,
       'Z',
     ].join(' ');
     
@@ -150,10 +171,21 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
   });
 
   return (
-    <div className="bg-slate-900/50 rounded-lg p-4">
+    <div 
+      className="rounded-lg p-4"
+      style={{ backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.5))' }}
+    >
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-white mb-2">情绪统计</h3>
-        <div className="flex items-center gap-4 text-sm text-slate-400">
+        <h3 
+          className="text-lg font-bold mb-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          情绪统计
+        </h3>
+        <div 
+          className="flex items-center gap-4 text-sm"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <span>周期: {period === 'day' ? '一天' : period === 'week' ? '一周' : '一月'}</span>
           <span>总记录: {statistics.total}</span>
           <span>平均置信度: {(statistics.averageConfidence * 100).toFixed(0)}%</span>
@@ -169,7 +201,7 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
                 <path
                   d={segment.pathData}
                   fill={segment.color}
-                  stroke="#1a1a1a"
+                  stroke="var(--bg-primary-dark)"
                   strokeWidth="2"
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 >
@@ -184,7 +216,7 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
               x={centerX}
               y={centerY - 10}
               textAnchor="middle"
-              fill="#fff"
+              fill="var(--text-primary, #ffffff)"
               fontSize="20"
               fontWeight="bold"
             >
@@ -194,7 +226,7 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
               x={centerX}
               y={centerY + 15}
               textAnchor="middle"
-              fill="#9E9E9E"
+              fill="var(--text-tertiary, #9E9E9E)"
               fontSize="12"
             >
               总记录
@@ -207,18 +239,40 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
           {pieData.map((item, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors"
+              className="flex items-center justify-between p-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, rgba(30, 41, 59, 0.5))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 1))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 0.5))';
+              }}
             >
               <div className="flex items-center gap-3">
                 <div
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-white font-medium">{item.name}</span>
+                <span 
+                  className="font-medium"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {item.name}
+                </span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-slate-400 text-sm">{item.count}次</span>
-                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <span 
+                  className="text-sm"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {item.count}次
+                </span>
+                <div 
+                  className="w-24 h-2 rounded-full overflow-hidden"
+                  style={{ backgroundColor: 'var(--bg-secondary, rgba(51, 65, 85, 1))' }}
+                >
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -227,7 +281,10 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
                     }}
                   />
                 </div>
-                <span className="text-slate-400 text-sm w-12 text-right">
+                <span 
+                  className="text-sm w-12 text-right"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   {item.percentage.toFixed(1)}%
                 </span>
               </div>
@@ -238,22 +295,42 @@ export const EmotionStatistics: React.FC<EmotionStatisticsProps> = ({
 
       {/* 强度统计 */}
       {statistics.byIntensity && (
-        <div className="mt-6 pt-4 border-t border-slate-700">
-          <h4 className="text-sm font-bold text-slate-300 mb-3">情绪强度分布</h4>
+        <div 
+          className="mt-6 pt-4 border-t"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
+          <h4 
+            className="text-sm font-bold mb-3"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            情绪强度分布
+          </h4>
           <div className="flex gap-4">
             {Object.entries(statistics.byIntensity).map(([intensity, count]) => (
               <div key={intensity} className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-slate-400">
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                     {intensity === 'mild' ? '轻度' : intensity === 'moderate' ? '中度' : '强烈'}
                   </span>
-                  <span className="text-xs text-slate-500">{count as number}次</span>
+                  <span 
+                    className="text-xs"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
+                    {count as number}次
+                  </span>
                 </div>
-                <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div 
+                  className="w-full h-2 rounded-full overflow-hidden"
+                  style={{ backgroundColor: 'var(--bg-secondary, rgba(51, 65, 85, 1))' }}
+                >
                   <div
-                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    className="h-full rounded-full transition-all"
                     style={{
                       width: `${((count as number) / statistics.total) * 100}%`,
+                      backgroundColor: 'var(--color-primary, #6366f1)',
                     }}
                   />
                 </div>

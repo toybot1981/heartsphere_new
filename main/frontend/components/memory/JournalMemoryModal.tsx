@@ -105,7 +105,7 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
         
         setMemories(journalMemories);
         
-        logger.debug('[JournalMemoryModal] 加载日记记忆成功', {
+        logger.info('[JournalMemoryModal] 加载日记记忆成功', {
           total: journalMemories.length,
           journalId,
         });
@@ -127,7 +127,7 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
     try {
       await memorySystem.system?.deleteMemory(memoryId);
       setMemories(memories.filter(m => m.id !== memoryId));
-      logger.debug('[JournalMemoryModal] 删除记忆成功', { memoryId });
+      logger.info('[JournalMemoryModal] 删除记忆成功', { memoryId });
     } catch (error) {
       logger.error('[JournalMemoryModal] 删除记忆失败', error);
       alert('删除失败，请重试');
@@ -137,19 +137,50 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-700">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.6))',
+      }}
+    >
+      <div 
+        className="rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #0f172a)',
+          borderColor: 'var(--border-color-overlay, #334155)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
           <div>
-            <h2 className="text-2xl font-bold text-white">日记记忆</h2>
-            <p className="text-sm text-slate-400 mt-1">
+            <h2 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              日记记忆
+            </h2>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               {journalId ? '查看此日记提取的记忆' : '查看所有从日记中提取的记忆'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-lg"
+            className="transition-colors p-2 rounded-lg"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(30, 41, 59, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -166,12 +197,38 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
               placeholder="搜索记忆..."
               value={filter.keyword || ''}
               onChange={(e) => setFilter({ ...filter, keyword: e.target.value })}
-              className="flex-1 min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              className="flex-1 min-w-[200px] border rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e3a8a)',
+                borderColor: 'var(--border-color-overlay, #334155)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                e.currentTarget.style.outline = '1px solid var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #334155)';
+                e.currentTarget.style.outline = 'none';
+              }}
             />
             <select
               value={filter.type || ''}
               onChange={(e) => setFilter({ ...filter, type: e.target.value as MemoryType || undefined })}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              className="border rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e3a8a)',
+                borderColor: 'var(--border-color-overlay, #334155)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                e.currentTarget.style.outline = '1px solid var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #334155)';
+                e.currentTarget.style.outline = 'none';
+              }}
             >
               <option value="">所有类型</option>
               {Object.entries(memoryTypeNames).map(([value, label]) => (
@@ -181,7 +238,20 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
             <select
               value={filter.importance || ''}
               onChange={(e) => setFilter({ ...filter, importance: e.target.value as MemoryImportance || undefined })}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+              className="border rounded-lg px-4 py-2 outline-none"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1e3a8a)',
+                borderColor: 'var(--border-color-overlay, #334155)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                e.currentTarget.style.outline = '1px solid var(--color-primary, #6366f1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #334155)';
+                e.currentTarget.style.outline = 'none';
+              }}
             >
               <option value="">所有重要性</option>
               {Object.entries(importanceNames).map(([value, label]) => (
@@ -194,10 +264,19 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {isLoading ? (
               <div className="flex items-center justify-center h-48">
-                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div 
+                  className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+                  style={{
+                    borderColor: 'var(--color-primary, #6366f1)',
+                    borderTopColor: 'transparent',
+                  }}
+                />
               </div>
             ) : memories.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+              <div 
+                className="flex flex-col items-center justify-center h-48"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -209,7 +288,17 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                 {memories.map((memory) => (
                   <div
                     key={memory.id}
-                    className="p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors border border-slate-700/50"
+                    className="p-4 rounded-lg transition-colors border"
+                    style={{
+                      backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                      borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 0.5))',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 1))';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                    }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -217,7 +306,13 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                           className="w-2 h-2 rounded-full flex-shrink-0"
                           style={{ backgroundColor: importanceColorMap[memory.importance] }}
                         />
-                        <span className="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
+                        <span 
+                          className="text-xs px-2 py-1 rounded"
+                          style={{
+                            backgroundColor: 'var(--bg-overlay, rgba(51, 65, 85, 0.5))',
+                            color: 'var(--text-tertiary)',
+                          }}
+                        >
                           {memoryTypeNames[memory.memoryType]}
                         </span>
                         <span
@@ -230,19 +325,32 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                           {importanceNames[memory.importance]}
                         </span>
                         {memory.sourceId && (
-                          <span className="text-xs text-slate-500">
+                          <span 
+                            className="text-xs"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
                             来源日记: {memory.sourceId.substring(0, 8)}...
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500">
+                        <span 
+                          className="text-xs"
+                          style={{ color: 'var(--text-disabled)' }}
+                        >
                           {new Date(memory.timestamp).toLocaleDateString('zh-CN')}
                         </span>
                         <button
                           onClick={() => handleDelete(memory.id)}
-                          className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                          className="transition-colors p-1"
+                          style={{ color: 'var(--text-disabled)' }}
                           title="删除记忆"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--text-disabled)';
+                          }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -251,10 +359,18 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                       </div>
                     </div>
                     
-                    <p className="text-white mb-2 leading-relaxed">{memory.content}</p>
+                    <p 
+                      className="mb-2 leading-relaxed"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {memory.content}
+                    </p>
                     
                     {memory.structuredData && (
-                      <div className="text-xs text-slate-400 mb-2 space-y-1">
+                      <div 
+                        className="text-xs mb-2 space-y-1"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
                         {memory.structuredData.key && (
                           <div>
                             <span className="font-semibold">{memory.structuredData.key}:</span>{' '}
@@ -266,7 +382,11 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                             {memory.structuredData.tags.map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded text-xs"
+                                className="px-2 py-0.5 rounded text-xs"
+                                style={{
+                                  backgroundColor: 'var(--color-primary, rgba(99, 102, 241, 0.2))',
+                                  color: 'var(--color-primary, #a5b4fc)',
+                                }}
                               >
                                 {tag}
                               </span>
@@ -276,7 +396,13 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-4 text-xs text-slate-500 mt-3 pt-3 border-t border-slate-700/50">
+                    <div 
+                      className="flex items-center gap-4 text-xs mt-3 pt-3 border-t"
+                      style={{
+                        color: 'var(--text-disabled)',
+                        borderColor: 'var(--border-color-overlay, rgba(51, 65, 85, 0.5))',
+                      }}
+                    >
                       <span>使用次数: {memory.usageCount}</span>
                       <span>置信度: {(memory.confidence * 100).toFixed(0)}%</span>
                       {memory.lastUsedAt && (
@@ -293,10 +419,23 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-700 flex justify-end">
+        <div 
+          className="p-6 border-t flex justify-end"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            className="px-6 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary, #6366f1)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+            }}
           >
             关闭
           </button>

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback as useCallbackHook } from 'react';
 import { Character, Message, AppSettings, UserProfile } from '../../types';
 import { Button } from '../Button';
 import { sharedApi } from '../../services/api/heartconnect';
@@ -21,6 +22,7 @@ import { AIConfigManager } from '../../services/ai/config';
 import { logger } from '../../utils/logger';
 import { TeleportationManager } from '../portal';
 import { usePortal } from '../../hooks/usePortal';
+import { memoryApi } from '../../services/api/memory/memory';
 
 interface SharedChatWindowProps {
   character: Character;
@@ -166,6 +168,10 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
     }
   }, [isActive, shareConfig, onBack]);
   
+  // 历史消息加载状态
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  
   useEffect(() => {
     const loadHistory = async () => {
       if (!isActive || !shareConfig) {
@@ -183,7 +189,9 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
           return;
         }
 
-        const result = await sharedApi.getChatMessages(sessionId, token, 100);
+        setIsLoadingHistory(true);
+        // 初始加载最近10条消息
+        const result = await sharedApi.getChatMessages(sessionId, token, 10);
 
         if (result && result.messages) {
           const messages: Message[] = result.messages.map((msg: any) => ({
@@ -193,10 +201,16 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
             timestamp: msg.timestamp || Date.now(),
           }));
 
+          // 按时间戳排序（从旧到新）
+          messages.sort((a, b) => a.timestamp - b.timestamp);
+
           // 加载历史消息时，标记为用户滚动，避免自动滚动
           isUserScrollingRef.current = true;
           onUpdateHistory(messages);
           historyLoadedRef.current = sessionId;
+          
+          // 如果有10条消息，可能还有更多
+          setHasMoreHistory(messages.length >= 10);
           
           // 加载完成后，滚动到底部（首次加载）
           setTimeout(() => {
@@ -208,15 +222,85 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               }, 500);
             }
           }, 100);
+        } else {
+          setHasMoreHistory(false);
         }
       } catch (err) {
         logger.error('[SharedChatWindow] 加载消息历史失败:', err);
+        setHasMoreHistory(false);
+      } finally {
+        setIsLoadingHistory(false);
       }
     };
 
     loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, shareConfig, sessionId]);
+  
+  // 加载更多历史消息（下拉加载）
+  const loadMoreHistory = useCallback(async () => {
+    if (isLoadingHistory || !hasMoreHistory || !shareConfig) {
+      return;
+    }
+    
+    try {
+      const token = getToken();
+      if (!token) {
+        return;
+      }
+      
+      // 获取最早的消息时间戳
+      const earliestMessage = safeHistory[0];
+      if (!earliestMessage || !earliestMessage.timestamp) {
+        setHasMoreHistory(false);
+        return;
+      }
+      
+      setIsLoadingHistory(true);
+      // 注意：sharedApi.getChatMessages 可能需要支持 beforeTimestamp 参数
+      // 这里先使用 limit 参数，实际应该修改后端 API 支持分页
+      const result = await sharedApi.getChatMessages(sessionId, token, 100);
+      
+      if (result && result.messages) {
+        const messages: Message[] = result.messages
+          .filter((msg: any) => (msg.timestamp || 0) < earliestMessage.timestamp)
+          .map((msg: any) => ({
+            id: msg.id || `msg_${Date.now()}_${Math.random()}`,
+            role: msg.role === 'USER' ? 'user' : 'model',
+            text: msg.content || '',
+            timestamp: msg.timestamp || Date.now(),
+          }));
+        
+        if (messages.length > 0) {
+          // 按时间戳排序（从旧到新）
+          messages.sort((a, b) => a.timestamp - b.timestamp);
+          
+          // 添加到历史前面
+          onUpdateHistory((prev: Message[]) => {
+            const existing = Array.isArray(prev) ? prev : [];
+            // 合并并去重
+            const merged = [...messages, ...existing];
+            const unique = merged.filter((msg, idx, arr) => 
+              arr.findIndex(m => m.id === msg.id) === idx
+            );
+            return unique;
+          });
+          
+          // 如果返回的消息少于10条，说明没有更多了
+          setHasMoreHistory(messages.length >= 10);
+        } else {
+          setHasMoreHistory(false);
+        }
+      } else {
+        setHasMoreHistory(false);
+      }
+    } catch (error) {
+      logger.error('[SharedChatWindow] 加载更多历史消息失败:', error);
+      setHasMoreHistory(false);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [isLoadingHistory, hasMoreHistory, sessionId, safeHistory, shareConfig, onUpdateHistory]);
 
   // 发送消息（独立的API调用逻辑）
   const handleSend = useCallback(async () => {
@@ -251,14 +335,29 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       }
 
       // 保存用户消息到后端（独立的API调用）
-      await sharedApi.saveChatMessage(
-        sessionId,
-        'USER',
-        userMessage.text,
-        token,
-        undefined,
-        0.5
-      );
+      // 同时保存到 chat_message 表（业务数据）
+      try {
+        await sharedApi.saveChatMessage(
+          sessionId,
+          'USER',
+          userMessage.text,
+          token,
+          undefined,
+          0.5
+        );
+        // 也保存到 chat_message 表
+        await memoryApi.saveChatMessage(
+          sessionId,
+          'USER',
+          userMessage.text,
+          token,
+          { characterId: character.id },
+          undefined
+        );
+      } catch (saveError) {
+        logger.error('[SharedChatWindow] 保存用户消息失败:', saveError);
+        // 保存失败不影响主流程
+      }
 
       const config = await AIConfigManager.getUserConfig();
       const tempBotId = `shared_${Date.now()}`;
@@ -280,6 +379,7 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
         relevantMemories: [],
         onComplete: async (fullText, requestId) => {
           try {
+            // 保存到共享API
             await sharedApi.saveChatMessage(
               sessionId,
               'ASSISTANT',
@@ -287,6 +387,15 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               token,
               undefined,
               0.5
+            );
+            // 也保存到 chat_message 表（业务数据）
+            await memoryApi.saveChatMessage(
+              sessionId,
+              'ASSISTANT',
+              fullText,
+              token,
+              { characterId: character.id, requestId },
+              undefined
             );
             // AI 回复完成后，只有在用户在底部时才滚动
             setTimeout(() => {
@@ -338,11 +447,22 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
 
   if (!isActive || !shareConfig) {
     return (
-      <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
+      <div 
+        className="relative h-screen w-full overflow-hidden font-sans"
+        style={{
+          backgroundColor: 'var(--bg-primary, #000000)',
+          color: 'var(--text-primary)',
+        }}
+      >
         <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000" style={{ backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined, filter: 'blur(4px) opacity(0.6)' }} />
         <div className="h-full flex items-center justify-center relative z-10">
           <div className="text-center">
-            <p className="text-gray-400 mb-4">未进入共享模式</p>
+            <p 
+              className="mb-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              未进入共享模式
+            </p>
             <Button onClick={onBack}>返回</Button>
           </div>
         </div>
@@ -405,7 +525,13 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       sceneId={sceneId || undefined}
       onTeleportationComplete={handleTeleportationComplete}
     >
-      <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
+      <div 
+        className="relative h-screen w-full overflow-hidden font-sans"
+        style={{
+          backgroundColor: 'var(--bg-primary, #000000)',
+          color: 'var(--text-primary)',
+        }}
+      >
         {/* 背景图片 - 与ChatWindow样式一致 */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
@@ -434,20 +560,41 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
 
       {/* Header Bar - 与ChatWindow样式一致，返回按钮更明显 */}
       {!uiState.isCinematic && (
-        <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center transition-opacity duration-500">
+        <div 
+          className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center transition-opacity duration-500"
+          style={{
+            background: 'linear-gradient(to bottom, var(--bg-overlay, rgba(0, 0, 0, 0.8)), transparent)',
+          }}
+        >
           <div className="flex items-center space-x-3">
             <Button 
               variant="ghost" 
               onClick={onBack} 
-              className="!p-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg backdrop-blur-sm"
+              className="!p-2 rounded-lg backdrop-blur-sm border transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+                borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.3))',
+                color: 'var(--text-primary)',
+              }}
               title="返回"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.3))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.2))';
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Button>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-wider">{character.name}</h2>
+              <h2 
+                className="text-xl font-bold tracking-wider"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {character.name}
+              </h2>
               <span className="text-xs uppercase tracking-widest opacity-80" style={{ color: character.colorAccent }}>
                 共享模式
               </span>
@@ -456,14 +603,31 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={handleClear}
-              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+              className="px-3 py-1.5 text-sm transition-colors"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
               title="清空对话"
             >
               清空
             </button>
             <button
               onClick={uiState.toggleCinematic}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/10"
+              className="p-2 rounded-full transition-all border"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+              }}
               title="进入沉浸模式"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -477,10 +641,19 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
 
       {/* 提示信息 - 调整位置 */}
       {!uiState.isCinematic && (
-        <div className="absolute top-16 left-0 right-0 p-3 bg-blue-900/40 border-b border-blue-500/50 z-10">
+        <div 
+          className="absolute top-16 left-0 right-0 p-3 border-b z-10"
+          style={{
+            backgroundColor: 'var(--color-info, rgba(30, 58, 138, 0.4))',
+            borderColor: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+          }}
+        >
           <div className="flex items-start gap-2">
             <span className="text-sm">💡</span>
-            <p className="text-blue-200 text-xs flex-1">
+            <p 
+              className="text-xs flex-1"
+              style={{ color: 'var(--color-primary-light, #bfdbfe)' }}
+            >
               你正在共享模式下与角色对话。对话记录会临时保存，离开共享心域后会自动清除。
             </p>
           </div>
@@ -489,12 +662,28 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
 
       {/* 沉浸模式下的退出按钮和返回按钮 */}
       {uiState.isCinematic && (
-        <div className="absolute top-0 left-0 right-0 p-4 z-50 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent">
+        <div 
+          className="absolute top-0 left-0 right-0 p-4 z-50 flex justify-between items-center"
+          style={{
+            background: 'linear-gradient(to bottom, var(--bg-overlay, rgba(0, 0, 0, 0.6)), transparent)',
+          }}
+        >
           <Button 
             variant="ghost" 
             onClick={onBack} 
-            className="!p-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg backdrop-blur-sm"
+            className="!p-2 rounded-lg backdrop-blur-sm border transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+              borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.3))',
+              color: 'var(--text-primary)',
+            }}
             title="返回"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.3))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.2))';
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -502,7 +691,20 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
           </Button>
           <button 
             onClick={() => uiState.setIsCinematic(false)}
-            className="p-2 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white/70 hover:text-white transition-all backdrop-blur-sm"
+            className="p-2 rounded-full border transition-all backdrop-blur-sm"
+            style={{
+              backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+              borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.3))',
+              color: 'var(--text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.3))';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.2))';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
             title="退出沉浸模式"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -513,19 +715,75 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
       )}
 
       {/* Main Chat Area - 与ChatWindow保持一致，确保输入框固定在底部 */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-24 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
+      <div 
+        className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-24 transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh]' : 'h-[65vh]'}`}
+        style={{
+          background: uiState.isCinematic
+            ? 'linear-gradient(to top, var(--bg-primary, #000000), var(--bg-overlay, rgba(0, 0, 0, 0.5)), transparent)'
+            : 'linear-gradient(to top, var(--bg-primary, #000000), var(--bg-overlay, rgba(0, 0, 0, 0.8)), transparent)',
+        }}
+      >
         
         {/* Messages - 使用公共组件，flex-1 确保占据可用空间 */}
         <div
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide min-h-0"
           style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%)' }}
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            // 当滚动到顶部附近时，加载更多历史消息
+            if (target.scrollTop < 100 && hasMoreHistory && !isLoadingHistory) {
+              loadMoreHistory();
+            }
+          }}
         >
+          {/* 加载更多历史消息提示 */}
+          {isLoadingHistory && (
+            <div className="text-center py-2 text-sm opacity-70">
+              加载历史消息中...
+            </div>
+          )}
+          
+          {/* 加载更多按钮（如果没有自动触发） */}
+          {hasMoreHistory && !isLoadingHistory && safeHistory.length > 0 && (
+            <div className="text-center py-2">
+              <button
+                onClick={loadMoreHistory}
+                className="text-sm px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                  color: 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                }}
+              >
+                ⬆️ 加载更多历史消息
+              </button>
+            </div>
+          )}
+          
           {safeHistory.length === 0 && !isLoading && (
-            <div className="text-white/50 text-center py-4">
+            <div 
+              className="text-center py-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               <div className="text-6xl mb-4">💬</div>
-              <p className="text-gray-400 text-lg mb-2">开始对话吧</p>
-              <p className="text-gray-500 text-sm">与 {character.name} 开始一段新的对话</p>
+              <p 
+                className="text-lg mb-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                开始对话吧
+              </p>
+              <p 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                与 {character.name} 开始一段新的对话
+              </p>
             </div>
           )}
           <MessageList
@@ -572,29 +830,72 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
 
       {/* 传送门调试信息（开发环境或手动启用） */}
       {(process.env.NODE_ENV === 'development' || localStorage.getItem('portal_debug') === 'true') && sceneId && (
-        <div className="absolute top-20 right-4 bg-slate-900/90 p-3 rounded-lg text-xs text-white z-50 max-w-xs border border-indigo-500/50 shadow-lg">
+        <div 
+          className="absolute top-20 right-4 p-3 rounded-lg text-xs z-50 max-w-xs border shadow-lg"
+          style={{
+            backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.9))',
+            borderColor: 'var(--color-primary, rgba(99, 102, 241, 0.5))',
+            color: 'var(--text-primary)',
+          }}
+        >
           <div className="font-bold mb-2 flex items-center gap-2">
             <span>🔮</span>
             <span>传送门调试</span>
           </div>
           <div className="space-y-1">
-            <div>场景ID: <span className="text-indigo-400 font-mono">{sceneId}</span></div>
-            <div>传送门数: <span className={portalsLoading ? 'text-yellow-400' : 'text-green-400'}>{portals.length}</span></div>
+            <div>
+              场景ID: <span 
+                className="font-mono"
+                style={{ color: 'var(--color-primary-light, #818cf8)' }}
+              >
+                {sceneId}
+              </span>
+            </div>
+            <div>
+              传送门数: <span 
+                style={{ 
+                  color: portalsLoading 
+                    ? 'var(--color-warning, #fbbf24)' 
+                    : 'var(--color-success, #4ade80)' 
+                }}
+              >
+                {portals.length}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <span>加载中:</span>
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                portalsLoading 
-                  ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' 
-                  : 'bg-green-500/20 text-green-400'
-              }`}>
+              <span 
+                className="px-2 py-0.5 rounded text-xs font-semibold"
+                style={{
+                  backgroundColor: portalsLoading 
+                    ? 'var(--color-warning, rgba(234, 179, 8, 0.2))' 
+                    : 'var(--color-success, rgba(34, 197, 94, 0.2))',
+                  color: portalsLoading 
+                    ? 'var(--color-warning, #fbbf24)' 
+                    : 'var(--color-success, #4ade80)',
+                  animation: portalsLoading ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+                }}
+              >
                 {portalsLoading ? '是' : '否'}
               </span>
             </div>
             {portals.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-slate-700">
-                <div className="text-xs font-semibold mb-1">传送门列表:</div>
+              <div 
+                className="mt-2 pt-2 border-t"
+                style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+              >
+                <div 
+                  className="text-xs font-semibold mb-1"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  传送门列表:
+                </div>
                 {portals.map(p => (
-                  <div key={p.id} className="text-xs text-slate-300 pl-2 mb-1 flex items-center justify-between">
+                    <div 
+                      key={p.id} 
+                      className="text-xs pl-2 mb-1 flex items-center justify-between"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
                     <span>• {p.portalName} ({p.portalType})</span>
                     <button
                       onClick={() => {
@@ -602,7 +903,17 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
                           detail: { portalId: p.id, sceneId } 
                         }));
                       }}
-                      className="ml-2 px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded transition-colors"
+                      className="ml-2 px-2 py-0.5 text-xs rounded transition-colors"
+                      style={{
+                        backgroundColor: 'var(--color-primary, #4f46e5)',
+                        color: 'var(--text-primary)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #6366f1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                      }}
                       title="激活传送门"
                     >
                       传送
@@ -612,9 +923,20 @@ export const SharedChatWindow: React.FC<SharedChatWindowProps> = ({
               </div>
             )}
             {portals.length === 0 && !portalsLoading && (
-              <div className="mt-2 pt-2 border-t border-slate-700">
-                <div className="text-xs text-slate-400 mb-1">该场景暂无传送门</div>
-                <div className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <div 
+                className="mt-2 pt-2 border-t"
+                style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+              >
+                <div 
+                  className="text-xs mb-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  该场景暂无传送门
+                </div>
+                <div 
+                  className="text-xs mt-1 leading-relaxed"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
                   传送门需要由心域主人在场景中创建，用于连接到其他心域。
                   <br />
                   创建方式：心域主人可以在场景编辑页面或通过API创建传送门。

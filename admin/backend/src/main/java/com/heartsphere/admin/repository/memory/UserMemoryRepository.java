@@ -93,6 +93,12 @@ public interface UserMemoryRepository extends JpaRepository<UserMemoryEntity, St
     long countByUserIdAndImportance(String userId, MemoryImportance importance);
     
     /**
+     * 按类型统计所有记忆数量
+     */
+    @Query("SELECT m.type, COUNT(m) FROM UserMemoryEntity m GROUP BY m.type")
+    List<Object[]> countByTypeGroupBy();
+    
+    /**
      * 删除用户记忆
      */
     @Modifying

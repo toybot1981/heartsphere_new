@@ -36,7 +36,7 @@ public class WebSearchNode {
         try {
             // 1. 从上下文获取变量并构建查询
             String query = evaluateTemplate(config.getQueryTemplate(), context);
-            log.debug("解析后的查询: query={}", query);
+            log.info("解析后的查询: query={}", query);
 
             // 2. 执行搜索
             WebSearchRequest searchRequest = buildSearchRequest(config, context);

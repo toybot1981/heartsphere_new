@@ -50,7 +50,7 @@ heartsphere:
 
 logging:
   level:
-    com.heartsphere: DEBUG
-    com.heartsphere.heartsphereshare: DEBUG
+    com.heartsphere: INFO
+    com.heartsphere.heartsphereshare: INFO
     org.springframework.data.mongodb: WARN
     org.springframework.data.redis: WARN

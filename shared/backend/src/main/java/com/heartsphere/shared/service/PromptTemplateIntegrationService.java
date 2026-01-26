@@ -72,7 +72,7 @@ public class PromptTemplateIntegrationService {
         try {
             Optional<PromptTemplate> templateOpt = getTemplateByCategory(categoryCode);
             if (templateOpt.isEmpty()) {
-                logger.debug("未找到启用的模板，分类: {}，将使用默认提示词", categoryCode);
+                logger.info("未找到启用的模板，分类: {}，将使用默认提示词", categoryCode);
                 return null;
             }
             
@@ -109,7 +109,7 @@ public class PromptTemplateIntegrationService {
             response.setSystemPrompt(defaultSystemPrompt);
             response.setUserPrompt(defaultUserPrompt);
             response.setUsedVariables(variables != null ? variables : new HashMap<>());
-            logger.debug("使用默认提示词，分类: {}", categoryCode);
+            logger.info("使用默认提示词，分类: {}", categoryCode);
         }
         
         return response;

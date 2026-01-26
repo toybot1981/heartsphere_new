@@ -199,10 +199,10 @@ public class GraphExecutionManagementService {
                                 if (edgeDTO.getSourceNodeId().equals(nodeDTO.getNodeId())) {
                                     if ("true".equals(edgeDTO.getEdgeType()) && conditionNode.getTrueNodeId() == null) {
                                         conditionNode.setTrueNodeId(edgeDTO.getTargetNodeId());
-                                        log.debug("从边推断ConditionNode {} 的trueNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
+                                        log.info("从边推断ConditionNode {} 的trueNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
                                     } else if ("false".equals(edgeDTO.getEdgeType()) && conditionNode.getFalseNodeId() == null) {
                                         conditionNode.setFalseNodeId(edgeDTO.getTargetNodeId());
-                                        log.debug("从边推断ConditionNode {} 的falseNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
+                                        log.info("从边推断ConditionNode {} 的falseNodeId: {}", nodeDTO.getNodeId(), edgeDTO.getTargetNodeId());
                                     }
                                 }
                             }

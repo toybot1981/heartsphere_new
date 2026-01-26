@@ -173,7 +173,10 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
         {qrStatus === 'loading' ? (
           <MobileLoadingSpinner size="large" />
         ) : qrStatus === 'expired' ? (
-          <div className="text-center text-slate-500">
+          <div 
+            className="text-center"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-16 w-16 mx-auto mb-2"
@@ -193,39 +196,62 @@ export const MobileWechatLogin: React.FC<MobileWechatLoginProps> = memo(({
         ) : qrCodeDataUrl ? (
           <img src={qrCodeDataUrl} alt="微信登录二维码" className="w-full h-full" />
         ) : (
-          <div className="text-center text-slate-500">
+          <div 
+            className="text-center"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             <p className={MobileTypography.fontSize.sm}>加载中...</p>
           </div>
         )}
 
         {qrStatus === 'scanned' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 rounded-2xl">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-pulse mb-3">
+          <div 
+            className="absolute inset-0 flex flex-col items-center justify-center z-10 rounded-2xl"
+            style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))' }}
+          >
+            <div 
+              className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg animate-pulse mb-3"
+              style={{ backgroundColor: 'var(--color-success, #22c55e)' }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 text-white"
+                className="h-12 w-12"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                style={{ color: 'var(--text-primary)' }}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-white text-sm font-medium bg-black/60 px-3 py-1 rounded">
+            <p 
+              className="text-sm font-medium px-3 py-1 rounded"
+              style={{
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.6))',
+              }}
+            >
               请在手机上确认登录
             </p>
           </div>
         )}
 
         {qrStatus === 'confirmed' && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-green-500/20 rounded-2xl">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+          <div 
+            className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl"
+            style={{ backgroundColor: 'var(--bg-success-alpha, rgba(34, 197, 94, 0.2))' }}
+          >
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: 'var(--color-success, #22c55e)' }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-white"
+                className="h-10 w-10"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                style={{ color: 'var(--text-primary)' }}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>

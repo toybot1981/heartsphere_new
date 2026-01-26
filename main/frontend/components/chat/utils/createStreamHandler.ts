@@ -42,7 +42,7 @@ export const createStreamHandler = ({
   let currentSkillId = initialSkillId;
   let currentSkillName = initialSkillName;
 
-  return (chunk: StreamChunk) => {
+  return async (chunk: StreamChunk) => {
     try {
       // 如果有 getSkillInfo 函数，动态获取最新的技能信息
       if (getSkillInfo) {
@@ -137,8 +137,14 @@ export const createStreamHandler = ({
         }
 
         // 调用完成回调
-        if (onComplete && requestFullResponseText) {
-          onComplete(requestFullResponseText, requestId);
+        if (onComplete) {
+          // 即使 fullText 为空，也调用 onComplete，让调用方决定如何处理
+          // 这样可以确保保存消息的逻辑能够执行（即使内容为空）
+          try {
+            await onComplete(requestFullResponseText || '', requestId);
+          } catch (error) {
+            console.error('[createStreamHandler] onComplete 回调执行失败:', error);
+          }
         }
       }
     } catch (error) {

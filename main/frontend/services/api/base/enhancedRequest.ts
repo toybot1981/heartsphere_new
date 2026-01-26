@@ -55,7 +55,7 @@ export const enhancedRequest = async <T>(
   if (cacheEnabled && isGetRequest) {
     const cached = requestCache.get<T>(url, options);
     if (cached !== null) {
-      logger.debug(`[enhancedRequest] 使用缓存: ${url}`);
+      logger.info(`[enhancedRequest] 使用缓存: ${url}`);
       return cached;
     }
   }
@@ -94,7 +94,7 @@ export const enhancedRequest = async <T>(
     if (cacheEnabled && isGetRequest) {
       const ttl = options?.cache?.ttl;
       requestCache.set(url, result, options, ttl);
-      logger.debug(`[enhancedRequest] 缓存结果: ${url} (TTL: ${ttl || 'default'})`);
+      logger.info(`[enhancedRequest] 缓存结果: ${url} (TTL: ${ttl || 'default'})`);
     }
 
     return result;
@@ -103,7 +103,7 @@ export const enhancedRequest = async <T>(
     if (cacheEnabled && isGetRequest) {
       const cached = requestCache.get<T>(url, options);
       if (cached !== null) {
-        logger.debug(`[enhancedRequest] 请求失败，使用缓存降级: ${url}`);
+        logger.info(`[enhancedRequest] 请求失败，使用缓存降级: ${url}`);
         return cached;
       }
     }

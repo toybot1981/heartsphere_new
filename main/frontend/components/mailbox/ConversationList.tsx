@@ -70,19 +70,43 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-950">
+    <div 
+      className="flex flex-col h-full"
+      style={{
+        background: 'var(--gradient-bg, linear-gradient(to bottom, #0f172a, #020617))',
+      }}
+    >
       {/* 对话列表 */}
       <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent">
         {loading && conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-slate-400">加载中...</p>
+            <div 
+              className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mb-4"
+              style={{
+                borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+                borderTopColor: 'var(--color-primary, #9333ea)',
+              }}
+            />
+            <p style={{ color: 'var(--text-tertiary)' }}>加载中...</p>
           </div>
         ) : conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500">
+          <div 
+            className="flex flex-col items-center justify-center h-full"
+            style={{ color: 'var(--text-disabled)' }}
+          >
             <div className="text-6xl mb-6 animate-bounce">💬</div>
-            <p className="text-lg font-medium mb-2">暂无对话</p>
-            <p className="text-sm text-slate-600">开始一个新的对话吧！</p>
+            <p 
+              className="text-lg font-medium mb-2"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              暂无对话
+            </p>
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              开始一个新的对话吧！
+            </p>
           </div>
         ) : (
           <>
@@ -102,11 +126,34 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               <button
                 onClick={handleLoadMore}
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-slate-800/50 hover:bg-slate-700/70 text-slate-400 hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700/30 font-medium"
+                className="w-full py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border font-medium"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                  borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+                  color: 'var(--text-tertiary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }
+                }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-slate-500/30 border-t-slate-400 rounded-full animate-spin"></div>
+                    <div 
+                      className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                      style={{
+                        borderColor: 'var(--text-disabled, rgba(148, 163, 184, 0.3))',
+                        borderTopColor: 'var(--text-tertiary, #94a3b8)',
+                      }}
+                    />
                     加载中...
                   </span>
                 ) : (
@@ -142,19 +189,54 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onCli
   return (
     <div
       onClick={onClick}
-      className={`group p-4 rounded-2xl cursor-pointer transition-all duration-300 border relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] ${
-        unreadCount > 0
-          ? 'bg-gradient-to-r from-blue-900/70 via-cyan-900/50 to-blue-900/70 border-cyan-500/40 hover:border-cyan-400/60 shadow-lg shadow-cyan-900/20 ring-2 ring-cyan-500/10'
-          : 'bg-slate-800/50 border-slate-700/40 hover:bg-slate-800/80 hover:border-slate-600/60'
-      }`}
+      className="group p-4 rounded-2xl cursor-pointer transition-all duration-300 border relative overflow-hidden active:scale-[0.98]"
+      style={{
+        background: unreadCount > 0
+          ? 'var(--gradient-primary, linear-gradient(to right, rgba(30, 58, 138, 0.7), rgba(14, 116, 144, 0.5), rgba(30, 58, 138, 0.7)))'
+          : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+        borderColor: unreadCount > 0
+          ? 'var(--color-info, rgba(6, 182, 212, 0.4))'
+          : 'var(--bg-overlay, rgba(71, 85, 105, 0.4))',
+        boxShadow: unreadCount > 0
+          ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+          : 'none',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        if (unreadCount > 0) {
+          e.currentTarget.style.borderColor = 'var(--color-info, rgba(34, 211, 238, 0.6))';
+        } else {
+          e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(71, 85, 105, 0.6))';
+          e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.8))';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.borderColor = unreadCount > 0
+          ? 'var(--color-info, rgba(6, 182, 212, 0.4))'
+          : 'var(--bg-overlay, rgba(71, 85, 105, 0.4))';
+        e.currentTarget.style.backgroundColor = unreadCount > 0
+          ? 'var(--gradient-primary, linear-gradient(to right, rgba(30, 58, 138, 0.7), rgba(14, 116, 144, 0.5), rgba(30, 58, 138, 0.7)))'
+          : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+      }}
     >
       {/* 背景光效 */}
       {unreadCount > 0 && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div 
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{
+            background: 'var(--gradient-bg, linear-gradient(to right, transparent, rgba(6, 182, 212, 0.05), transparent))',
+          }}
+        />
       )}
       
       {isPinned && (
-        <div className="absolute top-3 right-3 text-yellow-400 text-base drop-shadow-lg z-10">📌</div>
+        <div 
+          className="absolute top-3 right-3 text-base drop-shadow-lg z-10"
+          style={{ color: 'var(--color-warning, #fbbf24)' }}
+        >
+          📌
+        </div>
       )}
       
       <div className="flex items-center gap-4 relative z-10">
@@ -163,38 +245,71 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onCli
             <img
               src={participantAvatar}
               alt={participantName}
-              className="w-14 h-14 rounded-full object-cover border-2 border-slate-700/50 shadow-lg transition-transform group-hover:scale-110"
+              className="w-14 h-14 rounded-full object-cover border-2 shadow-lg transition-transform group-hover:scale-110"
+              style={{
+                borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+              }}
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg transition-transform group-hover:scale-110 border-2 border-white/20">
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg shadow-lg transition-transform group-hover:scale-110 border-2"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to bottom right, #9333ea, #ec4899, #6366f1))',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+              }}
+            >
               {participantName.charAt(0).toUpperCase()}
             </div>
           )}
           {unreadCount > 0 && (
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse">
+            <div 
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg animate-pulse"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to bottom right, #ef4444, #ec4899))',
+                color: 'var(--text-primary)',
+              }}
+            >
               {unreadCount > 9 ? '9+' : unreadCount}
             </div>
           )}
           {unreadCount === 0 && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900"></div>
+            <div 
+              className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2"
+              style={{
+                backgroundColor: 'var(--color-success, #4ade80)',
+                borderColor: 'var(--bg-overlay, #0f172a)',
+              }}
+            />
           )}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
-            <h4 className={`font-bold text-base truncate ${
-              unreadCount > 0 ? 'text-white' : 'text-slate-300'
-            }`}>
+            <h4 
+              className="font-bold text-base truncate"
+              style={{
+                color: unreadCount > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
+              }}
+            >
               {participantName}
             </h4>
             <div className="flex items-center gap-2 flex-shrink-0">
               {isMuted && (
-                <span className="text-slate-500 text-base">🔇</span>
+                <span 
+                  className="text-base"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  🔇
+                </span>
               )}
               {conversation.lastMessageAt && (
-                <p className={`text-xs whitespace-nowrap ml-2 ${
-                  unreadCount > 0 ? 'text-cyan-300/70' : 'text-slate-500'
-                }`}>
+                <p 
+                  className="text-xs whitespace-nowrap ml-2"
+                  style={{
+                    color: unreadCount > 0 ? 'var(--color-info, rgba(34, 211, 238, 0.7))' : 'var(--text-disabled)',
+                  }}
+                >
                   {new Date(conversation.lastMessageAt).toLocaleTimeString('zh-CN', {
                     hour: '2-digit',
                     minute: '2-digit'
@@ -205,9 +320,13 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onCli
           </div>
           
           {conversation.lastMessageContent && (
-            <p className={`text-sm truncate leading-relaxed ${
-              unreadCount > 0 ? 'text-slate-200 font-medium' : 'text-slate-400'
-            }`}>
+            <p 
+              className="text-sm truncate leading-relaxed"
+              style={{
+                color: unreadCount > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+                fontWeight: unreadCount > 0 ? 500 : 400,
+              }}
+            >
               {conversation.lastMessageContent}
             </p>
           )}

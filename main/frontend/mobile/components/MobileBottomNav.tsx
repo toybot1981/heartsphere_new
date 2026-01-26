@@ -17,10 +17,19 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentScreen,
     const isProfile = currentScreen === 'mobileProfile';
 
     return (
-        <div className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-md border-t border-white/10 flex justify-around items-center z-50 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        <div 
+          className="fixed bottom-0 left-0 w-full backdrop-blur-md border-t flex justify-around items-center z-50 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+          style={{
+            backgroundColor: 'var(--tabbar-bg)',
+            borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+          }}
+        >
             <button 
                 onClick={() => onNavigate('realWorld')}
-                className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation ${isHome ? 'text-pink-400' : 'text-gray-500 active:text-white'}`}
+                className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation"
+                style={{
+                  color: isHome ? 'var(--tabbar-icon-active)' : 'var(--tabbar-icon-color)',
+                }}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isHome ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isHome ? 0 : 2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -30,7 +39,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentScreen,
 
             <button 
                 onClick={() => onNavigate('sceneSelection')}
-                className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation ${isWorld ? 'text-purple-400' : 'text-gray-500 active:text-white'}`}
+                className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation"
+                style={{
+                  color: isWorld ? 'var(--tabbar-icon-active)' : 'var(--tabbar-icon-color)',
+                }}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isWorld ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isWorld ? 0 : 2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -41,16 +53,29 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentScreen,
             {/* Connection Center Button */}
             <button 
                 onClick={() => onNavigate('connectionSpace')}
-                className={`relative -top-6 bg-gradient-to-tr from-indigo-600 to-purple-600 min-w-[56px] min-h-[56px] w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 border-2 border-black transition-transform active:scale-90 touch-manipulation ${isConnect ? 'ring-2 ring-purple-400' : ''}`}
+                className="relative -top-6 min-w-[56px] min-h-[56px] w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-2 transition-transform active:scale-90 touch-manipulation"
+                style={{
+                  background: 'var(--gradient-primary)',
+                  borderColor: 'var(--bg-primary)',
+                  boxShadow: 'var(--shadow-primary)',
+                }}
             >
                 <span className="text-xl">✨</span>
             </button>
 
             <button 
                 onClick={onOpenMail}
-                className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation relative text-gray-500 active:text-white`}
+                className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation relative"
+                style={{
+                  color: 'var(--tabbar-icon-color)',
+                }}
             >
-                {hasUnreadMail && <span className="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                {hasUnreadMail && (
+                  <span 
+                    className="absolute top-1 right-3 w-2 h-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: 'var(--color-error, #ef4444)' }}
+                  />
+                )}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -59,7 +84,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ currentScreen,
 
             <button 
                 onClick={() => onNavigate('mobileProfile')} 
-                className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation ${isProfile ? 'text-indigo-400' : 'text-gray-500 active:text-white'}`}
+                className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-16 h-12 transition-all active:scale-95 touch-manipulation"
+                style={{
+                  color: isProfile ? 'var(--tabbar-icon-active)' : 'var(--tabbar-icon-color)',
+                }}
             >
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isProfile ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isProfile ? 0 : 2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

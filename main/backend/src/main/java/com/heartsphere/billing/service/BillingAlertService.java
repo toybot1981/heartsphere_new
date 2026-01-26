@@ -35,7 +35,7 @@ public class BillingAlertService {
         if (!existingAlerts.isEmpty()) {
             BillingAlert latest = existingAlerts.get(0);
             if (latest.getAlertType().equals("low_balance") || latest.getAlertType().equals("insufficient_balance")) {
-                log.debug("提供商 {} 已有未解决的余额提醒，跳过创建", pool.getProviderId());
+                log.info("提供商 {} 已有未解决的余额提醒，跳过创建", pool.getProviderId());
                 return latest;
             }
         }

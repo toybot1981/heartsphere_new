@@ -70,7 +70,7 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
     if (!container) return;
 
     const init = async () => {
-      logger.debug('[PortalLayer] 开始初始化PortalRenderer', {
+      logger.info('[PortalLayer] 开始初始化PortalRenderer', {
         containerSize: {
           width: container.clientWidth,
           height: container.clientHeight,
@@ -80,13 +80,13 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
       
       try {
         const renderer = new PortalRenderer(options);
-        logger.debug('[PortalLayer] PortalRenderer实例创建成功，开始初始化...');
+        logger.info('[PortalLayer] PortalRenderer实例创建成功，开始初始化...');
         await renderer.init(container);
-        logger.debug('[PortalLayer] PortalRenderer初始化成功');
+        logger.info('[PortalLayer] PortalRenderer初始化成功');
 
         // 创建所有传送门
         const activePortals = portals.filter(p => p.isActive);
-        logger.debug('[PortalLayer] 准备创建传送门', {
+        logger.info('[PortalLayer] 准备创建传送门', {
           totalPortals: portals.length,
           activePortals: activePortals.length,
           portals: activePortals.map(p => ({
@@ -108,9 +108,9 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
             state: 'idle' as PortalAnimationState,
           };
 
-          logger.debug(`[PortalLayer] 创建传送门: ${portal.portalName} (ID: ${portal.id})`, renderConfig);
+          logger.info(`[PortalLayer] 创建传送门: ${portal.portalName} (ID: ${portal.id})`, renderConfig);
           await renderer.createPortal(portal.id, renderConfig);
-          logger.debug(`[PortalLayer] 传送门创建成功: ${portal.portalName}`);
+          logger.info(`[PortalLayer] 传送门创建成功: ${portal.portalName}`);
         }
         
         logger.info(`[PortalLayer] 所有传送门创建完成，共 ${activePortals.length} 个`);
@@ -135,7 +135,7 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
 
     return () => {
       if (rendererRef.current) {
-        logger.debug('[PortalLayer] 清理PortalRenderer');
+        logger.info('[PortalLayer] 清理PortalRenderer');
         rendererRef.current.dispose();
         rendererRef.current = null;
       }
@@ -214,7 +214,7 @@ export const PortalLayer: React.FC<PortalLayerProps> = ({
       enabledSync,
       localStorageValue: localStorage.getItem('portal_enabled'),
     });
-    logger.debug('[PortalLayer] 功能未启用，不渲染组件', {
+    logger.info('[PortalLayer] 功能未启用，不渲染组件', {
       isEnabled,
       enabledSync,
       localStorageValue: localStorage.getItem('portal_enabled'),

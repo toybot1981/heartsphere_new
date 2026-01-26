@@ -207,7 +207,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             if (optionId == null || optionId.isEmpty()) {
                 // 使用nextNodeId作为id，如果没有则使用索引
                 optionId = option.getNextNodeId() != null ? option.getNextNodeId() : ("opt_" + optionIndex);
-                log.debug("[ChoiceNode] 选项缺少id，自动生成: {}", optionId);
+                log.info("[ChoiceNode] 选项缺少id，自动生成: {}", optionId);
             }
             
             optionMap.put("id", optionId);
@@ -239,7 +239,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
         state.setData("waiting_for_choice", true);
         state.setData("choice_node_id", id);
         
-        log.debug("[ChoiceNode] 选择节点执行完成，等待用户选择，可用选项数量: {}", optionMaps.size());
+        log.info("[ChoiceNode] 选择节点执行完成，等待用户选择，可用选项数量: {}", optionMaps.size());
         
         return state;
     }
@@ -268,7 +268,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             availableOptions.add(option);
         }
         
-        log.debug("[ChoiceNode] 可用选项数量: {}/{}", availableOptions.size(), options.size());
+        log.info("[ChoiceNode] 可用选项数量: {}/{}", availableOptions.size(), options.size());
         return availableOptions;
     }
     
@@ -453,7 +453,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             effect.getFavorabilityChange().forEach((characterId, change) -> {
                 int current = finalFavorability.getOrDefault(characterId, 0);
                 finalFavorability.put(characterId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[ChoiceNode] 角色 {} 好感度变化: {} -> {}", characterId, current, finalFavorability.get(characterId));
+                log.info("[ChoiceNode] 角色 {} 好感度变化: {} -> {}", characterId, current, finalFavorability.get(characterId));
             });
         }
         
@@ -471,7 +471,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             effect.getSkillChange().forEach((skillId, change) -> {
                 int current = finalSkills.getOrDefault(skillId, 0);
                 finalSkills.put(skillId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[ChoiceNode] 技能 {} 值变化: {} -> {}", skillId, current, finalSkills.get(skillId));
+                log.info("[ChoiceNode] 技能 {} 值变化: {} -> {}", skillId, current, finalSkills.get(skillId));
             });
         }
         
@@ -486,7 +486,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             for (String eventId : effect.getTriggerEvents()) {
                 if (!triggeredEvents.contains(eventId)) {
                     triggeredEvents.add(eventId);
-                    log.debug("[ChoiceNode] 触发事件: {}", eventId);
+                    log.info("[ChoiceNode] 触发事件: {}", eventId);
                 }
             }
         }
@@ -502,7 +502,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             for (String itemId : effect.getAddItems()) {
                 if (!items.contains(itemId)) {
                     items.add(itemId);
-                    log.debug("[ChoiceNode] 添加物品: {}", itemId);
+                    log.info("[ChoiceNode] 添加物品: {}", itemId);
                 }
             }
         }
@@ -511,7 +511,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
         if (effect.getSetVariables() != null) {
             effect.getSetVariables().forEach((varName, varValue) -> {
                 state.setData("variable_" + varName, varValue);
-                log.debug("[ChoiceNode] 设置变量: {} = {}", varName, varValue);
+                log.info("[ChoiceNode] 设置变量: {} = {}", varName, varValue);
             });
         }
     }
@@ -538,7 +538,7 @@ public class ChoiceNode implements GraphEngine.GraphNode {
             if (option.getId() == null || option.getId().isEmpty()) {
                 if (option.getNextNodeId() != null && option.getNextNodeId().equals(optionId)) {
                     selectedOption = option;
-                    log.debug("[ChoiceNode] 通过nextNodeId匹配选项: {}", optionId);
+                    log.info("[ChoiceNode] 通过nextNodeId匹配选项: {}", optionId);
                     break;
                 }
             }

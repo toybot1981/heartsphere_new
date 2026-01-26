@@ -131,7 +131,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
             applyChange(change, state);
         }
         
-        log.debug("[StateChangeNode] 状态变更节点执行完成");
+        log.info("[StateChangeNode] 状态变更节点执行完成");
         return state;
     }
     
@@ -139,7 +139,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
      * 应用状态变更
      */
     private void applyChange(StateChange change, GraphEngine.GraphState state) {
-        log.debug("[StateChangeNode] 应用变更: type={}, target={}, operation={}, value={}", 
+        log.info("[StateChangeNode] 应用变更: type={}, target={}, operation={}, value={}", 
                 change.getType(), change.getTarget(), change.getOperation(), change.getValue());
         
         switch (change.getType()) {
@@ -182,7 +182,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
         newValue = Math.max(0, Math.min(100, newValue));
         
         skills.put(skillId, newValue);
-        log.debug("[StateChangeNode] 技能 {} 变更: {} -> {}", skillId, currentValue, newValue);
+        log.info("[StateChangeNode] 技能 {} 变更: {} -> {}", skillId, currentValue, newValue);
     }
     
     /**
@@ -204,7 +204,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
         newValue = Math.max(0, Math.min(100, newValue));
         
         favorability.put(characterId, newValue);
-        log.debug("[StateChangeNode] 角色 {} 好感度变更: {} -> {}", characterId, currentValue, newValue);
+        log.info("[StateChangeNode] 角色 {} 好感度变更: {} -> {}", characterId, currentValue, newValue);
     }
     
     /**
@@ -223,7 +223,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
         if (change.getOperation() == StateChange.OperationType.SET) {
             // SET操作：直接设置值
             variables.put(variableName, change.getValue());
-            log.debug("[StateChangeNode] 变量 {} 设置为: {}", variableName, change.getValue());
+            log.info("[StateChangeNode] 变量 {} 设置为: {}", variableName, change.getValue());
         } else if (change.getOperation() == StateChange.OperationType.ADD || 
                    change.getOperation() == StateChange.OperationType.SUBTRACT) {
             // ADD/SUBTRACT操作：需要当前值是数值类型
@@ -232,7 +232,7 @@ public class StateChangeNode implements GraphEngine.GraphNode {
                 int current = ((Number) currentValue).intValue();
                 int newValue = calculateNewValue(current, change.getOperation(), change.getValue());
                 variables.put(variableName, newValue);
-                log.debug("[StateChangeNode] 变量 {} 变更: {} -> {}", variableName, current, newValue);
+                log.info("[StateChangeNode] 变量 {} 变更: {} -> {}", variableName, current, newValue);
             } else {
                 log.warn("[StateChangeNode] 变量 {} 不是数值类型，无法执行ADD/SUBTRACT操作", variableName);
             }
@@ -258,12 +258,12 @@ public class StateChangeNode implements GraphEngine.GraphNode {
             // TRIGGER操作：添加事件（如果不存在）
             if (!triggeredEvents.contains(eventId)) {
                 triggeredEvents.add(eventId);
-                log.debug("[StateChangeNode] 触发事件: {}", eventId);
+                log.info("[StateChangeNode] 触发事件: {}", eventId);
             }
         } else if (change.getOperation() == StateChange.OperationType.REMOVE) {
             // REMOVE操作：移除事件
             triggeredEvents.remove(eventId);
-            log.debug("[StateChangeNode] 移除事件: {}", eventId);
+            log.info("[StateChangeNode] 移除事件: {}", eventId);
         } else {
             log.warn("[StateChangeNode] 事件变更不支持的操作类型: {}", change.getOperation());
         }
@@ -287,12 +287,12 @@ public class StateChangeNode implements GraphEngine.GraphNode {
             // ADD/TRIGGER操作：添加物品（如果不存在）
             if (!collectedItems.contains(itemId)) {
                 collectedItems.add(itemId);
-                log.debug("[StateChangeNode] 添加物品: {}", itemId);
+                log.info("[StateChangeNode] 添加物品: {}", itemId);
             }
         } else if (change.getOperation() == StateChange.OperationType.REMOVE) {
             // REMOVE操作：移除物品
             collectedItems.remove(itemId);
-            log.debug("[StateChangeNode] 移除物品: {}", itemId);
+            log.info("[StateChangeNode] 移除物品: {}", itemId);
         } else {
             log.warn("[StateChangeNode] 物品变更不支持的操作类型: {}", change.getOperation());
         }

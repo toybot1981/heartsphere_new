@@ -43,6 +43,8 @@ public class SecurityConfig {
                 // 允许 Swagger 和 Actuator 匿名访问
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                // Demo API 端点（用于 AgentScope Computer-Use 演示）
+                .requestMatchers("/api/demo/**").permitAll() // 允许匿名访问，用于演示和监控
                 // Mentis API 端点需要认证（如果没有 token，则允许匿名访问，使用默认用户）
                 .requestMatchers("/api/mentis/**").permitAll() // 临时允许匿名访问，后续可以改为 .authenticated()
                 .anyRequest().authenticated()

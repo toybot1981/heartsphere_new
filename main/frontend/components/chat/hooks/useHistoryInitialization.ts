@@ -66,11 +66,54 @@ export const useHistoryInitialization = ({
 
       if (customScenario && onUpdateScenarioState) {
         // Scenario Mode: 确保 scenarioState 已初始化
+        
+        // 验证 customScenario.nodes 存在
+        if (!customScenario.nodes || typeof customScenario.nodes !== 'object') {
+          console.error('[useHistoryInitialization] customScenario.nodes 不存在或格式错误:', {
+            hasNodes: !!customScenario.nodes,
+            nodesType: typeof customScenario.nodes,
+            customScenarioId: customScenario.id,
+            customScenarioTitle: customScenario.title,
+            customScenarioKeys: Object.keys(customScenario),
+          });
+          // 不直接返回，而是尝试使用普通模式初始化
+          // 这样可以避免完全无法使用的情况
+          if (!isStoryMode) {
+            const initMsg: Message = {
+              id: 'init_scenario_error',
+              role: 'model',
+              text: character.firstMessage || '剧本数据不完整，无法初始化场景。',
+              timestamp: Date.now(),
+            };
+            onUpdateHistory([initMsg]);
+          }
+          return;
+        }
+        
         let targetNodeId = scenarioState?.currentNodeId;
 
         // 如果 scenarioState 未初始化或 currentNodeId 无效，使用 startNodeId
         if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
           targetNodeId = customScenario.startNodeId;
+
+          // 验证 startNodeId 是否有效
+          if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
+            console.error('[useHistoryInitialization] startNodeId 无效:', {
+              startNodeId: customScenario.startNodeId,
+              availableNodes: Object.keys(customScenario.nodes),
+            });
+            // 使用普通模式初始化作为降级方案
+            if (!isStoryMode) {
+              const initMsg: Message = {
+                id: 'init_scenario_error',
+                role: 'model',
+                text: character.firstMessage || '剧本起始节点无效，无法初始化场景。',
+                timestamp: Date.now(),
+              };
+              onUpdateHistory([initMsg]);
+            }
+            return;
+          }
 
           // 更新 scenarioState
           if (onUpdateScenarioState) {
@@ -88,8 +131,19 @@ export const useHistoryInitialization = ({
         } else {
           console.error('[useHistoryInitialization] 找不到起始节点:', {
             targetNodeId,
-            availableNodes: Object.keys(customScenario.nodes),
+            availableNodes: Object.keys(customScenario.nodes || {}),
+            hasNodes: !!customScenario.nodes,
           });
+          // 使用普通模式初始化作为降级方案
+          if (!isStoryMode) {
+            const initMsg: Message = {
+              id: 'init_scenario_error',
+              role: 'model',
+              text: character.firstMessage || '找不到起始节点，无法初始化场景。',
+              timestamp: Date.now(),
+            };
+            onUpdateHistory([initMsg]);
+          }
         }
       } else if (!isStoryMode) {
         // Normal Mode

@@ -2,4 +2,6 @@
 export { useAdminAuth } from '../contexts/AdminAuthContext';
 export { useAdminData } from './useAdminData';
 export { useImageUpload } from './useImageUpload';
+export { useLogStream } from './useLogStream';
+export type { LogMessage } from './useLogStream';
 

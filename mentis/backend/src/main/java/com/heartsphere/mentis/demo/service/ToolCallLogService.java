@@ -140,7 +140,7 @@ public class ToolCallLogService {
                 }
                 
                 repository.save(logEntry);
-                log.debug("Tool call log updated to success: logId={}, duration={}ms", 
+                log.info("Tool call log updated to success: logId={}, duration={}ms", 
                     logId, logEntry.getDuration());
                 
                 // 推送工具调用成功事件
@@ -185,7 +185,7 @@ public class ToolCallLogService {
                 }
                 
                 repository.save(logEntry);
-                log.debug("Tool call log updated to error: logId={}, error={}", logId, errorMessage);
+                log.info("Tool call log updated to error: logId={}, error={}", logId, errorMessage);
                 
                 // 推送工具调用错误事件
                 if (eventService != null) {

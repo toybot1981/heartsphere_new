@@ -61,7 +61,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
             IntentRecognizer.IntentRecognitionResult intentResult = 
                     intentRecognizer.recognize(userMessage, sessionId);
             
-            log.debug("意图识别结果: taskType={}, intent={}, confidence={}", 
+            log.info("意图识别结果: taskType={}, intent={}, confidence={}", 
                     intentResult.getTaskType(), intentResult.getIntent(), intentResult.getConfidence());
             
             String taskType = intentResult.getTaskType();
@@ -93,7 +93,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                 // 保存用户消息，获取 messageId
                 var userMessageEntity = messageService.saveMessage(sessionId, "USER", userMessage, "TEXT");
                 String messageId = userMessageEntity.getMessageId();
-                log.debug("保存用户消息: messageId={}", messageId);
+                log.info("保存用户消息: messageId={}", messageId);
                 
                 // 2.1 规划任务
                 TaskPlanner.TaskPlan plan = taskPlanner.planTask(userMessage, sessionId);
@@ -111,7 +111,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                     
                     log.info("开始生成响应: sessionId={}, executionStatus={}", 
                             sessionId, executionResult.getStatus());
-                    log.debug("执行结果摘要: taskResults数量={}", 
+                    log.info("执行结果摘要: taskResults数量={}", 
                             responseExecutionResult.getTaskResults() != null ? responseExecutionResult.getTaskResults().size() : 0);
                     
                     responseText = responseGenerator.generate(responseExecutionResult, sessionId);
@@ -139,7 +139,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                     // 保存助手响应消息到数据库
                     try {
                         messageService.saveMessage(sessionId, "MENTIS", responseText, "TEXT");
-                        log.debug("保存助手响应消息到数据库: sessionId={}", sessionId);
+                        log.info("保存助手响应消息到数据库: sessionId={}", sessionId);
                     } catch (Exception e) {
                         log.warn("保存助手响应消息失败（不影响响应返回）: sessionId={}", sessionId, e);
                     }
@@ -157,7 +157,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
             response.setResponse(responseText);
             response.setSessionId(sessionId);
             
-            log.debug("消息处理完成: messageId={}, responseLength={}", 
+            log.info("消息处理完成: messageId={}, responseLength={}", 
                     response.getMessageId(), responseText != null ? responseText.length() : 0);
             
             return response;
@@ -181,7 +181,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
             // 保存用户消息，获取 messageId
             var userMessageEntity = messageService.saveMessage(sessionId, "USER", userMessage, "TEXT");
             String messageId = userMessageEntity.getMessageId();
-            log.debug("保存用户消息: messageId={}", messageId);
+            log.info("保存用户消息: messageId={}", messageId);
             
             // 1. 识别用户意图
             IntentRecognizer.IntentRecognitionResult intentResult = 
@@ -222,7 +222,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                 
                 log.info("开始流式生成响应: sessionId={}, messageId={}, executionStatus={}", 
                         sessionId, messageId, executionResult.getStatus());
-                log.debug("执行结果摘要: taskResults数量={}", 
+                log.info("执行结果摘要: taskResults数量={}", 
                         responseExecutionResult.getTaskResults() != null ? responseExecutionResult.getTaskResults().size() : 0);
                 
                 // 使用流式生成响应，实时返回给前端
@@ -248,7 +248,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
      * 生成聊天回复（同步）
      */
     private String generateChatResponse(Long userId, String userMessage, String sessionId) {
-        log.debug("生成聊天回复: userId={}, sessionId={}", userId, sessionId);
+        log.info("生成聊天回复: userId={}, sessionId={}", userId, sessionId);
         
         try {
             String systemInstruction = "你是 Mentis，一个友好的智能助手。请用自然、友好的语言回复用户的问题。";
@@ -285,7 +285,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
             TextGenerationResponse response = aiService.generateText(userId, request);
             
             String responseText = response.getContent();
-            log.debug("聊天回复生成完成: responseLength={}", 
+            log.info("聊天回复生成完成: responseLength={}", 
                     responseText != null ? responseText.length() : 0);
             
             return responseText != null ? responseText : "抱歉，我无法生成回复。";
@@ -301,7 +301,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
      */
     private void generateChatResponseStream(Long userId, String userMessage, String sessionId, 
                                            String messageId, StreamResponseHandler handler) {
-        log.debug("流式生成聊天回复: userId={}, sessionId={}, messageId={}", 
+        log.info("流式生成聊天回复: userId={}, sessionId={}, messageId={}", 
                 userId, sessionId, messageId);
         
         try {
@@ -379,7 +379,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                 }
             });
             
-            log.debug("流式聊天回复生成完成: responseLength={}", fullResponse[0].length());
+            log.info("流式聊天回复生成完成: responseLength={}", fullResponse[0].length());
             
         } catch (Exception e) {
             log.error("流式生成聊天回复失败: userId={}, sessionId={}", userId, sessionId, e);
@@ -498,7 +498,7 @@ public class MentisAgentServiceImpl implements MentisAgentService {
                     taskCancelledData.put("errorMessage", task.getErrorMessage());
                     sessionRealtimeService.sendEvent(sessionId, "task_status_changed", taskCancelledData);
                     
-                    log.debug("任务已取消: taskId={}, description={}", task.getTaskId(), task.getDescription());
+                    log.info("任务已取消: taskId={}, description={}", task.getTaskId(), task.getDescription());
                 }
                 
                 // 发送一个清理事件，通知前端清空任务列表

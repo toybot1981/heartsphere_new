@@ -77,15 +77,38 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-          selectedSceneIds.length > 0
-            ? 'bg-blue-500 text-white shadow-lg'
-            : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
-        }`}
+        className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+        style={{
+          backgroundColor: selectedSceneIds.length > 0
+            ? 'var(--color-primary, #3b82f6)'
+            : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+          color: selectedSceneIds.length > 0
+            ? 'var(--text-primary)'
+            : 'var(--text-secondary)',
+          boxShadow: selectedSceneIds.length > 0 ? 'var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.5))' : 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (selectedSceneIds.length === 0) {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (selectedSceneIds.length === 0) {
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }
+        }}
       >
         <span>🏷️ 场景</span>
         {selectedSceneIds.length > 0 && (
-          <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs">
+          <span
+            className="px-2 py-0.5 rounded-full text-xs"
+            style={{
+              backgroundColor: 'var(--bg-overlay-alpha)',
+              color: 'var(--text-primary)',
+            }}
+          >
             {selectedSceneIds.length}
           </span>
         )}
@@ -105,19 +128,50 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full left-0 mt-2 w-64 bg-gray-800 border border-white/20 rounded-xl shadow-2xl z-20 max-h-64 overflow-y-auto">
+          <div 
+            className="absolute top-full left-0 mt-2 w-64 border rounded-xl shadow-2xl z-20 max-h-64 overflow-y-auto"
+            style={{
+              backgroundColor: 'var(--bg-card, #1f2937)',
+              borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+            }}
+          >
             {isLoading ? (
-              <div className="p-4 text-center text-gray-400">加载中...</div>
+              <div 
+                className="p-4 text-center"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                加载中...
+              </div>
             ) : scenes.length === 0 ? (
-              <div className="p-4 text-center text-gray-400">暂无场景</div>
+              <div 
+                className="p-4 text-center"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                暂无场景
+              </div>
             ) : (
               <>
-                <div className="p-2 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-sm text-gray-300">选择场景</span>
+                <div 
+                  className="p-2 border-b flex items-center justify-between"
+                  style={{ borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))' }}
+                >
+                  <span 
+                    className="text-sm"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    选择场景
+                  </span>
                   {selectedSceneIds.length > 0 && (
                     <button
                       onClick={handleClearAll}
-                      className="text-xs text-blue-400 hover:text-blue-300"
+                      className="text-xs transition-colors"
+                      style={{ color: 'var(--color-primary, #60a5fa)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--color-primary-light, #93c5fd)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--color-primary, #60a5fa)';
+                      }}
                     >
                       清除
                     </button>
@@ -127,15 +181,34 @@ export const SceneFilter: React.FC<SceneFilterProps> = ({
                   {scenes.map(scene => (
                     <label
                       key={scene.id}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-lg cursor-pointer"
+                      style={{
+                        backgroundColor: 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.1))';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
                       <input
                         type="checkbox"
                         checked={selectedSceneIds.includes(scene.id)}
                         onChange={() => handleSceneToggle(scene.id)}
-                        className="w-4 h-4 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-blue-500"
+                        className="w-4 h-4 rounded"
+                        style={{
+                          borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+                          backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                          accentColor: 'var(--color-primary, #3b82f6)',
+                        }}
                       />
-                      <span className="text-sm text-gray-300">{scene.name}</span>
+                      <span 
+                        className="text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        {scene.name}
+                      </span>
                     </label>
                   ))}
                 </div>

@@ -276,7 +276,7 @@ export const usePortal = (sceneId?: number | null) => {
 
   // 当sceneId变化时，自动加载传送门列表
   useEffect(() => {
-    logger.debug('[usePortal] sceneId变化，检查是否需要加载传送门', {
+    logger.info('[usePortal] sceneId变化，检查是否需要加载传送门', {
       sceneId,
       hasSceneId: !!sceneId,
       currentLoading: state.loading,

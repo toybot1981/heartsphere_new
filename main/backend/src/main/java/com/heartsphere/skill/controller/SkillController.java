@@ -109,9 +109,9 @@ public class SkillController {
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             // TODO: 在用户服务模式下，验证角色属于当前用户
-            log.debug("用户服务模式 - userId={}, characterId={}", userDetails.getId(), characterId);
+            log.info("用户服务模式 - userId={}, characterId={}", userDetails.getId(), characterId);
         } else {
-            log.debug("管理服务模式 - characterId={}", characterId);
+            log.info("管理服务模式 - characterId={}", characterId);
         }
         
         List<SkillDefinition> skills = skillRegistry.getCharacterSkills(characterId);
@@ -138,9 +138,9 @@ public class SkillController {
         
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            log.debug("用户服务模式 - userId={}, characterId={}", userDetails.getId(), characterId);
+            log.info("用户服务模式 - userId={}, characterId={}", userDetails.getId(), characterId);
         } else {
-            log.debug("管理服务模式 - characterId={}", characterId);
+            log.info("管理服务模式 - characterId={}", characterId);
         }
         
         List<SkillDefinition> skills = skillRegistry.getCharacterSkills(characterId);
@@ -171,7 +171,7 @@ public class SkillController {
                 .promptDrivenSkills(promptDrivenSkills)
                 .build();
         
-        log.debug("角色 {} 技能统计: Function Calling={}, 提示词驱动={}", 
+        log.info("角色 {} 技能统计: Function Calling={}, 提示词驱动={}", 
             characterId, functionCallingSkills.size(), promptDrivenSkills.size());
         
         return ResponseEntity.ok(ApiResponse.success(result));

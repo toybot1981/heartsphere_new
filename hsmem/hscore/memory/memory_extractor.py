@@ -76,10 +76,15 @@ class MemoryExtractor:
 
         for msg in messages:
             content = msg.get("content", "")
+            # 处理 content 可能是字符串或字典的情况
+            if isinstance(content, dict):
+                content = content.get("text", str(content))
+            content_str = str(content) if not isinstance(content, str) else content
+            
             for keyword in preference_keywords:
-                if keyword in content.lower():
+                if keyword in content_str.lower():
                     # 提取包含关键词的句子
-                    sentences = content.split("。")
+                    sentences = content_str.split("。")
                     for sentence in sentences:
                         if keyword in sentence.lower():
                             preferences.append(sentence.strip())
@@ -94,9 +99,14 @@ class MemoryExtractor:
 
         for msg in messages:
             content = msg.get("content", "")
+            # 处理 content 可能是字符串或字典的情况
+            if isinstance(content, dict):
+                content = content.get("text", str(content))
+            content_str = str(content) if not isinstance(content, str) else content
+            
             for keyword in habit_keywords:
-                if keyword in content.lower():
-                    sentences = content.split("。")
+                if keyword in content_str.lower():
+                    sentences = content_str.split("。")
                     for sentence in sentences:
                         if keyword in sentence.lower():
                             habits.append(sentence.strip())
@@ -111,10 +121,14 @@ class MemoryExtractor:
         # 提取名字、年龄、职业等
         for msg in messages[:10]:  # 只检查前10条消息
             content = msg.get("content", "")
+            # 处理 content 可能是字符串或字典的情况
+            if isinstance(content, dict):
+                content = content.get("text", str(content))
+            content_str = str(content) if not isinstance(content, str) else content
 
             # 简单的模式匹配
-            if "我叫" in content or "我是" in content:
-                info.append(content)
+            if "我叫" in content_str or "我是" in content_str:
+                info.append(content_str)
 
             if len(info) >= 5:
                 break

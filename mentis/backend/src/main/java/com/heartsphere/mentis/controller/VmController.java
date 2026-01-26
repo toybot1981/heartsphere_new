@@ -150,7 +150,7 @@ public class VmController {
         }
         
         // 截图功能已禁用
-        // log.debug("截图功能已禁用: sessionId={}, vmId={}", sessionId, vmInstance.getVmId());
+        // log.info("截图功能已禁用: sessionId={}, vmId={}", sessionId, vmInstance.getVmId());
         
         Map<String, String> result = new java.util.HashMap<>();
         result.put("screenshotUrl", "");

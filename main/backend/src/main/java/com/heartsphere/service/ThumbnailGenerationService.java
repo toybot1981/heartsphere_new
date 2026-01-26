@@ -1,5 +1,7 @@
 package com.heartsphere.service;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.heartsphere.shared.util.ImageUrlUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

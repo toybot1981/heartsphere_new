@@ -62,7 +62,7 @@ public class TaskPlannerImpl implements TaskPlanner {
     
     @Override
     public boolean validateTask(TaskPlan plan) {
-        log.debug("验证任务计划: planId={}", plan.getPlanId());
+        log.info("验证任务计划: planId={}", plan.getPlanId());
         
         if (plan == null || plan.getSteps() == null || plan.getSteps().isEmpty()) {
             return false;

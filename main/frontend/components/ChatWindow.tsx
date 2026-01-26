@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Character, Message, CustomScenario, AppSettings, StoryNode, StoryOption, UserProfile, JournalEcho, DialogueStyle } from '../types';
 import { ChatWindowProps, ScenarioState, ScenarioStateUpdates } from '../types/chat';
 import { aiService } from '../services/ai';
@@ -41,11 +41,15 @@ import { createErrorMessage, getErrorMessage } from '../utils/chat/errorHandling
 import { applyOptionEffects, processRandomEvents, checkOptionConditions } from '../utils/chat/scenarioHelpers';
 import { generateAIResponse } from './chat/utils/generateAIResponse';
 import { logger } from '../utils/logger';
+import { MemoryDebugPanel, MemoryDebugInfo } from './chat/debug/MemoryDebugPanel';
+import { SkillDebugPanel } from './chat/debug/SkillDebugPanel';
+import { useSkillDebug } from '../hooks/useSkillDebug';
 import { getToken } from '../services/api/base/tokenStorage';
 import { mailboxApi } from '../services/api/mailbox';
 import { browserNotificationService } from '../services/mailbox/BrowserNotificationService';
 import { useGameState } from '../contexts/GameStateContext';
 import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
+import { memoryApi } from '../services/api/memory/memory';
 
 // 类型定义已移至 types/chat.ts
 // 音频解码函数已移至 utils/audio.ts
@@ -60,7 +64,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   
   // 调试日志：检查history数据（仅在开发环境）
   useEffect(() => {
-    logger.debug('[ChatWindow] history prop变化:', {
+    logger.info('[ChatWindow] history prop变化:', {
       historyLength: history?.length || 0,
       historyType: typeof history,
       isArray: Array.isArray(history),
@@ -71,6 +75,46 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // 基础状态
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 记忆调试信息
+  const [memoryDebugInfo, setMemoryDebugInfo] = useState<MemoryDebugInfo | null>(null);
+  
+  // 技能调试面板可见性
+  const [skillDebugVisible, setSkillDebugVisible] = useState(false);
+  
+  // 会话ID：基于角色ID和用户ID
+  const sessionId = `chat_${character?.id || 'unknown'}_${userProfile?.id || 'guest'}`;
+  
+  // 技能调试 Hook
+  // 注意：conversationId 是可选的，如果没有 conversationId，将只显示基于 userId 的统计数据
+  // 技能调试面板可以在没有 conversationId 的情况下显示用户统计数据
+  const conversationIdForSkill = undefined; // 可选：如果有会话ID，可以传入
+  const skillDebug = useSkillDebug({
+    conversationId: conversationIdForSkill,
+    userId: userProfile?.id,
+    autoRefresh: false,
+  });
+
+  // 快捷键支持：Ctrl+Shift+S 切换技能调试面板
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+Shift+S (Windows/Linux) 或 Cmd+Shift+S (Mac)
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'S') {
+        event.preventDefault();
+        setSkillDebugVisible(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+  // 历史消息加载状态
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const historyLoadedRef = useRef(false);
   
   // UI状态管理（使用自定义Hook）
   const uiState = useUIState();
@@ -290,6 +334,201 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const scrollToBottom = React.useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+  
+  // 加载历史消息（初始加载最近100条）
+  useEffect(() => {
+    const loadHistory = async () => {
+      // 检查 sessionId 是否变化，如果变化则重置加载标记
+      if (historyLoadedRef.current === sessionId) {
+        logger.info('[ChatWindow] 历史消息已加载，跳过重复加载', { sessionId });
+        return;
+      }
+      
+      if (!userProfile?.id || !character?.id) {
+        logger.info('[ChatWindow] 缺少必要信息，跳过历史消息加载', {
+          hasUserId: !!userProfile?.id,
+          hasCharacterId: !!character?.id,
+        });
+        return;
+      }
+      
+      try {
+        const token = getToken();
+        if (!token) {
+          logger.warn('[ChatWindow] 未登录，跳过历史消息加载');
+          return;
+        }
+        
+        setIsLoadingHistory(true);
+        
+        // 记录加载开始
+        logger.info('[ChatWindow] 开始加载历史消息', {
+          sessionId,
+          userId: userProfile.id,
+          characterId: character?.id,
+        });
+        
+        logger.info('[ChatWindow] ========== 开始加载历史消息 ==========');
+        logger.info('[ChatWindow] 加载前检查: sessionId={}, userId={}, characterId={}, limit=100', 
+          sessionId, userProfile?.id, character?.id);
+        
+        const messages = await memoryApi.getChatMessages(sessionId, token, 100); // 增加到100条，确保加载所有消息
+        
+        // 记录加载结果
+        logger.info('[ChatWindow] 历史消息加载完成', {
+          sessionId,
+          messageCount: Array.isArray(messages) ? messages.length : 0,
+          messages: Array.isArray(messages) ? messages.map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            contentLength: m.content?.length || 0,
+            timestamp: m.timestamp,
+          })) : [],
+        });
+        
+        // 确保 messages 是数组
+        if (Array.isArray(messages) && messages.length > 0) {
+          // 转换为前端 Message 格式
+          const formattedMessages: Message[] = messages.map((msg: any) => ({
+            id: msg.id || `msg_${msg.timestamp}_${Math.random()}`,
+            role: msg.role === 'USER' ? 'user' : msg.role === 'ASSISTANT' ? 'model' : 'user',
+            text: msg.content || '',
+            timestamp: msg.timestamp || Date.now(),
+          }));
+          
+          // 按时间戳排序（从旧到新）
+          formattedMessages.sort((a, b) => a.timestamp - b.timestamp);
+          
+          // 统计消息类型
+          const userMessages = formattedMessages.filter(m => m.role === 'user').length;
+          const assistantMessages = formattedMessages.filter(m => m.role === 'model').length;
+          
+          logger.info('[ChatWindow] ✅ 历史消息格式化完成', {
+            sessionId,
+            totalMessages: formattedMessages.length,
+            userMessages,
+            assistantMessages,
+            messageIds: formattedMessages.map(m => m.id),
+          });
+          
+          // 更新历史
+          logger.info('[ChatWindow] 更新历史消息到界面');
+          onUpdateHistory(formattedMessages);
+          historyLoadedRef.current = sessionId; // 使用 sessionId 作为标记，而不是简单的 true
+          
+          // 如果有10条消息，可能还有更多
+          setHasMoreHistory(messages.length >= 10);
+          logger.info('[ChatWindow] ========== 加载历史消息完成 ==========');
+          
+          // 滚动到底部
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+        } else {
+          logger.info('[ChatWindow] 没有历史消息或消息为空', {
+            sessionId,
+            messagesType: typeof messages,
+            isArray: Array.isArray(messages),
+            length: Array.isArray(messages) ? messages.length : 'N/A',
+          });
+          setHasMoreHistory(false);
+          logger.info('[ChatWindow] ========== 加载历史消息完成（无消息） ==========');
+        }
+      } catch (error) {
+        // 改进错误处理，显示更详细的错误信息
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorDetails = error instanceof Error ? {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+        } : error;
+        
+        logger.error('[ChatWindow] 加载历史消息失败:', {
+          error: errorMessage,
+          details: errorDetails,
+          sessionId,
+          userId: userProfile?.id,
+        });
+        
+        // 如果是404或空响应，说明没有历史消息，这是正常的
+        if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+          logger.info('[ChatWindow] 没有历史消息（这是正常的）');
+          setHasMoreHistory(false);
+        } else {
+          // 其他错误，也设置为没有更多历史，避免重复请求
+          setHasMoreHistory(false);
+        }
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, userProfile?.id, character?.id]);
+  
+  // 加载更多历史消息（下拉加载）
+  const loadMoreHistory = useCallback(async () => {
+    if (isLoadingHistory || !hasMoreHistory || !userProfile?.id) {
+      return;
+    }
+    
+    try {
+      const token = getToken();
+      if (!token) {
+        return;
+      }
+      
+      // 获取最早的消息时间戳
+      const earliestMessage = safeHistory[0];
+      if (!earliestMessage || !earliestMessage.timestamp) {
+        setHasMoreHistory(false);
+        return;
+      }
+      
+      setIsLoadingHistory(true);
+      const messages = await memoryApi.getChatMessages(
+        sessionId,
+        token,
+        10,
+        earliestMessage.timestamp
+      );
+      
+      if (messages && messages.length > 0) {
+        // 转换为前端 Message 格式
+        const formattedMessages: Message[] = messages.map((msg: any) => ({
+          id: msg.id || `msg_${msg.timestamp}_${Math.random()}`,
+          role: msg.role === 'USER' ? 'user' : msg.role === 'ASSISTANT' ? 'model' : 'user',
+          text: msg.content || '',
+          timestamp: msg.timestamp || Date.now(),
+        }));
+        
+        // 按时间戳排序（从旧到新）
+        formattedMessages.sort((a, b) => a.timestamp - b.timestamp);
+        
+        // 添加到历史前面
+        onUpdateHistory((prev: Message[]) => {
+          const existing = Array.isArray(prev) ? prev : [];
+          // 合并并去重
+          const merged = [...formattedMessages, ...existing];
+          const unique = merged.filter((msg, idx, arr) => 
+            arr.findIndex(m => m.id === msg.id) === idx
+          );
+          return unique;
+        });
+        
+        // 如果返回的消息少于10条，说明没有更多了
+        setHasMoreHistory(messages.length >= 10);
+      } else {
+        setHasMoreHistory(false);
+      }
+    } catch (error) {
+      logger.error('[ChatWindow] 加载更多历史消息失败:', error);
+      setHasMoreHistory(false);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [isLoadingHistory, hasMoreHistory, sessionId, userProfile?.id, safeHistory, onUpdateHistory]);
 
   useEffect(() => {
     scrollToBottom();
@@ -347,7 +586,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       if (nodeType === 'ai-dynamic') {
         // AI动态生成模式：使用AI根据节点prompt生成内容
-        logger.debug('[ChatWindow] AI动态节点生成:', { nodeId: node.id, prompt: node.prompt });
+        logger.info('[ChatWindow] AI动态节点生成:', { nodeId: node.id, prompt: node.prompt });
         
         // 获取节点涉及的角色信息
         let focusedCharacter = character; // 默认使用主角色
@@ -388,6 +627,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           memorySystem: undefined, // 场景模式不使用记忆系统
           relevantMemories: [], // 场景模式不获取记忆
           customSystemInstructionSuffix: scenarioContext, // 添加场景上下文
+          sessionId, // 传入会话ID，用于保存消息
         });
       } else if (nodeType === 'ending') {
         // 结局节点：显示结局内容
@@ -433,11 +673,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
        
       // 如果节点有timeLimit，设置超时处理
-      if (node.timeLimit && node.timeoutNodeId) {
+      if (node.timeLimit && node.timeoutNodeId && customScenario?.nodes) {
         setTimeout(() => {
           if (scenarioState?.currentNodeId === node.id) {
             // 如果还在当前节点，说明超时了，跳转到超时节点
-            const timeoutNode = customScenario?.nodes[node.timeoutNodeId];
+            const timeoutNode = customScenario.nodes[node.timeoutNodeId];
             if (timeoutNode) {
               handleScenarioTransition(timeoutNode, null);
             }
@@ -483,21 +723,60 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     audioPlayback.setLoadingMessageId(msgId);
 
     try {
+      // 检查浏览器是否支持 AudioContext
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        throw new Error("浏览器不支持 AudioContext");
+      }
+      
+      // 初始化 AudioContext
       if (!audioPlayback.audioContextRef.current) {
-        audioPlayback.audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+        try {
+          audioPlayback.audioContextRef.current = new AudioContextClass({sampleRate: 24000});
+        } catch (error) {
+          throw new Error(`创建 AudioContext 失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
+      
       const ctx = audioPlayback.audioContextRef.current;
+      if (!ctx) {
+        throw new Error("AudioContext 未初始化");
+      }
+      
+      // 恢复 AudioContext（如果被暂停）
       if (ctx.state === 'suspended') {
-        await ctx.resume();
+        try {
+          await ctx.resume();
+        } catch (error) {
+          throw new Error(`恢复 AudioContext 失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
 
+      // 生成语音
       const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
-      if (!base64Audio) throw new Error("No audio data generated");
+      if (!base64Audio) {
+        throw new Error("No audio data generated");
+      }
 
+      // 解码音频数据
       const audioBytes = decodeBase64ToBytes(base64Audio);
       const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
+      
+      if (!audioBuffer) {
+        throw new Error("音频解码失败");
+      }
 
+      // 创建音频源节点
       const source = ctx.createBufferSource();
+      if (!source) {
+        throw new Error("无法创建音频源节点");
+      }
+      
+      // 验证 source 是否有必要的方法
+      if (typeof source.start !== 'function') {
+        throw new Error("音频源节点缺少 start 方法");
+      }
+      
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
       source.onended = () => {
@@ -505,12 +784,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
       
       audioPlayback.sourceNodeRef.current = source;
-      source.start();
       
-      audioPlayback.setPlayingMessageId(msgId);
+      // 调用 start 方法
+      try {
+        source.start();
+        audioPlayback.setPlayingMessageId(msgId);
+        logger.info('[ChatWindow] ✅ 手动播放音频成功', { msgId, textLength: text.length });
+      } catch (error) {
+        throw new Error(`启动音频播放失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
     } catch (e) {
-      logger.error("Audio playback failed", e);
-      showAlert("语音播放失败，请检查网络或稍后重试", "错误", "error");
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      const errorDetails = e instanceof Error ? {
+        name: e.name,
+        message: e.message,
+        stack: e.stack,
+      } : e;
+      logger.error("Audio playback failed", {
+        error: errorMessage,
+        details: errorDetails,
+        msgId,
+        characterId: character?.id,
+        voiceName: character?.voiceName,
+      });
+      showAlert(`语音播放失败: ${errorMessage || '未知错误'}`, "错误", "error");
     } finally {
       audioPlayback.setLoadingMessageId(null);
     }
@@ -543,9 +840,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           return;
       }
       
+      // 确保 customScenario.nodes 存在
+      if (!customScenario?.nodes || typeof customScenario.nodes !== 'object') {
+          logger.error('[ChatWindow] customScenario.nodes 不存在或格式错误:', {
+              hasNodes: !!customScenario?.nodes,
+              nodesType: typeof customScenario?.nodes,
+          });
+          return;
+      }
+      
       const currentNode = customScenario.nodes[currentNodeId];
       if (!currentNode) {
-          logger.error('[ChatWindow] 找不到当前节点:', currentNodeId);
+          logger.error('[ChatWindow] 找不到当前节点:', {
+              currentNodeId,
+              availableNodes: Object.keys(customScenario.nodes),
+          });
           return;
       }
       
@@ -561,7 +870,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       const nextNode = customScenario.nodes[option.nextNodeId];
       if (!nextNode) {
-          logger.error('[ChatWindow] 找不到下一个节点:', option.nextNodeId);
+          logger.error('[ChatWindow] 找不到下一个节点:', {
+              nextNodeId: option.nextNodeId,
+              availableNodes: Object.keys(customScenario.nodes),
+          });
           return;
       }
       
@@ -581,17 +893,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   Object.entries(updates.favorability).forEach(([target, newValue]) => {
                       const current = scenarioState.favorability?.[target] || 0;
                       const change = newValue - current;
-                      logger.debug(`[ChatWindow] 好感度变化: ${target} ${current} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
+                      logger.info(`[ChatWindow] 好感度变化: ${target} ${current} -> ${newValue} (${change >= 0 ? '+' : ''}${change})`);
                   });
               }
               if (updates.events && updates.events.length > 0) {
                   updates.events.forEach(event => {
-                      logger.debug(`[ChatWindow] 触发事件: ${event}`);
+                      logger.info(`[ChatWindow] 触发事件: ${event}`);
                   });
               }
               if (updates.items && updates.items.length > 0) {
                   updates.items.forEach(item => {
-                      logger.debug(`[ChatWindow] 收集物品: ${item}`);
+                      logger.info(`[ChatWindow] 收集物品: ${item}`);
                   });
               }
               
@@ -623,6 +935,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     // 先创建用户消息对象（需要在系统集成之前创建，因为记忆系统需要userMsg.id）
     const userMsg: Message = { id: `user_${Date.now()}`, role: 'user', text: userText, timestamp: Date.now() };
     const tempBotId = `bot_${Date.now()}`;
+    
+    // 保存用户消息到数据库（异步，不阻塞主流程，但记录结果）
+    if (userProfile?.id && sessionId) {
+      const token = getToken();
+      if (token) {
+        memoryApi.saveChatMessage(
+          sessionId,
+          'USER',
+          userText,
+          token,
+          { characterId: character?.id },
+          undefined
+        ).then((savedMessage) => {
+          logger.info('[ChatWindow] ✅ 用户消息已成功保存到数据库', {
+            sessionId,
+            messageId: savedMessage?.id,
+            messageLength: userText.length,
+            timestamp: savedMessage?.timestamp,
+          });
+        }).catch((error) => {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          logger.error('[ChatWindow] ❌ 保存用户消息失败:', {
+            sessionId,
+            error: errorMessage,
+            details: error instanceof Error ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+            } : error,
+          });
+        });
+      } else {
+        logger.warn('[ChatWindow] ⚠️ 未登录或 token 无效，跳过保存用户消息', {
+          sessionId,
+          userId: userProfile.id,
+          hasToken: !!token,
+          characterId: character?.id,
+        });
+        logger.info('[ChatWindow] ========== 跳过保存用户消息（无token） ==========');
+      }
+    } else {
+      logger.warn('[ChatWindow] ⚠️ 跳过保存用户消息（缺少必要参数）', {
+        hasUserId: !!userProfile?.id,
+        hasSessionId: !!sessionId,
+        sessionId,
+        userId: userProfile?.id,
+        characterId: character?.id,
+      });
+      logger.info('[ChatWindow] ========== 跳过保存用户消息（缺少参数） ==========');
+    }
     
     // 系统集成：分析用户输入并集成各个系统（使用统一的Hook）
     try {
@@ -676,7 +1038,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         
         // 获取相关记忆用于上下文（使用系统集成Hook）
         try {
-          relevantMemories = await systemIntegration.getRelevantMemories(userText, 3);
+          // 创建调试信息收集函数
+          const debugInfoCollector: MemoryDebugInfo = {};
+          
+          relevantMemories = await systemIntegration.getRelevantMemories(
+            userText,
+            5, // 增加到5条记忆
+            character?.id,  // 🆕 传入角色ID用于检索通用资产
+            (retrievalInfo) => {
+              debugInfoCollector.retrieval = retrievalInfo.retrieval;
+              setMemoryDebugInfo({ ...debugInfoCollector });
+            }
+          );
         } catch (error) {
           // 获取相关记忆失败，继续执行（不使用记忆）
           relevantMemories = []; // 失败时使用空数组
@@ -699,6 +1072,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         engineReady,
         memorySystem,
         relevantMemories,
+        sessionId, // 传入会话ID，用于保存消息
+        onDebugInfo: (info) => {
+          setMemoryDebugInfo((prev) => ({
+            ...prev,
+            ...info,
+          }));
+        },
       });
     } catch (error) { 
         // 提取详细的错误信息用于日志记录
@@ -778,21 +1158,70 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // 自动播放音频（使用audioPlayback Hook）- 需要在handleVoiceSend之前定义
   const autoPlayAudio = React.useCallback(async (text: string, msgId: string) => {
     try {
+      // 检查浏览器是否支持 AudioContext
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        logger.warn('[ChatWindow] 浏览器不支持 AudioContext，跳过自动播放音频');
+        return;
+      }
+      
+      // 初始化 AudioContext
       if (!audioPlayback.audioContextRef.current) {
-        audioPlayback.audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+        try {
+          audioPlayback.audioContextRef.current = new AudioContextClass({sampleRate: 24000});
+        } catch (error) {
+          logger.error('[ChatWindow] 创建 AudioContext 失败:', error);
+          return;
+        }
       }
+      
       const ctx = audioPlayback.audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
+      if (!ctx) {
+        logger.error('[ChatWindow] AudioContext 未初始化');
+        return;
       }
       
-      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
-      if (!base64Audio) return;
+      // 恢复 AudioContext（如果被暂停）
+      if (ctx.state === 'suspended') {
+        try {
+          await ctx.resume();
+        } catch (error) {
+          logger.error('[ChatWindow] 恢复 AudioContext 失败:', error);
+          return;
+        }
+      }
       
+      // 生成语音
+      const base64Audio = await aiService.generateSpeech(text, character.voiceName || 'Kore');
+      if (!base64Audio) {
+        logger.warn('[ChatWindow] 语音生成失败，跳过自动播放');
+        return;
+      }
+      
+      // 解码音频数据
       const audioBytes = decodeBase64ToBytes(base64Audio);
       const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
       
+      if (!audioBuffer) {
+        logger.error('[ChatWindow] 音频解码失败');
+        return;
+      }
+      
+      // 创建音频源节点
       const source = ctx.createBufferSource();
+      if (!source) {
+        logger.error('[ChatWindow] 无法创建音频源节点');
+        audioPlayback.setPlayingMessageId(null);
+        return;
+      }
+      
+      // 验证 source 是否有必要的方法
+      if (typeof source.start !== 'function') {
+        logger.error('[ChatWindow] 音频源节点缺少 start 方法');
+        audioPlayback.setPlayingMessageId(null);
+        return;
+      }
+      
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
       
@@ -801,10 +1230,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
       
       audioPlayback.sourceNodeRef.current = source;
-      source.start();
-      audioPlayback.setPlayingMessageId(msgId);
+      
+      // 调用 start 方法
+      try {
+        source.start();
+        audioPlayback.setPlayingMessageId(msgId);
+        logger.info('[ChatWindow] ✅ 自动播放音频成功', { msgId, textLength: text.length });
+      } catch (error) {
+        logger.error('[ChatWindow] ❌ 启动音频播放失败:', error);
+        audioPlayback.setPlayingMessageId(null);
+      }
     } catch (error) {
-      console.error('Auto play audio failed:', error);
+      logger.error('[ChatWindow] ❌ 自动播放音频失败:', error);
       audioPlayback.setPlayingMessageId(null);
     }
   }, [audioPlayback, character.voiceName]);
@@ -912,6 +1349,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     try {
       const recognition = new SpeechRecognition();
+      
+      // 验证 recognition 对象是否创建成功
+      if (!recognition) {
+        throw new Error('SpeechRecognition 对象创建失败');
+      }
+      
       recognition.lang = 'zh-CN'; // 设置语言为中文
       recognition.interimResults = true; // 返回中间结果
       recognition.continuous = voiceInput.isVoiceMode; // 语音模式下连续识别
@@ -987,7 +1430,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
       
       voiceInput.setRecognition(recognition);
-      recognition.start();
+      
+      // 确保 recognition 存在且有 start 方法
+      if (recognition && typeof recognition.start === 'function') {
+        recognition.start();
+      } else {
+        throw new Error('SpeechRecognition 对象无效或缺少 start 方法');
+      }
     } catch (error) {
       console.error('启动语音识别失败:', error);
       voiceInput.setError('启动语音识别失败');
@@ -1097,32 +1546,61 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // 获取当前节点的选项（用于ScenarioChoices组件）
   const currentOptions = React.useMemo(() => {
-    if (!customScenario || !scenarioState) {
-      return [];
-    }
+    try {
+      if (!customScenario || !scenarioState) {
+        return [];
+      }
 
-    const currentNodeId = scenarioState.currentNodeId;
-    if (!currentNodeId) {
-      return [];
-    }
+      const currentNodeId = scenarioState.currentNodeId;
+      if (!currentNodeId) {
+        return [];
+      }
 
-    const currentNode = customScenario.nodes[currentNodeId];
-    if (!currentNode?.options || !Array.isArray(currentNode.options)) {
-      return [];
-    }
-
-    // 验证并处理选项
-    return currentNode.options
-      .map((opt, index) => {
-        if (!opt || typeof opt !== 'object') {
-          return null;
+      // 确保 customScenario.nodes 存在
+      if (!customScenario.nodes || typeof customScenario.nodes !== 'object') {
+        logger.warn('[ChatWindow] customScenario.nodes 不存在或格式错误', {
+          hasNodes: !!customScenario.nodes,
+          nodesType: typeof customScenario.nodes,
+          customScenarioId: customScenario.id,
+          customScenarioTitle: customScenario.title,
+          customScenarioKeys: Object.keys(customScenario),
+        });
+        // 尝试修复：如果 nodes 不存在，初始化为空对象
+        if (!customScenario.nodes) {
+          (customScenario as any).nodes = {};
         }
-        if (!opt.id) {
-          return { ...opt, id: `temp-option-${currentNode.id}-${index}` };
-        }
-        return opt;
-      })
-      .filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+        return [];
+      }
+
+      const currentNode = customScenario.nodes[currentNodeId];
+      if (!currentNode) {
+        logger.warn('[ChatWindow] 找不到当前节点', {
+          currentNodeId,
+          availableNodes: Object.keys(customScenario.nodes),
+        });
+        return [];
+      }
+
+      if (!currentNode?.options || !Array.isArray(currentNode.options)) {
+        return [];
+      }
+
+      // 验证并处理选项
+      return currentNode.options
+        .map((opt, index) => {
+          if (!opt || typeof opt !== 'object') {
+            return null;
+          }
+          if (!opt.id) {
+            return { ...opt, id: `temp-option-${currentNode.id || currentNodeId}-${index}` };
+          }
+          return opt;
+        })
+        .filter((opt): opt is NonNullable<typeof opt> => opt !== null);
+    } catch (error) {
+      logger.error('[ChatWindow] currentOptions useMemo 执行失败', error);
+      return [];
+    }
   }, [customScenario, scenarioState]);
   
   if (!character) {
@@ -1192,27 +1670,45 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [backgroundImage]);
 
+  // 生成头像的多分辨率版本（用于背景显示）
+  const avatarVariants: ImageVariants | undefined = React.useMemo(() => {
+    if (!character.avatarUrl || !character.avatarUrl.trim()) return undefined;
+    
+    return {
+      original: character.avatarUrl,
+      thumbnail: generateVariantUrl(character.avatarUrl, 200, 200),
+      medium: generateVariantUrl(character.avatarUrl, 800, 800),
+      highQuality: generateVariantUrl(character.avatarUrl, 1920, 1920),
+    };
+  }, [character.avatarUrl]);
+
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black text-white font-sans">
+    <div 
+      className="relative h-screen w-full overflow-hidden font-sans"
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+      }}
+    >
       <BackgroundLayer
         backgroundImage={backgroundImage}
         character={character}
         isStoryMode={isStoryMode}
         isCinematic={uiState.isCinematic}
         backgroundVariants={backgroundVariants}
+        useAvatarAsBackground={true}
+        avatarVariants={avatarVariants}
       />
       
-      <CharacterAvatar
-        character={displayCharacter}
-        isStoryMode={isStoryMode}
-        isCinematic={uiState.isCinematic}
-      />
+      {/* 不再显示单独的头像，头像已作为背景显示 */}
 
       {/* Header Bar */}
       <HeaderBar
         character={character}
         customScenario={customScenario}
         isCinematic={uiState.isCinematic}
+        onToggleSkillDebug={() => setSkillDebugVisible(prev => !prev)}
+        isSkillDebugVisible={skillDebugVisible}
         isVoiceMode={voiceInput.isVoiceMode}
         isListening={voiceInput.isListening}
         isWaitingForResponse={voiceInput.isWaitingForResponse}
@@ -1231,7 +1727,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {uiState.isCinematic && (
         <button 
           onClick={() => uiState.setIsCinematic(false)}
-          className="absolute top-4 right-4 z-50 p-3 rounded-full bg-black/40 hover:bg-black/60 text-white/50 hover:text-white transition-all backdrop-blur-md"
+          className="absolute top-4 right-4 z-50 p-3 rounded-full transition-all backdrop-blur-md"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))',
+            color: 'var(--text-tertiary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(0, 0, 0, 0.6))';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(0, 0, 0, 0.4))';
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+          }}
         >
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-3.65-3.65m3.65 3.65F5.183 2.16 20.632 17.608M14.25 12a2.25 2.25 0 0 1-2.25 2.25" />
@@ -1249,18 +1757,76 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       ))}
 
       {/* Main Chat Area */}
-      <div className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 bg-gradient-to-t from-black via-black/80 to-transparent transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh] bg-gradient-to-t from-black via-black/50 to-transparent' : 'h-[65vh]'}`}>
+      <div 
+        className={`absolute bottom-0 left-0 right-0 z-20 flex flex-col justify-end pb-4 transition-all duration-500 ${uiState.isCinematic ? 'h-[40vh]' : 'h-[65vh]'}`}
+        style={{
+          background: uiState.isCinematic
+            ? 'linear-gradient(to top, var(--bg-primary, #000000) 0%, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0.5) 60%, transparent 100%)'
+            : 'linear-gradient(to top, var(--bg-primary, #000000) 0%, rgba(0, 0, 0, 0.85) 25%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.5) 75%, transparent 100%)',
+        }}
+      >
         
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%)' }}>
+        <div 
+          className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 scrollbar-hide" 
+          style={{ 
+            maskImage: 'linear-gradient(to bottom, transparent, var(--bg-primary, #000000) 15%)' 
+          }}
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            // 当滚动到顶部附近时，加载更多历史消息
+            if (target.scrollTop < 100 && hasMoreHistory && !isLoadingHistory) {
+              loadMoreHistory();
+            }
+          }}
+        >
+          {/* 加载更多历史消息提示 */}
+          {isLoadingHistory && (
+            <div className="text-center py-2 text-sm opacity-70">
+              加载历史消息中...
+            </div>
+          )}
+          
+          {/* 加载更多按钮（如果没有自动触发） */}
+          {hasMoreHistory && !isLoadingHistory && safeHistory.length > 0 && (
+            <div className="text-center py-2">
+              <button
+                onClick={loadMoreHistory}
+                className="text-sm px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                  color: 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                }}
+              >
+                ⬆️ 加载更多历史消息
+              </button>
+            </div>
+          )}
           {safeHistory.length === 0 && isLoading && isStoryMode && (
               <div className="h-full flex flex-col items-center justify-center space-y-4 animate-fade-in">
-                  <div className="w-16 h-16 border-4 border-t-indigo-500 border-white/20 rounded-full animate-spin" />
-                  <p className="text-indigo-300 font-bold text-lg animate-pulse">正在生成故事...</p>
+                  <div 
+                    className="w-16 h-16 border-4 border-t-indigo-500 rounded-full animate-spin"
+                    style={{ borderColor: 'var(--color-primary, #6366f1) var(--bg-overlay, rgba(255, 255, 255, 0.2))' }}
+                  />
+                  <p 
+                    className="font-bold text-lg animate-pulse"
+                    style={{ color: 'var(--color-primary-light, #a5b4fc)' }}
+                  >
+                    正在生成故事...
+                  </p>
               </div>
           )}
           {safeHistory.length === 0 && !isLoading && (
-            <div className="text-white/50 text-center py-4">
+            <div 
+              className="text-center py-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               <p>暂无消息</p>
             </div>
           )}
@@ -1279,7 +1845,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 showAudioButton={!uiState.isCinematic}
               />
             ))}
-          {isLoading && safeHistory.length > 0 && (<div className="flex justify-start w-full"><div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /><div className="w-2 h-2 bg-white/70 rounded-full typing-dot" /></div></div>)}
+          {isLoading && safeHistory.length > 0 && (
+            <div className="flex justify-start w-full">
+              <div 
+                className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border flex items-center space-x-2" 
+                style={{ 
+                  backgroundColor: `${character.colorAccent}1A`,
+                  borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                }}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot"
+                  style={{ backgroundColor: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot"
+                  style={{ backgroundColor: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot"
+                  style={{ backgroundColor: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}
+                />
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -1325,12 +1914,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     />
                   ) : (
                     /* 普通文本输入模式 */
-                    <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
+                    <div 
+                      className="relative flex items-center rounded-2xl p-2 border animate-fade-in w-full"
+                      style={{
+                        backgroundColor: 'var(--bg-card, rgba(0, 0, 0, 0.9))',
+                        borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                      }}
+                    >
                        {/* 表情按钮 */}
                        <button
                          onClick={() => uiState.setShowEmojiPicker(true)}
                          disabled={isLoading}
-                         className="mr-2 p-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         className="mr-2 p-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         style={{
+                           backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                           color: 'var(--text-secondary)',
+                         }}
+                         onMouseEnter={(e) => {
+                           if (!isLoading) {
+                             e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                             e.currentTarget.style.color = 'var(--text-primary)';
+                           }
+                         }}
+                         onMouseLeave={(e) => {
+                           if (!isLoading) {
+                             e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                             e.currentTarget.style.color = 'var(--text-secondary)';
+                           }
+                         }}
                          title="选择表情"
                        >
                          <svg
@@ -1348,17 +1959,44 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                            />
                          </svg>
                        </button>
-                       <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="输入你的消息..." className="flex-1 bg-transparent border-none text-white placeholder-white/40 focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base" rows={1} disabled={isLoading} />
+                       <textarea 
+                         value={input} 
+                         onChange={(e) => setInput(e.target.value)} 
+                         onKeyDown={handleKeyDown} 
+                         placeholder="输入你的消息..." 
+                         className="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-24 py-3 px-3 scrollbar-hide text-base" 
+                         rows={1} 
+                         disabled={isLoading}
+                         style={{
+                           color: 'var(--text-primary)',
+                         }}
+                       />
                        
                        {/* 语音输入按钮 */}
                        <button
                          onClick={voiceInput.isListening ? voiceInput.stopListening : () => startSpeechRecognition(false)}
                          disabled={isLoading}
-                         className={`ml-2 p-2 rounded-lg transition-all ${
-                           voiceInput.isListening 
-                             ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 animate-pulse' 
-                             : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                         } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         className={`ml-2 p-2 rounded-lg transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         style={{
+                           backgroundColor: voiceInput.isListening 
+                             ? 'rgba(239, 68, 68, 0.2)' 
+                             : 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                           color: voiceInput.isListening 
+                             ? '#f87171' 
+                             : 'var(--text-secondary)',
+                         }}
+                         onMouseEnter={(e) => {
+                           if (!isLoading && !voiceInput.isListening) {
+                             e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+                             e.currentTarget.style.color = 'var(--text-primary)';
+                           }
+                         }}
+                         onMouseLeave={(e) => {
+                           if (!isLoading && !voiceInput.isListening) {
+                             e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+                             e.currentTarget.style.color = 'var(--text-secondary)';
+                           }
+                         }}
                          title={voiceInput.isListening ? '停止语音输入' : '开始语音输入'}
                        >
                          {voiceInput.isListening ? (
@@ -1407,6 +2045,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       )}
 
       {/* 评论列表已移除，可在留言板测试 */}
+      
+      {/* 记忆调试面板 */}
+      <MemoryDebugPanel
+        debugInfo={memoryDebugInfo}
+        onClose={() => setMemoryDebugInfo(null)}
+      />
+      
+      {/* 技能调试面板 */}
+      <SkillDebugPanel
+        debugInfo={skillDebug.debugInfo}
+        conversationId={conversationIdForSkill}
+        isVisible={skillDebugVisible}
+        onClose={() => setSkillDebugVisible(false)}
+        onRefresh={skillDebug.refresh}
+      />
     </div>
   );
 };

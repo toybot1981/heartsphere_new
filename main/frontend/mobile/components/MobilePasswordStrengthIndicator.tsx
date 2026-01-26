@@ -19,7 +19,10 @@ export const MobilePasswordStrengthIndicator: React.FC<MobilePasswordStrengthInd
 }) => {
   if (password.length === 0) {
     return (
-      <p className={`${MobileTypography.fontSize.xs} text-slate-500 mt-2`}>
+      <p 
+        className={`${MobileTypography.fontSize.xs} mt-2`}
+        style={{ color: 'var(--text-disabled)' }}
+      >
         密码要求：至少8位，包含大小写字母、数字和特殊字符(@$!%*?&)
       </p>
     );
@@ -30,31 +33,38 @@ export const MobilePasswordStrengthIndicator: React.FC<MobilePasswordStrengthInd
       {/* 强度条 */}
       <div className="flex gap-1 h-1.5">
         <div
-          className={`flex-1 rounded ${
-            strength === 'strong'
-              ? 'bg-green-500'
+          className="flex-1 rounded"
+          style={{
+            backgroundColor: strength === 'strong'
+              ? 'var(--color-success, #22c55e)'
               : strength === 'medium'
-              ? 'bg-yellow-500'
+              ? 'var(--color-warning, #fbbf24)'
               : errors.length > 0
-              ? 'bg-red-500'
-              : 'bg-slate-600'
-          }`}
+              ? 'var(--color-error, #ef4444)'
+              : 'var(--bg-secondary, #475569)',
+          }}
           role="progressbar"
           aria-valuenow={strength === 'strong' ? 100 : strength === 'medium' ? 66 : 33}
           aria-valuemin={0}
           aria-valuemax={100}
         />
         <div
-          className={`flex-1 rounded ${
-            strength === 'strong' || strength === 'medium'
+          className="flex-1 rounded"
+          style={{
+            backgroundColor: strength === 'strong' || strength === 'medium'
               ? strength === 'strong'
-                ? 'bg-green-500'
-                : 'bg-yellow-500'
-              : 'bg-slate-600'
-          }`}
+                ? 'var(--color-success, #22c55e)'
+                : 'var(--color-warning, #fbbf24)'
+              : 'var(--bg-secondary, #475569)',
+          }}
         />
         <div
-          className={`flex-1 rounded ${strength === 'strong' ? 'bg-green-500' : 'bg-slate-600'}`}
+          className="flex-1 rounded"
+          style={{
+            backgroundColor: strength === 'strong' 
+              ? 'var(--color-success, #22c55e)' 
+              : 'var(--bg-secondary, #475569)',
+          }}
         />
       </div>
 

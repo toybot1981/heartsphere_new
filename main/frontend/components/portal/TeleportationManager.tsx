@@ -81,7 +81,7 @@ export const TeleportationManager: React.FC<TeleportationManagerProps> = ({
     const handlePortalClickEvent = (event: CustomEvent) => {
       const { portalId } = event.detail;
       if (portalId) {
-        logger.debug(`[TeleportationManager] 收到传送门点击事件: portalId=${portalId}`);
+        logger.info(`[TeleportationManager] 收到传送门点击事件: portalId=${portalId}`);
         handlePortalClick(portalId);
       }
     };
@@ -214,7 +214,8 @@ export const TeleportationManager: React.FC<TeleportationManagerProps> = ({
       {/* 预览卡片（悬停或无法访问时显示） */}
       {showPreview && portalPreview && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm"
+          style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))' }}
           onClick={() => setShowPreview(false)}
         >
           <div onClick={(e) => e.stopPropagation()}>

@@ -46,8 +46,9 @@ export const ShareConfigManagement: React.FC<ShareConfigManagementProps> = ({
       setError(errorMessage);
       
       // 根据错误类型提供更详细的提示
-      if (errorMessage.includes('401') || errorMessage.includes('未授权')) {
-        showAlert('登录已过期，请重新登录', '认证失败', 'error');
+      if (errorMessage.includes('401') || errorMessage.includes('未授权') || errorMessage.includes('登录已过期')) {
+        // 不在这里显示弹框，由 AdminAuthContext 统一处理
+        // showAlert('登录已过期，请重新登录', '认证失败', 'error');
       } else if (errorMessage.includes('403') || errorMessage.includes('权限')) {
         showAlert('您没有权限执行此操作', '权限不足', 'error');
       } else if (errorMessage.includes('网络') || errorMessage.includes('Network')) {

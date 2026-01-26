@@ -117,41 +117,109 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
     window.addEventListener('resize', resize);
     resize();
 
+    // 获取当前主题ID的辅助函数（在整个useEffect中共享）
+    const getThemeId = () => {
+      if (typeof window !== 'undefined') {
+        return document.documentElement.getAttribute('data-theme') || 'tech';
+      }
+      return 'tech';
+    };
+    const currentTheme = getThemeId();
+    const isBlueSkyTheme = currentTheme === 'blue-sky-white-cloud';
+
     // Create Background Stars (fewer for mobile performance)
-    const bgStars: Star[] = Array.from({ length: 100 }).map((_, i) => {
-      const isBlue = Math.random() > 0.8;
-      const color = isBlue ? '#a5f3fc' : '#ffffff';
+    
+    // 蓝白主题下大幅增加星辰数量（移动端适当优化性能）
+    const baseStarCount = 150;  // 增加基础星辰
+    const starCount = isBlueSkyTheme 
+      ? Math.floor(baseStarCount * 2.5) // 蓝白主题下增加2.5倍（移动端平衡性能）
+      : baseStarCount;
+    
+    const bgStars: Star[] = Array.from({ length: starCount }).map((_, i) => {
+      // 使用主题变量获取颜色
+      const getThemeColor = (varName: string, fallback: string) => {
+        if (typeof window !== 'undefined') {
+          const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+          return value || fallback;
+        }
+        return fallback;
+      };
+      
+      // 蓝白主题下使用多层次星辰：白色、淡蓝色、淡青色、淡粉色
+      let color: string;
+      let size: number;
+      if (isBlueSkyTheme) {
+        const colorType = Math.random();
+        if (colorType < 0.45) {
+          // 45% 白色星辰（主要）
+          color = getThemeColor('--star-color-white', 'rgba(255, 255, 255, 0.95)');
+          size = Math.random() * 1.5;
+        } else if (colorType < 0.65) {
+          // 20% 淡蓝色星辰
+          color = getThemeColor('--star-color-blue', 'rgba(173, 216, 230, 0.85)');
+          size = Math.random() * 1.2;
+        } else if (colorType < 0.8) {
+          // 15% 淡青色星辰（参考图中的青色点缀）
+          color = 'rgba(0, 212, 255, 0.8)';
+          size = Math.random() * 1;
+        } else {
+          // 20% 淡粉色星辰（心域色）
+          color = getThemeColor('--star-color-pink', 'rgba(255, 182, 193, 0.8)');
+          size = Math.random() * 0.8;
+        }
+      } else {
+        // 其他主题使用原有逻辑
+        const isBlue = Math.random() > 0.8;
+        color = isBlue 
+          ? getThemeColor('--color-info', '#a5f3fc')
+          : getThemeColor('--text-primary', '#ffffff');
+        size = Math.random() * 1.5;
+      }
+      
       return {
         id: `bg_${i}`,
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 1.5,
+        size: size,
         color: color,
         baseColor: color,
         speedX: (Math.random() - 0.5) * 0.05,
         speedY: (Math.random() - 0.5) * 0.05,
-        pulseSpeed: Math.random() * 0.02,
+        pulseSpeed: isBlueSkyTheme ? 0.02 + Math.random() * 0.03 : Math.random() * 0.02,
         pulseOffset: Math.random() * Math.PI * 2,
-        glow: 0
+        glow: isBlueSkyTheme ? 0.2 + Math.random() * 0.3 : 0 // 蓝白主题下极轻微光晕
       };
     });
 
     // Create Soul Stars (Characters)
     const charStars: Star[] = characters.map(char => {
+      // 蓝白主题下使用主题颜色
+      const getThemeColor = (varName: string, fallback: string) => {
+        if (typeof window !== 'undefined') {
+          const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+          return value || fallback;
+        }
+        return fallback;
+      };
+      
+      const color = isBlueSkyTheme 
+        ? getThemeColor('--star-color-pink', 'rgba(255, 182, 193, 0.9)') // 心域色
+        : (char.colorAccent || '#ffffff');
+      
       const star = {
         id: `soul_${char.id}`,
         x: Math.random() * (canvas.width - 100) + 50,
         y: Math.random() * (canvas.height - 100) + 50,
         size: 5 + Math.random() * 4, // Bigger for mobile touch
-        color: char.colorAccent || '#ffffff',
-        baseColor: char.colorAccent || '#ffffff',
+        color: color,
+        baseColor: color,
         speedX: (Math.random() - 0.5) * 0.2,
         speedY: (Math.random() - 0.5) * 0.2,
         characterId: char.id,
         character: char,
-        pulseSpeed: 0.05 + Math.random() * 0.05,
+        pulseSpeed: isBlueSkyTheme ? 0.08 + Math.random() * 0.08 : 0.05 + Math.random() * 0.05, // 蓝白主题下更快的闪烁
         pulseOffset: Math.random() * Math.PI * 2,
-        glow: 20 // More glow for mobile visibility
+        glow: isBlueSkyTheme ? 30 : 20 // 蓝白主题下更强的光晕
       };
       return star;
     });
@@ -159,8 +227,22 @@ export const MobileConnectionSpaceScreen: React.FC<MobileConnectionSpaceScreenPr
     
     // Create Shared Heart Sphere Stars (更大、更显著的颜色)
     const sharedStars: Star[] = sharedHeartSpheres.map((shared, index) => {
-      // 使用更显著的颜色：金色、紫色、青色等
-      const colors = ['#fbbf24', '#a855f7', '#06b6d4', '#f59e0b', '#ec4899'];
+      // 使用主题变量获取颜色
+      const getThemeColor = (varName: string, fallback: string) => {
+        if (typeof window !== 'undefined') {
+          const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+          return value || fallback;
+        }
+        return fallback;
+      };
+      // 使用主题变量：警告色、主色、信息色等
+      const colors = [
+        getThemeColor('--color-warning', '#fbbf24'),
+        getThemeColor('--color-primary', '#a855f7'),
+        getThemeColor('--color-info', '#06b6d4'),
+        getThemeColor('--color-warning', '#f59e0b'),
+        getThemeColor('--color-primary', '#ec4899'),
+      ];
       const color = colors[index % colors.length];
       const star = {
         id: `shared_${shared.shareCode}`,
@@ -203,11 +285,60 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
     let time = 0;
 
+    // 获取当前主题ID的辅助函数（在render函数中共享）
+    const getThemeId = () => {
+      if (typeof window !== 'undefined') {
+        return document.documentElement.getAttribute('data-theme') || 'tech';
+      }
+      return 'tech';
+    };
+
     const render = () => {
       time++;
+      
+      // 检查当前主题
+      const currentTheme = getThemeId();
+      const isBlueSkyTheme = currentTheme === 'blue-sky-white-cloud';
+      
       // Clear with trail effect for shooting stars
-      ctx.fillStyle = 'rgba(5, 5, 16, 0.4)'; 
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 使用主题背景色，但需要从 CSS 变量中获取实际颜色值
+      const getThemeColor = (varName: string, fallback: string) => {
+        if (typeof window !== 'undefined') {
+          const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+          return value || fallback;
+        }
+        return fallback;
+      };
+      
+      if (isBlueSkyTheme) {
+        // 蓝白主题：绘制梦幻星空背景（移动端版本）
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#1a1f4f');      // 顶部：深紫蓝
+        gradient.addColorStop(0.3, '#1e3a8a');    // 上中：深蓝
+        gradient.addColorStop(0.6, '#0369a1');    // 下中：亮蓝
+        gradient.addColorStop(1, '#00a3e0');      // 底部：青色（能量感）
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 移动端：添加底部光晕效果（简化版，减少计算量）
+        const bottomGlowGradient = ctx.createLinearGradient(0, canvas.height * 0.75, 0, canvas.height);
+        bottomGlowGradient.addColorStop(0, 'rgba(0, 163, 224, 0)');
+        bottomGlowGradient.addColorStop(1, 'rgba(0, 212, 255, 0.15)');
+        ctx.fillStyle = bottomGlowGradient;
+        ctx.fillRect(0, canvas.height * 0.75, canvas.width, canvas.height * 0.25);
+      } else {
+        // 其他主题：使用原有逻辑
+        // 将十六进制颜色转换为 rgba
+        const hexToRgba = (hex: string, alpha: number) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        const bgColor = getThemeColor('--bg-primary', '#050510');
+        ctx.fillStyle = hexToRgba(bgColor.length === 7 ? bgColor : '#050510', 0.4);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       // --- Nebula Background (simplified for mobile) ---
       const drawNebula = (x: number, y: number, radius: number, color: string) => {
@@ -295,8 +426,40 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
         if (star.character) {
             // Pulse effect for Soul Stars
-            currentSize = star.size + pulse * 2;
-            shadowBlur = 20 + pulse * 5;
+            const currentTheme = getThemeId();
+            const isBlueSkyTheme = currentTheme === 'blue-sky-white-cloud';
+            
+            if (isBlueSkyTheme) {
+              // 蓝白主题下增强脉冲效果和光晕
+              currentSize = star.size + pulse * 3; // 更大的脉冲
+              shadowBlur = 30 + pulse * 10; // 更强的光晕
+              
+              // 添加心域星辰的特殊光晕（蓝色和粉色）
+              const getThemeColor = (varName: string, fallback: string) => {
+                if (typeof window !== 'undefined') {
+                  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+                  return value || fallback;
+                }
+                return fallback;
+              };
+              
+              // 使用粉色光晕（心域色）
+              const pinkGlow = getThemeColor('--star-glow-pink', 'rgba(236, 64, 122, 0.6)');
+              const blueGlow = getThemeColor('--star-glow-blue', 'rgba(33, 150, 243, 0.6)');
+              
+              // 绘制双重光晕效果
+              ctx.shadowBlur = shadowBlur * 1.5;
+              ctx.shadowColor = pinkGlow;
+              ctx.fillStyle = star.color;
+              ctx.arc(drawX, drawY, currentSize * 0.8, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.shadowBlur = shadowBlur;
+              ctx.shadowColor = blueGlow;
+            } else {
+              currentSize = star.size + pulse * 2;
+              shadowBlur = 20 + pulse * 5;
+            }
             
             // Connection Line if selected
             if (selectedStar?.id === star.id) {
@@ -328,6 +491,39 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
             }
         } else {
             ctx.globalAlpha = 0.3 + pulse * 0.2;
+            
+            // 蓝白主题下为背景星辰添加光晕效果
+            const currentTheme = getThemeId();
+            const isBlueSkyTheme = currentTheme === 'blue-sky-white-cloud';
+            
+            if (isBlueSkyTheme && star.glow > 0) {
+              // 根据星辰颜色选择光晕颜色
+              const getThemeColor = (varName: string, fallback: string) => {
+                if (typeof window !== 'undefined') {
+                  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+                  return value || fallback;
+                }
+                return fallback;
+              };
+              
+              // 判断星辰颜色类型，应用相应的光晕
+              const starColor = star.color.toLowerCase();
+              let glowColor: string;
+              if (starColor.includes('255, 182, 193') || starColor.includes('pink')) {
+                // 粉色星辰使用粉色光晕
+                glowColor = getThemeColor('--star-glow-pink', 'rgba(236, 64, 122, 0.6)');
+              } else if (starColor.includes('173, 216, 230') || starColor.includes('blue')) {
+                // 蓝色星辰使用蓝色光晕
+                glowColor = getThemeColor('--star-glow-blue', 'rgba(33, 150, 243, 0.6)');
+              } else {
+                // 白色星辰使用蓝色光晕
+                glowColor = getThemeColor('--star-glow-blue', 'rgba(33, 150, 243, 0.4)');
+              }
+              
+              shadowBlur = star.glow + pulse * 3;
+              ctx.shadowBlur = shadowBlur;
+              ctx.shadowColor = glowColor;
+            }
         }
 
         ctx.shadowBlur = shadowBlur;
@@ -505,14 +701,17 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
   // Empty state
   if (characters.length === 0) {
     return (
-      <MobileSafeAreaView className="h-full w-full bg-black">
+      <MobileSafeAreaView 
+        className="h-full w-full"
+        style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+      >
         <div className="h-full flex flex-col">
           <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
             <MobileTouchableButton
               onClick={onBack}
               variant="ghost"
               size="sm"
-              className="text-white/80"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -535,7 +734,10 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
   }
 
   return (
-    <MobileSafeAreaView className="h-full w-full bg-black relative overflow-hidden">
+    <MobileSafeAreaView 
+      className="h-full w-full relative overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+    >
       <canvas 
         ref={canvasRef} 
         onTouchStart={handleCanvasTouch}
@@ -550,12 +752,21 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center pointer-events-none z-20">
         <div>
-          <h2 className="text-2xl font-bold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+          <h2 
+            className="text-2xl font-bold drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+            style={{ color: 'var(--text-primary)' }}
+          >
             心域连接
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            <p className="text-blue-200/70 text-xs tracking-widest font-mono">
+            <span 
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: 'var(--color-success)' }}
+            ></span>
+            <p 
+              className="text-xs tracking-widest font-mono"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               DEEP SPACE LINK
             </p>
           </div>
@@ -564,7 +775,11 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
           onClick={onBack}
           variant="ghost"
           size="sm"
-          className="pointer-events-auto bg-white/10 backdrop-blur-md text-white/80"
+          className="pointer-events-auto backdrop-blur-md"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+            color: 'var(--text-secondary)',
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -575,14 +790,26 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
       {/* Selected Star Details (Mobile Optimized) - Character */}
       {selectedStar && selectedStar.character && (
         <div className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] pointer-events-none z-30">
-          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center animate-fade-in pointer-events-auto shadow-2xl">
+          <div 
+            className="backdrop-blur-xl border rounded-2xl p-4 text-center animate-fade-in pointer-events-auto shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-overlay-alpha)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
             {/* Character Theme Glow */}
             <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{backgroundColor: selectedStar.color}} />
             
             <div className="mb-4 flex flex-col items-center">
               <div className="relative mb-3">
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{backgroundColor: selectedStar.color}}></div>
-                <div className="w-16 h-16 rounded-full border-2 p-1 relative bg-black/50" style={{borderColor: selectedStar.color}}>
+                <div 
+                  className="w-16 h-16 rounded-full border-2 p-1 relative" 
+                  style={{
+                    borderColor: selectedStar.color,
+                    backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+                  }}
+                >
                   <MobileLazyImage 
                     src={selectedStar.character.avatarUrl} 
                     className="w-full h-full rounded-full object-cover opacity-90" 
@@ -590,25 +817,52 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
                   />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-white tracking-wide mb-1">
+              <h3 
+                className="text-xl font-bold tracking-wide mb-1"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {selectedStar.character.name}
               </h3>
               {selectedStar.character.role && (
-                <span className="text-xs font-mono text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded bg-blue-500/10 mb-2">
+                <span 
+                  className="text-xs font-mono border px-2 py-0.5 rounded mb-2"
+                  style={{
+                    color: 'var(--color-info)',
+                    borderColor: 'var(--border-info-alpha)',
+                    backgroundColor: 'var(--bg-info-alpha)',
+                  }}
+                >
                   {selectedStar.character.role}
                 </span>
               )}
-              <p className="text-gray-300 text-sm italic line-clamp-2 px-2">
+              <p 
+                className="text-sm italic line-clamp-2 px-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 "{selectedStar.character.firstMessage}"
               </p>
             </div>
 
             {connecting ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-white animate-[width_1.5s_ease-out_forwards]" style={{width: '0%'}} />
+                <div 
+                  className="w-full h-1 rounded-full overflow-hidden"
+                  style={{ backgroundColor: 'var(--bg-secondary)' }}
+                >
+                  <div 
+                    className="h-full animate-[width_1.5s_ease-out_forwards]" 
+                    style={{
+                      width: '0%',
+                      backgroundColor: 'var(--color-primary)',
+                    }}
+                  />
                 </div>
-                <span className="text-xs text-green-400 font-mono animate-pulse">正在建立连接...</span>
+                <span 
+                  className="text-xs font-mono animate-pulse"
+                  style={{ color: 'var(--color-success)' }}
+                >
+                  正在建立连接...
+                </span>
               </div>
             ) : (
               <MobileTouchableButton
@@ -616,7 +870,17 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
                 variant="primary"
                 size="lg"
                 fullWidth
-                className="bg-white text-black hover:bg-indigo-50 font-bold tracking-wide shadow-lg"
+                className="font-bold tracking-wide shadow-lg"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                }}
               >
                 请求连接
               </MobileTouchableButton>
@@ -629,7 +893,13 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
       {/* Selected Star Details (Mobile Optimized) - Shared Heart Sphere */}
       {selectedStar && selectedStar.sharedHeartSphere && (
         <div className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] pointer-events-none z-30">
-          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center animate-fade-in pointer-events-auto shadow-2xl">
+          <div 
+            className="backdrop-blur-xl border rounded-2xl p-4 text-center animate-fade-in pointer-events-auto shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-overlay-alpha)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
             {/* Shared Heart Sphere Theme Glow */}
             <div className="absolute top-0 left-0 right-0 h-2 rounded-t-2xl" style={{backgroundColor: selectedStar.color}} />
             
@@ -648,21 +918,41 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
                   )}
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-white tracking-wide mb-1">
+              <h3 
+                className="text-xl font-bold tracking-wide mb-1"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {selectedStar.sharedHeartSphere.heartSphereName || '共享心域'}
               </h3>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-mono text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded bg-purple-500/10">
+                <span 
+                  className="text-xs font-mono border px-2 py-0.5 rounded"
+                  style={{
+                    color: 'var(--color-primary)',
+                    borderColor: 'var(--border-color-overlay)',
+                    backgroundColor: 'var(--bg-secondary-alpha)',
+                  }}
+                >
                   {selectedStar.sharedHeartSphere.ownerName || '未知主人'}
                 </span>
                 {selectedStar.sharedHeartSphere.characterCount && selectedStar.sharedHeartSphere.characterCount > 0 && (
-                  <span className="text-xs font-mono text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded bg-blue-500/10">
+                  <span 
+                    className="text-xs font-mono border px-2 py-0.5 rounded"
+                    style={{
+                      color: 'var(--color-info)',
+                      borderColor: 'var(--border-info-alpha)',
+                      backgroundColor: 'var(--bg-info-alpha)',
+                    }}
+                  >
                     {selectedStar.sharedHeartSphere.characterCount} 个角色
                   </span>
                 )}
               </div>
               {selectedStar.sharedHeartSphere.description && (
-                <p className="text-gray-300 text-sm line-clamp-2 px-2">
+                <p 
+                  className="text-sm line-clamp-2 px-2"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   {selectedStar.sharedHeartSphere.description}
                 </p>
               )}
@@ -670,10 +960,24 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
 
             {connecting ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full animate-[width_1.5s_ease-out_forwards]" style={{width: '0%', backgroundColor: selectedStar.color}} />
+                <div 
+                  className="w-full h-1 rounded-full overflow-hidden"
+                  style={{ backgroundColor: 'var(--bg-secondary)' }}
+                >
+                  <div 
+                    className="h-full animate-[width_1.5s_ease-out_forwards]" 
+                    style={{
+                      width: '0%',
+                      backgroundColor: selectedStar.color || 'var(--color-primary)',
+                    }}
+                  />
                 </div>
-                <span className="text-xs font-mono animate-pulse" style={{color: selectedStar.color}}>正在连接共享心域...</span>
+                <span 
+                  className="text-xs font-mono animate-pulse"
+                  style={{ color: selectedStar.color || 'var(--color-primary)' }}
+                >
+                  正在连接共享心域...
+                </span>
               </div>
             ) : (
               <MobileTouchableButton
@@ -697,7 +1001,12 @@ starsRef.current = [...bgStars, ...charStars, ...sharedStars];
       {/* Hint (only when no selection) */}
       {!selectedStar && (
         <div className="absolute bottom-24 left-0 right-0 text-center pointer-events-none z-10">
-          <p className="text-white/40 text-xs tracking-widest animate-pulse">触摸星辰以捕获信号</p>
+          <p 
+            className="text-xs tracking-widest animate-pulse"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            触摸星辰以捕获信号
+          </p>
     </div>
       )}
     </MobileSafeAreaView>

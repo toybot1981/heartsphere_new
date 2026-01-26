@@ -53,14 +53,28 @@ export const MobileSettingsModal: React.FC<MobileSettingsModalProps> = memo(({
     >
       <div className="flex flex-col min-h-0 max-h-[calc(90vh-8rem)]">
         {/* 标签页导航 */}
-        <div className={`flex border-b ${MobileColors.border.default} mb-4`} role="tablist">
+        <div 
+          className="flex border-b mb-4"
+          style={{ borderColor: 'var(--border-color-overlay)' }}
+          role="tablist"
+        >
           <button
             onClick={() => setActiveTab('general')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'general'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'general' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'general' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'general') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'general') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="通用设置"
             aria-selected={activeTab === 'general'}
             role="tab"
@@ -69,11 +83,21 @@ export const MobileSettingsModal: React.FC<MobileSettingsModalProps> = memo(({
           </button>
           <button
             onClick={() => setActiveTab('models')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'models'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'models' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'models' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'models') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'models') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="AI模型配置"
             aria-selected={activeTab === 'models'}
             role="tab"
@@ -82,11 +106,21 @@ export const MobileSettingsModal: React.FC<MobileSettingsModalProps> = memo(({
           </button>
           <button
             onClick={() => setActiveTab('backup')}
-            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors ${
-              activeTab === 'backup'
-                ? `${MobileColors.text.primary} border-b-2 border-purple-500`
-                : `${MobileColors.text.secondary} hover:${MobileColors.text.primary}`
-            }`}
+            className={`flex-1 pb-3 ${MobileTypography.fontSize.sm} ${MobileTypography.fontWeight.semibold} transition-colors border-b-2`}
+            style={{
+              color: activeTab === 'backup' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: activeTab === 'backup' ? 'var(--color-primary, #a855f7)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'backup') {
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'backup') {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
             aria-label="记忆备份"
             aria-selected={activeTab === 'backup'}
             role="tab"

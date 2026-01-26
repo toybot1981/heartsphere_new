@@ -151,7 +151,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AsyncRequestTimeoutException.class)
     public ResponseEntity<ApiResponse<Object>> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException e) {
         // SSE 连接超时是正常行为，不需要记录为错误
-        log.debug("异步请求超时（SSE 连接超时）: {}", e.getMessage());
+        log.info("异步请求超时（SSE 连接超时）: {}", e.getMessage());
         // 返回 204 No Content，表示请求已处理但无内容返回
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
@@ -167,7 +167,7 @@ public class GlobalExceptionHandler {
         if (isSseRequest(request)) {
             // SSE 连接中的异常不应该返回 JSON，因为响应头已经设置为 text/event-stream
             // 这些异常通常已经在 SessionRealtimeService 中处理了
-            log.debug("SSE 连接中的异常（已由 SessionRealtimeService 处理）: {}", e.getMessage());
+            log.info("SSE 连接中的异常（已由 SessionRealtimeService 处理）: {}", e.getMessage());
             // 返回空响应，避免序列化错误
             return ResponseEntity
                     .status(HttpStatus.NO_CONTENT)

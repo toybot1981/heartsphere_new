@@ -49,7 +49,12 @@ export const CompanionMemoryDashboard: React.FC<CompanionMemoryDashboardProps> =
       {/* 重要记忆 */}
       {statistics.importantMemories.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-white mb-4">重要记忆</h2>
+          <h2 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            重要记忆
+          </h2>
           <CompanionMemoryTimeline memories={statistics.importantMemories.slice(0, 5)} />
         </section>
       )}
@@ -57,7 +62,12 @@ export const CompanionMemoryDashboard: React.FC<CompanionMemoryDashboardProps> =
       {/* 最近记忆 */}
       {statistics.recentMemories.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-white mb-4">最近记忆</h2>
+          <h2 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            最近记忆
+          </h2>
           <CompanionMemoryTimeline memories={statistics.recentMemories} />
         </section>
       )}
@@ -65,7 +75,12 @@ export const CompanionMemoryDashboard: React.FC<CompanionMemoryDashboardProps> =
       {/* 记忆时间线 */}
       {statistics.memoryTimeline.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-white mb-4">记忆时间线</h2>
+          <h2 
+            className="text-xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            记忆时间线
+          </h2>
           <CompanionMemoryTimeline
             memories={statistics.memoryTimeline.flatMap((day) => day.memories)}
           />
@@ -86,22 +101,50 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
-  const colorClasses = {
-    blue: 'bg-blue-500/20 border-blue-400/50',
-    purple: 'bg-purple-500/20 border-purple-400/50',
-    yellow: 'bg-yellow-500/20 border-yellow-400/50',
-    pink: 'bg-pink-500/20 border-pink-400/50',
+  const colorStyles = {
+    blue: {
+      bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+      border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+    },
+    purple: {
+      bg: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+      border: 'var(--color-primary, rgba(168, 85, 247, 0.5))',
+    },
+    yellow: {
+      bg: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+      border: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+    },
+    pink: {
+      bg: 'var(--color-primary, rgba(236, 72, 153, 0.2))',
+      border: 'var(--color-primary, rgba(236, 72, 153, 0.5))',
+    },
   };
+
+  const style = colorStyles[color];
 
   return (
     <div
-      className={`rounded-lg p-4 border backdrop-blur-md ${colorClasses[color]} transition-all hover:scale-105`}
+      className="rounded-lg p-4 border backdrop-blur-md transition-all hover:scale-105"
+      style={{
+        backgroundColor: style.bg,
+        borderColor: style.border,
+      }}
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
-        <span className="text-2xl font-bold text-white">{value}</span>
+        <span 
+          className="text-2xl font-bold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {value}
+        </span>
       </div>
-      <p className="text-sm text-white/70">{title}</p>
+      <p 
+        className="text-sm"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        {title}
+      </p>
     </div>
   );
 };

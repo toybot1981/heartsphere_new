@@ -64,7 +64,7 @@ export class RemoteMemoryStorage implements IMemoryStorage {
         metadata: memory.metadata,
       }, token);
       
-      logger.debug('[RemoteMemoryStorage] 保存记忆成功', {
+      logger.info('[RemoteMemoryStorage] 保存记忆成功', {
         memoryId: memory.id,
         userId: this.userId,
       });
@@ -121,7 +121,7 @@ export class RemoteMemoryStorage implements IMemoryStorage {
     try {
       const token = this.getToken();
       await memoryApi.deleteMemory(this.userId, id, token);
-      logger.debug('[RemoteMemoryStorage] 删除记忆成功', {
+      logger.info('[RemoteMemoryStorage] 删除记忆成功', {
         memoryId: id,
         userId: this.userId,
       });
@@ -153,7 +153,7 @@ export class RemoteMemoryStorage implements IMemoryStorage {
         metadata: memory.metadata,
       }, token);
       
-      logger.debug('[RemoteMemoryStorage] 更新记忆成功', {
+      logger.info('[RemoteMemoryStorage] 更新记忆成功', {
         memoryId: memory.id,
         userId: this.userId,
       });
@@ -169,7 +169,7 @@ export class RemoteMemoryStorage implements IMemoryStorage {
       
       if (isNotFound) {
         // 静默处理，不记录错误日志（这是正常情况）
-        logger.debug('[RemoteMemoryStorage] 记忆不存在，跳过更新', {
+        logger.info('[RemoteMemoryStorage] 记忆不存在，跳过更新', {
           memoryId: memory.id,
           userId: this.userId,
         });

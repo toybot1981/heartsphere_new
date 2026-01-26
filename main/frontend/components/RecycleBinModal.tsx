@@ -140,24 +140,58 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
     : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+      style={{
+        backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.8))',
+      }}
+    >
+      <div 
+        className="border rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+        style={{
+          backgroundColor: 'var(--bg-secondary, #0f172a)',
+          borderColor: 'var(--border-color-overlay, #334155)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
           <div>
-            <h2 className="text-2xl font-bold text-white">回收站</h2>
-            <p className="text-sm text-slate-400 mt-1">共 {totalCount} 项已删除的数据</p>
+            <h2 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              回收站
+            </h2>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              共 {totalCount} 项已删除的数据
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-3xl leading-none"
+            className="text-3xl leading-none transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             ×
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700 px-6 overflow-x-auto">
+        <div 
+          className="flex border-b px-6 overflow-x-auto"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
           {[
             { key: 'characters' as const, label: '角色', count: recycleBin?.characters.length || 0 },
             { key: 'worlds' as const, label: '世界', count: recycleBin?.worlds.length || 0 },
@@ -168,11 +202,25 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? 'border-indigo-400 text-indigo-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              className="px-4 py-3 text-sm font-medium border-b-2 transition-colors"
+              style={{
+                borderColor: activeTab === tab.key
+                  ? 'var(--color-primary, #818cf8)'
+                  : 'transparent',
+                color: activeTab === tab.key
+                  ? 'var(--color-primary, #818cf8)'
+                  : 'var(--text-tertiary)',
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.key) {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.key) {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                }
+              }}
             >
               {tab.label} ({tab.count})
             </button>
@@ -183,12 +231,15 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-slate-400">加载中...</div>
+              <div style={{ color: 'var(--text-tertiary)' }}>加载中...</div>
             </div>
           ) : (
             <>
               {getCurrentItems().length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <div 
+                  className="flex flex-col items-center justify-center h-64"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-16 w-16 mb-4 opacity-50"
@@ -210,30 +261,71 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
                   {getCurrentItems().map((item: any) => (
                     <div
                       key={item.id}
-                      className="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors"
+                      className="border rounded-lg p-4 transition-colors"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 1))',
+                        borderColor: 'var(--border-color-overlay, #334155)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-hover, #475569)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay, #334155)';
+                      }}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-white font-bold text-lg mb-1">{getItemName(item)}</h3>
+                          <h3 
+                            className="font-bold text-lg mb-1"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {getItemName(item)}
+                          </h3>
                           {getItemDescription(item) && (
-                            <p className="text-slate-400 text-sm line-clamp-2 mb-2">
+                            <p 
+                              className="text-sm line-clamp-2 mb-2"
+                              style={{ color: 'var(--text-tertiary)' }}
+                            >
                               {getItemDescription(item)}
                             </p>
                           )}
-                          <p className="text-xs text-slate-500">
+                          <p 
+                            className="text-xs"
+                            style={{ color: 'var(--text-disabled)' }}
+                          >
                             删除时间: {item.deletedAt ? new Date(item.deletedAt).toLocaleString('zh-CN') : '未知'}
                           </p>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <button
                             onClick={() => handleRestore(activeTab, item.id)}
-                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded transition-colors"
+                            className="px-3 py-1.5 text-sm rounded transition-colors"
+                            style={{
+                              backgroundColor: 'var(--color-primary, #6366f1)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-primary, #4f46e5)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-primary, #6366f1)';
+                            }}
                           >
                             恢复
                           </button>
                           <button
                             onClick={() => handlePermanentlyDelete(activeTab, item.id, getItemName(item))}
-                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                            className="px-3 py-1.5 text-sm rounded transition-colors"
+                            style={{
+                              backgroundColor: 'var(--color-error, #dc2626)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-error, #b91c1c)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--color-error, #dc2626)';
+                            }}
                           >
                             永久删除
                           </button>
@@ -248,7 +340,10 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ token, onClose
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-slate-700">
+        <div 
+          className="flex justify-end gap-3 p-6 border-t"
+          style={{ borderColor: 'var(--border-color-overlay, #334155)' }}
+        >
           <Button variant="ghost" onClick={onClose}>
             关闭
           </Button>

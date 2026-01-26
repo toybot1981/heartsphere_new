@@ -87,7 +87,7 @@ export const useJournalHandlers = () => {
         apiRequestData.imageUrl = imageUrl;
       }
       
-      logger.debug('[useJournalHandlers] 创建日记 - API请求', {
+      logger.info('[useJournalHandlers] 创建日记 - API请求', {
         title: apiRequestData.title,
         hasContent: !!apiRequestData.content,
         hasImageUrl: apiRequestData.imageUrl !== undefined,
@@ -111,7 +111,7 @@ export const useJournalHandlers = () => {
       
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
       
-      logger.debug('[useJournalHandlers] 日记创建成功，已从服务器重新加载', {
+      logger.info('[useJournalHandlers] 日记创建成功，已从服务器重新加载', {
         totalEntries: mappedEntries.length,
       });
 
@@ -141,7 +141,7 @@ export const useJournalHandlers = () => {
    * 直接调用后台API，成功后从服务器重新获取所有日志
    */
   const handleUpdateJournalEntry = useCallback(async (updatedEntry: JournalEntry) => {
-    logger.debug(`[useJournalHandlers] 更新日记条目: ${updatedEntry.id}`, {
+    logger.info(`[useJournalHandlers] 更新日记条目: ${updatedEntry.id}`, {
       insightLength: updatedEntry.insight?.length || 0,
       insightPreview: updatedEntry.insight?.substring(0, 50) || 'null',
     });
@@ -178,7 +178,7 @@ export const useJournalHandlers = () => {
         apiRequestData.insight = updatedEntry.insight !== null ? updatedEntry.insight : null;
       }
       
-      logger.debug(`[useJournalHandlers] 更新日记 - API请求: ${updatedEntry.id}`, {
+      logger.info(`[useJournalHandlers] 更新日记 - API请求: ${updatedEntry.id}`, {
         hasImageUrl: apiRequestData.imageUrl !== undefined,
         hasInsight: apiRequestData.insight !== undefined,
       });
@@ -200,7 +200,7 @@ export const useJournalHandlers = () => {
       
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
       
-      logger.debug(`[useJournalHandlers] 更新日记成功，已从服务器重新加载`, {
+      logger.info(`[useJournalHandlers] 更新日记成功，已从服务器重新加载`, {
         totalEntries: mappedEntries.length,
       });
 
@@ -225,7 +225,7 @@ export const useJournalHandlers = () => {
    * 直接调用后台API删除，成功后从服务器重新获取所有日志
    */
   const handleDeleteJournalEntry = useCallback(async (id: string) => {
-    logger.debug(`[useJournalHandlers] 开始删除日志条目: ${id}`);
+    logger.info(`[useJournalHandlers] 开始删除日志条目: ${id}`);
 
     const token = localStorage.getItem('auth_token');
     const currentUserProfile = userProfileRef.current;
@@ -245,7 +245,7 @@ export const useJournalHandlers = () => {
     try {
       // 直接调用API删除
       await journalApi.deleteJournalEntry(id, token);
-      logger.debug('[useJournalHandlers] API删除成功');
+      logger.info('[useJournalHandlers] API删除成功');
       
       // 删除成功后，从服务器重新获取所有日志
       const allEntries = await journalApi.getAllJournalEntries(token);
@@ -261,7 +261,7 @@ export const useJournalHandlers = () => {
       
       dispatch({ type: 'SET_JOURNAL_ENTRIES', payload: mappedEntries });
       
-      logger.debug(`[useJournalHandlers] 删除成功，已从服务器重新加载`, {
+      logger.info(`[useJournalHandlers] 删除成功，已从服务器重新加载`, {
         totalEntries: mappedEntries.length,
       });
     } catch (error) {

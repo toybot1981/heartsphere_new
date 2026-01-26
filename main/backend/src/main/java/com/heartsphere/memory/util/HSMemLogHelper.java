@@ -41,7 +41,7 @@ public class HSMemLogHelper {
         
         // DEBUG 级别记录更详细的信息
         if (log.isDebugEnabled()) {
-            log.debug("{} {} - 请求详情 | requestId={}, {}", LOG_PREFIX, operation, requestId, contextStr);
+            log.info("{} {} - 请求详情 | requestId={}, {}", LOG_PREFIX, operation, requestId, contextStr);
         }
     }
     
@@ -68,7 +68,7 @@ public class HSMemLogHelper {
         
         // DEBUG 级别记录性能指标
         if (log.isDebugEnabled()) {
-            log.debug("{} {} - 性能指标 | requestId={}, duration={}ms", 
+            log.info("{} {} - 性能指标 | requestId={}, duration={}ms", 
                 LOG_PREFIX, operation, requestId, durationMs);
         }
     }
@@ -93,7 +93,7 @@ public class HSMemLogHelper {
         
         // DEBUG 级别记录完整异常堆栈
         if (log.isDebugEnabled() && error != null) {
-            log.debug("{} {} - 异常堆栈 | requestId={}", LOG_PREFIX, operation, requestId, error);
+            log.info("{} {} - 异常堆栈 | requestId={}", LOG_PREFIX, operation, requestId, error);
         }
     }
     
@@ -110,7 +110,7 @@ public class HSMemLogHelper {
             log.warn("{} {} - 慢请求 | requestId={}, duration={}ms", 
                 LOG_PREFIX, operation, requestId, durationMs);
         } else {
-            log.debug("{} {} - 性能指标 | requestId={}, duration={}ms", 
+            log.info("{} {} - 性能指标 | requestId={}, duration={}ms", 
                 LOG_PREFIX, operation, requestId, durationMs);
         }
     }

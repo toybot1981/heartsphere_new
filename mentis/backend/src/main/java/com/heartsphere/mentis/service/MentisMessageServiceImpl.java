@@ -31,7 +31,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     @Override
     @Transactional
     public MentisMessage saveMessage(String sessionId, String role, String content, String messageType) {
-        log.debug("保存消息: sessionId={}, role={}, type={}", sessionId, role, messageType);
+        log.info("保存消息: sessionId={}, role={}, type={}", sessionId, role, messageType);
         
         MentisSession session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -49,7 +49,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     @Override
     @Transactional
     public MentisMessage saveMessage(MentisMessage message) {
-        log.debug("保存消息: messageId={}", message.getMessageId());
+        log.info("保存消息: messageId={}", message.getMessageId());
         
         if (message.getMessageId() == null) {
             message.setMessageId("msg_" + UUID.randomUUID().toString().replace("-", ""));
@@ -60,7 +60,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     
     @Override
     public MentisMessage getMessage(String messageId) {
-        log.debug("获取消息: messageId={}", messageId);
+        log.info("获取消息: messageId={}", messageId);
         
         return messageRepository.findByMessageId(messageId)
                 .orElseThrow(() -> new RuntimeException("消息不存在: " + messageId));
@@ -68,7 +68,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     
     @Override
     public List<MentisMessage> getSessionMessages(String sessionId) {
-        log.debug("获取会话消息列表: sessionId={}", sessionId);
+        log.info("获取会话消息列表: sessionId={}", sessionId);
         
         MentisSession session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -84,7 +84,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     
     @Override
     public List<MentisMessage> getRecentMessages(String sessionId, int limit) {
-        log.debug("获取最近消息: sessionId={}, limit={}", sessionId, limit);
+        log.info("获取最近消息: sessionId={}, limit={}", sessionId, limit);
         
         MentisSession session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -95,7 +95,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     
     @Override
     public List<MentisMessage> getMessagesByRole(String sessionId, String role) {
-        log.debug("根据角色获取消息: sessionId={}, role={}", sessionId, role);
+        log.info("根据角色获取消息: sessionId={}, role={}", sessionId, role);
         
         MentisSession session = sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -105,7 +105,7 @@ public class MentisMessageServiceImpl implements MentisMessageService {
     
     @Override
     public List<MentisMessage> getMessagesByTaskId(String taskId) {
-        log.debug("根据任务ID获取消息: taskId={}", taskId);
+        log.info("根据任务ID获取消息: taskId={}", taskId);
         
         return messageRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
     }

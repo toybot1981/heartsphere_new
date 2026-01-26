@@ -21,7 +21,7 @@ public class PermissionTypeConverter implements AttributeConverter<PortalConfig.
             return null;
         }
         String result = attribute.name().toLowerCase();
-        log.debug("PermissionTypeConverter: 转换到数据库 - {} -> {}", attribute, result);
+        log.info("PermissionTypeConverter: 转换到数据库 - {} -> {}", attribute, result);
         return result;
     }
     
@@ -34,7 +34,7 @@ public class PermissionTypeConverter implements AttributeConverter<PortalConfig.
         try {
             String upperCase = dbData.toUpperCase();
             PortalConfig.PermissionType result = PortalConfig.PermissionType.valueOf(upperCase);
-            log.debug("PermissionTypeConverter: 从数据库转换 - '{}' -> {}", dbData, result);
+            log.info("PermissionTypeConverter: 从数据库转换 - '{}' -> {}", dbData, result);
             return result;
         } catch (IllegalArgumentException e) {
             log.error("PermissionTypeConverter: 无法转换数据库值 '{}' 到 PermissionType 枚举。可用值: {}", 

@@ -15,9 +15,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   action,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+    <div 
+      className="flex flex-col items-center justify-center py-20"
+      style={{ color: 'var(--text-tertiary)' }}
+    >
       {icon || (
-        <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg 
+          className="w-16 h-16 mb-4" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

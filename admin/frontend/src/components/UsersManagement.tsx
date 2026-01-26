@@ -3,6 +3,7 @@ import { adminApi } from '../services/api';
 import { showAlert, showConfirm } from "../utils/dialog";
 import { Button } from "../components/Button";
 import { InputGroup, TextInput } from './AdminUIComponents';
+import { useAdminState } from '../contexts/AdminStateContext';
 
 interface UsersManagementProps {
     adminToken: string | null;
@@ -25,6 +26,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
     adminToken,
     onRefresh
 }) => {
+    const { setActiveSection, setSelectedUserId, setBillingSubSection, setMemoryTab, openTab } = useAdminState();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
@@ -33,6 +35,22 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
     const [totalElements, setTotalElements] = useState(0);
     const [search, setSearch] = useState('');
     const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
+    
+    // 处理跳转到用户配额页面（在新标签页中打开）
+    const handleViewQuota = (userId: number) => {
+        setSelectedUserId(userId);
+        setBillingSubSection('quota');
+        // 在新标签页中打开 billing section
+        openTab('billing');
+    };
+    
+    // 处理跳转到用户记忆页面（在新标签页中打开）
+    const handleViewMemory = (userId: number) => {
+        setSelectedUserId(userId);
+        setMemoryTab(2); // 切换到用户记忆标签页（索引2）
+        // 在新标签页中打开 memory section
+        openTab('memory');
+    };
 
     const loadUsers = async () => {
         if (!adminToken) return;
@@ -385,22 +403,40 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({
                                         </td>
                                         <td className="p-3">
                                             <div className="flex flex-col gap-2 items-end">
-                                                <button
-                                                    onClick={() => handleToggleEnabled(user.id, user.username, user.isEnabled)}
-                                                    className={`${
-                                                        user.isEnabled 
-                                                            ? 'bg-yellow-600 hover:bg-yellow-700' 
-                                                            : 'bg-green-600 hover:bg-green-700'
-                                                    } text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium`}
-                                                >
-                                                    {user.isEnabled ? '禁用' : '启用'}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user.id, user.username)}
-                                                    className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium"
-                                                >
-                                                    删除
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleViewQuota(user.id)}
+                                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded transition-colors font-medium"
+                                                        title="查看个人配额"
+                                                    >
+                                                        配额
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleViewMemory(user.id)}
+                                                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-2 py-1 rounded transition-colors font-medium"
+                                                        title="查看记忆信息"
+                                                    >
+                                                        记忆
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleToggleEnabled(user.id, user.username, user.isEnabled)}
+                                                        className={`${
+                                                            user.isEnabled 
+                                                                ? 'bg-yellow-600 hover:bg-yellow-700' 
+                                                                : 'bg-green-600 hover:bg-green-700'
+                                                        } text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium`}
+                                                    >
+                                                        {user.isEnabled ? '禁用' : '启用'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(user.id, user.username)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded-lg transition-colors min-w-[60px] font-medium"
+                                                    >
+                                                        删除
+                                                    </button>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>

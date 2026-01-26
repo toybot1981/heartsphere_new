@@ -26,10 +26,20 @@ export const MobileEmptyState: React.FC<MobileEmptyStateProps> = memo(({
 }) => {
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-4 ${className}`}>
-      <div className="text-6xl mb-4 opacity-50">{icon}</div>
-      <h3 className="text-white font-semibold text-lg mb-2 text-center">{title}</h3>
+      <div className="text-6xl mb-4" style={{ opacity: 0.5 }}>{icon}</div>
+      <h3 
+        className="font-semibold text-lg mb-2 text-center"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {title}
+      </h3>
       {description && (
-        <p className="text-slate-400 text-sm text-center mb-6 max-w-xs leading-relaxed">{description}</p>
+        <p 
+          className="text-sm text-center mb-6 max-w-xs leading-relaxed"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          {description}
+        </p>
       )}
       {action && (
         <MobileTouchableButton

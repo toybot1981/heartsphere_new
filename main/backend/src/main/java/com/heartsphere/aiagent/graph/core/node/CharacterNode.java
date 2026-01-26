@@ -119,7 +119,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
                 if (characterName != null) {
                     state.setData("current_character_name", characterName);
                 }
-                log.debug("[CharacterNode] 设置当前角色: {}", characterId);
+                log.info("[CharacterNode] 设置当前角色: {}", characterId);
                 break;
                 
             case UPDATE_ATTRIBUTES:
@@ -139,7 +139,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
                     }
                     if (!triggeredEvents.contains(eventId)) {
                         triggeredEvents.add(eventId);
-                        log.debug("[CharacterNode] 触发角色事件: {}", eventId);
+                        log.info("[CharacterNode] 触发角色事件: {}", eventId);
                     }
                 }
                 break;
@@ -155,7 +155,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
                         state.setData("character_relations", characterRelations);
                     }
                     characterRelations.putAll(relationUpdates);
-                    log.debug("[CharacterNode] 更新角色关系: {}", relationUpdates);
+                    log.info("[CharacterNode] 更新角色关系: {}", relationUpdates);
                 }
                 break;
         }
@@ -186,7 +186,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
             favorabilityChange.forEach((charId, change) -> {
                 int current = finalFavorability.getOrDefault(charId, 0);
                 finalFavorability.put(charId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[CharacterNode] 角色 {} 好感度变化: {} -> {}", 
+                log.info("[CharacterNode] 角色 {} 好感度变化: {} -> {}", 
                     charId, current, finalFavorability.get(charId));
             });
         }
@@ -206,7 +206,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
             skillChange.forEach((skillId, change) -> {
                 int current = finalSkills.getOrDefault(skillId, 0);
                 finalSkills.put(skillId, Math.max(0, Math.min(100, current + change)));
-                log.debug("[CharacterNode] 技能 {} 值变化: {} -> {}", 
+                log.info("[CharacterNode] 技能 {} 值变化: {} -> {}", 
                     skillId, current, finalSkills.get(skillId));
             });
         }
@@ -221,7 +221,7 @@ public class CharacterNode implements GraphEngine.GraphNode {
                 state.setData("character_attributes", characterAttributes);
             }
             characterAttributes.putAll(attributeUpdates);
-            log.debug("[CharacterNode] 更新角色属性: {}", attributeUpdates);
+            log.info("[CharacterNode] 更新角色属性: {}", attributeUpdates);
         }
     }
 }

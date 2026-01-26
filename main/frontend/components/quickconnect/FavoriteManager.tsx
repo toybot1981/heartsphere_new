@@ -53,25 +53,49 @@ export const FavoriteManager: React.FC<FavoriteManagerProps> = ({
           onDragStart={() => handleDragStart(index)}
           onDragOver={(e) => handleDragOver(e, index)}
           onDragEnd={handleDragEnd}
-          className={`p-3 rounded-lg bg-white/10 border border-white/20 cursor-move transition-all ${
-            draggedIndex === index ? 'opacity-50' : 'hover:bg-white/20'
+          className={`p-3 rounded-lg border cursor-move transition-all ${
+            draggedIndex === index ? 'opacity-50' : ''
           }`}
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+            borderColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))',
+          }}
+          onMouseEnter={(e) => {
+            if (draggedIndex !== index) {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.2))';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(255, 255, 255, 0.1))';
+          }}
         >
           <div className="flex items-center gap-3">
-            <div className="text-gray-400 text-sm w-6">#{index + 1}</div>
+            <div 
+              className="text-sm w-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              #{index + 1}
+            </div>
             <div className="flex-1">
-              <div className="text-white font-medium">
+              <div 
+                className="font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {favorite.character?.characterName || `角色 ${favorite.characterId}`}
               </div>
-              <div className="text-gray-400 text-sm">
+              <div 
+                className="text-sm"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
                 {favorite.character?.sceneName || ''}
               </div>
             </div>
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              style={{ color: 'var(--text-tertiary)' }}
             >
               <path
                 strokeLinecap="round"

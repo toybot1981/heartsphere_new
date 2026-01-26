@@ -56,21 +56,35 @@ class MemoryRetriever:
 
         # 简单的关键词匹配
         results = []
-        query_lower = query.lower()
+        # 确保 query 是字符串
+        query_str = str(query) if not isinstance(query, str) else query
+        query_lower = query_str.lower()
 
         for category in all_categories:
             score = 0.0
 
-            # 检查名称匹配
-            if query_lower in category["name"].lower():
+            # 检查名称匹配（确保 name 是字符串）
+            category_name = category.get("name", "")
+            if isinstance(category_name, dict):
+                category_name = str(category_name)
+            category_name_lower = str(category_name).lower()
+            if query_lower in category_name_lower:
                 score += 0.5
 
-            # 检查描述匹配
-            if query_lower in category["description"].lower():
+            # 检查描述匹配（确保 description 是字符串）
+            category_description = category.get("description", "")
+            if isinstance(category_description, dict):
+                category_description = str(category_description)
+            category_description_lower = str(category_description).lower()
+            if query_lower in category_description_lower:
                 score += 0.3
 
-            # 检查摘要匹配
-            if query_lower in category["summary"].lower():
+            # 检查摘要匹配（确保 summary 是字符串）
+            category_summary = category.get("summary", "")
+            if isinstance(category_summary, dict):
+                category_summary = str(category_summary)
+            category_summary_lower = str(category_summary).lower()
+            if query_lower in category_summary_lower:
                 score += 0.2
 
             if score > 0:

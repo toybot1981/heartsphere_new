@@ -61,11 +61,15 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
 
       {/* 全部共享 */}
       <div
-        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${
-          shareType === 'all'
-            ? 'border-purple-500/50 bg-purple-500/10'
-            : 'hover:border-purple-500/30'
-        } ${MobileCardStyles.interactive}`}
+        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+        style={{
+          borderColor: shareType === 'all'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+            : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'all'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+            : undefined,
+        }}
         onClick={() => handleShareTypeChange('all')}
         role="button"
         aria-label="全部共享"
@@ -76,15 +80,34 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
             handleShareTypeChange('all');
           }
         }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'all') {
+            e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'all') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all ${
-              shareType === 'all' ? 'border-purple-500 bg-purple-500' : 'border-slate-600 bg-transparent'
-            }`}
+            className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all"
+            style={{
+              borderColor: shareType === 'all' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'var(--border-color-overlay, #475569)',
+              backgroundColor: shareType === 'all' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'transparent',
+            }}
           >
             {shareType === 'all' && (
-              <div className="w-2 h-2 rounded-full bg-white" />
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: 'var(--text-primary)' }}
+              />
             )}
           </div>
           <div className="flex-1">
@@ -92,7 +115,13 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
               <span className={`${MobileTypography.fontSize.base} ${MobileTypography.fontWeight.semibold} ${MobileColors.text.primary}`}>
                 全部共享
               </span>
-              <span className={`${MobileTypography.fontSize.xs} px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded`}>
+              <span 
+                className={`${MobileTypography.fontSize.xs} px-2 py-0.5 rounded`}
+                style={{
+                  backgroundColor: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+                  color: 'var(--color-primary, #c084fc)',
+                }}
+              >
                 ⭐推荐
               </span>
             </div>
@@ -108,11 +137,15 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
 
       {/* 按世界共享 */}
       <div
-        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${
-          shareType === 'world'
-            ? 'border-purple-500/50 bg-purple-500/10'
-            : 'hover:border-purple-500/30'
-        } ${MobileCardStyles.interactive}`}
+        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+        style={{
+          borderColor: shareType === 'world'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+            : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'world'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+            : undefined,
+        }}
         onClick={() => handleShareTypeChange('world')}
         role="button"
         aria-label="按世界共享"
@@ -123,15 +156,34 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
             handleShareTypeChange('world');
           }
         }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'world') {
+            e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'world') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all ${
-              shareType === 'world' ? 'border-purple-500 bg-purple-500' : 'border-slate-600 bg-transparent'
-            }`}
+            className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all"
+            style={{
+              borderColor: shareType === 'world' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'var(--border-color-overlay, #475569)',
+              backgroundColor: shareType === 'world' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'transparent',
+            }}
           >
             {shareType === 'world' && (
-              <div className="w-2 h-2 rounded-full bg-white" />
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: 'var(--text-primary)' }}
+              />
             )}
           </div>
           <div className="flex-1">
@@ -139,7 +191,13 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
               <span className={`${MobileTypography.fontSize.base} ${MobileTypography.fontWeight.semibold} ${MobileColors.text.primary}`}>
                 按世界共享
               </span>
-              <span className={`${MobileTypography.fontSize.xs} px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded`}>
+              <span 
+                className={`${MobileTypography.fontSize.xs} px-2 py-0.5 rounded`}
+                style={{
+                  backgroundColor: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+                  color: 'var(--color-primary, #c084fc)',
+                }}
+              >
                 ⭐推荐
               </span>
             </div>
@@ -158,27 +216,48 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
                     暂无世界
                   </div>
                 ) : (
-                  worlds.map(world => (
-                    <label
-                      key={world.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700/50 cursor-pointer transition-colors ${
-                        selectedScopes.some(s => s.scopeType === 'world' && s.scopeId === world.id)
-                          ? 'bg-purple-500/10 border border-purple-500/30'
-                          : 'bg-slate-800/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedScopes.some(s => s.scopeType === 'world' && s.scopeId === world.id)}
-                        onChange={() => handleScopeToggle('world', world.id)}
-                        className="w-5 h-5 text-purple-500 rounded border-slate-600 focus:ring-purple-500 focus:ring-2"
-                        aria-label={`选择世界：${world.name}`}
-                      />
-                      <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary} flex-1`}>
-                        {world.name}
-                      </span>
-                    </label>
-                  ))
+                  worlds.map(world => {
+                    const isSelected = selectedScopes.some(s => s.scopeType === 'world' && s.scopeId === world.id);
+                    return (
+                      <label
+                        key={world.id}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border"
+                        style={{
+                          backgroundColor: isSelected
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                            : 'var(--bg-secondary, rgba(30, 41, 59, 0.5))',
+                          borderColor: isSelected
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.3))'
+                            : 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(51, 65, 85, 0.5))';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 0.5))';
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleScopeToggle('world', world.id)}
+                          className="w-5 h-5 rounded border focus:ring-2"
+                          style={{
+                            accentColor: 'var(--color-primary, #a855f7)',
+                            borderColor: 'var(--border-color-overlay, #475569)',
+                          }}
+                          aria-label={`选择世界：${world.name}`}
+                        />
+                        <span className={`${MobileTypography.fontSize.sm} flex-1`} style={{ color: 'var(--text-primary)' }}>
+                          {world.name}
+                        </span>
+                      </label>
+                    );
+                  })
                 )}
               </div>
             )}
@@ -188,11 +267,15 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
 
       {/* 按场景共享 */}
       <div
-        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${
-          shareType === 'era'
-            ? 'border-purple-500/50 bg-purple-500/10'
-            : 'hover:border-purple-500/30'
-        } ${MobileCardStyles.interactive}`}
+        className={`${MobileCardStyles.default} p-4 cursor-pointer transition-all ${MobileCardStyles.interactive}`}
+        style={{
+          borderColor: shareType === 'era'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.5))'
+            : 'var(--border-color-overlay)',
+          backgroundColor: shareType === 'era'
+            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+            : undefined,
+        }}
         onClick={() => handleShareTypeChange('era')}
         role="button"
         aria-label="按场景共享"
@@ -203,15 +286,34 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
             handleShareTypeChange('era');
           }
         }}
+        onMouseEnter={(e) => {
+          if (shareType !== 'era') {
+            e.currentTarget.style.borderColor = 'var(--color-primary, rgba(168, 85, 247, 0.3))';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (shareType !== 'era') {
+            e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+          }
+        }}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all ${
-              shareType === 'era' ? 'border-purple-500 bg-purple-500' : 'border-slate-600 bg-transparent'
-            }`}
+            className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-all"
+            style={{
+              borderColor: shareType === 'era' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'var(--border-color-overlay, #475569)',
+              backgroundColor: shareType === 'era' 
+                ? 'var(--color-primary, #a855f7)' 
+                : 'transparent',
+            }}
           >
             {shareType === 'era' && (
-              <div className="w-2 h-2 rounded-full bg-white" />
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: 'var(--text-primary)' }}
+              />
             )}
           </div>
           <div className="flex-1">
@@ -235,27 +337,48 @@ export const MobileShareConfigStep1: React.FC<MobileShareConfigStep1Props> = mem
                     暂无场景
                   </div>
                 ) : (
-                  eras.map(era => (
-                    <label
-                      key={era.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700/50 cursor-pointer transition-colors ${
-                        selectedScopes.some(s => s.scopeType === 'era' && s.scopeId === era.id)
-                          ? 'bg-purple-500/10 border border-purple-500/30'
-                          : 'bg-slate-800/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedScopes.some(s => s.scopeType === 'era' && s.scopeId === era.id)}
-                        onChange={() => handleScopeToggle('era', era.id)}
-                        className="w-5 h-5 text-purple-500 rounded border-slate-600 focus:ring-purple-500 focus:ring-2"
-                        aria-label={`选择场景：${era.name}`}
-                      />
-                      <span className={`${MobileTypography.fontSize.sm} ${MobileColors.text.primary} flex-1`}>
-                        {era.name}
-                      </span>
-                    </label>
-                  ))
+                  eras.map(era => {
+                    const isSelected = selectedScopes.some(s => s.scopeType === 'era' && s.scopeId === era.id);
+                    return (
+                      <label
+                        key={era.id}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border"
+                        style={{
+                          backgroundColor: isSelected
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.1))'
+                            : 'var(--bg-secondary, rgba(30, 41, 59, 0.5))',
+                          borderColor: isSelected
+                            ? 'var(--color-primary, rgba(168, 85, 247, 0.3))'
+                            : 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(51, 65, 85, 0.5))';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, rgba(30, 41, 59, 0.5))';
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleScopeToggle('era', era.id)}
+                          className="w-5 h-5 rounded border focus:ring-2"
+                          style={{
+                            accentColor: 'var(--color-primary, #a855f7)',
+                            borderColor: 'var(--border-color-overlay, #475569)',
+                          }}
+                          aria-label={`选择场景：${era.name}`}
+                        />
+                        <span className={`${MobileTypography.fontSize.sm} flex-1`} style={{ color: 'var(--text-primary)' }}>
+                          {era.name}
+                        </span>
+                      </label>
+                    );
+                  })
                 )}
               </div>
             )}

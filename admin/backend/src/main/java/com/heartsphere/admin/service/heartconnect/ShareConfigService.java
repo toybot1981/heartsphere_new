@@ -212,7 +212,7 @@ public class ShareConfigService {
         if (currentUserId == null) {
             result = configs.stream()
                 .map(config -> {
-                    log.debug("转换共享配置为DTO（未登录用户）: configId={}, shareCode={}, ownerId={}", 
+                    log.info("转换共享配置为DTO（未登录用户）: configId={}, shareCode={}, ownerId={}", 
                         config.getId(), config.getShareCode(), config.getUserId());
                     return convertToSharedDTO(config, null);
                 })
@@ -223,12 +223,12 @@ public class ShareConfigService {
                     // 排除自己的
                     boolean isNotOwn = !config.getUserId().equals(currentUserId);
                     if (!isNotOwn) {
-                        log.debug("排除自己的共享配置: configId={}, userId={}", config.getId(), config.getUserId());
+                        log.info("排除自己的共享配置: configId={}, userId={}", config.getId(), config.getUserId());
                     }
                     return isNotOwn;
                 })
                 .map(config -> {
-                    log.debug("转换共享配置为DTO: configId={}, shareCode={}, ownerId={}", 
+                    log.info("转换共享配置为DTO: configId={}, shareCode={}, ownerId={}", 
                         config.getId(), config.getShareCode(), config.getUserId());
                     return convertToSharedDTO(config, currentUserId);
                 })

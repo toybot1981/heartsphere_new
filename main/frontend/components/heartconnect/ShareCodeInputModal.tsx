@@ -40,19 +40,36 @@ export const ShareCodeInputModal: React.FC<ShareCodeInputModalProps> = ({
   
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.7))' }}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-card, #111827)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">输入共享码</h2>
+        <div 
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
+          <h2 
+            className="text-xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            输入共享码
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -63,13 +80,25 @@ export const ShareCodeInputModal: React.FC<ShareCodeInputModalProps> = ({
         {/* 内容 */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+            <div 
+              className="mb-4 p-4 border rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+                borderColor: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+                color: 'var(--color-error, #fca5a5)',
+              }}
+            >
               {error}
             </div>
           )}
           
           <div className="mb-4">
-            <label className="block text-white font-medium mb-2">共享码</label>
+            <label 
+              className="block font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              共享码
+            </label>
             <input
               type="text"
               value={shareCode}
@@ -79,28 +108,67 @@ export const ShareCodeInputModal: React.FC<ShareCodeInputModalProps> = ({
               }}
               placeholder="HS-XXXXXX"
               maxLength={9}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 font-mono text-lg tracking-wider"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none font-mono text-lg tracking-wider"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #3b82f6)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+              }}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleSubmit();
                 }
               }}
             />
-            <p className="text-gray-400 text-sm mt-2">格式：HS-XXXXXX（6位字母或数字）</p>
+            <p 
+              className="text-sm mt-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              格式：HS-XXXXXX（6位字母或数字）
+            </p>
           </div>
         </div>
         
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-700">
+        <div 
+          className="flex items-center justify-end gap-3 p-6 border-t"
+          style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary, #374151)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #374151)';
+            }}
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium"
+            className="px-6 py-2 rounded-lg transition-colors font-medium"
+            style={{
+              backgroundColor: 'var(--color-primary, #3b82f6)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+            }}
           >
             连接
           </button>

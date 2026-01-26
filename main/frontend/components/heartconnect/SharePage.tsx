@@ -95,10 +95,23 @@ const SharePageContent: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(to bottom right, var(--bg-primary, #312e81), var(--bg-primary, #581c87), var(--bg-primary, #831843))',
+        }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">加载中...</p>
+          <div 
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderColor: 'var(--text-primary)' }}
+          ></div>
+          <p 
+            className="text-lg"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            加载中...
+          </p>
         </div>
       </div>
     );
@@ -106,15 +119,48 @@ const SharePageContent: React.FC = () => {
   
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-        <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full mx-4">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(to bottom right, var(--bg-primary, #312e81), var(--bg-primary, #581c87), var(--bg-primary, #831843))',
+        }}
+      >
+        <div 
+          className="rounded-lg p-8 max-w-md w-full mx-4"
+          style={{ backgroundColor: 'var(--bg-card, #111827)' }}
+        >
           <div className="text-center">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <h2 className="text-white text-xl font-bold mb-2">访问失败</h2>
-            <p className="text-gray-400 mb-6">{error}</p>
+            <div 
+              className="text-4xl mb-4"
+              style={{ color: 'var(--color-error, #ef4444)' }}
+            >
+              ⚠️
+            </div>
+            <h2 
+              className="text-xl font-bold mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              访问失败
+            </h2>
+            <p 
+              className="mb-6"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {error}
+            </p>
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-6 py-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--color-primary, #3b82f6)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #2563eb)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+              }}
             >
               返回首页
             </button>
@@ -129,17 +175,36 @@ const SharePageContent: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div 
+      className="min-h-screen"
+      style={{
+        background: 'linear-gradient(to bottom right, var(--bg-primary, #312e81), var(--bg-primary, #581c87), var(--bg-primary, #831843))',
+      }}
+    >
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           {/* 头部 */}
-          <div className="bg-gray-900 rounded-lg p-8 mb-6">
+          <div 
+            className="rounded-lg p-8 mb-6"
+            style={{ backgroundColor: 'var(--bg-card, #111827)' }}
+          >
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-white mb-4">
+              <h1 
+                className="text-3xl font-bold mb-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {shareConfig.description || '心域分享'}
               </h1>
-              <p className="text-gray-400 mb-6">
-                共享码: <span className="font-mono text-blue-400">{shareConfig.shareCode}</span>
+              <p 
+                className="mb-6"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                共享码: <span 
+                  className="font-mono"
+                  style={{ color: 'var(--color-primary, #60a5fa)' }}
+                >
+                  {shareConfig.shareCode}
+                </span>
               </p>
               
               {shareConfig.coverImageUrl && (
@@ -150,42 +215,67 @@ const SharePageContent: React.FC = () => {
                 />
               )}
               
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center justify-center gap-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.viewCount || 0}</span> 次查看
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{shareConfig.viewCount || 0}</span> 次查看
                 </div>
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.requestCount || 0}</span> 次请求
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{shareConfig.requestCount || 0}</span> 次请求
                 </div>
                 <div>
-                  <span className="text-white font-semibold">{shareConfig.approvedCount || 0}</span> 已批准
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{shareConfig.approvedCount || 0}</span> 已批准
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* 权限说明 */}
-          <div className="bg-gray-900 rounded-lg p-6 mb-6">
-            <h3 className="text-white font-semibold mb-3">访问权限</h3>
+          <div
+            className="rounded-lg p-6 mb-6"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+            }}
+          >
+            <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>访问权限</h3>
             {shareConfig.accessPermission === 'free' ? (
-              <p className="text-gray-400">自由连接 - 可以直接进入体验</p>
+              <p style={{ color: 'var(--text-tertiary)' }}>自由连接 - 可以直接进入体验</p>
             ) : (
-              <p className="text-gray-400">需要审批 - 主人同意后才能进入</p>
+              <p style={{ color: 'var(--text-tertiary)' }}>需要审批 - 主人同意后才能进入</p>
             )}
           </div>
-          
+
           {/* 操作按钮 */}
           <div className="flex gap-4">
             <button
               onClick={() => navigate('/')}
-              className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex-1 px-6 py-3 rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+              }}
             >
               返回首页
             </button>
             {shareConfig.accessPermission === 'approval' && (
               <button
                 onClick={() => setShowRequestModal(true)}
-                className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 px-6 py-3 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: 'var(--color-info)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
               >
                 请求连接
               </button>

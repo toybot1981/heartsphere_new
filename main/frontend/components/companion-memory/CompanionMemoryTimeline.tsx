@@ -18,7 +18,11 @@ export const CompanionMemoryTimeline: React.FC<CompanionMemoryTimelineProps> = (
   if (memories.length === 0) {
     return (
       <div className={`text-center py-8 ${className}`}>
-        <p className="text-white/50">还没有陪伴记忆，让我们一起创造美好的回忆吧～</p>
+        <p 
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          还没有陪伴记忆，让我们一起创造美好的回忆吧～
+        </p>
       </div>
     );
   }
@@ -32,11 +36,22 @@ export const CompanionMemoryTimeline: React.FC<CompanionMemoryTimelineProps> = (
         <div key={date} className="relative">
           {/* 日期标题 */}
           <div className="flex items-center mb-4">
-            <div className="flex-1 h-px bg-white/20" />
+            <div 
+              className="flex-1 h-px"
+              style={{ backgroundColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))' }}
+            />
             <div className="px-4">
-              <h3 className="text-lg font-semibold text-white">{formatDate(date)}</h3>
+              <h3 
+                className="text-lg font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {formatDate(date)}
+              </h3>
             </div>
-            <div className="flex-1 h-px bg-white/20" />
+            <div 
+              className="flex-1 h-px"
+              style={{ backgroundColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))' }}
+            />
           </div>
 
           {/* 记忆列表 */}
@@ -62,15 +77,31 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory }) => {
   const icon = getMemoryIcon(memory.type);
   const color = getMemoryColor(memory.type);
 
+  const colorStyle = getMemoryColorStyle(memory.type);
+  
   return (
     <div
-      className={`rounded-lg p-4 border backdrop-blur-md ${color.bg} ${color.border} transition-all hover:scale-[1.02]`}
+      className="rounded-lg p-4 border backdrop-blur-md transition-all hover:scale-[1.02]"
+      style={{
+        backgroundColor: colorStyle.bg,
+        borderColor: colorStyle.border,
+      }}
     >
       <div className="flex items-start space-x-3">
         <div className="text-2xl">{icon}</div>
         <div className="flex-1">
-          <h4 className="text-base font-semibold text-white mb-1">{memory.title}</h4>
-          <p className="text-sm text-white/70 mb-2">{memory.content}</p>
+          <h4 
+            className="text-base font-semibold mb-1"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {memory.title}
+          </h4>
+          <p 
+            className="text-sm mb-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {memory.content}
+          </p>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {memory.tags && memory.tags.length > 0 && (
@@ -78,7 +109,11 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory }) => {
                   {memory.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="text-xs px-2 py-0.5 bg-white/10 rounded-full text-white/70"
+                      className="text-xs px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+                        color: 'var(--text-tertiary)',
+                      }}
                     >
                       {tag}
                     </span>
@@ -86,7 +121,12 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ memory }) => {
                 </div>
               )}
             </div>
-            <span className="text-xs text-white/50">{formatTime(memory.timestamp)}</span>
+            <span 
+              className="text-xs"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {formatTime(memory.timestamp)}
+            </span>
           </div>
         </div>
       </div>
@@ -167,46 +207,56 @@ function getMemoryIcon(type: CompanionMemory['type']): string {
 }
 
 /**
- * 获取记忆颜色
+ * 获取记忆颜色（CSS变量版本）
+ */
+function getMemoryColorStyle(type: CompanionMemory['type']): {
+  bg: string;
+  border: string;
+} {
+  const colorMap: Record<CompanionMemory['type'], { bg: string; border: string }> = {
+    conversation: {
+      bg: 'var(--color-info, rgba(59, 130, 246, 0.2))',
+      border: 'var(--color-info, rgba(59, 130, 246, 0.5))',
+    },
+    milestone: {
+      bg: 'var(--color-warning, rgba(234, 179, 8, 0.2))',
+      border: 'var(--color-warning, rgba(234, 179, 8, 0.5))',
+    },
+    emotion_share: {
+      bg: 'var(--color-primary, rgba(236, 72, 153, 0.2))',
+      border: 'var(--color-primary, rgba(236, 72, 153, 0.5))',
+    },
+    special_moment: {
+      bg: 'var(--color-primary, rgba(168, 85, 247, 0.2))',
+      border: 'var(--color-primary, rgba(168, 85, 247, 0.5))',
+    },
+    anniversary: {
+      bg: 'var(--color-error, rgba(239, 68, 68, 0.2))',
+      border: 'var(--color-error, rgba(239, 68, 68, 0.5))',
+    },
+    growth: {
+      bg: 'var(--color-success, rgba(34, 197, 94, 0.2))',
+      border: 'var(--color-success, rgba(34, 197, 94, 0.5))',
+    },
+    care_message: {
+      bg: 'var(--color-primary, rgba(99, 102, 241, 0.2))',
+      border: 'var(--color-primary, rgba(99, 102, 241, 0.5))',
+    },
+  };
+  return colorMap[type] || {
+    bg: 'var(--bg-overlay, rgba(255, 255, 255, 0.1))',
+    border: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+  };
+}
+
+/**
+ * 获取记忆颜色（保留原函数以兼容）
  */
 function getMemoryColor(type: CompanionMemory['type']): {
   bg: string;
   border: string;
 } {
-  const colors: Record<CompanionMemory['type'], { bg: string; border: string }> = {
-    conversation: {
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-400/50',
-    },
-    milestone: {
-      bg: 'bg-yellow-500/20',
-      border: 'border-yellow-400/50',
-    },
-    emotion_share: {
-      bg: 'bg-pink-500/20',
-      border: 'border-pink-400/50',
-    },
-    special_moment: {
-      bg: 'bg-purple-500/20',
-      border: 'border-purple-400/50',
-    },
-    anniversary: {
-      bg: 'bg-red-500/20',
-      border: 'border-red-400/50',
-    },
-    growth: {
-      bg: 'bg-green-500/20',
-      border: 'border-green-400/50',
-    },
-    care_message: {
-      bg: 'bg-indigo-500/20',
-      border: 'border-indigo-400/50',
-    },
-  };
-  return colors[type] || {
-    bg: 'bg-white/10',
-    border: 'border-white/20',
-  };
+  return getMemoryColorStyle(type);
 }
 
 

@@ -202,7 +202,7 @@ public class GraphRecommendationService {
                         }
                     }
                 } catch (Exception e) {
-                    log.debug("获取角色关系失败: {}", e.getMessage());
+                    log.info("获取角色关系失败: {}", e.getMessage());
                 }
             }
         }

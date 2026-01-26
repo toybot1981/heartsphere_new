@@ -51,25 +51,51 @@ export const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
       } transition-all duration-500`}
     >
       {/* 背景遮罩 */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      <div 
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.3))' }}
+      />
 
       {/* 庆祝内容 */}
-      <div className="relative z-10 bg-gradient-to-br from-purple-600/90 to-pink-600/90 rounded-2xl p-8 max-w-md w-full mx-4 border-2 border-white/30 shadow-2xl">
+      <div 
+        className="relative z-10 rounded-2xl p-8 max-w-md w-full mx-4 border-2 shadow-2xl"
+        style={{
+          background: 'var(--gradient-celebration, linear-gradient(to bottom right, rgba(147, 51, 234, 0.9), rgba(219, 39, 119, 0.9)))',
+          borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.3))',
+        }}
+      >
         {/* 标题 */}
         <div className="text-center mb-4">
-          <h2 className="text-3xl font-bold text-white mb-2 animate-bounce">
+          <h2 
+            className="text-3xl font-bold mb-2 animate-bounce"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {celebration.title}
           </h2>
-          <p className="text-white/90 text-lg">{celebration.message}</p>
+          <p 
+            className="text-lg"
+            style={{ color: 'var(--text-primary, rgba(255, 255, 255, 0.9))' }}
+          >
+            {celebration.message}
+          </p>
         </div>
 
         {/* 里程碑信息 */}
-        <div className="bg-white/20 rounded-lg p-4 mb-4 backdrop-blur-sm">
-          <p className="text-white font-semibold text-center">
+        <div 
+          className="rounded-lg p-4 mb-4 backdrop-blur-sm"
+          style={{ backgroundColor: 'var(--bg-overlay, rgba(255, 255, 255, 0.2))' }}
+        >
+          <p 
+            className="font-semibold text-center"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {celebration.milestone.title}
           </p>
           {celebration.milestone.value && (
-            <p className="text-white/80 text-sm text-center mt-1">
+            <p 
+              className="text-sm text-center mt-1"
+              style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.8))' }}
+            >
               达成值: {celebration.milestone.value}
             </p>
           )}
@@ -117,9 +143,16 @@ const ConfettiAnimation: React.FC = () => {
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181'][
-              Math.floor(Math.random() * 5)
-            ],
+            backgroundColor: (() => {
+              const colors = [
+                'var(--color-error, #ef4444)',
+                'var(--color-info, #22d3ee)',
+                'var(--color-warning, #fbbf24)',
+                'var(--color-success, #4ade80)',
+                'var(--color-primary, #ec4899)',
+              ];
+              return colors[Math.floor(Math.random() * 5)];
+            })(),
             animationDelay: `${Math.random() * 2}s`,
             animationDuration: `${2 + Math.random() * 2}s`,
           }}
@@ -142,9 +175,16 @@ const FireworksAnimation: React.FC = () => {
           style={{
             left: '50%',
             top: '50%',
-            backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181'][
-              Math.floor(Math.random() * 5)
-            ],
+            backgroundColor: (() => {
+              const colors = [
+                'var(--color-error, #ef4444)',
+                'var(--color-info, #22d3ee)',
+                'var(--color-warning, #fbbf24)',
+                'var(--color-success, #4ade80)',
+                'var(--color-primary, #ec4899)',
+              ];
+              return colors[Math.floor(Math.random() * 5)];
+            })(),
             animationDelay: `${i * 0.1}s`,
           }}
         />

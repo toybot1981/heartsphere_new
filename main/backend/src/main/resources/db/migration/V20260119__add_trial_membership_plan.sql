@@ -1,7 +1,7 @@
--- 添加体验会员订阅计划
+-- 添加体验用户订阅计划
 -- 执行方法：mysql -h 127.0.0.1 -u root -p123456 heartsphere --default-character-set=utf8mb4 < V20260119__add_trial_membership_plan.sql
 -- 
--- 说明：为游客模式创建体验会员计划，默认提供1万文本Token，其他配额为0
+-- 说明：为游客模式创建体验用户计划，默认提供1万文本Token，其他配额为0
 
 SET NAMES utf8mb4;
 

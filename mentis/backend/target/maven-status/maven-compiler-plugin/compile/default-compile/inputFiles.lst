@@ -21,9 +21,11 @@
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/demo/service/DemoService.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/audit/AuditLogServiceImpl.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/service/McpIntegrationService.java
+/Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/controller/ToolTestController.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/brain/impl/BrainOrchestratorImpl.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/executor/computeruse/ScriptExecutor.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/brain/module/impl/PlanningModuleImpl.java
+/Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/service/ToolConfigIntegrationService.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/service/McpToolDiscoveryService.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/agentscope/config/AgentScopeConfig.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/executor/impl/VmCommandExecutor.java
@@ -83,6 +85,7 @@
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/tool/system/SystemInfoTool.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/alert/AlertServiceImpl.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/ai/service/AIServiceImpl.java
+/Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/service/ToolConfigInitializer.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/service/MentisVmService.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/vm/VmNotFoundException.java
 /Users/admin/Workspace/heartsphere_new/mentis/backend/src/main/java/com/heartsphere/mentis/brain/executor/impl/E2BExecutor.java

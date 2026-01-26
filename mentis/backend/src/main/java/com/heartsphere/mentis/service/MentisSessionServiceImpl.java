@@ -46,7 +46,7 @@ public class MentisSessionServiceImpl implements MentisSessionService {
     
     @Override
     public MentisSession getSession(String sessionId) {
-        log.debug("获取会话: sessionId={}", sessionId);
+        log.info("获取会话: sessionId={}", sessionId);
         
         return sessionRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("会话不存在: " + sessionId));
@@ -64,7 +64,7 @@ public class MentisSessionServiceImpl implements MentisSessionService {
     
     @Override
     public List<MentisSession> getUserSessions(Long userId) {
-        log.debug("获取用户会话列表: userId={}", userId);
+        log.info("获取用户会话列表: userId={}", userId);
         
         return sessionRepository.findByUserIdOrderByLastActiveAtDesc(userId);
     }
@@ -81,7 +81,7 @@ public class MentisSessionServiceImpl implements MentisSessionService {
             // 1. 删除关联的虚拟机资源
             try {
                 vmManager.deleteVmForSession(sessionId);
-                log.debug("已删除会话的虚拟机资源: sessionId={}", sessionId);
+                log.info("已删除会话的虚拟机资源: sessionId={}", sessionId);
             } catch (Exception e) {
                 log.warn("删除会话的虚拟机资源失败（继续删除其他数据）: sessionId={}", sessionId, e);
             }

@@ -20,10 +20,18 @@ import {
   Tabs,
   Tab,
   Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Grid,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { adminMemoryApi, UserMemory, UserSearchResult } from '../../services/api/admin/memory';
 import { hsmemApi, MemoryItem, RetrieveResponse, Resource, Category } from '../../services/api/hsmem/hsmemApi';
 import { MUIProvider } from '../MUIProvider';
+import { useAdminState } from '../../contexts/AdminStateContext';
 
 /**
  * 用户记忆管理组件
@@ -33,6 +41,7 @@ interface UserMemoryManagementProps {
 }
 
 const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ adminToken }) => {
+  const { selectedUserId: contextSelectedUserId, setSelectedUserId: setContextSelectedUserId } = useAdminState();
   const [activeTab, setActiveTab] = useState(0);
   
   // 原有功能状态
@@ -44,6 +53,36 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
   const [error, setError] = useState<string | null>(null);
   const [memoryDetailOpen, setMemoryDetailOpen] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState<UserMemory | null>(null);
+  
+  // 如果从用户管理页面跳转过来，自动设置userId并加载记忆
+  useEffect(() => {
+    if (contextSelectedUserId !== null && adminToken) {
+      const userId = contextSelectedUserId;
+      // 清除context中的selectedUserId，避免下次进入时自动加载
+      setContextSelectedUserId(null);
+      
+      // 设置状态
+      setSelectedUserId(userId);
+      setSearchKeyword(String(userId));
+      
+      // 自动加载该用户的记忆
+      const loadMemories = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const result = await adminMemoryApi.getUserMemories(adminToken, userId, undefined, 0, 20);
+          setMemories(result.content || []);
+        } catch (err: any) {
+          setError(err.message || '加载记忆失败');
+          setMemories([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadMemories();
+    }
+  }, [contextSelectedUserId, setContextSelectedUserId, adminToken]);
   
   // HSMem查询功能状态
   const [hsmemQueryText, setHsmemQueryText] = useState('');
@@ -67,6 +106,26 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [categoryDetailOpen, setCategoryDetailOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+
+  // 资源管理功能状态
+  const [resourceModalityFilter, setResourceModalityFilter] = useState<string>('all');
+  const [allResources, setAllResources] = useState<Resource[]>([]);
+  const [resourceLoading, setResourceLoading] = useState(false);
+  const [resourceError, setResourceError] = useState<string | null>(null);
+
+  // 记忆项管理功能状态
+  const [itemMemoryTypeFilter, setItemMemoryTypeFilter] = useState<string>('all');
+  const [itemCategoryFilter, setItemCategoryFilter] = useState<string>('all');
+  const [allItems, setAllItems] = useState<MemoryItem[]>([]);
+  const [itemLoading, setItemLoading] = useState(false);
+  const [itemError, setItemError] = useState<string | null>(null);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableMemoryTypes, setAvailableMemoryTypes] = useState<string[]>([]);
+
+  // 类别管理功能状态
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!adminToken) return;
@@ -219,7 +278,8 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
     try {
       const response = await hsmemApi.getCategoryItems(categoryName);
       // 构造分类对象
-      const category = traceCategories.find(cat => cat.name === categoryName);
+      const category = traceCategories.find(cat => cat.name === categoryName) || 
+                       allCategories.find(cat => cat.name === categoryName);
       if (category) {
         setSelectedCategory({
           ...category,
@@ -231,6 +291,74 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
       setTraceError(err.message || '加载分类详情失败');
     }
   };
+
+  // 资源管理功能
+  const handleLoadAllResources = async () => {
+    try {
+      setResourceLoading(true);
+      setResourceError(null);
+      const response = await hsmemApi.getAllResources();
+      setAllResources(response.data.resources || []);
+    } catch (err: any) {
+      setResourceError(err.message || '加载资源失败');
+    } finally {
+      setResourceLoading(false);
+    }
+  };
+
+  // 记忆项管理功能
+  const handleLoadAllItems = async () => {
+    try {
+      setItemLoading(true);
+      setItemError(null);
+      const response = await hsmemApi.getAllItems();
+      const items = response.data.items || [];
+      setAllItems(items);
+      
+      // 提取所有唯一的类别和记忆类型
+      const categoriesSet = new Set<string>();
+      const memoryTypesSet = new Set<string>();
+      items.forEach(item => {
+        if (item.categories) {
+          item.categories.forEach(cat => categoriesSet.add(cat));
+        }
+        if (item.memory_type) {
+          memoryTypesSet.add(item.memory_type);
+        }
+      });
+      setAvailableCategories(Array.from(categoriesSet).sort());
+      setAvailableMemoryTypes(Array.from(memoryTypesSet).sort());
+    } catch (err: any) {
+      setItemError(err.message || '加载记忆项失败');
+    } finally {
+      setItemLoading(false);
+    }
+  };
+
+  // 类别管理功能
+  const handleLoadAllCategories = async () => {
+    try {
+      setCategoryLoading(true);
+      setCategoryError(null);
+      const response = await hsmemApi.getCategories();
+      setAllCategories(response.data.categories || []);
+    } catch (err: any) {
+      setCategoryError(err.message || '加载类别失败');
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  // 组件加载时自动加载数据
+  useEffect(() => {
+    if (activeTab === 3) {
+      handleLoadAllResources();
+    } else if (activeTab === 4) {
+      handleLoadAllItems();
+    } else if (activeTab === 5) {
+      handleLoadAllCategories();
+    }
+  }, [activeTab]);
 
   return (
     <Box>
@@ -248,6 +376,9 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
         <Tab label="用户记忆（Admin API）" />
         <Tab label="HSMem查询" />
         <Tab label="记忆提取追溯" />
+        <Tab label="资源管理（Resource Layer）" />
+        <Tab label="记忆项管理（Item Layer）" />
+        <Tab label="类别管理（Category Layer）" />
       </Tabs>
 
       {/* 用户记忆管理（原有功能） */}
@@ -909,15 +1040,16 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
                   {selectedCategory.item_ids && selectedCategory.item_ids.length > 0 && (
                     <>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>包含的记忆项ID:</strong>
+                        <strong>包含的记忆项 ({selectedCategory.item_ids.length} 个):</strong>
                       </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 300, overflow: 'auto' }}>
                         {selectedCategory.item_ids.map((itemId) => {
-                          const item = traceItems.find(i => i.id === itemId);
+                          const item = traceItems.find(i => i.id === itemId) || 
+                                      allItems.find(i => i.id === itemId);
                           return (
                             <Chip
                               key={itemId}
-                              label={item ? item.summary : itemId}
+                              label={item ? (item.summary || itemId) : itemId}
                               size="small"
                               onClick={() => item && handleViewHsmemItemDetail(item)}
                               sx={{ cursor: item ? 'pointer' : 'default' }}
@@ -934,6 +1066,395 @@ const UserMemoryManagementContent: React.FC<UserMemoryManagementProps> = ({ admi
               <Button onClick={() => setCategoryDetailOpen(false)}>关闭</Button>
             </DialogActions>
           </Dialog>
+        </Box>
+      )}
+
+      {/* 资源管理（Resource Layer） */}
+      {activeTab === 3 && (
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            资源管理（Resource Layer）
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            管理多模态资源：对话（Conversation）、文本（Text）、文档（Document）、音频（Audio）等
+          </Typography>
+
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+              <FormControl sx={{ minWidth: 200 }}>
+                <InputLabel>模态类型筛选</InputLabel>
+                <Select
+                  value={resourceModalityFilter}
+                  onChange={(e) => setResourceModalityFilter(e.target.value)}
+                  label="模态类型筛选"
+                >
+                  <MenuItem value="all">全部</MenuItem>
+                  <MenuItem value="conversation">对话（Conversation）</MenuItem>
+                  <MenuItem value="text">文本（Text）</MenuItem>
+                  <MenuItem value="document">文档（Document）</MenuItem>
+                  <MenuItem value="audio">音频（Audio）</MenuItem>
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                onClick={handleLoadAllResources}
+                disabled={resourceLoading}
+              >
+                {resourceLoading ? <CircularProgress size={20} /> : '刷新资源列表'}
+              </Button>
+            </Box>
+            {resourceError && <Alert severity="error" sx={{ mt: 2 }}>{resourceError}</Alert>}
+          </Paper>
+
+          {/* 统计卡片 */}
+          {allResources.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              {['conversation', 'text', 'document', 'audio'].map((modality) => {
+                const count = allResources.filter(r => r.modality === modality).length;
+                return (
+                  <Card key={modality} sx={{ flex: 1 }}>
+                    <CardContent>
+                      <Typography variant="h4" color="primary">{count}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {modality === 'conversation' ? '对话' : 
+                         modality === 'text' ? '文本' :
+                         modality === 'document' ? '文档' : '音频'}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
+          )}
+
+          {/* 资源列表 */}
+          {allResources.length > 0 && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>资源ID</TableCell>
+                    <TableCell>模态类型</TableCell>
+                    <TableCell>创建时间</TableCell>
+                    <TableCell>操作</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allResources
+                    .filter(resource => resourceModalityFilter === 'all' || resource.modality === resourceModalityFilter)
+                    .map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell>{resource.id}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={resource.modality} 
+                            size="small"
+                            color={
+                              resource.modality === 'conversation' ? 'primary' :
+                              resource.modality === 'text' ? 'secondary' :
+                              resource.modality === 'document' ? 'success' : 'info'
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {new Date(resource.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            onClick={() => handleViewResourceDetail(resource.id)}
+                          >
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {!resourceLoading && allResources.length === 0 && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              暂无资源数据，请点击"刷新资源列表"加载
+            </Alert>
+          )}
+        </Box>
+      )}
+
+      {/* 记忆项管理（Item Layer） */}
+      {activeTab === 4 && (
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            记忆项管理（Memory Item Layer）
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            管理从资源中提取的记忆项，按记忆类型（Event、Habit、Asset、Work等）和类别进行区分
+          </Typography>
+
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>记忆类型筛选</InputLabel>
+                  <Select
+                    value={itemMemoryTypeFilter}
+                    onChange={(e) => setItemMemoryTypeFilter(e.target.value)}
+                    label="记忆类型筛选"
+                  >
+                    <MenuItem value="all">全部类型</MenuItem>
+                    {availableMemoryTypes.map(type => (
+                      <MenuItem key={type} value={type}>{type}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>类别筛选</InputLabel>
+                  <Select
+                    value={itemCategoryFilter}
+                    onChange={(e) => setItemCategoryFilter(e.target.value)}
+                    label="类别筛选"
+                  >
+                    <MenuItem value="all">全部类别</MenuItem>
+                    {availableCategories.map(cat => (
+                      <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+            <Button
+              variant="contained"
+              onClick={handleLoadAllItems}
+              disabled={itemLoading}
+            >
+              {itemLoading ? <CircularProgress size={20} /> : '刷新记忆项列表'}
+            </Button>
+            {itemError && <Alert severity="error" sx={{ mt: 2 }}>{itemError}</Alert>}
+          </Paper>
+
+          {/* 统计卡片 */}
+          {allItems.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+              {availableMemoryTypes.map((type) => {
+                const count = allItems.filter(item => item.memory_type === type).length;
+                return (
+                  <Card key={type} sx={{ minWidth: 150 }}>
+                    <CardContent>
+                      <Typography variant="h4" color="primary">{count}</Typography>
+                      <Typography variant="body2" color="text.secondary">{type}</Typography>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
+          )}
+
+          {/* 记忆项列表 */}
+          {allItems.length > 0 && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>记忆项ID</TableCell>
+                    <TableCell>摘要</TableCell>
+                    <TableCell>记忆类型</TableCell>
+                    <TableCell>分类</TableCell>
+                    <TableCell>重要性</TableCell>
+                    <TableCell>创建时间</TableCell>
+                    <TableCell>操作</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allItems
+                    .filter(item => {
+                      const typeMatch = itemMemoryTypeFilter === 'all' || item.memory_type === itemMemoryTypeFilter;
+                      const categoryMatch = itemCategoryFilter === 'all' || 
+                        (item.categories && item.categories.includes(itemCategoryFilter));
+                      return typeMatch && categoryMatch;
+                    })
+                    .map((item) => (
+                      <TableRow 
+                        key={item.id}
+                        onClick={() => handleViewHsmemItemDetail(item)}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'action.hover'
+                          }
+                        }}
+                      >
+                        <TableCell>{item.id}</TableCell>
+                        <TableCell>{item.summary}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={item.memory_type} 
+                            size="small"
+                            color={
+                              item.memory_type === 'Event' ? 'primary' :
+                              item.memory_type === 'Habit' ? 'secondary' :
+                              item.memory_type === 'Asset' ? 'success' :
+                              item.memory_type === 'Work' ? 'info' : 'default'
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {item.categories && item.categories.length > 0 ? (
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                              {item.categories.slice(0, 2).map((cat, idx) => (
+                                <Chip key={idx} label={cat} size="small" />
+                              ))}
+                              {item.categories.length > 2 && (
+                                <Chip label={`+${item.categories.length - 2}`} size="small" />
+                              )}
+                            </Box>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>{item.importance || '-'}</TableCell>
+                        <TableCell>
+                          {item.created_at ? new Date(item.created_at).toLocaleString() : '-'}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="small"
+                            onClick={() => handleViewHsmemItemDetail(item)}
+                          >
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {!itemLoading && allItems.length === 0 && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              暂无记忆项数据，请点击"刷新记忆项列表"加载
+            </Alert>
+          )}
+        </Box>
+      )}
+
+      {/* 类别管理（Category Layer） */}
+      {activeTab === 5 && (
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            类别管理（Category Layer）
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            管理记忆类别，查看每个类别包含的记忆项，支持按类别进行区分管理
+          </Typography>
+
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Button
+              variant="contained"
+              onClick={handleLoadAllCategories}
+              disabled={categoryLoading}
+            >
+              {categoryLoading ? <CircularProgress size={20} /> : '刷新类别列表'}
+            </Button>
+            {categoryError && <Alert severity="error" sx={{ mt: 2 }}>{categoryError}</Alert>}
+          </Paper>
+
+          {/* 类别卡片网格 */}
+          {allCategories.length > 0 && (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              {allCategories.map((category) => (
+                <Grid item xs={12} sm={6} md={4} key={category.id || category.name}>
+                  <Card 
+                    sx={{ 
+                      height: '100%',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        boxShadow: 4
+                      }
+                    }}
+                    onClick={() => handleViewCategoryDetail(category.name)}
+                  >
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {category.name}
+                      </Typography>
+                      {category.summary && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {category.summary}
+                        </Typography>
+                      )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                        <Chip 
+                          label={`${category.item_count} 个记忆项`} 
+                          size="small" 
+                          color="primary"
+                        />
+                        {category.created_at && (
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(category.created_at).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+
+          {/* 类别列表表格视图 */}
+          {allCategories.length > 0 && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>类别名称</TableCell>
+                    <TableCell>摘要</TableCell>
+                    <TableCell>记忆项数量</TableCell>
+                    <TableCell>创建时间</TableCell>
+                    <TableCell>操作</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allCategories.map((category) => (
+                    <TableRow key={category.id || category.name}>
+                      <TableCell>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          {category.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{category.summary || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={category.item_count} 
+                          size="small" 
+                          color="primary"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {category.created_at ? new Date(category.created_at).toLocaleString() : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          onClick={() => handleViewCategoryDetail(category.name)}
+                        >
+                          查看详情
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {!categoryLoading && allCategories.length === 0 && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              暂无类别数据，请点击"刷新类别列表"加载
+            </Alert>
+          )}
         </Box>
       )}
     </Box>

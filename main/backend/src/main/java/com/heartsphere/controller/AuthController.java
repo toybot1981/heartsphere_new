@@ -457,29 +457,31 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> guestLogin(
             @RequestBody(required = false) Map<String, String> request) {
         try {
-            // 使用固定的游客用户名
-            String guestUsername = "__guest__";
+            // 为每个游客创建独立的临时用户
+            // 用户名格式：guest_<timestamp>_<random>
+            String guestUsername = generateUniqueGuestUsername();
             
-            // 查找或创建固定的游客用户
-            User guestUser = userRepository.findByUsername(guestUsername).orElse(null);
+            // 生成临时邮箱（格式：guest_<timestamp>_<random>@guest.temp）
+            String guestEmail = guestUsername + "@guest.temp";
             
-            if (guestUser == null) {
-                // 如果不存在，创建固定的游客用户
-                guestUser = new User();
-                guestUser.setUsername(guestUsername);
-                guestUser.setEmail("guest@heartsphere.temp");
-                // 生成随机密码（游客不需要密码，但User实体要求非空）
-                String randomPassword = java.util.UUID.randomUUID().toString();
-                guestUser.setPassword(encoder.encode(randomPassword));
-                guestUser.setNickname("游客");
-                guestUser.setIsEnabled(true);
-                guestUser = userRepository.save(guestUser);
-            } else {
-                // 如果用户提供了昵称，更新昵称（但只在当前会话中有效，不保存到数据库）
-                // 注意：这里不更新数据库，因为所有游客共享同一个用户
-            }
+            // 生成随机密码（游客不需要密码，但User实体要求非空）
+            String randomPassword = java.util.UUID.randomUUID().toString();
             
-            // 分配体验会员
+            // 创建新的临时用户
+            User guestUser = new User();
+            guestUser.setUsername(guestUsername);
+            guestUser.setEmail(guestEmail);
+            guestUser.setPassword(encoder.encode(randomPassword));
+            // 如果用户提供了昵称，使用提供的昵称，否则使用默认的"游客"
+            String nickname = (request != null && request.containsKey("nickname") && request.get("nickname") != null && !request.get("nickname").trim().isEmpty())
+                ? request.get("nickname").trim()
+                : "游客";
+            guestUser.setNickname(nickname);
+            guestUser.setIsEnabled(true);
+            
+            guestUser = userRepository.save(guestUser);
+            
+            // 为每个临时用户创建独立的体验会员记录
             com.heartsphere.entity.Membership trialMembership = membershipService.getOrCreateTrialMembership(guestUser.getId());
             
             // 获取体验会员计划信息
@@ -497,7 +499,7 @@ public class AuthController {
             }
             
             // 直接生成JWT Token（游客用户不需要通过密码认证）
-            String jwt = jwtUtils.generateJwtTokenFromUsername(guestUsername);
+            String jwt = jwtUtils.generateJwtTokenFromUsername(guestUser.getUsername());
             
             // 设置认证上下文（用于后续请求）
             UserDetailsImpl userDetails = UserDetailsImpl.build(guestUser);
@@ -511,11 +513,7 @@ public class AuthController {
             resp.put("id", guestUser.getId());
             resp.put("username", guestUser.getUsername());
             resp.put("email", guestUser.getEmail());
-            // 如果用户提供了昵称，使用提供的昵称，否则使用默认的"游客"
-            String displayNickname = (request != null && request.containsKey("nickname") && request.get("nickname") != null && !request.get("nickname").trim().isEmpty())
-                ? request.get("nickname").trim()
-                : "游客";
-            resp.put("nickname", displayNickname);
+            resp.put("nickname", guestUser.getNickname());
             resp.put("avatar", guestUser.getAvatar());
             resp.put("isGuest", true);
             resp.put("isFirstLogin", true);

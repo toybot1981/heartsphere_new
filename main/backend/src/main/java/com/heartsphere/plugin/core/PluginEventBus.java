@@ -38,7 +38,7 @@ public class PluginEventBus {
         List<PluginEventHandler> eventHandlers = handlers.get(eventType);
         
         if (eventHandlers != null && !eventHandlers.isEmpty()) {
-            log.debug("发布事件: {}, 处理器数量: {}", eventType, eventHandlers.size());
+            log.info("发布事件: {}, 处理器数量: {}", eventType, eventHandlers.size());
             for (PluginEventHandler handler : eventHandlers) {
                 try {
                     handler.handle(event);
@@ -47,7 +47,7 @@ public class PluginEventBus {
                 }
             }
         } else {
-            log.debug("事件类型 {} 没有处理器", eventType);
+            log.info("事件类型 {} 没有处理器", eventType);
         }
     }
     
@@ -59,7 +59,7 @@ public class PluginEventBus {
      */
     public void subscribe(String eventType, PluginEventHandler handler) {
         handlers.computeIfAbsent(eventType, k -> new ArrayList<>()).add(handler);
-        log.debug("订阅事件: {}, 当前处理器数量: {}", eventType, handlers.get(eventType).size());
+        log.info("订阅事件: {}, 当前处理器数量: {}", eventType, handlers.get(eventType).size());
     }
     
     /**
@@ -72,7 +72,7 @@ public class PluginEventBus {
         List<PluginEventHandler> eventHandlers = handlers.get(eventType);
         if (eventHandlers != null) {
             eventHandlers.remove(handler);
-            log.debug("取消订阅事件: {}, 剩余处理器数量: {}", eventType, eventHandlers.size());
+            log.info("取消订阅事件: {}, 剩余处理器数量: {}", eventType, eventHandlers.size());
         }
     }
     
@@ -81,6 +81,6 @@ public class PluginEventBus {
      */
     public void clear() {
         handlers.clear();
-        log.debug("清空所有事件订阅");
+        log.info("清空所有事件订阅");
     }
 }

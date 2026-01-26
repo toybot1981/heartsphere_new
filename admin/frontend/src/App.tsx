@@ -5,10 +5,35 @@ import { AdminStateProvider } from './contexts/AdminStateContext';
 import { AdminLogin } from './components/AdminLogin';
 
 // 懒加载管理页面
-const AdminMainPage = lazy(() => import('./AdminScreen').then(m => ({ default: m.AdminScreen })).catch((err) => {
-  console.error('加载 AdminScreen 失败:', err);
-  return { default: () => <div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="text-white text-center"><p className="text-xl mb-4">加载失败</p><p className="text-slate-400 mb-4">请刷新页面</p><button onClick={() => window.location.reload()} className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700">刷新</button></div></div> };
-}));
+const AdminMainPage = lazy(() => 
+  import('./AdminScreen')
+    .then(m => {
+      // 确保正确导出
+      if (m.AdminScreen) {
+        return { default: m.AdminScreen };
+      }
+      throw new Error('AdminScreen 未正确导出');
+    })
+    .catch((err) => {
+      console.error('加载 AdminScreen 失败:', err);
+      return { 
+        default: () => (
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+            <div className="text-white text-center">
+              <p className="text-xl mb-4">加载失败</p>
+              <p className="text-slate-400 mb-4">{err.message || '请刷新页面'}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              >
+                刷新
+              </button>
+            </div>
+          </div>
+        )
+      };
+    })
+);
 
 // 加载中占位符
 const LoadingFallback: React.FC = () => (

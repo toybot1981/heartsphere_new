@@ -238,7 +238,7 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
         }
       } else {
         // 处理其他类型的插件结果
-        logger.debug('[ScenePluginContainer] 处理其他插件动作', {
+        logger.info('[ScenePluginContainer] 处理其他插件动作', {
           action: result?.action,
           message: result?.message,
         });
@@ -265,7 +265,7 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
       showAlert(error?.message || '执行插件功能失败，请稍后重试', '错误', 'error');
     } finally {
       setIsExecuting(false);
-      logger.debug('[ScenePluginContainer] 插件执行完成', {
+      logger.info('[ScenePluginContainer] 插件执行完成', {
         pluginInstanceId: plugin.pluginInstanceId,
       });
     }
@@ -348,11 +348,33 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
         pointerEvents: 'auto',
         overflow: isHidden ? 'visible' : 'hidden', // 隐藏时允许边框突出
       }}
-      className={`${isHidden ? 'bg-slate-700/80' : 'bg-slate-800/95'} border-2 rounded-xl shadow-2xl backdrop-blur-sm ${
-        isEditMode ? 'border-cyan-500 shadow-cyan-500/50 ring-2 ring-cyan-500/30' : 'border-slate-600 shadow-slate-900/50'
-      } ${isDragging ? 'cursor-move scale-105' : ''} ${!plugin.visible ? 'opacity-50' : 'opacity-100'} transition-all duration-200 ${
-        isHidden ? 'cursor-pointer hover:border-cyan-400 hover:bg-slate-600/90' : ''
-      }`}
+      className="border-2 rounded-xl shadow-2xl backdrop-blur-sm transition-all duration-200"
+      style={{
+        backgroundColor: isHidden 
+          ? 'var(--bg-overlay, rgba(51, 65, 85, 0.8))' 
+          : 'var(--bg-card, rgba(30, 41, 59, 0.95))',
+        borderColor: isEditMode 
+          ? 'var(--color-info, #06b6d4)' 
+          : 'var(--bg-overlay, #475569)',
+        boxShadow: isEditMode 
+          ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1)), 0 0 0 2px var(--color-info, rgba(6, 182, 212, 0.3))' 
+          : 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))',
+        cursor: isDragging ? 'move' : isHidden ? 'pointer' : 'default',
+        transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+        opacity: !plugin.visible ? 0.5 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (isHidden) {
+          e.currentTarget.style.borderColor = 'var(--color-info, #22d3ee)';
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(71, 85, 105, 0.9))';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isHidden) {
+          e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+          e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(51, 65, 85, 0.8))';
+        }
+      }}
       onClick={isHidden ? handleExpandFromHidden : undefined}
       onMouseDown={isHidden ? undefined : handleMouseDown}
       onMouseDownCapture={isHidden ? undefined : (e) => {
@@ -378,7 +400,22 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
             e.stopPropagation();
             handleToggleHide();
           }}
-          className="absolute -top-8 right-0 p-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-600 hover:border-slate-500 rounded-t-lg text-slate-400 hover:text-yellow-400 transition-all z-20"
+          className="absolute -top-8 right-0 p-1.5 border rounded-t-lg transition-all z-20"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.9))',
+            borderColor: 'var(--bg-overlay, #475569)',
+            color: 'var(--text-tertiary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #1e293b)';
+            e.currentTarget.style.borderColor = 'var(--bg-overlay, #64748b)';
+            e.currentTarget.style.color = 'var(--color-warning, #fbbf24)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(15, 23, 42, 0.9))';
+            e.currentTarget.style.borderColor = 'var(--bg-overlay, #475569)';
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+          }}
           title="隐藏插件"
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -391,12 +428,23 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
       {/* Edit Mode Toolbar */}
       {isEditMode && !isHidden && (
         <div
-          className="absolute -top-8 left-0 flex gap-1 bg-slate-900 border border-cyan-500 rounded-t-lg px-2 py-1 z-10"
+          className="absolute -top-8 left-0 flex gap-1 border rounded-t-lg px-2 py-1 z-10"
+          style={{
+            backgroundColor: 'var(--bg-overlay, #0f172a)',
+            borderColor: 'var(--color-info, #06b6d4)',
+          }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <button
             onClick={handleDelete}
-            className="p-1 text-red-400 hover:text-red-300 transition-colors"
+            className="p-1 transition-colors"
+            style={{ color: 'var(--color-error, #f87171)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-error-light, #fca5a5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-error, #f87171)';
+            }}
             title="删除插件"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -405,7 +453,14 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
           </button>
           <button
             onClick={() => onConfig(plugin.pluginInstanceId)}
-            className="p-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="p-1 transition-colors"
+            style={{ color: 'var(--color-info, #06b6d4)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-info-light, #22d3ee)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-info, #06b6d4)';
+            }}
             title="配置插件"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -419,11 +474,23 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
       {/* 隐藏时显示的小条提示 - 可点击恢复 */}
       {isHidden && (
         <div 
-          className="w-full h-full flex items-center justify-center bg-slate-700/80 hover:bg-slate-600/90 transition-colors cursor-pointer"
+          className="w-full h-full flex items-center justify-center transition-colors cursor-pointer"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(51, 65, 85, 0.8))',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(71, 85, 105, 0.9))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(51, 65, 85, 0.8))';
+          }}
           onClick={handleExpandFromHidden}
           title={`点击恢复 ${plugin.pluginName || '插件'}`}
         >
-          <div className="transform -rotate-90 whitespace-nowrap text-xs text-slate-300 font-semibold flex items-center gap-1">
+          <div 
+            className="transform -rotate-90 whitespace-nowrap text-xs font-semibold flex items-center gap-1"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -446,14 +513,32 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
           style={{ cursor: 'move' }}
         >
         {/* Plugin Header */}
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-700">
+        <div 
+          className="flex items-center justify-between mb-3 pb-2 border-b"
+          style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{
+                background: 'var(--gradient-primary, linear-gradient(to bottom right, #6366f1, #9333ea))',
+              }}
+            >
               <span className="text-lg">🔌</span>
             </div>
             <div>
-              <h3 className="font-semibold text-white text-sm">{plugin.pluginName}</h3>
-              <span className="text-xs text-slate-400">ID: {plugin.pluginId}</span>
+              <h3 
+                className="font-semibold text-sm"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {plugin.pluginName}
+              </h3>
+              <span 
+                className="text-xs"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                ID: {plugin.pluginId}
+              </span>
             </div>
           </div>
           {!isEditMode && (
@@ -463,7 +548,14 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                   e.stopPropagation();
                   onConfig(plugin.pluginInstanceId);
                 }}
-                className="p-1 text-slate-400 hover:text-cyan-400 transition-colors"
+                className="p-1 transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-info, #22d3ee)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                }}
                 title="配置插件"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -476,7 +568,14 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className="p-1 text-slate-400 hover:text-red-400 transition-colors"
+                className="p-1 transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-error, #f87171)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                }}
                 title="删除插件"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -501,8 +600,14 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
               return (
                 <div className="flex-1 overflow-hidden">
                   <div className="h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-700">
-                      <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <div 
+                      className="flex items-center justify-between mb-2 pb-2 border-b"
+                      style={{ borderColor: 'var(--bg-overlay, #475569)' }}
+                    >
+                      <h3 
+                        className="text-sm font-semibold flex items-center gap-2"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         <span className="text-lg">📷</span>
                         {plugin.pluginName || '家庭温馨相册'}
                       </h3>
@@ -510,7 +615,14 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                         onClick={() => {
                           setShowAlbumView(false);
                         }}
-                        className="p-1 text-slate-400 hover:text-white transition-colors"
+                        className="p-1 transition-colors"
+                        style={{ color: 'var(--text-tertiary)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--text-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--text-tertiary)';
+                        }}
                         title="返回"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -533,16 +645,41 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
             <>
               {/* 插件状态指示 */}
               <div className="flex items-center gap-2 text-xs">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-slate-400">插件运行中</span>
+                <div 
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: 'var(--color-success, #4ade80)' }}
+                />
+                <span style={{ color: 'var(--text-tertiary)' }}>插件运行中</span>
               </div>
 
               {/* 插件功能区域 */}
-              <div className="flex-1 bg-slate-900/50 rounded-lg p-3 border border-slate-700 overflow-auto">
+              <div 
+                className="flex-1 rounded-lg p-3 border overflow-auto"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(15, 23, 42, 0.5))',
+                  borderColor: 'var(--bg-overlay, #475569)',
+                }}
+              >
             {!isEditMode && (
-              <div className="mb-3 p-2 bg-indigo-500/20 border border-indigo-500/30 rounded-lg">
-                <p className="text-xs text-indigo-300 font-semibold mb-1">✨ 插件已就绪</p>
-                <p className="text-[10px] text-slate-400">点击下方按钮使用插件功能</p>
+              <div 
+                className="mb-3 p-2 rounded-lg border"
+                style={{
+                  backgroundColor: 'var(--color-primary, rgba(79, 70, 229, 0.2))',
+                  borderColor: 'var(--color-primary, rgba(79, 70, 229, 0.3))',
+                }}
+              >
+                <p 
+                  className="text-xs font-semibold mb-1"
+                  style={{ color: 'var(--color-primary, #c7d2fe)' }}
+                >
+                  ✨ 插件已就绪
+                </p>
+                <p 
+                  className="text-[10px]"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  点击下方按钮使用插件功能
+                </p>
               </div>
             )}
             
@@ -551,11 +688,37 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
               <div className="space-y-2">
               <button
                 onClick={handleExecutePlugin}
-                className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-                disabled={isEditMode || isExecuting || !plugin.visible}
+                className="w-full px-4 py-3 font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
                 style={{ 
                   minHeight: '44px',
-                  fontSize: '14px'
+                  fontSize: '14px',
+                  background: 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))',
+                  color: 'var(--text-primary)',
+                }}
+                disabled={isEditMode || isExecuting || !plugin.visible}
+                onMouseEnter={(e) => {
+                  if (!isEditMode && !isExecuting && plugin.visible) {
+                    e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #6366f1, #a855f7))';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isEditMode && !isExecuting && plugin.visible) {
+                    e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #4f46e5, #9333ea))';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (!isEditMode && !isExecuting && plugin.visible) {
+                    e.currentTarget.style.transform = 'scale(0.95)';
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (!isEditMode && !isExecuting && plugin.visible) {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }
                 }}
               >
                 {isExecuting ? (
@@ -582,8 +745,18 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
             {/* 编辑模式提示 */}
             {isEditMode && (
               <div className="text-center py-4">
-                <p className="text-xs text-slate-400 mb-2">编辑模式</p>
-                <p className="text-[10px] text-slate-500 mb-3">退出编辑模式后可使用插件功能</p>
+                <p 
+                  className="text-xs mb-2"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  编辑模式
+                </p>
+                <p 
+                  className="text-[10px] mb-3"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  退出编辑模式后可使用插件功能
+                </p>
                 {/* 编辑模式下也可以预览相册 */}
                 {(plugin.pluginId === 'photo-album' || plugin.pluginName?.includes('相册')) && (
                   <button
@@ -591,7 +764,18 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
                       e.stopPropagation();
                       setShowAlbumView(true);
                     }}
-                    className="px-3 py-1.5 text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg transition-colors border border-indigo-500/30"
+                    className="px-3 py-1.5 text-xs rounded-lg transition-colors border"
+                    style={{
+                      backgroundColor: 'var(--color-primary, rgba(79, 70, 229, 0.2))',
+                      borderColor: 'var(--color-primary, rgba(79, 70, 229, 0.3))',
+                      color: 'var(--color-primary, #c7d2fe)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(79, 70, 229, 0.3))';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(79, 70, 229, 0.2))';
+                    }}
                   >
                     📷 预览相册
                   </button>
@@ -601,27 +785,61 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
             
             {/* 配置信息显示 */}
             {plugin.config && Object.keys(plugin.config).length > 0 && (
-              <div className="mt-2 p-2 bg-slate-800/50 rounded text-xs">
-                <p className="text-slate-400 mb-1">当前配置:</p>
-                <pre className="text-slate-300 text-[10px] overflow-x-auto">
+              <div 
+                className="mt-2 p-2 rounded text-xs"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                }}
+              >
+                <p 
+                  className="mb-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  当前配置:
+                </p>
+                <pre 
+                  className="text-[10px] overflow-x-auto"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   {JSON.stringify(plugin.config, null, 2)}
                 </pre>
               </div>
             )}
             
             {(!plugin.config || Object.keys(plugin.config).length === 0) && (
-              <div className="mt-2 p-2 bg-slate-800/50 rounded text-xs text-center text-slate-500">
+              <div 
+                className="mt-2 p-2 rounded text-xs text-center"
+                style={{
+                  backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+                  color: 'var(--text-disabled)',
+                }}
+              >
                 <p>暂无配置信息</p>
-                <p className="text-[10px] mt-1">点击右上角 ⚙️ 进行配置</p>
+                <p 
+                  className="text-[10px] mt-1"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  点击右上角 ⚙️ 进行配置
+                </p>
               </div>
             )}
               </div>
 
               {/* 使用提示（编辑模式时显示） */}
               {isEditMode && (
-                <div className="text-xs text-cyan-400 bg-cyan-900/20 border border-cyan-700/50 rounded p-2">
+                <div 
+                  className="text-xs rounded p-2 border"
+                  style={{
+                    color: 'var(--color-info, #22d3ee)',
+                    backgroundColor: 'var(--color-info, rgba(6, 182, 212, 0.2))',
+                    borderColor: 'var(--color-info, rgba(6, 182, 212, 0.5))',
+                  }}
+                >
                   <p>💡 <strong>使用提示:</strong></p>
-                  <ul className="list-disc list-inside mt-1 space-y-0.5 text-slate-300">
+                  <ul 
+                    className="list-disc list-inside mt-1 space-y-0.5"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     <li>点击并拖拽插件来移动位置</li>
                     <li>拖拽右下角调整大小</li>
                     <li>点击 ⚙️ 配置插件</li>
@@ -639,10 +857,17 @@ export const ScenePluginContainer: React.FC<ScenePluginContainerProps> = ({
 
       {(!isMobile && !isHidden) && (
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 bg-cyan-500 cursor-se-resize hover:bg-cyan-400 transition-colors z-50"
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize transition-colors z-50"
           style={{
             clipPath: 'polygon(100% 0, 0 100%, 100% 100%)',
             pointerEvents: 'auto',
+            backgroundColor: 'var(--color-info, #06b6d4)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-info-light, #22d3ee)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-info, #06b6d4)';
           }}
           onMouseDown={handleResizeMouseDown}
           title="拖动调整大小"

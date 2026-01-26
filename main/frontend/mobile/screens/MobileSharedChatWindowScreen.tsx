@@ -69,7 +69,7 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
   // 加载传送门列表
   useEffect(() => {
     if (sceneId) {
-      logger.debug(`[MobileSharedChatWindow] 🔮 加载传送门列表: sceneId=${sceneId}`);
+      logger.info(`[MobileSharedChatWindow] 🔮 加载传送门列表: sceneId=${sceneId}`);
       loadPortals(sceneId);
     } else {
       logger.warn('[MobileSharedChatWindow] ⚠️ 场景ID为空，无法加载传送门');
@@ -235,7 +235,7 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
 
   // 处理传送完成
   const handleTeleportationComplete = useCallback((targetHeartsphereId: number, targetShareCode?: string) => {
-    logger.debug('[MobileSharedChatWindow] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
+    logger.info('[MobileSharedChatWindow] 🔮 传送完成', { targetHeartsphereId, targetShareCode });
     if (targetShareCode) {
       // 通过共享码传送到另一个心域
       window.location.href = `/share/${targetShareCode}`;
@@ -245,7 +245,10 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
   // 如果未激活共享模式
   if (!isActive || !shareConfig) {
     return (
-      <MobileSafeAreaView className="h-full w-full bg-black">
+      <MobileSafeAreaView 
+        className="h-full w-full"
+        style={{ backgroundColor: 'var(--bg-primary, #000000)' }}
+      >
         <div className="h-full flex flex-col items-center justify-center p-6">
           <MobileEmptyState
             icon="🔒"
@@ -297,13 +300,23 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
       )}
 
       {/* 头部栏（移动端优化） */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-4 pt-[calc(1rem+env(safe-area-inset-top))] bg-gradient-to-b from-black/95 via-black/90 to-black/60 backdrop-blur-md">
+      <div 
+        className="absolute top-0 left-0 right-0 z-30 p-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md"
+        style={{
+          background: 'linear-gradient(to bottom, var(--bg-overlay-alpha), var(--bg-primary))',
+        }}
+      >
         <div className="flex items-center justify-between">
           <MobileTouchableButton
             onClick={onBack}
             variant="ghost"
             size="sm"
-            className="text-white bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2"
+            className="backdrop-blur-sm border rounded-lg px-3 py-2"
+            style={{
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.5))',
+              borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.2))',
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -316,9 +329,22 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
               size="small"
               isCinematic={false}
             />
-            <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1.5">
-              <h2 className="text-white font-bold text-base drop-shadow-lg">{character.name}</h2>
-              <span className="text-xs text-blue-400 drop-shadow-md">共享模式</span>
+            <div 
+              className="backdrop-blur-sm rounded-lg px-3 py-1.5"
+              style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))' }}
+            >
+              <h2 
+                className="font-bold text-base drop-shadow-lg"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {character.name}
+              </h2>
+              <span 
+                className="text-xs drop-shadow-md"
+                style={{ color: 'var(--color-info, #60a5fa)' }}
+              >
+                共享模式
+              </span>
             </div>
           </div>
 
@@ -327,7 +353,8 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
               onClick={handleClear}
               variant="ghost"
               size="sm"
-              className="text-white/50 text-xs"
+              className="text-xs"
+              style={{ color: 'var(--text-tertiary, rgba(255, 255, 255, 0.5))' }}
             >
               清空
             </MobileTouchableButton>
@@ -336,7 +363,7 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
                 onClick={() => uiState.setIsCinematic(true)}
                 variant="ghost"
                 size="sm"
-                className="text-white/70"
+                style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -354,7 +381,11 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
           onClick={() => uiState.setIsCinematic(false)}
           variant="ghost"
           size="md"
-          className="absolute top-4 right-4 z-50 p-3 rounded-full bg-black/40 text-white/50"
+          className="absolute top-4 right-4 z-50 p-3 rounded-full"
+          style={{
+            backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.4))',
+            color: 'var(--text-tertiary, rgba(255, 255, 255, 0.5))',
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-3.65-3.65m3.65 3.65F5.183 2.16 20.632 17.608M14.25 12a2.25 2.25 0 0 1-2.25 2.25" />
@@ -364,10 +395,20 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
 
       {/* 提示信息（移动端优化） */}
       {!uiState.isCinematic && (
-        <div className="absolute left-0 right-0 p-3 bg-blue-900/40 border-b border-blue-500/50 z-10" style={{ top: 'calc(1rem + env(safe-area-inset-top) + 4rem)' }}>
+        <div 
+          className="absolute left-0 right-0 p-3 border-b z-10" 
+          style={{ 
+            top: 'calc(1rem + env(safe-area-inset-top) + 4rem)',
+            backgroundColor: 'var(--bg-info-alpha, rgba(30, 58, 138, 0.4))',
+            borderColor: 'var(--border-info-alpha, rgba(59, 130, 246, 0.5))',
+          }}
+        >
           <div className="flex items-start gap-2">
             <span className="text-sm">💡</span>
-            <p className="text-blue-200 text-xs flex-1">
+            <p 
+              className="text-xs flex-1"
+              style={{ color: 'var(--text-info-light, #bfdbfe)' }}
+            >
               你正在共享模式下与角色对话。对话记录会临时保存，离开共享心域后会自动清除。
             </p>
           </div>
@@ -376,7 +417,12 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
 
       {/* 主聊天区域（移动端优化） */}
       <div 
-        className={`absolute left-0 right-0 z-20 flex flex-col justify-end bg-gradient-to-t from-black via-black/90 to-black/70 transition-all duration-500 ${uiState.isCinematic ? 'bg-gradient-to-t from-black via-black/70 to-black/50' : ''}`} 
+        className="absolute left-0 right-0 z-20 flex flex-col justify-end transition-all duration-500"
+        style={{
+          background: uiState.isCinematic 
+            ? 'linear-gradient(to top, var(--bg-overlay-alpha), var(--bg-primary))'
+            : 'linear-gradient(to top, var(--bg-overlay-alpha), var(--bg-primary))',
+        }} 
         style={{ 
           bottom: 'calc(4rem + env(safe-area-inset-bottom))',
           top: uiState.isCinematic ? 'calc(1rem + env(safe-area-inset-top) + 4rem)' : 'calc(1rem + env(safe-area-inset-top) + 4rem + 3.5rem)',
@@ -411,10 +457,25 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
           
           {isLoading && safeHistory.length > 0 && (
             <div className="flex justify-start w-full">
-              <div className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border border-white/10 flex items-center space-x-2" style={{ backgroundColor: `${character.colorAccent}1A` }}>
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
-                <div className="w-2 h-2 bg-white/70 rounded-full typing-dot" />
+              <div 
+                className="rounded-2xl rounded-bl-none px-4 py-3 backdrop-blur-md border flex items-center space-x-2" 
+                style={{ 
+                  backgroundColor: `${character.colorAccent}1A`,
+                  borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+                }}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
+                <div 
+                  className="w-2 h-2 rounded-full typing-dot" 
+                  style={{ backgroundColor: 'var(--text-primary, rgba(255, 255, 255, 0.7))' }}
+                />
               </div>
             </div>
           )}
@@ -433,14 +494,24 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
           }}
         >
           {!uiState.isCinematic && (
-            <div className="relative flex items-center bg-black/90 rounded-2xl p-2 border border-white/10 animate-fade-in w-full">
+            <div 
+              className="relative flex items-center rounded-2xl p-2 border animate-fade-in w-full"
+              style={{
+                backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.9))',
+                borderColor: 'var(--border-color-overlay, rgba(255, 255, 255, 0.1))',
+              }}
+            >
               {/* 表情按钮 */}
               <MobileTouchableButton
                 onClick={() => uiState.setShowEmojiPicker(true)}
                 disabled={isLoading}
                 variant="ghost"
                 size="sm"
-                className="mr-2 bg-white/10 text-white/70"
+                className="mr-2"
+                style={{
+                  backgroundColor: 'var(--bg-overlay-alpha, rgba(255, 255, 255, 0.1))',
+                  color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -464,7 +535,11 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={`与 ${character.name} 对话...`}
-                className="flex-1 bg-transparent border-none text-white placeholder-slate-400 focus:ring-0 focus:outline-none resize-none max-h-24 py-3 px-3 scrollbar-hide text-base min-h-[44px] touch-manipulation"
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-24 py-3 px-3 scrollbar-hide text-base min-h-[44px] touch-manipulation"
+                style={{
+                  color: 'var(--text-primary)',
+                  placeholderColor: 'var(--placeholder-color, rgba(148, 163, 184, 1))',
+                }}
                 rows={1}
                 disabled={isLoading || !isActive || !shareConfig}
                 inputMode="text"
@@ -493,7 +568,7 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
             sceneId={sceneId}
             onPortalClick={(portalId) => {
               // 通过自定义事件触发传送，TeleportationManager会监听
-              logger.debug(`[MobileSharedChatWindow] 🔮 点击传送门: portalId=${portalId}`);
+              logger.info(`[MobileSharedChatWindow] 🔮 点击传送门: portalId=${portalId}`);
               window.dispatchEvent(new CustomEvent('portal-click', { 
                 detail: { portalId, sceneId } 
               }));
@@ -504,9 +579,25 @@ export const MobileSharedChatWindowScreen: React.FC<MobileSharedChatWindowScreen
 
         {/* 传送门调试信息（开发环境） */}
         {process.env.NODE_ENV === 'development' && sceneId && (
-          <div className="absolute top-20 right-2 bg-slate-900/90 p-2 rounded-lg text-xs text-white z-50 max-w-[120px]">
-            <div className="font-bold mb-1 text-[10px]">🔮 传送门</div>
-            <div className="text-[10px]">场景: {sceneId}</div>
+          <div 
+            className="absolute top-20 right-2 p-2 rounded-lg text-xs z-50 max-w-[120px]"
+            style={{
+              backgroundColor: 'var(--bg-card, rgba(15, 23, 42, 0.9))',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <div 
+              className="font-bold mb-1 text-[10px]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              🔮 传送门
+            </div>
+            <div 
+              className="text-[10px]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              场景: {sceneId}
+            </div>
             <div className="text-[10px]">数量: {(portals || []).length}</div>
             <div className="text-[10px]">{portalsLoading ? '加载中' : '已就绪'}</div>
           </div>

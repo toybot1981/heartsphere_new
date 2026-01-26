@@ -27,6 +27,15 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     List<ChatMessageEntity> findBySessionIdOrderByTimestampDesc(String sessionId, Pageable pageable);
     
     /**
+     * 根据会话ID获取消息（按时间正序，用于分页加载）
+     */
+    List<ChatMessageEntity> findBySessionIdAndTimestampLessThanOrderByTimestampDesc(
+        String sessionId, 
+        Long beforeTimestamp, 
+        Pageable pageable
+    );
+    
+    /**
      * 根据会话ID和时间范围获取消息
      */
     @Query("SELECT m FROM ChatMessageEntity m WHERE m.sessionId = :sessionId " +

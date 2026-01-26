@@ -49,7 +49,7 @@ public class ESoulLetterService {
         
         // 检查触发条件
         if (!shouldTriggerLetter(userId)) {
-            log.debug("不满足触发条件，跳过来信生成 - userId={}", userId);
+            log.info("不满足触发条件，跳过来信生成 - userId={}", userId);
             return null;
         }
         

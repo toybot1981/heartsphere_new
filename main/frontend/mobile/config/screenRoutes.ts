@@ -48,10 +48,17 @@ const MobileConnectionSpaceScreen = lazy(() => import('../screens/MobileConnecti
   console.error('[screenRoutes] Failed to load MobileConnectionSpaceScreen:', err);
   throw err;
 }));
-const MobileProfileScreen = lazy(() => import('../screens/MobileProfileScreen').then(m => ({ default: m.MobileProfile })).catch(err => {
-  console.error('[screenRoutes] Failed to load MobileProfileScreen:', err);
-  throw err;
-}));
+const MobileProfileScreen = lazy(() => 
+  import('../screens/MobileProfileScreen').then(module => {
+    if (module.MobileProfile) {
+      return { default: module.MobileProfile };
+    }
+    throw new Error('MobileProfile not found in module');
+  }).catch(err => {
+    console.error('[screenRoutes] Failed to load MobileProfileScreen:', err);
+    throw err;
+  })
+);
 const MobileSharedHeartSphereScreen = lazy(() => import('../screens/MobileSharedHeartSphereScreen').then(m => ({ default: m.MobileSharedHeartSphereScreen })).catch(err => {
   console.error('[screenRoutes] Failed to load MobileSharedHeartSphereScreen:', err);
   throw err;

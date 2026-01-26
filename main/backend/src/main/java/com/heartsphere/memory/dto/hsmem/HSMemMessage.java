@@ -1,5 +1,6 @@
 package com.heartsphere.memory.dto.hsmem;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,8 @@ import java.util.Map;
 /**
  * HSMem 消息DTO
  * 对应 hsmem API 的 Message 格式
+ * 
+ * 注意：HSMem API 要求 content 必须是字典（对象），不能是字符串
  * 
  * @author HeartSphere
  * @date 2026-01-16
@@ -25,8 +28,10 @@ public class HSMemMessage {
     
     /**
      * 消息内容
-     * 可以是字符串或包含 text 字段的对象
+     * HSMem API 要求必须是字典（对象），格式为 {"text": "..."}
+     * 如果前端传入字符串，需要转换为对象格式
      */
+    @JsonProperty("content")
     private Object content;
     
     /**

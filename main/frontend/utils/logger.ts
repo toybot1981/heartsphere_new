@@ -172,7 +172,7 @@ export { Logger };
 
 // 便捷方法
 export const log = {
-  debug: (message: string, ...args: unknown[]) => logger.debug(message, ...args),
+  debug: (message: string, ...args: unknown[]) => logger.info(message, ...args),
   info: (message: string, ...args: unknown[]) => logger.info(message, ...args),
   warn: (message: string, ...args: unknown[]) => logger.warn(message, ...args),
   error: (message: string, ...args: unknown[]) => logger.error(message, ...args),

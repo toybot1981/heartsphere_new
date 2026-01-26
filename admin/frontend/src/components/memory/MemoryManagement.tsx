@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, Tab, Box } from '@mui/material';
 import MemoryDashboard from './MemoryDashboard';
 import UserMemoryManagement from './UserMemoryManagement';
@@ -8,6 +8,7 @@ import MemoryStatistics from './MemoryStatistics';
 import MemoryMaintenance from './MemoryMaintenance';
 import MemoryTesting from './MemoryTesting';
 import { MUIProvider } from '../MUIProvider';
+import { useAdminState } from '../../contexts/AdminStateContext';
 
 /**
  * 记忆系统管理主组件
@@ -18,6 +19,7 @@ interface MemoryManagementProps {
 }
 
 const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }) => {
+  const { memoryTab, setMemoryTab } = useAdminState();
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
@@ -29,6 +31,15 @@ const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }
     { label: '统计分析', value: 5 },
     { label: '数据维护', value: 6 },
   ];
+
+  // 如果从用户管理页面跳转过来，自动切换到指定的标签页
+  useEffect(() => {
+    if (memoryTab !== null && memoryTab >= 0 && memoryTab < tabs.length) {
+      setActiveTab(memoryTab);
+      // 清除状态，避免下次进入时自动切换
+      setMemoryTab(null);
+    }
+  }, [memoryTab, setMemoryTab]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -46,7 +57,25 @@ const MemoryManagementContent: React.FC<MemoryManagementProps> = ({ adminToken }
         onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+        sx={{ 
+          mb: 3, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          '& .MuiTab-root': {
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontWeight: 500,
+            '&.Mui-selected': {
+              color: '#3b82f6', // indigo-500
+              fontWeight: 600,
+            },
+            '&:hover': {
+              color: 'rgba(255, 255, 255, 0.9)',
+            },
+          },
+          '& .MuiTabs-indicator': {
+            backgroundColor: '#3b82f6', // indigo-500
+          },
+        }}
       >
         {tabs.map((tab) => (
           <Tab key={tab.value} label={tab.label} value={tab.value} />

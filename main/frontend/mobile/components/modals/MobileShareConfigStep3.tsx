@@ -90,7 +90,14 @@ export const MobileShareConfigStep3: React.FC<MobileShareConfigStep3Props> = mem
             共享码
           </label>
           <div className="flex items-center gap-2">
-            <div className={`flex-1 px-4 py-3 bg-slate-900 border ${MobileColors.border.default} ${MobileRadius.md} ${MobileTypography.fontSize.base} ${MobileColors.text.primary} font-mono`}>
+            <div 
+              className={`flex-1 px-4 py-3 border ${MobileRadius.md} ${MobileTypography.fontSize.base} font-mono`}
+              style={{
+                backgroundColor: 'var(--bg-primary, #0f172a)',
+                borderColor: 'var(--border-color-overlay)',
+                color: 'var(--text-primary)',
+              }}
+            >
               {shareConfig.shareCode}
             </div>
             <MobileTouchableButton

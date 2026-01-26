@@ -345,60 +345,290 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white relative">
+    <div 
+      className="h-full flex flex-col relative"
+      style={{
+        backgroundColor: 'var(--bg-overlay, #111827)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {showMagicModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-fade-in">
-            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 mb-4">AI 一键生成剧本</h3>
-            <p className="text-sm text-gray-400 mb-4">输入一个简单的想法（例如：“一个关于在闹鬼的图书馆里寻找丢失书籍的恐怖故事”），AI 将为您构建完整的剧情分支。</p>
-            <textarea value={magicPrompt} onChange={e => setMagicPrompt(e.target.value)} placeholder="在这里输入你的创意..." className="w-full h-32 bg-gray-900 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-600 focus:border-indigo-500 outline-none resize-none mb-6" disabled={isMagicLoading} />
+        <div 
+          className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+        >
+          <div 
+            className="border rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-fade-in"
+            style={{
+              backgroundColor: 'var(--bg-card, #1f2937)',
+              borderColor: 'var(--bg-overlay, #374151)',
+            }}
+          >
+            <h3 
+              className="text-xl font-bold mb-4"
+              style={{
+                background: 'var(--gradient-text, linear-gradient(to right, #818cf8, #f472b6))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              AI 一键生成剧本
+            </h3>
+            <p 
+              className="text-sm mb-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              输入一个简单的想法（例如："一个关于在闹鬼的图书馆里寻找丢失书籍的恐怖故事"），AI 将为您构建完整的剧情分支。
+            </p>
+            <textarea 
+              value={magicPrompt} 
+              onChange={e => setMagicPrompt(e.target.value)} 
+              placeholder="在这里输入你的创意..." 
+              className="w-full h-32 border rounded-xl p-4 outline-none resize-none mb-6" 
+              style={{
+                backgroundColor: 'var(--bg-overlay, #111827)',
+                borderColor: 'var(--bg-overlay, #374151)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-info, #818cf8)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+              }}
+              disabled={isMagicLoading} 
+            />
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setShowMagicModal(false)} disabled={isMagicLoading}>取消</Button>
-              <Button onClick={handleMagicBuild} disabled={isMagicLoading || !magicPrompt.trim()} className="bg-indigo-600 hover:bg-indigo-500 flex items-center">
-                {isMagicLoading ? (<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />正在构思中...</>) : (<>✨ 开始生成</>)}
+              <Button
+                onClick={handleMagicBuild}
+                disabled={isMagicLoading || !magicPrompt.trim()}
+                className="flex items-center"
+                style={{
+                  backgroundColor: 'var(--color-info)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isMagicLoading && magicPrompt.trim()) {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
+              >
+                {isMagicLoading ? (
+                  <>
+                    <div
+                      className="w-4 h-4 border-2 rounded-full animate-spin mr-2"
+                      style={{
+                        borderColor: 'var(--border-color-overlay)',
+                        borderTopColor: 'var(--text-primary)',
+                      }}
+                    />
+                    正在构思中...
+                  </>
+                ) : (
+                  <>✨ 开始生成</>
+                )}
               </Button>
             </div>
           </div>
         </div>
       )}
-      <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+      <div 
+        className="p-4 border-b flex justify-between items-center"
+        style={{
+          borderColor: 'var(--bg-overlay, #1f2937)',
+          backgroundColor: 'var(--bg-overlay, #111827)',
+        }}
+      >
         <div>
-          <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">剧本编辑器</h2>
-          <p className="text-xs text-gray-500">{initialScenario ? `正在编辑: ${initialScenario.title}` : '设计属于你的命运流程。'}</p>
+          <h2 
+            className="text-xl font-bold"
+            style={{
+              background: 'var(--gradient-text, linear-gradient(to right, #f472b6, #a855f7))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            剧本编辑器
+          </h2>
+          <p 
+            className="text-xs"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            {initialScenario ? `正在编辑: ${initialScenario.title}` : '设计属于你的命运流程。'}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setShowMagicModal(true)} className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-500/10">✨ AI 一键生成</Button>
-          <div className="w-px h-8 bg-gray-800 mx-1"></div>
+          <Button
+            variant="secondary"
+            onClick={() => setShowMagicModal(true)}
+            style={{
+              borderColor: 'var(--border-info-alpha)',
+              color: 'var(--text-info)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            ✨ AI 一键生成
+          </Button>
+          <div 
+            className="w-px h-8 mx-1"
+            style={{ backgroundColor: 'var(--bg-overlay, #1f2937)' }}
+          />
           <Button variant="ghost" onClick={onCancel}>取消</Button>
-          <Button onClick={handleSave} className="bg-pink-600 hover:bg-pink-500">保存剧本</Button>
+          <Button
+            onClick={handleSave}
+            style={{
+              backgroundColor: 'var(--color-pink)',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-pink-light)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-pink)';
+            }}
+          >
+            保存剧本
+          </Button>
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/4 min-w-[250px] border-r border-gray-800 p-4 overflow-y-auto bg-gray-900/50">
+        <div 
+          className="w-1/4 min-w-[250px] border-r p-4 overflow-y-auto"
+          style={{
+            borderColor: 'var(--bg-overlay, #1f2937)',
+            backgroundColor: 'var(--bg-overlay, rgba(17, 24, 39, 0.5))',
+          }}
+        >
           <div className="space-y-4 mb-8">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">剧本标题</label>
-              <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 text-sm focus:border-pink-500 outline-none" />
+              <label 
+                className="block text-xs mb-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                剧本标题
+              </label>
+              <input 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                className="w-full rounded px-3 py-2 border text-sm outline-none" 
+                style={{
+                  backgroundColor: 'var(--bg-secondary, #1f2937)',
+                  borderColor: 'var(--bg-overlay, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                }}
+              />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">简介</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 text-sm focus:border-pink-500 outline-none h-20 resize-none" />
+              <label 
+                className="block text-xs mb-1"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                简介
+              </label>
+              <textarea 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                className="w-full rounded px-3 py-2 border text-sm outline-none h-20 resize-none" 
+                style={{
+                  backgroundColor: 'var(--bg-secondary, #1f2937)',
+                  borderColor: 'var(--bg-overlay, #374151)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--bg-overlay, #374151)';
+                }}
+              />
             </div>
           </div>
           <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-gray-300">剧情节点</h3>
-            <button onClick={addNode} className="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">+ 添加</button>
+            <h3 
+              className="font-bold"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              剧情节点
+            </h3>
+            <button 
+              onClick={addNode} 
+              className="text-xs px-2 py-1 rounded transition-colors"
+              style={{
+                backgroundColor: 'var(--bg-secondary, #1f2937)',
+                color: 'var(--text-primary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #374151)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary, #1f2937)';
+              }}
+            >
+              + 添加
+            </button>
           </div>
           <div className="space-y-2">
             {Object.values(nodes).map((node: StoryNode) => (
-              <div key={node.id} onClick={() => setSelectedNodeId(node.id)} className={`p-3 rounded-lg cursor-pointer border transition-all ${selectedNodeId === node.id ? 'bg-pink-500/20 border-pink-500' : 'bg-gray-800 border-transparent hover:border-gray-600'}`}>
-                <div className="font-medium text-sm truncate">{node.title}</div>
-                <div className="text-xs text-gray-500">{node.options.length} 个分支</div>
+              <div 
+                key={node.id} 
+                onClick={() => setSelectedNodeId(node.id)} 
+                className="p-3 rounded-lg cursor-pointer border transition-all"
+                style={{
+                  backgroundColor: selectedNodeId === node.id 
+                    ? 'var(--color-primary, rgba(236, 72, 153, 0.2))' 
+                    : 'var(--bg-secondary, #1f2937)',
+                  borderColor: selectedNodeId === node.id 
+                    ? 'var(--color-primary, #ec4899)' 
+                    : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedNodeId !== node.id) {
+                    e.currentTarget.style.borderColor = 'var(--bg-hover, #4b5563)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedNodeId !== node.id) {
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }
+                }}
+              >
+                <div 
+                  className="font-medium text-sm truncate"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {node.title}
+                </div>
+                <div 
+                  className="text-xs"
+                  style={{ color: 'var(--text-disabled)' }}
+                >
+                  {node.options.length} 个分支
+                </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="flex-1 p-8 overflow-y-auto bg-gray-900">
+        <div 
+          className="flex-1 p-8 overflow-y-auto"
+          style={{ backgroundColor: 'var(--bg-overlay, #111827)' }}
+        >
           {currentNode ? (
           <div className="max-w-3xl mx-auto space-y-6">
             <NodeEditor
@@ -424,11 +654,39 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
             />
             <div>
               <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-bold text-green-400">玩家选项 (分支)</label>
-                <button onClick={addOption} className="text-xs bg-green-900/50 text-green-400 px-3 py-1 rounded hover:bg-green-900">+ 添加选项</button>
+                <label 
+                  className="block text-sm font-bold"
+                  style={{ color: 'var(--color-success, #22c55e)' }}
+                >
+                  玩家选项 (分支)
+                </label>
+                <button 
+                  onClick={addOption} 
+                  className="text-xs px-3 py-1 rounded transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-success, rgba(34, 197, 94, 0.5))',
+                    color: 'var(--color-success, #86efac)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-success, rgba(34, 197, 94, 0.7))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-success, rgba(34, 197, 94, 0.5))';
+                  }}
+                >
+                  + 添加选项
+                </button>
               </div>
               {currentNode.options.length === 0 ? (
-                <div className="p-4 border border-dashed border-gray-700 rounded-xl text-center text-gray-500 text-sm">未定义选项。故事将在此结束。</div>
+                <div 
+                  className="p-4 border border-dashed rounded-xl text-center text-sm"
+                  style={{
+                    borderColor: 'var(--bg-overlay, #374151)',
+                    color: 'var(--text-disabled)',
+                  }}
+                >
+                  未定义选项。故事将在此结束。
+                </div>
               ) : (
                 <div className="space-y-3">
                   {currentNode.options.map((opt, idx) => (
@@ -468,45 +726,114 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
               )}
             </div>
           </div>
-          ) : ( <div className="text-center text-gray-500 mt-20">请在左侧选择或创建一个节点</div> )}
+          ) : ( 
+            <div 
+              className="text-center mt-20"
+              style={{ color: 'var(--text-disabled)' }}
+            >
+              请在左侧选择或创建一个节点
+            </div>
+          )}
         </div>
       </div>
       
       {/* 创建事件模态框 */}
       {showCreateEventModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 mb-4">创建新事件</h3>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
+        >
+          <div 
+            className="border rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-card, #1f2937)',
+              borderColor: 'var(--bg-overlay, #374151)',
+            }}
+          >
+            <h3 
+              className="text-xl font-bold mb-4"
+              style={{
+                background: 'var(--gradient-text, linear-gradient(to right, #818cf8, #f472b6))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              创建新事件
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-300 mb-1">事件名称 *</label>
+                <label 
+                  className="block text-sm mb-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  事件名称 *
+                </label>
                 <input
                   type="text"
                   value={createEventForm.name}
                   onChange={(e) => setCreateEventForm({ ...createEventForm, name: e.target.value })}
                   placeholder="例如：发现线索"
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none"
+                  className="w-full border rounded px-3 py-2 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-overlay, #111827)',
+                    borderColor: 'var(--bg-overlay, #4b5563)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info, #818cf8)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bg-overlay, #4b5563)';
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">事件ID *</label>
+                <label 
+                  className="block text-sm mb-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  事件ID *
+                </label>
                 <input
                   type="text"
                   value={createEventForm.eventId}
                   onChange={(e) => setCreateEventForm({ ...createEventForm, eventId: e.target.value })}
                   placeholder="例如：event_find_clue"
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none font-mono text-sm"
+                  className="w-full border rounded px-3 py-2 outline-none font-mono text-sm"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
-                <p className="text-xs text-gray-500 mt-1">用于剧本中引用，建议使用小写字母和下划线</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-disabled)' }}>用于剧本中引用，建议使用小写字母和下划线</p>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">描述（可选）</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>描述（可选）</label>
                 <textarea
                   value={createEventForm.description}
                   onChange={(e) => setCreateEventForm({ ...createEventForm, description: e.target.value })}
                   placeholder="事件描述..."
                   rows={3}
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none resize-none"
+                  className="w-full border rounded px-3 py-2 outline-none resize-none"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
               </div>
             </div>
@@ -514,7 +841,19 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
               <Button
                 onClick={handleCreateEvent}
                 disabled={isCreatingEvent || !createEventForm.name || !createEventForm.eventId}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                className="disabled:opacity-50"
+                style={{
+                  backgroundColor: 'var(--color-info)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCreatingEvent && createEventForm.name && createEventForm.eventId) {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
               >
                 {isCreatingEvent ? '创建中...' : '创建'}
               </Button>
@@ -524,7 +863,16 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
                   setCreateEventForm({ name: '', eventId: '', description: '' });
                   setCreatingEventFor(null);
                 }}
-                className="bg-gray-700 hover:bg-gray-600"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                }}
               >
                 取消
               </Button>
@@ -535,37 +883,89 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
       
       {/* 创建物品模态框 */}
       {showCreateItemModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 mb-4">创建新物品</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          style={{ backgroundColor: 'var(--bg-overlay-dark)' }}
+        >
+          <div
+            className="border rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color-overlay)',
+            }}
+          >
+            <h3
+              className="text-xl font-bold mb-4"
+              style={{
+                background: 'var(--gradient-text-primary)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              创建新物品
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-300 mb-1">物品名称 *</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>物品名称 *</label>
                 <input
                   type="text"
                   value={createItemForm.name}
                   onChange={(e) => setCreateItemForm({ ...createItemForm, name: e.target.value })}
                   placeholder="例如：神秘钥匙"
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none"
+                  className="w-full border rounded px-3 py-2 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">物品ID *</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>物品ID *</label>
                 <input
                   type="text"
                   value={createItemForm.itemId}
                   onChange={(e) => setCreateItemForm({ ...createItemForm, itemId: e.target.value })}
                   placeholder="例如：item_mysterious_key"
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none font-mono text-sm"
+                  className="w-full border rounded px-3 py-2 outline-none font-mono text-sm"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
-                <p className="text-xs text-gray-500 mt-1">用于剧本中引用，建议使用小写字母和下划线</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-disabled)' }}>用于剧本中引用，建议使用小写字母和下划线</p>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">物品类型（可选）</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>物品类型（可选）</label>
                 <select
                   value={createItemForm.itemType}
                   onChange={(e) => setCreateItemForm({ ...createItemForm, itemType: e.target.value })}
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none"
+                  className="w-full border rounded px-3 py-2 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 >
                   <option value="">未分类</option>
                   <option value="weapon">武器</option>
@@ -576,13 +976,24 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">描述（可选）</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>描述（可选）</label>
                 <textarea
                   value={createItemForm.description}
                   onChange={(e) => setCreateItemForm({ ...createItemForm, description: e.target.value })}
                   placeholder="物品描述..."
                   rows={3}
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 outline-none resize-none"
+                  className="w-full border rounded px-3 py-2 outline-none resize-none"
+                  style={{
+                    backgroundColor: 'var(--bg-primary-dark)',
+                    borderColor: 'var(--border-color-overlay)',
+                    color: 'var(--text-primary)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-info)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                  }}
                 />
               </div>
             </div>
@@ -590,7 +1001,19 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
               <Button
                 onClick={handleCreateItem}
                 disabled={isCreatingItem || !createItemForm.name || !createItemForm.itemId}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                className="disabled:opacity-50"
+                style={{
+                  backgroundColor: 'var(--color-info)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCreatingItem && createItemForm.name && createItemForm.itemId) {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                }}
               >
                 {isCreatingItem ? '创建中...' : '创建'}
               </Button>
@@ -600,7 +1023,16 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
                   setCreateItemForm({ name: '', itemId: '', description: '', itemType: '' });
                   setCreatingItemFor(null);
                 }}
-                className="bg-gray-700 hover:bg-gray-600"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                }}
               >
                 取消
               </Button>

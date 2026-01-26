@@ -47,8 +47,16 @@ export const ProductShowcase: React.FC = () => {
   return (
     <div className="space-y-12">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-neutral-900 mb-4">产品概述</h2>
-        <p className="text-neutral-700 text-lg max-w-3xl mx-auto leading-relaxed">
+        <h2 
+          className="text-3xl font-bold mb-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          产品概述
+        </h2>
+        <p 
+          className="text-lg max-w-3xl mx-auto leading-relaxed"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           心域（HeartSphere）是一个数字生命体交互系统，用户可以创建和管理自己的数字世界。
           系统提供AI对话、场景管理、角色扮演、剧本系统等核心功能，让用户与数字生命体进行深度交互，
           创造属于自己的数字世界。
@@ -56,7 +64,12 @@ export const ProductShowcase: React.FC = () => {
       </div>
 
       <div>
-        <h2 className="text-3xl font-bold text-neutral-900 mb-8 text-center">核心功能模块</h2>
+        <h2 
+          className="text-3xl font-bold mb-8 text-center"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          核心功能模块
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <FeatureCard key={index} {...feature} />
@@ -64,23 +77,57 @@ export const ProductShowcase: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-neutral-50 rounded-lg p-8 border border-neutral-200">
-        <h2 className="text-2xl font-bold text-neutral-900 mb-4">使用场景</h2>
-        <ul className="space-y-3 text-neutral-700">
+      <div 
+        className="rounded-lg p-8 border"
+        style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: 'var(--border-color-overlay)',
+        }}
+      >
+        <h2 
+          className="text-2xl font-bold mb-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          使用场景
+        </h2>
+        <ul 
+          className="space-y-3"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           <li className="flex items-start">
-            <span className="text-primary-500 mr-3">•</span>
+            <span 
+              className="mr-3"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              •
+            </span>
             <span>教育场景：创建历史人物角色，进行历史对话和学习</span>
           </li>
           <li className="flex items-start">
-            <span className="text-primary-500 mr-3">•</span>
+            <span 
+              className="mr-3"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              •
+            </span>
             <span>娱乐场景：创建喜欢的角色，进行角色扮演和剧情体验</span>
           </li>
           <li className="flex items-start">
-            <span className="text-primary-500 mr-3">•</span>
+            <span 
+              className="mr-3"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              •
+            </span>
             <span>创作场景：创建剧本和场景，进行内容创作和故事创作</span>
           </li>
           <li className="flex items-start">
-            <span className="text-primary-500 mr-3">•</span>
+            <span 
+              className="mr-3"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              •
+            </span>
             <span>社交场景：与朋友分享心域，体验不同的数字世界</span>
           </li>
         </ul>
@@ -91,7 +138,17 @@ export const ProductShowcase: React.FC = () => {
           href="http://heartsphere.cn"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center px-8 py-4 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 transition-all hover:scale-105 shadow-lg hover:shadow-primary-500/50"
+          className="inline-flex items-center px-8 py-4 rounded-lg font-semibold focus:outline-none transition-all hover:scale-105 shadow-lg"
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+          }}
         >
           立即体验心域
           <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

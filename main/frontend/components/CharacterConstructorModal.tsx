@@ -8,6 +8,8 @@ import { ResourcePicker } from './ResourcePicker';
 import { showAlert } from '../utils/dialog';
 import { CharacterMemoryTab } from './character/CharacterMemoryTab';
 import { CharacterSkillTab } from './character/CharacterSkillTab';
+import { CharacterGrowthTab } from './character/CharacterGrowthTab';
+import { RoleCapabilityPanel } from './character/RoleCapabilityPanel';
 import { getToken } from '../services/api/base/tokenStorage';
 import { LazyImage } from './LazyImage';
 import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
@@ -66,7 +68,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   };
   
   // Edit Mode State - Tab状态
-  const [activeTab, setActiveTab] = useState<'basic' | 'skills' | 'memory'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'skills' | 'memory' | 'growth' | 'capability'>('basic');
   
   // Upload states
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -377,14 +379,27 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
       return (
           <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
             {/* 标签页导航 */}
-            <div className="flex gap-2 border-b border-gray-700 mb-6">
+            <div 
+              className="flex gap-2 border-b mb-6"
+              style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+            >
               <button
                 onClick={() => setActiveTab('basic')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'basic'
-                    ? 'text-indigo-400 border-b-2 border-indigo-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className="px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  color: activeTab === 'basic' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                  borderBottom: activeTab === 'basic' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== 'basic') {
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== 'basic') {
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }
+                }}
               >
                 基本信息
               </button>
@@ -392,23 +407,83 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 <>
                   <button
                     onClick={() => setActiveTab('skills')}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
-                      activeTab === 'skills'
-                        ? 'text-indigo-400 border-b-2 border-indigo-400'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
+                    className="px-4 py-2 text-sm font-medium transition-colors"
+                    style={{
+                      color: activeTab === 'skills' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      borderBottom: activeTab === 'skills' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'skills') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'skills') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
                   >
                     技能
                   </button>
                   <button
                     onClick={() => setActiveTab('memory')}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
-                      activeTab === 'memory'
-                        ? 'text-indigo-400 border-b-2 border-indigo-400'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
+                    className="px-4 py-2 text-sm font-medium transition-colors"
+                    style={{
+                      color: activeTab === 'memory' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      borderBottom: activeTab === 'memory' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'memory') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'memory') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
                   >
                     记忆
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('growth')}
+                    className="px-4 py-2 text-sm font-medium transition-colors"
+                    style={{
+                      color: activeTab === 'growth' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      borderBottom: activeTab === 'growth' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'growth') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'growth') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
+                  >
+                    成长
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('capability')}
+                    className="px-4 py-2 text-sm font-medium transition-colors"
+                    style={{
+                      color: activeTab === 'capability' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      borderBottom: activeTab === 'capability' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'capability') {
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'capability') {
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                      }
+                    }}
+                  >
+                    能力体系
                   </button>
                 </>
               )}
@@ -420,15 +495,39 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  {/* 左列：基础信息 */}
                  <div className="space-y-5">
-                     <h4 className="text-base font-bold text-indigo-400 border-b border-indigo-900/30 pb-2">基础信息</h4>
+                     <h4 
+                       className="text-base font-bold border-b pb-2"
+                       style={{
+                         color: 'var(--color-info)',
+                         borderColor: 'var(--border-info-alpha)',
+                       }}
+                     >
+                       基础信息
+                     </h4>
                      
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">姓名</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-tertiary)' }}
+                         >
+                           姓名
+                         </label>
                          <div className="flex gap-2">
                              <input 
                                  value={characterToEdit.name} 
                                  onChange={e => updateCharacter('name', e.target.value)} 
-                                 className="flex-1 bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                 className="flex-1 rounded px-3 py-2 border text-sm outline-none"
+                                 style={{
+                                   backgroundColor: 'var(--bg-secondary, #0f172a)',
+                                   borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                                   color: 'var(--text-primary)',
+                                 }}
+                                 onFocus={(e) => {
+                                   e.currentTarget.style.borderColor = 'var(--color-primary, #6366f1)';
+                                 }}
+                                 onBlur={(e) => {
+                                   e.currentTarget.style.borderColor = 'var(--bg-overlay, rgba(55, 65, 81, 1))';
+                                 }} 
                              />
                              <button
                                  onClick={async () => {
@@ -477,7 +576,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                      }
                                  }}
                                  disabled={isLoading}
-                                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+                                 className="px-4 py-2 text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+                                 style={{ 
+                                   backgroundColor: 'var(--color-info)',
+                                   color: 'var(--text-primary)',
+                                 }}
+                                 onMouseEnter={(e) => {
+                                   if (!isLoading) {
+                                     e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                                   }
+                                 }}
+                                 onMouseLeave={(e) => {
+                                   e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                                 }}
                                  title="AI生成名字"
                              >
                                  {isLoading ? '生成中...' : '✨ AI'}
@@ -486,29 +597,71 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      </div>
                      
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">角色定位 (Role)</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           角色定位 (Role)
+                         </label>
                          <input 
                              value={characterToEdit.role || ''} 
                              onChange={e => updateCharacter('role', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                             className="w-full rounded px-3 py-2 border text-sm outline-none"
+                             style={{
+                               backgroundColor: 'var(--bg-card)',
+                               borderColor: 'var(--border-color-overlay)',
+                               color: 'var(--text-primary)',
+                             }}
+                             onFocus={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--color-info)';
+                             }}
+                             onBlur={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                             }} 
                          />
                      </div>
                      
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">所属场景 (Scene)</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           所属场景 (Scene)
+                         </label>
                          <input 
                              value={scene.name} 
                              disabled
-                             className="w-full bg-gray-800 rounded px-3 py-2 border border-gray-700 text-sm text-gray-500 cursor-not-allowed" 
+                             className="w-full rounded px-3 py-2 border text-sm cursor-not-allowed"
+                             style={{
+                               backgroundColor: 'var(--bg-secondary)',
+                               borderColor: 'var(--border-color-overlay)',
+                               color: 'var(--text-tertiary)',
+                             }} 
                          />
                      </div>
                      
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">简介 (Bio)</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           简介 (Bio)
+                         </label>
                          <textarea 
                              value={characterToEdit.bio || ''} 
                              onChange={e => updateCharacter('bio', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
+                             className="w-full rounded px-3 py-2 border text-sm outline-none resize-none"
+                             style={{
+                               backgroundColor: 'var(--bg-card)',
+                               borderColor: 'var(--border-color-overlay)',
+                               color: 'var(--text-primary)',
+                             }}
+                             onFocus={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--color-info)';
+                             }}
+                             onBlur={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                             }} 
                              rows={4}
                          />
                      </div>
@@ -516,18 +669,42 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
 
                  {/* 右列：视觉与人设 */}
                  <div className="space-y-5">
-                     <h4 className="text-base font-bold text-pink-400 border-b border-pink-900/30 pb-2">视觉与人设</h4>
+                     <h4 
+                       className="text-base font-bold border-b pb-2"
+                       style={{
+                         color: 'var(--color-primary)',
+                         borderColor: 'var(--border-color-overlay)',
+                       }}
+                     >
+                       视觉与人设
+                     </h4>
                      
                      {/* 头像 */}
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">头像</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           头像
+                         </label>
                          <div className="space-y-2">
                              <div className="flex flex-col gap-2">
                                  <input 
                                      value={characterToEdit.avatarUrl || ''} 
                                      onChange={e => updateCharacter('avatarUrl', e.target.value)} 
                                      placeholder="头像URL或点击上传"
-                                     className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                     className="w-full rounded px-3 py-2 border text-sm outline-none"
+                                     style={{
+                                       backgroundColor: 'var(--bg-card)',
+                                       borderColor: 'var(--border-color-overlay)',
+                                       color: 'var(--text-primary)',
+                                     }}
+                                     onFocus={(e) => {
+                                       e.currentTarget.style.borderColor = 'var(--color-info)';
+                                     }}
+                                     onBlur={(e) => {
+                                       e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                                     }}
                                  />
                                  <div className="flex gap-2">
                                  <button 
@@ -539,7 +716,20 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              showAlert('请先登录', '提示', 'warning');
                                          }
                                      }}
-                                         className="flex-1 px-4 py-2.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 border border-indigo-700/50 rounded text-sm font-medium transition-colors"
+                                         className="flex-1 px-4 py-2.5 border rounded text-sm font-medium transition-colors"
+                                         style={{
+                                           color: 'var(--color-info)',
+                                           borderColor: 'var(--border-info-alpha)',
+                                           backgroundColor: 'transparent',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha)';
+                                           e.currentTarget.style.color = 'var(--color-info-light)';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'transparent';
+                                           e.currentTarget.style.color = 'var(--color-info)';
+                                         }}
                                          title="选择预置头像"
                                      >
                                          🖼️ 选择预置
@@ -609,7 +799,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              }
                                          }}
                                          disabled={isUploadingAvatar || isLoading}
-                                         className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         className="flex-1 px-4 py-2.5 text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         style={{ 
+                                           backgroundColor: 'var(--color-primary)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           if (!isUploadingAvatar && !isLoading) {
+                                             e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                           }
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                                         }}
                                          title="AI生成头像"
                                      >
                                          {isUploadingAvatar ? '生成中...' : '✨ AI生成'}
@@ -617,7 +819,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  <button 
                                      onClick={() => avatarInputRef.current?.click()} 
                                      disabled={isUploadingAvatar}
-                                         className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         className="flex-1 px-4 py-2.5 text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         style={{ 
+                                           backgroundColor: 'var(--color-info)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           if (!isUploadingAvatar) {
+                                             e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                                           }
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                                         }}
                                  >
                                          {isUploadingAvatar ? '上传中...' : '📤 上传'}
                                  </button>
@@ -631,22 +845,56 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  className="hidden" 
                              />
                              {characterToEdit.avatarUrl && !characterToEdit.avatarUrl.includes('picsum.photos') && (
-                                 <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-700">
+                                 <div 
+                                   className="relative w-20 h-20 rounded-full overflow-hidden border"
+                                   style={{ borderColor: 'var(--border-color-overlay)' }}
+                                 >
                                      <AvatarPreviewImage src={characterToEdit.avatarUrl} />
                                      <button 
                                          onClick={() => updateCharacter('avatarUrl', '')} 
-                                         className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs z-10"
+                                         className="absolute top-0 right-0 rounded-full p-1 transition-colors text-xs z-10"
+                                         style={{ 
+                                           backgroundColor: 'var(--bg-overlay-alpha)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-error)';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha)';
+                                         }}
                                      >
                                          ×
                                      </button>
                                  </div>
                              )}
                              {characterToEdit.avatarUrl && characterToEdit.avatarUrl.includes('picsum.photos') && (
-                                 <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-700 bg-gray-800 flex items-center justify-center">
-                                     <span className="text-xs text-gray-500">占位符</span>
+                                 <div 
+                                   className="relative w-20 h-20 rounded-full overflow-hidden border flex items-center justify-center"
+                                   style={{
+                                     borderColor: 'var(--border-color-overlay)',
+                                     backgroundColor: 'var(--bg-secondary)',
+                                   }}
+                                 >
+                                     <span 
+                                       className="text-xs"
+                                       style={{ color: 'var(--text-tertiary)' }}
+                                     >
+                                       占位符
+                                     </span>
                                      <button 
                                          onClick={() => updateCharacter('avatarUrl', '')} 
-                                         className="absolute top-0 right-0 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs"
+                                         className="absolute top-0 right-0 rounded-full p-1 transition-colors text-xs"
+                                         style={{ 
+                                           backgroundColor: 'var(--bg-overlay-alpha)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-error)';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha)';
+                                         }}
                                      >
                                          ×
                                      </button>
@@ -657,14 +905,30 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                      
                      {/* 背景 */}
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">背景</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           背景
+                         </label>
                          <div className="space-y-2">
                              <div className="flex flex-col gap-2">
                                  <input 
                                      value={characterToEdit.backgroundUrl || ''} 
                                      onChange={e => updateCharacter('backgroundUrl', e.target.value)} 
                                      placeholder="背景URL或点击上传"
-                                     className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none" 
+                                     className="w-full rounded px-3 py-2 border text-sm outline-none"
+                                     style={{
+                                       backgroundColor: 'var(--bg-card)',
+                                       borderColor: 'var(--border-color-overlay)',
+                                       color: 'var(--text-primary)',
+                                     }}
+                                     onFocus={(e) => {
+                                       e.currentTarget.style.borderColor = 'var(--color-info)';
+                                     }}
+                                     onBlur={(e) => {
+                                       e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                                     }}
                                  />
                                  <div className="flex gap-2">
                                  <button 
@@ -676,7 +940,20 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              showAlert('请先登录', '提示', 'warning');
                                          }
                                      }}
-                                         className="flex-1 px-4 py-2.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 border border-indigo-700/50 rounded text-sm font-medium transition-colors"
+                                         className="flex-1 px-4 py-2.5 border rounded text-sm font-medium transition-colors"
+                                         style={{
+                                           color: 'var(--color-info)',
+                                           borderColor: 'var(--border-info-alpha)',
+                                           backgroundColor: 'transparent',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--bg-info-alpha)';
+                                           e.currentTarget.style.color = 'var(--color-info-light)';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'transparent';
+                                           e.currentTarget.style.color = 'var(--color-info)';
+                                         }}
                                          title="选择预置背景"
                                      >
                                          🖼️ 选择预置
@@ -751,7 +1028,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                              }
                                          }}
                                          disabled={isUploadingBackground || isLoading}
-                                         className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         className="flex-1 px-4 py-2.5 text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         style={{ 
+                                           backgroundColor: 'var(--color-primary)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           if (!isUploadingAvatar && !isLoading) {
+                                             e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                           }
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                                         }}
                                          title="AI生成背景"
                                      >
                                          {isUploadingBackground ? '生成中...' : '✨ AI生成'}
@@ -759,7 +1048,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  <button 
                                      onClick={() => bgInputRef.current?.click()} 
                                      disabled={isUploadingBackground}
-                                         className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         className="flex-1 px-4 py-2.5 text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                         style={{ 
+                                           backgroundColor: 'var(--color-info)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           if (!isUploadingAvatar) {
+                                             e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                                           }
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                                         }}
                                  >
                                          {isUploadingBackground ? '上传中...' : '📤 上传'}
                                  </button>
@@ -773,11 +1074,24 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                                  className="hidden" 
                              />
                              {characterToEdit.backgroundUrl && (
-                                 <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-700">
+                                 <div 
+                                   className="relative w-full h-32 rounded-lg overflow-hidden border"
+                                   style={{ borderColor: 'var(--border-color-overlay)' }}
+                                 >
                                      <BackgroundPreviewImage src={characterToEdit.backgroundUrl} />
                                      <button 
                                          onClick={() => updateCharacter('backgroundUrl', '')} 
-                                         className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors z-10"
+                                         className="absolute top-2 right-2 rounded-full p-1 transition-colors z-10"
+                                         style={{ 
+                                           backgroundColor: 'var(--bg-overlay-alpha)',
+                                           color: 'var(--text-primary)',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--color-error)';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.backgroundColor = 'var(--bg-overlay-alpha)';
+                                         }}
                                      >
                                          ×
                                      </button>
@@ -786,15 +1100,38 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                          </div>
                      </div>
                      
-                     {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
+                     {uploadError && (
+                       <p 
+                         className="text-xs mt-1"
+                         style={{ color: 'var(--color-error)' }}
+                       >
+                         {uploadError}
+                       </p>
+                     )}
                      
                      {/* 第一句问候 */}
                      <div>
-                         <label className="text-sm text-gray-400 block mb-2 font-medium">第一句问候</label>
+                         <label 
+                           className="text-sm block mb-2 font-medium"
+                           style={{ color: 'var(--text-secondary)' }}
+                         >
+                           第一句问候
+                         </label>
                          <textarea 
                              value={characterToEdit.firstMessage || ''} 
                              onChange={e => updateCharacter('firstMessage', e.target.value)} 
-                             className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm focus:border-indigo-500 outline-none resize-none" 
+                             className="w-full rounded px-3 py-2 border text-sm outline-none resize-none"
+                             style={{
+                               backgroundColor: 'var(--bg-card)',
+                               borderColor: 'var(--border-color-overlay)',
+                               color: 'var(--text-primary)',
+                             }}
+                             onFocus={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--color-info)';
+                             }}
+                             onBlur={(e) => {
+                               e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                             }} 
                              rows={3}
                          />
                      </div>
@@ -803,13 +1140,37 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
 
              {/* 系统指令 - 独立大区域 */}
              <div className="mt-10">
-                 <h4 className="text-base font-bold text-green-400 border-b border-green-900/30 pb-2 mb-4">系统指令 (System Prompt)</h4>
+                 <h4 
+                   className="text-base font-bold border-b pb-2 mb-4"
+                   style={{
+                     color: 'var(--color-success)',
+                     borderColor: 'var(--border-color-overlay)',
+                   }}
+                 >
+                   系统指令 (System Prompt)
+                 </h4>
                  <div>
-                     <label className="text-sm text-gray-400 block mb-2 font-medium">完整角色扮演指令 (Prompt)</label>
+                     <label 
+                       className="text-sm block mb-2 font-medium"
+                       style={{ color: 'var(--text-secondary)' }}
+                     >
+                       完整角色扮演指令 (Prompt)
+                     </label>
                      <textarea 
                          value={characterToEdit.systemInstruction || ''} 
                          onChange={e => updateCharacter('systemInstruction', e.target.value)} 
-                         className="w-full bg-gray-900 rounded px-3 py-2 border border-gray-700 text-sm font-mono focus:border-indigo-500 outline-none resize-none" 
+                         className="w-full rounded px-3 py-2 border text-sm font-mono outline-none resize-none"
+                         style={{
+                           backgroundColor: 'var(--bg-card)',
+                           borderColor: 'var(--border-color-overlay)',
+                           color: 'var(--text-primary)',
+                         }}
+                         onFocus={(e) => {
+                           e.currentTarget.style.borderColor = 'var(--color-info)';
+                         }}
+                         onBlur={(e) => {
+                           e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                         }} 
                          rows={8}
                      />
                  </div>
@@ -837,13 +1198,33 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 />
               </div>
             )}
+
+            {activeTab === 'growth' && characterId && userId && (
+              <div className="character-growth-tab">
+                <CharacterGrowthTab
+                  characterId={characterId}
+                  userId={userId}
+                  characterName={characterToEdit.name}
+                />
+              </div>
+            )}
+            {activeTab === 'capability' && characterId && userId && (
+              <div className="role-capability-panel">
+                <RoleCapabilityPanel
+                  characterId={characterId}
+                  userId={userId}
+                  characterName={characterToEdit.name}
+                />
+              </div>
+            )}
           </div>
       );
   };
 
   return (
     <div 
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+      className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4 animate-fade-in"
+      style={{ backgroundColor: 'var(--bg-overlay, rgba(0, 0, 0, 0.8))' }}
       onClick={(e) => {
         // 点击背景关闭模态框
         if (e.target === e.currentTarget) {
@@ -851,13 +1232,28 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         }
       }}
     >
-      <div className={`bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[90vh] relative ${
-        showPresetCharacters ? 'w-full max-w-5xl' : 'w-full max-w-4xl'
-      }`}>
+      <div 
+        className={`rounded-2xl p-6 shadow-2xl flex flex-col max-h-[90vh] relative ${
+          showPresetCharacters ? 'w-full max-w-5xl' : 'w-full max-w-4xl'
+        }`}
+        style={{
+          backgroundColor: 'var(--bg-card, #1e293b)',
+          borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+        }}
+      >
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-700 z-10"
+          className="absolute top-4 right-4 transition-colors p-1 rounded-lg z-10"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(55, 65, 81, 1))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
           aria-label="关闭"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -866,10 +1262,16 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         </button>
 
         <div className="mb-4">
-            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+            <h3 
+              className="text-xl font-bold text-transparent bg-clip-text"
+              style={{ backgroundImage: 'var(--gradient-text)' }}
+            >
             {initialCharacter ? '角色编辑器' : '角色构造器'}
             </h3>
-            <p className="text-sm text-gray-400">
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
                 {initialCharacter ? '微调TA的灵魂设定。' : `为场景 “${scene.name}” 注入新的灵魂。`}
             </p>
             {/* 编辑模式下也可以参考预置角色 */}
@@ -880,7 +1282,14 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                             // 编辑模式下，点击参考预置角色时，直接打开资源选择器
                             setShowAvatarResourcePicker(true);
                         }}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 underline"
+                        className="text-xs underline"
+                        style={{ color: 'var(--color-info)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--color-info-light)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--color-info)';
+                        }}
                     >
                         📚 参考预置角色模板
                     </button>
@@ -891,10 +1300,17 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         {/* 预置角色选择界面 - 仅新建时显示，编辑模式下不显示此界面 */}
         {!initialCharacter && creationMode === 'preset' && scene.systemEraId && systemCharacters.length > 0 && (
           <div className="flex-1 space-y-4 overflow-y-auto">
-            <div className="flex gap-3 border-b border-gray-700 pb-3">
+            <div 
+              className="flex gap-3 border-b pb-3"
+              style={{ borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))' }}
+            >
               <button
                 onClick={() => setCreationMode('preset')}
-                className="text-sm font-bold pb-2 transition-colors text-indigo-400 border-b-2 border-indigo-400"
+                className="text-sm font-bold pb-2 transition-colors"
+                style={{
+                  color: 'var(--color-primary-light, #818cf8)',
+                  borderBottom: '2px solid var(--color-primary-light, #818cf8)',
+                }}
               >
                 📚 {initialCharacter ? '参考预置角色' : '选择预置角色'}
               </button>
@@ -906,7 +1322,14 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     setGeneratedCharacter(initialCharacter);
                   }
                 }}
-                className="text-sm font-bold pb-2 transition-colors text-gray-500 hover:text-white"
+                className="text-sm font-bold pb-2 transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                }}
               >
                 ✨ {initialCharacter ? '继续编辑' : '创建自定义角色'}
               </button>
@@ -914,12 +1337,26 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
 
             {loadingSystemCharacters ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                <span className="ml-3 text-gray-400">加载预置角色...</span>
+                <div 
+                  className="w-8 h-8 border-4 rounded-full animate-spin"
+                  style={{
+                    borderColor: 'var(--bg-info-alpha)',
+                    borderTopColor: 'var(--color-info)',
+                  }}
+                ></div>
+                <span 
+                  className="ml-3"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  加载预置角色...
+                </span>
               </div>
             ) : systemCharacters.length > 0 ? (
               <div>
-                <p className="text-sm text-gray-400 mb-4">
+                <p 
+                  className="text-sm mb-4"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   {initialCharacter 
                     ? '选择一个预置角色模板，将应用其所有设定到当前编辑的角色' 
                     : '从预置角色中选择，或创建自定义角色'}
@@ -929,7 +1366,17 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     <div
                       key={char.id}
                       onClick={() => handleSelectPresetCharacter(char)}
-                      className="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-700 hover:border-indigo-500/50 transition-all bg-gray-900/50"
+                      className="group relative cursor-pointer overflow-hidden rounded-xl border transition-all"
+                      style={{
+                        borderColor: 'var(--bg-overlay, rgba(55, 65, 81, 1))',
+                        backgroundColor: 'var(--bg-secondary, rgba(17, 24, 39, 0.5))',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-info-alpha)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                      }}
                       title={initialCharacter ? '点击应用此预置角色的所有设定到当前编辑的角色' : '点击选择此预置角色'}
                     >
                       {char.avatarUrl ? (
@@ -939,31 +1386,63 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                           className="h-32 w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="h-32 w-full bg-gradient-to-br from-indigo-900/30 to-pink-900/30 flex items-center justify-center">
+                        <div 
+                          className="h-32 w-full flex items-center justify-center"
+                          style={{ background: 'var(--gradient-card)' }}
+                        >
                           <span className="text-4xl">👤</span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                      <div 
+                        className="absolute inset-0"
+                        style={{
+                          background: 'linear-gradient(to top, var(--bg-overlay-alpha), transparent)',
+                        }}
+                      />
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 p-3"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         <h4 className="font-bold text-sm mb-1 truncate">{char.name}</h4>
-                        <p className="text-xs text-gray-300 line-clamp-2">{char.role || char.description || char.bio}</p>
+                        <p 
+                          className="text-xs line-clamp-2"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {char.role || char.description || char.bio}
+                        </p>
                         {char.age && (
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div 
+                            className="text-xs mt-1"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
                             {char.age}岁
                           </div>
                         )}
                         {/* 显示更多信息提示 */}
-                        <div className="text-xs text-indigo-300/80 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div 
+                          className="text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ color: 'rgba(129, 140, 248, 0.8)' }}
+                        >
                           {initialCharacter ? '点击应用所有设定' : '点击选择'}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-700">
+                <div 
+                  className="mt-4 pt-4 border-t"
+                  style={{ borderColor: 'var(--border-color-overlay)' }}
+                >
                   <Button
                     onClick={() => setCreationMode('custom')}
-                    className="w-full bg-gray-700 hover:bg-gray-600"
+                    className="w-full"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                    }}
                   >
                     创建自定义角色
                   </Button>
@@ -971,10 +1450,21 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-400 mb-4">暂无预置角色</p>
+                <p 
+                  className="mb-4"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  暂无预置角色
+                </p>
                 <Button
                   onClick={() => setCreationMode('custom')}
-                  className="bg-indigo-600 hover:bg-indigo-500"
+                  style={{ backgroundColor: 'var(--color-info)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                  }}
                 >
                   创建自定义角色
                 </Button>
@@ -986,8 +1476,19 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         {/* 加载预置角色时的加载提示 */}
         {!initialCharacter && loadingSystemCharacters && (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-            <span className="ml-3 text-gray-400">正在加载预置角色...</span>
+            <div 
+              className="w-8 h-8 border-4 rounded-full animate-spin"
+              style={{
+                borderColor: 'var(--bg-info-alpha)',
+                borderTopColor: 'var(--color-info)',
+              }}
+            ></div>
+            <span 
+              className="ml-3"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              正在加载预置角色...
+            </span>
           </div>
         )}
 
@@ -998,19 +1499,68 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         {!initialCharacter && !generatedCharacter && (
             <div className="flex-1 space-y-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-white/80">你的想法</label>
+                    <label 
+                      className="text-sm font-bold"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      你的想法
+                    </label>
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="输入一个简单的角色概念，例如：&#10;“秦朝的第一个皇帝，秦始皇”&#10;“我的高中同桌，一个很幽默的女孩”"
-                        className="w-full bg-white/5 border-2 border-white/10 rounded-lg py-2 px-4 text-white placeholder-white/40 focus:border-pink-400 focus:ring-0 outline-none transition-colors resize-none h-28"
+                        className="w-full rounded-lg py-2 px-4 outline-none transition-colors resize-none h-28"
+                        style={{
+                          backgroundColor: 'var(--bg-overlay-alpha)',
+                          borderColor: 'var(--border-color-overlay)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-primary)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color-overlay)';
+                        }}
                         disabled={isLoading}
                     />
                 </div>
-                <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} fullWidth className="bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center">
-                    {isLoading ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />正在构思中...</>) : (<>✨ AI 生成设定 (不含图)</>)}
+                <Button 
+                  onClick={handleGenerate} 
+                  disabled={isLoading || !prompt.trim()} 
+                  fullWidth 
+                  className="flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--color-info)' }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading && prompt.trim()) {
+                      e.currentTarget.style.backgroundColor = 'var(--color-info-light)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--color-info)';
+                  }}
+                >
+                    {isLoading ? (
+                      <>
+                        <div 
+                          className="w-5 h-5 border-2 rounded-full animate-spin mr-2"
+                          style={{
+                            borderColor: 'var(--bg-secondary-alpha)',
+                            borderTopColor: 'var(--text-primary)',
+                          }}
+                        />正在构思中...
+                      </>
+                    ) : (
+                      <>✨ AI 生成设定 (不含图)</>
+                    )}
                 </Button>
-                {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+                {error && (
+                  <p 
+                    className="text-sm text-center"
+                    style={{ color: 'var(--color-error)' }}
+                  >
+                    {error}
+                  </p>
+                )}
             </div>
         )}
 
@@ -1019,7 +1569,10 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
 
             {/* 编辑模式下或已生成角色时，显示保存按钮 */}
             {(initialCharacter || generatedCharacter) && (
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-700/50 mt-4 shrink-0">
+              <div 
+                className="flex justify-end gap-3 pt-4 border-t mt-4 shrink-0"
+                style={{ borderColor: 'var(--border-color-overlay)' }}
+              >
                 <Button variant="ghost" onClick={onClose} disabled={isLoading || isUploadingAvatar || isUploadingBackground}>取消</Button>
                 <Button onClick={handleSave} disabled={isLoading || !generatedCharacter || isUploadingAvatar || isUploadingBackground}>
                   {initialCharacter ? '保存修改' : '添加到场景'}

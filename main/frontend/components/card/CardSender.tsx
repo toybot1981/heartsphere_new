@@ -34,19 +34,38 @@ export const CardSender: React.FC<CardSenderProps> = ({ card, userId, onSend, on
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: 'var(--bg-modal-backdrop, rgba(0, 0, 0, 0.5))' }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-modal, #ffffff)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">发送卡片</h3>
+        <div 
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+        >
+          <h3 
+            className="text-lg font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            发送卡片
+          </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(243, 244, 246, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             ×
           </button>
@@ -55,24 +74,51 @@ export const CardSender: React.FC<CardSenderProps> = ({ card, userId, onSend, on
         <div className="flex-1 overflow-y-auto p-6">
           {/* 卡片预览 */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">卡片预览</h4>
+            <h4 
+              className="text-sm font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              卡片预览
+            </h4>
             <CardPreview card={card} className="max-w-md mx-auto" />
           </div>
 
           {/* 收件人选择 */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">发送给</label>
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              发送给
+            </label>
             <div className="relative">
               <button
                 onClick={() => setShowUserList(!showUserList)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-left bg-white hover:border-pink-400 transition-colors"
+                className="w-full px-4 py-2 border rounded-lg text-left transition-colors"
+                style={{
+                  borderColor: 'var(--border-color-overlay, #d1d5db)',
+                  backgroundColor: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color-overlay, #d1d5db)';
+                }}
               >
                 {recipientId
                   ? users.find((u) => u.id === recipientId)?.name || `用户 ${recipientId}`
                   : '选择收件人...'}
               </button>
               {showUserList && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div 
+                  className="absolute z-10 w-full mt-1 border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  style={{
+                    backgroundColor: 'var(--bg-modal, #ffffff)',
+                    borderColor: 'var(--border-color-overlay, #d1d5db)',
+                  }}
+                >
                   {users.map((user) => (
                     <button
                       key={user.id}
@@ -80,7 +126,14 @@ export const CardSender: React.FC<CardSenderProps> = ({ card, userId, onSend, on
                         setRecipientId(user.id);
                         setShowUserList(false);
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-pink-50 transition-colors"
+                      className="w-full px-4 py-2 text-left transition-colors"
+                      style={{ color: 'var(--text-primary)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--color-primary, rgba(236, 72, 153, 0.1))';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
                       {user.name}
                     </button>
@@ -92,29 +145,74 @@ export const CardSender: React.FC<CardSenderProps> = ({ card, userId, onSend, on
 
           {/* 附加消息 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">附加消息（可选）</label>
+            <label 
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              附加消息（可选）
+            </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="输入附加消息..."
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-pink-400 transition-colors resize-none"
+              className="w-full px-4 py-2 border rounded-lg transition-colors resize-none"
+              style={{
+                borderColor: 'var(--border-color-overlay, #d1d5db)',
+                color: 'var(--text-primary)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary, #ec4899)';
+                e.currentTarget.style.outline = 'none';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color-overlay, #d1d5db)';
+              }}
             />
           </div>
         </div>
 
         {/* 底部操作 */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+        <div 
+          className="px-6 py-4 border-t flex items-center justify-end gap-3"
+          style={{ borderColor: 'var(--border-color-overlay, #e5e7eb)' }}
+        >
           <button
-            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-6 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-card, rgba(243, 244, 246, 1))',
+              color: 'var(--text-primary)',
+            }}
             onClick={onClose}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(229, 231, 235, 1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-card, rgba(243, 244, 246, 1))';
+            }}
           >
             取消
           </button>
           <button
-            className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="px-6 py-2 rounded-lg transition-colors disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: !recipientId
+                ? 'var(--bg-disabled, #d1d5db)'
+                : 'var(--color-primary, #ec4899)',
+              color: 'var(--text-primary)',
+            }}
             onClick={handleSend}
             disabled={!recipientId}
+            onMouseEnter={(e) => {
+              if (recipientId) {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #db2777)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (recipientId) {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary, #ec4899)';
+              }
+            }}
           >
             发送
           </button>

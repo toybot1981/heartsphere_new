@@ -236,7 +236,7 @@ public class McpClientService {
             }
         }
         
-        log.debug("Created headers for MCP request: Accept={}, Content-Type={}, ServerType={}", 
+        log.info("Created headers for MCP request: Accept={}, Content-Type={}, ServerType={}", 
             headers.getFirst("Accept"), headers.getContentType(), 
             config.getServerType() != null ? config.getServerType() : "unknown");
         

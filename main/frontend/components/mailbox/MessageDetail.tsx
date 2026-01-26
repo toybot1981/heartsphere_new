@@ -112,12 +112,32 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
   const isESoul = isESoulLetter(message);
   
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-950">
+    <div 
+      className="flex flex-col h-full"
+      style={{
+        background: 'var(--gradient-bg, linear-gradient(to bottom, #0f172a, #020617))',
+      }}
+    >
       {/* 头部 */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-950/80 to-slate-900/80 backdrop-blur-sm relative z-10">
+      <div 
+        className="flex items-center justify-between px-6 py-4 border-b backdrop-blur-sm relative z-10"
+        style={{
+          borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+          background: 'var(--gradient-bg, linear-gradient(to right, #020617, #0f172a))',
+        }}
+      >
         <button
           onClick={onBack}
-          className="text-slate-400 hover:text-white transition-all duration-200 p-2 rounded-lg hover:bg-slate-800/50 active:scale-95 flex items-center gap-2"
+          className="transition-all duration-200 p-2 rounded-lg active:scale-95 flex items-center gap-2"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -129,15 +149,40 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
           <button
             onClick={handleStar}
             disabled={isStarring}
-            className={`px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 relative overflow-hidden ${
-              message.isStarred
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30'
-                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 border border-slate-700/30'
-            }`}
+            className="px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 relative overflow-hidden border"
+            style={{
+              background: message.isStarred
+                ? 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899))'
+                : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+              color: message.isStarred
+                ? 'var(--text-primary)'
+                : 'var(--text-secondary)',
+              borderColor: message.isStarred
+                ? 'transparent'
+                : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+              boxShadow: message.isStarred
+                ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!message.isStarred && !isStarring) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!message.isStarred && !isStarring) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+              }
+            }}
             title="收藏"
           >
             {message.isStarred && (
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 animate-pulse"></div>
+              <div 
+                className="absolute inset-0 animate-pulse"
+                style={{
+                  background: 'var(--gradient-primary, linear-gradient(to right, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2)))',
+                }}
+              />
             )}
             <span className="relative z-10 text-base">{isStarring ? '...' : message.isStarred ? '★' : '☆'}</span>
           </button>
@@ -145,22 +190,60 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
           <button
             onClick={handleMarkImportant}
             disabled={isMarkingImportant}
-            className={`px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 relative overflow-hidden ${
-              message.isImportant
-                ? 'bg-gradient-to-r from-yellow-600 to-amber-600 text-white shadow-lg shadow-yellow-500/30'
-                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 border border-slate-700/30'
-            }`}
+            className="px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 relative overflow-hidden border"
+            style={{
+              background: message.isImportant
+                ? 'var(--gradient-primary, linear-gradient(to right, #fbbf24, #f59e0b))'
+                : 'var(--bg-overlay, rgba(30, 41, 59, 0.5))',
+              color: message.isImportant
+                ? 'var(--text-primary)'
+                : 'var(--text-secondary)',
+              borderColor: message.isImportant
+                ? 'transparent'
+                : 'var(--bg-overlay, rgba(71, 85, 105, 0.3))',
+              boxShadow: message.isImportant
+                ? 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))'
+                : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!message.isImportant && !isMarkingImportant) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(51, 65, 85, 0.7))';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!message.isImportant && !isMarkingImportant) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-overlay, rgba(30, 41, 59, 0.5))';
+              }
+            }}
             title="标记重要"
           >
             {message.isImportant && (
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 animate-pulse"></div>
+              <div 
+                className="absolute inset-0 animate-pulse"
+                style={{
+                  background: 'var(--gradient-primary, linear-gradient(to right, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)))',
+                }}
+              />
             )}
             <span className="relative z-10 text-base">{isMarkingImportant ? '...' : '⭐'}</span>
           </button>
           
           <button
             onClick={handleDelete}
-            className="px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl hover:from-red-500 hover:to-pink-500 transition-all duration-200 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 active:scale-95"
+            className="px-4 py-2 rounded-xl transition-all duration-200 active:scale-95"
+            style={{
+              background: 'var(--gradient-primary, linear-gradient(to right, #dc2626, #ec4899))',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #ef4444, #f472b6))';
+              e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #dc2626, #ec4899))';
+              e.currentTarget.style.boxShadow = 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+            }}
             title="删除"
           >
             删除
@@ -172,44 +255,71 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
       <div className="flex-1 overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent">
         <div className="max-w-4xl mx-auto animate-fade-in">
           {/* 发送者信息 */}
-          <div className={`flex items-start gap-6 mb-8 pb-6 border-b relative ${
-            isESoul 
-              ? 'border-purple-700/50' 
-              : 'border-slate-700/50'
-          }`}>
+          <div 
+            className="flex items-start gap-6 mb-8 pb-6 border-b relative"
+            style={{
+              borderColor: isESoul
+                ? 'var(--color-primary, rgba(147, 51, 234, 0.5))'
+                : 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+            }}
+          >
             {isESoul && (
               <>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-950/20 via-pink-950/20 to-purple-950/20 rounded-2xl blur-xl"></div>
-                <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
+                <div 
+                  className="absolute inset-0 rounded-2xl blur-xl"
+                  style={{
+                    background: 'var(--gradient-bg, linear-gradient(to right, rgba(88, 28, 135, 0.2), rgba(157, 23, 77, 0.2), rgba(88, 28, 135, 0.2)))',
+                  }}
+                />
+                <div 
+                  className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl"
+                  style={{
+                    backgroundColor: 'var(--color-primary, rgba(147, 51, 234, 0.1))',
+                  }}
+                />
               </>
             )}
             
             <div className="relative z-10">
               {message.senderAvatar ? (
-                <div className={`relative ${
-                  isESoul ? 'ring-4 ring-purple-500/30 ring-offset-4 ring-offset-slate-900' : ''
-                }`}>
+                <div 
+                  className="relative"
+                  style={isESoul ? {
+                    boxShadow: '0 0 0 4px var(--color-primary, rgba(147, 51, 234, 0.3)), 0 0 0 8px var(--bg-overlay, #0f172a)',
+                  } : {}}
+                >
                   <img
                     src={message.senderAvatar}
                     alt={message.senderName || '发送者'}
-                    className={`w-20 h-20 rounded-full border-4 object-cover shadow-2xl ${
-                      isESoul 
-                        ? 'border-purple-500/50' 
-                        : 'border-slate-600/50'
-                    }`}
+                    className="w-20 h-20 rounded-full border-4 object-cover shadow-2xl"
+                    style={{
+                      borderColor: isESoul
+                        ? 'var(--color-primary, rgba(147, 51, 234, 0.5))'
+                        : 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+                    }}
                   />
                   {isESoul && (
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm shadow-lg animate-pulse">
+                    <div 
+                      className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-lg animate-pulse"
+                      style={{
+                        background: 'var(--gradient-primary, linear-gradient(to bottom right, #9333ea, #ec4899))',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       ✨
                     </div>
                   )}
                 </div>
               ) : (
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-2xl ${
-                  isESoul
-                    ? 'bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500'
-                    : 'bg-gradient-to-br from-slate-600 to-slate-700'
-                }`}>
+                <div 
+                  className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-2xl shadow-2xl"
+                  style={{
+                    background: isESoul
+                      ? 'var(--gradient-primary, linear-gradient(to bottom right, #9333ea, #ec4899, #6366f1))'
+                      : 'var(--gradient-primary, linear-gradient(to bottom right, #475569, #334155))',
+                    color: 'var(--text-primary)',
+                  }}
+                >
                   {(message.senderName || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
@@ -217,34 +327,63 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
             
             <div className="flex-1 relative z-10">
               <div className="flex items-center gap-3 mb-3 flex-wrap">
-                <h2 className={`text-3xl font-bold ${
-                  isESoul ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300' : 'text-white'
-                }`}>
+                <h2 
+                  className="text-3xl font-bold"
+                  style={isESoul ? {
+                    background: 'var(--gradient-text, linear-gradient(to right, #fbcfe8, #e9d5ff))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  } : {
+                    color: 'var(--text-primary)',
+                  }}
+                >
                   {message.title || '无标题'}
                 </h2>
                 {isESoul && (
-                  <span className="text-xs bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 px-3 py-1.5 rounded-full font-semibold border border-purple-500/30 backdrop-blur-sm">
+                  <span 
+                    className="text-xs px-3 py-1.5 rounded-full font-semibold border backdrop-blur-sm"
+                    style={{
+                      background: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+                      color: 'var(--color-primary, #e9d5ff)',
+                      borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+                    }}
+                  >
                     E-SOUL来信
                   </span>
                 )}
               </div>
               <div className="space-y-1.5">
-                <p className={`text-sm font-medium ${
-                  isESoul ? 'text-purple-300' : 'text-slate-400'
-                }`}>
-                  来自：<span className={`font-semibold ${
-                    isESoul ? 'text-pink-300' : 'text-purple-400'
-                  }`}>
+                <p 
+                  className="text-sm font-medium"
+                  style={{
+                    color: isESoul ? 'var(--color-primary, #c7d2fe)' : 'var(--text-tertiary)',
+                  }}
+                >
+                  来自：<span 
+                    className="font-semibold"
+                    style={{
+                      color: isESoul ? 'var(--color-primary, #fbcfe8)' : 'var(--color-primary, #a78bfa)',
+                    }}
+                  >
                     {message.senderName || '未知发送者'}
                   </span>
                 </p>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg 
+                    className="w-4 h-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    style={{ color: 'var(--text-disabled)' }}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className={`text-xs ${
-                    isESoul ? 'text-purple-400/70' : 'text-slate-500'
-                  }`}>
+                  <p 
+                    className="text-xs"
+                    style={{
+                      color: isESoul ? 'var(--color-primary, rgba(196, 181, 253, 0.7))' : 'var(--text-disabled)',
+                    }}
+                  >
                     {new Date(message.createdAt).toLocaleString('zh-CN', {
                       year: 'numeric',
                       month: 'long',
@@ -259,29 +398,68 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
           </div>
 
           {/* 消息正文 */}
-          <div className={`relative ${
-            isESoul 
-              ? 'bg-gradient-to-br from-purple-950/40 via-pink-950/30 to-purple-950/40 p-8 rounded-2xl border border-purple-800/40 shadow-2xl shadow-purple-900/20' 
-              : 'bg-slate-800/30 p-8 rounded-2xl border border-slate-700/50'
-          }`}>
+          <div 
+            className="relative p-8 rounded-2xl border shadow-2xl"
+            style={isESoul ? {
+              background: 'var(--gradient-bg, linear-gradient(to bottom right, rgba(88, 28, 135, 0.4), rgba(157, 23, 77, 0.3), rgba(88, 28, 135, 0.4)))',
+              borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.4))',
+              boxShadow: 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))',
+            } : {
+              backgroundColor: 'var(--bg-overlay, rgba(30, 41, 59, 0.3))',
+              borderColor: 'var(--bg-overlay, rgba(71, 85, 105, 0.5))',
+            }}
+          >
             {isESoul && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50 rounded-2xl"></div>
+              <div 
+                className="absolute inset-0 rounded-2xl opacity-50"
+                style={{
+                  background: 'var(--gradient-bg, linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent))',
+                }}
+              />
             )}
-            <div className={`whitespace-pre-wrap leading-relaxed relative z-10 ${
-              isESoul 
-                ? 'text-purple-100 text-lg' 
-                : 'text-slate-300'
-            }`}>
+            <div 
+              className="whitespace-pre-wrap leading-relaxed relative z-10"
+              style={{
+                color: isESoul ? 'var(--color-primary, #f3e8ff)' : 'var(--text-secondary)',
+                fontSize: isESoul ? '1.125rem' : '1rem',
+              }}
+            >
               {message.content}
             </div>
           </div>
 
           {/* 回复按钮（仅E-SOUL来信） */}
           {isESoul && (
-            <div className="mt-8 pt-6 border-t border-purple-700/30">
+            <div 
+              className="mt-8 pt-6 border-t"
+              style={{
+                borderColor: 'var(--color-primary, rgba(147, 51, 234, 0.3))',
+              }}
+            >
               <button
                 onClick={handleReply}
-                className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-2xl hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 transition-all duration-200 font-semibold shadow-xl shadow-purple-900/40 hover:shadow-2xl hover:shadow-purple-900/50 hover:scale-[1.02] active:scale-[0.98] text-lg"
+                className="w-full py-4 px-6 rounded-2xl transition-all duration-200 font-semibold text-lg"
+                style={{
+                  background: 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899, #9333ea))',
+                  color: 'var(--text-primary)',
+                  boxShadow: 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #a855f7, #f472b6, #a855f7))';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-2xl, 0 25px 50px -12px rgba(0, 0, 0, 0.25))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--gradient-primary, linear-gradient(to right, #9333ea, #ec4899, #9333ea))';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1))';
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
               >
                 <span className="flex items-center justify-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
