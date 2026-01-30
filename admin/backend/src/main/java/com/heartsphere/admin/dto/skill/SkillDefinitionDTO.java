@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 /**
  * 技能定义 DTO（Admin模块）
  * 
+ * 注意：已移除废弃的 functionSchema 字段，改用 mcpToolConfig
+ * 
  * @author HeartSphere
- * @version 1.0
+ * @version 2.0
  */
 @Data
 @Builder
@@ -27,7 +29,7 @@ public class SkillDefinitionDTO {
     private Integer maxLevel;
     private Integer baseValue;
     private String iconUrl;
-    private String functionSchema;
+    // 已移除：functionSchema (废弃，改用 mcpToolConfig)
     private String executionType;
     private String executionConfig;
     private String autoTriggerKeywords;
@@ -36,6 +38,12 @@ public class SkillDefinitionDTO {
     private String version;
     private String author;
     private Boolean isSystemSkill;
+    // 专业 Skill Creator 支持的新字段
+    private String license;
+    private String compatibility;
+    private String metadata;
+    private String skillContent;
+    private String mcpToolConfig;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

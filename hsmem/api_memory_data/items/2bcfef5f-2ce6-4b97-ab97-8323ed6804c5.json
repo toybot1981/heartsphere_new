@@ -1,0 +1,16 @@
+{
+  "id": "2bcfef5f-2ce6-4b97-ab97-8323ed6804c5",
+  "resource_id": "3695e979-af62-41e6-92cd-24f0dabfa35d",
+  "content": "标题: 测试文档\n内容: 文档内容摘要。",
+  "summary": "文档: 测试文档",
+  "memory_type": "document",
+  "importance": 0.6,
+  "categories": [
+    "knowledge",
+    "document"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-29T23:20:52.559275",
+  "updated_at": "2026-01-29T23:20:52.559283",
+  "user_id": "user_282"
+}

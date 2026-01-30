@@ -1,0 +1,24 @@
+{
+  "id": "109c1de2-1b32-4f9f-956e-b329901eff6f",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "我喜欢跑步，每天晨跑。"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "很好的习惯！"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-29T23:35:59.197242",
+  "metadata": {
+    "size": 207
+  }
+}

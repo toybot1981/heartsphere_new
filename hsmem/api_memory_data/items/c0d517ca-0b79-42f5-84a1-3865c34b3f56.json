@@ -1,0 +1,16 @@
+{
+  "id": "c0d517ca-0b79-42f5-84a1-3865c34b3f56",
+  "resource_id": "109c1de2-1b32-4f9f-956e-b329901eff6f",
+  "content": "我喜欢跑步，每天晨跑\n很好的习惯！",
+  "summary": "用户有 2 个习惯",
+  "memory_type": "habit",
+  "importance": 0.6,
+  "categories": [
+    "habits",
+    "behavior"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-29T23:35:59.198506",
+  "updated_at": "2026-01-29T23:35:59.198510",
+  "user_id": "user_282"
+}

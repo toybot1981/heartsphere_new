@@ -1,0 +1,12 @@
+{
+  "id": "f9a96198-83cb-4901-9a5a-24aa49d001f2",
+  "modality": "text",
+  "data": {
+    "text": "这是一段测试文本，用于记忆化。",
+    "context": {}
+  },
+  "created_at": "2026-01-29T23:20:52.540356",
+  "metadata": {
+    "size": 117
+  }
+}

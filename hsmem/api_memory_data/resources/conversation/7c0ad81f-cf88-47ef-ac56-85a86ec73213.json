@@ -1,0 +1,24 @@
+{
+  "id": "7c0ad81f-cf88-47ef-ac56-85a86ec73213",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "把这个任务分解成小步骤"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "<|FunctionCallBegin|>[{\"name\": \"task_breakdown\", \"parameters\": {\"task\": \"分析今天的时间使用情况\"}}]<|FunctionCallEnd|>"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T14:37:11.131777",
+  "metadata": {
+    "size": 343
+  }
+}

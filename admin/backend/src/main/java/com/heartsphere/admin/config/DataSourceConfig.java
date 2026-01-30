@@ -24,17 +24,15 @@ public class DataSourceConfig {
      * Admin主数据源配置属性
      */
     @Bean
-    @Primary
     @ConfigurationProperties("spring.datasource.admin")
     public DataSourceProperties adminDataSourceProperties() {
         return new DataSourceProperties();
     }
     
     /**
-     * Admin主数据源
+     * Admin主数据源（供 routingDataSource 使用，不作为全局 Primary）
      */
     @Bean
-    @Primary
     public DataSource adminDataSource() {
         return adminDataSourceProperties()
                 .initializeDataSourceBuilder()

@@ -1,0 +1,17 @@
+{
+  "id": "f4c1a16b-0641-484f-9bca-c46ce00e8b35",
+  "resource_id": "9cec47b4-b052-4504-ba26-1dd00663c171",
+  "content": "你可以先设定一个小的时间管理目标，比如每天早上提前半小时起床，然后通过打卡等方式来追踪自己是否达成目标，逐渐养成良好的时间管理习惯\n另外，习惯养成追踪也很关键",
+  "summary": "用户有 2 个习惯",
+  "memory_type": "habit",
+  "importance": 0.6,
+  "categories": [
+    "habits",
+    "behavior"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-26T03:34:00.194588",
+  "updated_at": "2026-01-26T03:34:00.194614",
+  "user_id": "user_70",
+  "agent_id": "character_368"
+}

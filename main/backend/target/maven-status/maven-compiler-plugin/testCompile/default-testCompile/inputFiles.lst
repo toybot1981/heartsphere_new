@@ -50,6 +50,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/ai/skill/engine/LLMSkillApplicationEngineTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/multiagent/integration/MultiAgentCollaborationIntegrationTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/multiagent/util/TestAgentFactory.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/multiagent/protocol/mcp/McpToolExecutorTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/GeneratePasswordHash.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/aiagent/graph/core/node/StartNodeTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/memory/service/CharacterLongTermLearningIntegrationTest.java
@@ -75,6 +76,7 @@
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/character/multiagent/agent/WorkAssistantAgentTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/ai/skill/integration/LLMSkillSelectionIntegrationTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/emotion/service/EmotionServiceTest.java
+/Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/controller/AuthControllerGuestTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/ai/skill/repository/SkillExecutionRecordRepositoryTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/ai/skill/engine/LLMSkillSelectorTest.java
 /Users/admin/Workspace/heartsphere_new/main/backend/src/test/java/com/heartsphere/character/multiagent/CollaborativeAgentsIntegrationTest.java

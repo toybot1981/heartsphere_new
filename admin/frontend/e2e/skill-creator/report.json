@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-29T19:45:46.952661",
+    "plan_file": "admin/frontend/e2e/skill-creator/test_plan.json",
+    "total_iterations": 1,
+    "max_iterations": 1000,
+    "interrupted": true
+  },
+  "execution_history": [],
+  "fix_history": [],
+  "final_results": {
+    "summary": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0,
+      "passed_with_warnings": 0
+    }
+  },
+  "timeline": [],
+  "summary": {
+    "total_tests": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "passed_with_warnings": 0,
+    "success_rate": 0
+  }
+}

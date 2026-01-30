@@ -1,0 +1,692 @@
+{
+  "execution_start": "2026-01-29T02:30:13.948828",
+  "test_cases": {
+    "case_1_1": {
+      "case_id": "case_1_1",
+      "name": "登录管理端",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:21.066749",
+          "duration_ms": 2082
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:23.149599",
+          "duration_ms": 3002
+        },
+        {
+          "step_number": 3,
+          "description": "wait for input[type=\"text\"]",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:26.152519",
+          "duration_ms": 32
+        },
+        {
+          "step_number": 4,
+          "description": "type \"admin\" in input[type=\"text\"]",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:26.184742",
+          "duration_ms": 231
+        },
+        {
+          "step_number": 5,
+          "description": "type \"Tyx@19811009\" in input[type=\"password\"]",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:26.415932",
+          "duration_ms": 269
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 1 second",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:26.685140",
+          "duration_ms": 1003
+        },
+        {
+          "step_number": 7,
+          "description": "click button:has-text(\"进入系统\")",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:27.688742",
+          "duration_ms": 543
+        },
+        {
+          "step_number": 8,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:28.232182",
+          "duration_ms": 5003
+        },
+        {
+          "step_number": 9,
+          "description": "verify text=系统概览",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:33.235810",
+          "duration_ms": 7
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_1_1_20260129_023033.png",
+      "started_at": "2026-01-29T02:30:21.066692",
+      "completed_at": "2026-01-29T02:30:33.249507",
+      "duration_ms": 12182,
+      "content_anomalies": []
+    },
+    "case_1_2": {
+      "case_id": "case_1_2",
+      "name": "进入技能管理",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:33.331179",
+          "duration_ms": 2216
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:35.548179",
+          "duration_ms": 3001
+        },
+        {
+          "step_number": 3,
+          "description": "click text=AI 智能体",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:38.550050",
+          "duration_ms": 553
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 2 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:39.103306",
+          "duration_ms": 2002
+        },
+        {
+          "step_number": 5,
+          "description": "click text=技能管理",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:41.106221",
+          "duration_ms": 575
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:41.681760",
+          "duration_ms": 5002
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=技能管理",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:46.683839",
+          "duration_ms": 7
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_1_2_20260129_023046.png",
+      "started_at": "2026-01-29T02:30:33.331106",
+      "completed_at": "2026-01-29T02:30:46.692807",
+      "duration_ms": 13361,
+      "content_anomalies": []
+    },
+    "case_1_3": {
+      "case_id": "case_1_3",
+      "name": "打开专业创建器",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=skills",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:46.775150",
+          "duration_ms": 2061
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:48.837000",
+          "duration_ms": 5002
+        },
+        {
+          "step_number": 3,
+          "description": "click text=专业创建器",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:53.839332",
+          "duration_ms": 593
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:54.433261",
+          "duration_ms": 5002
+        },
+        {
+          "step_number": 5,
+          "description": "verify text=AI 生成",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:59.435483",
+          "duration_ms": 6
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_1_3_20260129_023059.png",
+      "started_at": "2026-01-29T02:30:46.775121",
+      "completed_at": "2026-01-29T02:30:59.442943",
+      "duration_ms": 12667,
+      "content_anomalies": []
+    },
+    "case_2_1": {
+      "case_id": "case_2_1",
+      "name": "AI 生成简单描述",
+      "status": "failed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=skills",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:30:59.521946",
+          "duration_ms": 2100
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:01.622304",
+          "duration_ms": 5002
+        },
+        {
+          "step_number": 3,
+          "description": "click text=专业创建器",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:06.624797",
+          "duration_ms": 562
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:07.187602",
+          "duration_ms": 3003
+        },
+        {
+          "step_number": 5,
+          "description": "click text=AI 自动生成",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:10.190728",
+          "duration_ms": 547
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 2 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:10.738555",
+          "duration_ms": 2002
+        },
+        {
+          "step_number": 7,
+          "description": "wait for textarea",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:12.740921",
+          "duration_ms": 5
+        },
+        {
+          "step_number": 8,
+          "description": "type \"一个查询天气的技能\" in textarea",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:12.746321",
+          "duration_ms": 210
+        },
+        {
+          "step_number": 9,
+          "description": "wait for 1 second",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:12.957282",
+          "duration_ms": 1002
+        },
+        {
+          "step_number": 10,
+          "description": "click button:has-text(\"生成技能\")",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:13.960003",
+          "duration_ms": 525
+        },
+        {
+          "step_number": 11,
+          "description": "wait for 30 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-29T02:31:14.485019",
+          "duration_ms": 30004
+        },
+        {
+          "step_number": 12,
+          "description": "verify text=skillId",
+          "status": "failed",
+          "executed_at": "2026-01-29T02:31:44.489456",
+          "duration_ms": 9,
+          "error": "Text 'skillId' not found"
+        }
+      ],
+      "error": "Step 12 failed: Text 'skillId' not found",
+      "screenshot": "/tmp/test_case_2_1_20260129_023144.png",
+      "started_at": "2026-01-29T02:30:59.521918",
+      "completed_at": "2026-01-29T02:31:44.614980",
+      "duration_ms": 45093,
+      "content_anomalies": [],
+      "page_context": {
+        "url": "http://localhost:3005/admin?section=skills",
+        "title": "HeartSphere - 统一管理后台",
+        "visible_text": "HEARTSPHERE\n📊\n概览 Dashboard\n📚\n内容管理\n👥\n用户管理\n🔌\nAI 接入与计费\n🤖\nAI 智能体\n⚡\n技能管理\n🔌\nMCP 管理\n🤖\nMentis 管理\n🧠\nAgent Mind 管理\n🤝\n多智能体协作\n⚙️\n系统配置\n🔧\nDEVOPS 工作台\n🔗\n连接服务\n🎓\n教育版管理\n\nAdministrator\n\nSystem Root\n\n技能管理\nAdmin Mode\n退出登录\n📊\n系统概览\n⚡\n技能管理\n关闭其他\n关闭所有\n专业技能创建器\n关闭\n选择创建方式\nAI生成\n文件导入\n选择模板\n基础信息\n元数据配置\n指令编写\nMCP工具配置\n执行配置\n资源管理\n预览与验证\nAI 自动生成技能\n\n请详细描述您想要创建的技能，AI 将根据您的描述生成完整的技能定义。\n\nAI生成技能失败: 调用AI服务失败: I/O error on POST request for \"http://localhost:8081/api/ai/text/generate\": Connection refused\n返回\n生成技能\n上一步",
+        "dom_snippet": null
+      },
+      "cursor_analysis_path": "admin/e2e/skill-management/cursor_analysis/cursor_analysis_case_2_1_20260129_023144.md"
+    },
+    "case_3_1": {
+      "case_id": "case_3_1",
+      "name": "文件导入粘贴",
+      "status": "skipped",
+      "error": "Skipped: previous case failed",
+      "steps": []
+    },
+    "case_4_1": {
+      "case_id": "case_4_1",
+      "name": "三种创建方式切换",
+      "status": "skipped",
+      "error": "Skipped: previous case failed",
+      "steps": []
+    },
+    "case_5_1": {
+      "case_id": "case_5_1",
+      "name": "从 AI 生成到手动编辑",
+      "status": "skipped",
+      "error": "Skipped: previous case failed",
+      "steps": []
+    }
+  },
+  "summary": {
+    "total": 7,
+    "passed": 3,
+    "failed": 1,
+    "skipped": 3,
+    "passed_with_warnings": 0
+  },
+  "timeline": [
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T02:30:21.066706",
+      "metadata": {
+        "case_id": "case_1_1",
+        "name": "登录管理端"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:21.066754",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:23.149611",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 2,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:26.152530",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 3,
+        "description": "wait for input[type=\"text\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:26.184751",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 4,
+        "description": "type \"admin\" in input[type=\"text\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:26.415943",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 5,
+        "description": "type \"Tyx@19811009\" in input[type=\"password\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:26.685158",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 6,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:27.688753",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 7,
+        "description": "click button:has-text(\"进入系统\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:28.232201",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 8,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:33.235857",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 9,
+        "description": "verify text=系统概览"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T02:30:33.249531",
+      "metadata": {
+        "case_id": "case_1_1",
+        "status": "passed",
+        "duration_ms": 12182
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T02:30:33.331119",
+      "metadata": {
+        "case_id": "case_1_2",
+        "name": "进入技能管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:33.331188",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:35.548189",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 2,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:38.550060",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 3,
+        "description": "click text=AI 智能体"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:39.103317",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:41.106233",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 5,
+        "description": "click text=技能管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:41.681775",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 6,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:46.683852",
+      "metadata": {
+        "case_id": "case_1_2",
+        "step_number": 7,
+        "description": "verify text=技能管理"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T02:30:46.692816",
+      "metadata": {
+        "case_id": "case_1_2",
+        "status": "passed",
+        "duration_ms": 13361
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T02:30:46.775130",
+      "metadata": {
+        "case_id": "case_1_3",
+        "name": "打开专业创建器"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:46.775153",
+      "metadata": {
+        "case_id": "case_1_3",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=skills"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:48.837010",
+      "metadata": {
+        "case_id": "case_1_3",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:53.839342",
+      "metadata": {
+        "case_id": "case_1_3",
+        "step_number": 3,
+        "description": "click text=专业创建器"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:54.433272",
+      "metadata": {
+        "case_id": "case_1_3",
+        "step_number": 4,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:59.435496",
+      "metadata": {
+        "case_id": "case_1_3",
+        "step_number": 5,
+        "description": "verify text=AI 生成"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T02:30:59.442953",
+      "metadata": {
+        "case_id": "case_1_3",
+        "status": "passed",
+        "duration_ms": 12667
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T02:30:59.521927",
+      "metadata": {
+        "case_id": "case_2_1",
+        "name": "AI 生成简单描述"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:30:59.521949",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=skills"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:01.622314",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:06.624808",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 3,
+        "description": "click text=专业创建器"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:07.187613",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:10.190738",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 5,
+        "description": "click text=AI 自动生成"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:10.738566",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 6,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:12.740931",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 7,
+        "description": "wait for textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:12.746329",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 8,
+        "description": "type \"一个查询天气的技能\" in textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:12.957298",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 9,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:13.960014",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 10,
+        "description": "click button:has-text(\"生成技能\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:14.485029",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 11,
+        "description": "wait for 30 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T02:31:44.489518",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 12,
+        "description": "verify text=skillId"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T02:31:44.615002",
+      "metadata": {
+        "case_id": "case_2_1",
+        "status": "failed",
+        "duration_ms": 45093
+      }
+    }
+  ],
+  "execution_end": "2026-01-29T02:31:44.671201"
+}

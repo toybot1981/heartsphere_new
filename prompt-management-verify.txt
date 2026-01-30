@@ -1,0 +1,21 @@
+=== 提示词管理验证报告 2026-01-30T11:48:04+08:00 ===
+id	name	category_code
+33	提示词优化	admin-prompt-optimize
+5	main-emotion-analysis-default	main-emotion-analysis
+6	main-letter-generation-character	main-letter-generation
+22	facts	memory
+24	memories	memory
+23	preferences	memory
+25	角色交互记忆提取	memory-character-interaction
+26	角色场景记忆提取	memory-character-scene
+4	mentis-intent-recognition-basic	mentis-intent-recognition
+3	mentis-response-generation-friendly	mentis-response-generation
+1	mentis-task-decomposition-multi-agent	mentis-task-decomposition
+2	mentis-task-decomposition-single	mentis-task-decomposition
+34	多智能体Agent系统提示	multiagent-agent-system
+32	技能执行	skill-execution
+27	技能选择Level1	skill-selection-level1
+28	技能选择Level2	skill-selection-level2
+30	技能选择Level2批量	skill-selection-level2-batch
+29	技能选择Level3	skill-selection-level3
+31	技能选择Level3批量	skill-selection-level3-batch

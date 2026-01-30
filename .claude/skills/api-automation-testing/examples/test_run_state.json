@@ -1,0 +1,6 @@
+{
+  "results_file": ".claude/skills/api-automation-testing/examples/results2.json",
+  "passed_case_ids": [],
+  "failed_case_id": "case_1",
+  "plan_file": ".claude/skills/api-automation-testing/examples/example_api_test_plan.json"
+}

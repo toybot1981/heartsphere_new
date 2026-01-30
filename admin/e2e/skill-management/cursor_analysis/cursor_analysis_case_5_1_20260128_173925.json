@@ -1,0 +1,14 @@
+{
+  "case_id": "case_5_1",
+  "name": "从 AI 生成到手动编辑",
+  "error": "Step 3 failed: Locator.click: Target page, context or browser has been closed\nCall log:\n  - waiting for locator(\"text=专业创建器\")\n",
+  "failed_step": "click text=专业创建器",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin?section=skills",
+    "title": null,
+    "visible_text": null,
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_5_1_20260128_173910.png"
+}

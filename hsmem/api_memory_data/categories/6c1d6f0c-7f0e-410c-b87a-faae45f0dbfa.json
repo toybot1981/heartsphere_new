@@ -1,0 +1,13 @@
+{
+  "id": "6c1d6f0c-7f0e-410c-b87a-faae45f0dbfa",
+  "name": "knowledge",
+  "summary": "关于 knowledge 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "a441c9bc-a874-4a40-8723-550458f4ae2a"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-29T23:33:54.472322",
+  "updated_at": "2026-01-29T23:33:54.472331",
+  "version": 1
+}

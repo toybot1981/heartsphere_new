@@ -1,0 +1,102 @@
+/**
+ * 技能使用标记样式
+ */
+
+.skill-usage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #1890ff;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  margin: 2px;
+}
+
+.skill-usage-badge:hover {
+  background: #bae7ff;
+  border-color: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+}
+
+.skill-usage-badge__icon {
+  font-size: 14px;
+}
+
+.skill-usage-badge__name {
+  font-weight: 500;
+}
+
+.skill-usage-badge__score {
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.skill-usage-badge__tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.skill-usage-badge__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #333;
+}
+
+.skill-usage-badge__tooltip-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.skill-usage-badge__tooltip-score {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+
+.skill-usage-badge__tooltip-explanation {
+  font-size: 11px;
+  opacity: 0.9;
+  margin: 4px 0;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.skill-usage-badge__tooltip-hint {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.skill-usage-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}

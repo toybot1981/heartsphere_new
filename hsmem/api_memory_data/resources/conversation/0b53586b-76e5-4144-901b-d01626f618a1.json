@@ -1,0 +1,18 @@
+{
+  "id": "0b53586b-76e5-4144-901b-d01626f618a1",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "hello"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-29T14:59:45.294171",
+  "metadata": {
+    "size": 62
+  }
+}

@@ -141,4 +141,38 @@ public class PromptTemplateIntegrationService {
             String defaultUserPrompt) {
         return renderTemplateWithFallback(categoryCode, variables, defaultSystemPrompt, defaultUserPrompt);
     }
+
+    /**
+     * 按分类代码+名称获取提示词对（带默认值）
+     * 用于同一分类下多模板场景（如 memory+facts / memory+preferences）。
+     */
+    public PromptRenderResponse getPromptsByCategoryAndName(
+            String categoryCode,
+            String name,
+            Map<String, Object> variables,
+            String defaultSystemPrompt,
+            String defaultUserPrompt) {
+        try {
+            Optional<PromptTemplate> templateOpt = getTemplateByCategoryAndName(categoryCode, name);
+            if (templateOpt.isEmpty()) {
+                logger.info("未找到启用的模板，分类: {}, 名称: {}，将使用默认提示词", categoryCode, name);
+                PromptRenderResponse response = new PromptRenderResponse();
+                response.setSystemPrompt(defaultSystemPrompt);
+                response.setUserPrompt(defaultUserPrompt);
+                response.setUsedVariables(variables != null ? variables : new HashMap<>());
+                return response;
+            }
+            PromptRenderResponse response = renderService.render(
+                    templateOpt.get(), variables != null ? variables : new HashMap<>());
+            return response;
+        } catch (Exception e) {
+            logger.warn("渲染模板时发生错误，分类: {}, 名称: {}, 错误: {}，将使用默认提示词",
+                    categoryCode, name, e.getMessage());
+            PromptRenderResponse response = new PromptRenderResponse();
+            response.setSystemPrompt(defaultSystemPrompt);
+            response.setUserPrompt(defaultUserPrompt);
+            response.setUsedVariables(variables != null ? variables : new HashMap<>());
+            return response;
+        }
+    }
 }

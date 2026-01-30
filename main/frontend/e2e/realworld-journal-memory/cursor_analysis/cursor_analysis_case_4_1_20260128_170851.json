@@ -1,0 +1,14 @@
+{
+  "case_id": "case_4_1",
+  "name": "打开日记记忆模态框",
+  "error": "Step 1 failed: Timeout 30000ms exceeded.",
+  "failed_step": "navigate to http://localhost:3000",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3000/",
+    "title": "心域-心灵安放的港湾",
+    "visible_text": "手机版 Mobile\nHEARTSPHERE\n\nDIGITAL SOUL INTERFACE\n\nT\n个人资料\n\n欢迎回来，tongyexin\n\n系统已就绪，等待神经链接...System Ready. Waiting for Neural Link...\n\n进入现实\nENTER REALITY\n潜入心域\nDIVE DEEP\n隐私政策\n|\n服务条款\n心域-心灵安放的港湾\n|\nheartsphere.cn\n|\n京ICP备2025156149号-1\nSYSTEM VERSION 2.5.0 // CONNECTED // 已连接",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_4_1_20260128_170636.png"
+}

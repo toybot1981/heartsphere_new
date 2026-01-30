@@ -70,6 +70,17 @@ export const scriptApi = {
   },
 
   /**
+   * 获取单个用户剧本
+   */
+  getScript: async (id: number, token: string): Promise<UserScript> => {
+    return request<UserScript>(`/scripts/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
    * 删除用户剧本
    */
   deleteScript: async (id: number, token: string): Promise<void> => {

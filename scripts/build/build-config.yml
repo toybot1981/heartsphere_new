@@ -1,0 +1,37 @@
+# 构建配置文件
+
+build:
+  modules:
+    - name: main
+      path: main/backend
+      type: maven
+      depends-on: []
+    - name: admin
+      path: admin/backend
+      type: maven
+      depends-on: []
+    - name: mentis
+      path: mentis/backend
+      type: maven
+      depends-on: []
+    - name: edu
+      path: edu/backend
+      type: maven
+      depends-on: []
+    - name: company
+      path: company/backend
+      type: maven
+      depends-on: []
+    - name: frontend
+      path: main/frontend
+      type: npm
+      depends-on: [main]
+  
+  parallel:
+    enabled: true
+    max-jobs: 4
+  
+  cache:
+    enabled: true
+    directory: .build-cache
+    ttl: 7d

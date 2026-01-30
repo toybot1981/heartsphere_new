@@ -1,0 +1,22 @@
+name: 快速部署
+description: 跳过扫描，直接构建和部署（适用于开发环境快速迭代）
+environment: test
+project: ""  # 通用流程，适用于所有项目
+steps:
+  - name: 构建
+    scriptId: build-all
+    order: 1
+    required: true
+    parallel: false
+    parameters:
+      clean: false
+      skipTests: true
+  
+  - name: 部署到测试环境
+    scriptId: deploy-all-dev
+    order: 2
+    dependsOn: [1]
+    required: true
+    parallel: false
+    parameters:
+      skipBuild: true

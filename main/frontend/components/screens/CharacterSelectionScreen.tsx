@@ -9,6 +9,7 @@ import { Button } from '../Button';
 import { CharacterCard } from '../CharacterCard';
 import { showAlert } from '../../utils/dialog';
 import { LazyImage } from '../LazyImage';
+import { convertBackendScriptToScenario } from '../../utils/dataTransformers';
 
 interface CharacterSelectionScreenProps {
   gameState: GameState;
@@ -552,7 +553,6 @@ export const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> =
                       return;
                     }
                     // 使用统一的转换函数确保 nodes 格式正确
-                    const { convertBackendScriptToScenario } = require('../../utils/dataTransformers');
                     const customScenario = convertBackendScriptToScenario(script, currentScene.id);
                     onPlayScenario(customScenario);
                   } catch (error) {

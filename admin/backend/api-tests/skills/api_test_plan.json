@@ -1,0 +1,47 @@
+{
+  "name": "Admin 技能管理 API",
+  "base_url": "http://localhost:8085",
+  "backend_service": "admin-backend",
+  "auth": "bearer",
+  "test_suites": [
+    {
+      "id": "suite_list",
+      "name": "技能列表",
+      "description": "GET /api/admin/skills 获取技能列表；需 Admin JWT",
+      "test_cases": [
+        {
+          "id": "case_get_all",
+          "name": "GET 技能列表",
+          "description": "GET /api/admin/skills，期望 200，响应含 data",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/admin/skills",
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_detail",
+      "name": "技能详情",
+      "description": "GET /api/admin/skills/{skillId} 获取技能详情；不存在的 ID 期望 404",
+      "test_cases": [
+        {
+          "id": "case_get_by_id_not_found",
+          "name": "GET 不存在的技能返回 404",
+          "description": "GET /api/admin/skills/non-existent-skill-id，期望 404",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/admin/skills/non-existent-skill-id",
+              "expected_status": 404
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

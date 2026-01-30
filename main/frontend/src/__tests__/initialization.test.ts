@@ -16,8 +16,8 @@ global.fetch = jest.fn();
 describe('初始化流程测试', () => {
   const mockToken = 'test-auth-token-12345';
   
-  // 体验场景的ID（来自 constants.ts）
-  const EXPERIENCE_SCENE_IDS = ['university_era', 'cyberpunk_city', 'clinic'];
+  // 本地已不再预置体验场景，场景由后端提供
+  const EXPERIENCE_SCENE_IDS: string[] = [];
   
   // Mock 数据
   const mockUser = {
@@ -415,16 +415,10 @@ describe('初始化流程测试', () => {
         isGuest: false,
       };
 
-      // 模拟 App.tsx 中的 getCurrentScenes 逻辑
-      const allScenes = userProfile && !userProfile.isGuest && userWorldScenes && userWorldScenes.length > 0
+      // 模拟 App.tsx 中的 getCurrentScenes 逻辑：优先 userWorldScenes，否则 WORLD_SCENES
+      const allScenes = (userWorldScenes && userWorldScenes.length > 0)
         ? [...userWorldScenes, ...customScenes]
         : [...WORLD_SCENES, ...customScenes];
-
-      // 验证不包含体验场景
-      const sceneIds = allScenes.map(s => s.id);
-      EXPERIENCE_SCENE_IDS.forEach(experienceSceneId => {
-        expect(sceneIds).not.toContain(experienceSceneId);
-      });
 
       // 验证只包含用户场景
       expect(allScenes.length).toBe(1);
@@ -432,31 +426,17 @@ describe('初始化流程测试', () => {
       expect(allScenes[0].name).toBe('我的大学');
     });
 
-    it('游客应该看到 WORLD_SCENES（体验场景）', () => {
-      const userProfile = {
-        id: '1',
-        nickname: '游客',
-        avatarUrl: '',
-        email: '',
-        isGuest: true,
-      };
-
-      const customScenes: any[] = [];
+    it('游客无 userWorldScenes 时看到 WORLD_SCENES（当前为空，依赖后端初始化）', () => {
       const userWorldScenes: any[] = [];
 
-      // 模拟游客场景列表构建逻辑
-      const allScenes = userProfile && !userProfile.isGuest && userWorldScenes && userWorldScenes.length > 0
-        ? [...userWorldScenes, ...customScenes]
-        : [...WORLD_SCENES, ...customScenes];
+      // 模拟 getCurrentScenes：优先 userWorldScenes，否则 WORLD_SCENES
+      const allScenes = (userWorldScenes && userWorldScenes.length > 0)
+        ? userWorldScenes
+        : WORLD_SCENES;
 
-      // 验证包含体验场景
-      const sceneIds = allScenes.map(s => s.id);
-      EXPERIENCE_SCENE_IDS.forEach(experienceSceneId => {
-        expect(sceneIds).toContain(experienceSceneId);
-      });
-
-      // 验证包含 WORLD_SCENES
-      expect(allScenes.length).toBeGreaterThanOrEqual(WORLD_SCENES.length);
+      // 当前本地不再预置场景，WORLD_SCENES 为空
+      expect(allScenes).toEqual(WORLD_SCENES);
+      expect(allScenes.length).toBe(0);
     });
   });
 });

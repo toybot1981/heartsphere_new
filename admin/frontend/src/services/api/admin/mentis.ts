@@ -100,6 +100,14 @@ export const mentisMcpApi = {
       body: JSON.stringify({ arguments: args }),
     });
   },
+
+  // 切换 MCP 配置的启用/禁用状态
+  toggleConfig: async (id: number, enabled: boolean): Promise<McpConfigDTO> => {
+    return await request<McpConfigDTO>(`/mentis/mcp/configs/${id}/toggle`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled }),
+    });
+  },
 };
 
 // Agent 管理 API

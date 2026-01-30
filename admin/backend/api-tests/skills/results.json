@@ -1,0 +1,38 @@
+{
+  "plan_file": "admin/backend/api-tests/skills/api_test_plan.json",
+  "base_url": "http://localhost:8085",
+  "started_at": "2026-01-29T21:44:10.500199",
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "suite_id": "suite_list",
+      "case_id": "case_get_all",
+      "name": "GET 技能列表",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_detail",
+      "case_id": "case_get_by_id_not_found",
+      "name": "GET 不存在的技能返回 404",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-01-29T21:44:10.517889"
+}

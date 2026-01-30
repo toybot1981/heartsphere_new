@@ -1,4 +1,4 @@
-export { AdminSidebarItem, AdminHeader, InputGroup, TextInput, TextArea, ConfigSection } from './AdminUIComponents';
+export { AdminSidebarItem, AdminHeader, InputGroup, TextInput, TextArea, Select, ConfigSection } from './AdminUIComponents';
 export { AdminSidebar } from './AdminSidebar';
 export { AdminLogin } from './AdminLogin';
 export { DashboardView } from './DashboardView';

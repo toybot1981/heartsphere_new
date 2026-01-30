@@ -1,0 +1,24 @@
+{
+  "id": "2dfaa630-a11e-48ac-9dc3-668ff2f4b12b",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "还在写程序"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "辛苦啦，happyheart同事！写程序很费神的。是遇到什么难题了，还是程序量比较大呀？要是有啥问题，我们可以一起探讨探讨，说不定我能给你提供点新思路。 "
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T13:19:20.545475",
+  "metadata": {
+    "size": 542
+  }
+}

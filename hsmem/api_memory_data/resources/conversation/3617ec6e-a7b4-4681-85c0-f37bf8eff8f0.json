@@ -1,0 +1,24 @@
+{
+  "id": "3617ec6e-a7b4-4681-85c0-f37bf8eff8f0",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "你好"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "小伙伴你好呀！我刚想到一个好玩的游戏，咱们去玩过家家吧，我可以当厨师给你做好多好吃的“菜”，可有意思啦，咱们一起去玩吧！ "
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T14:35:38.677772",
+  "metadata": {
+    "size": 478
+  }
+}

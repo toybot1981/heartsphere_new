@@ -1,0 +1,718 @@
+/* 用户画像全景地图样式 */
+
+.user-profile-panorama {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%);
+  color: #e0e7ff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  overflow-x: hidden;
+}
+
+/* 背景效果 */
+.panorama-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.grid-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, rgba(59, 130, 246, 0.3), transparent),
+    radial-gradient(2px 2px at 60% 70%, rgba(34, 211, 238, 0.3), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(147, 51, 234, 0.3), transparent),
+    radial-gradient(1px 1px at 80% 10%, rgba(59, 130, 246, 0.3), transparent),
+    radial-gradient(2px 2px at 90% 80%, rgba(34, 211, 238, 0.2), transparent);
+  background-size: 200% 200%;
+  animation: particleFloat 15s ease-in-out infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+}
+
+/* 主容器 */
+.panorama-container {
+  position: relative;
+  z-index: 1;
+  padding: 2rem;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* 头部 */
+.panorama-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 2rem;
+  background: rgba(30, 58, 138, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.panorama-title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  letter-spacing: 2px;
+}
+
+.panorama-time {
+  font-size: 1.1rem;
+  color: #a5b4fc;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+/* 关键指标横幅 */
+.key-metrics-banner {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.metric-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(59, 130, 246, 0.2) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.metric-card:hover::before {
+  left: 100%;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+}
+
+.metric-label {
+  font-size: 0.9rem;
+  color: #a5b4fc;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 内容区域 */
+.panorama-content {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1.5rem;
+  grid-template-areas:
+    "left middle right-top"
+    "left middle bottom-right"
+    "bottom-middle bottom-middle bottom-right";
+}
+
+.panorama-section {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.left-section {
+  grid-area: left;
+}
+
+.middle-section {
+  grid-area: middle;
+}
+
+.right-top-section {
+  grid-area: right-top;
+}
+
+.bottom-middle-section {
+  grid-area: bottom-middle;
+}
+
+.bottom-right-section {
+  grid-area: bottom-right;
+}
+
+/* 区块标题 */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.section-icon {
+  font-size: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #60a5fa;
+  margin: 0;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: rgba(30, 58, 138, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #93c5fd;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* 信息网格 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #a5b4fc;
+}
+
+.info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e7ff;
+}
+
+/* 标签 */
+.tags-container {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tags-label {
+  font-size: 0.9rem;
+  color: #a5b4fc;
+}
+
+.tags-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tag-primary {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.tag-secondary {
+  background: rgba(34, 211, 238, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  color: #5eead4;
+}
+
+.tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* 消费记录表格 */
+.consumption-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+
+.table-header {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-weight: 600;
+  color: #93c5fd;
+}
+
+.table-row {
+  background: rgba(30, 58, 138, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.table-row:hover {
+  background: rgba(30, 58, 138, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateX(5px);
+}
+
+.table-cell {
+  font-size: 0.9rem;
+  color: #e0e7ff;
+}
+
+/* 地图容器 */
+.map-card {
+  margin-top: 1rem;
+}
+
+.map-container {
+  width: 100%;
+  height: 300px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.china-map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-outline {
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+}
+
+.flight-route {
+  animation: routePulse 2s ease-in-out infinite;
+}
+
+@keyframes routePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.city-node {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8));
+  animation: nodePulse 2s ease-in-out infinite;
+}
+
+.main-city {
+  filter: drop-shadow(0 0 15px rgba(34, 211, 238, 1));
+}
+
+@keyframes nodePulse {
+  0%, 100% { r: 8; opacity: 1; }
+  50% { r: 10; opacity: 0.8; }
+}
+
+/* 偏好标签 */
+.preference-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.preference-tag-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(30, 58, 138, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(59, 130, 246, 0.6);
+}
+
+.preference-category {
+  font-size: 0.9rem;
+  color: #93c5fd;
+  font-weight: 500;
+}
+
+.preference-value {
+  font-size: 0.9rem;
+  color: #e0e7ff;
+}
+
+/* 意图网格 */
+.intent-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.intent-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: rgba(30, 58, 138, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(34, 211, 238, 0.6);
+}
+
+.intent-label {
+  font-size: 0.85rem;
+  color: #a5b4fc;
+}
+
+.intent-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e7ff;
+}
+
+.summary-label {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%);
+  border: 1px solid rgba(147, 51, 234, 0.5);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.summary-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 行程阶段 */
+.itinerary-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  padding: 1rem 0;
+}
+
+.itinerary-progress::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(59, 130, 246, 0.3);
+  z-index: 0;
+}
+
+.stage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.stage-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.3);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.stage-dot.active {
+  width: 20px;
+  height: 20px;
+  background: rgba(34, 211, 238, 1);
+  border-color: rgba(34, 211, 238, 1);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.8);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.stage-name {
+  font-size: 0.85rem;
+  color: #a5b4fc;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stage-indicator {
+  position: absolute;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 1);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+  animation: indicatorBlink 1s ease-in-out infinite;
+}
+
+@keyframes indicatorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 阶段详情 */
+.stage-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stage-detail-card {
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.detail-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #93c5fd;
+  margin-bottom: 0.75rem;
+}
+
+.pie-charts-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pie-chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pie-chart {
+  width: 80px;
+  height: 80px;
+}
+
+.pie-segment {
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5));
+  transition: all 0.3s ease;
+}
+
+.pie-segment:hover {
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+  transform: scale(1.05);
+  transform-origin: center;
+}
+
+.pie-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pie-text {
+  font-size: 0.75rem;
+  color: #a5b4fc;
+  text-align: center;
+}
+
+.pie-percentage {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+/* 预测仪表盘 */
+.prediction-gauges {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gauge-label {
+  font-size: 0.9rem;
+  color: #93c5fd;
+  text-align: center;
+  font-weight: 500;
+}
+
+.gauge-wrapper {
+  position: relative;
+}
+
+.gauge {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.gauge-progress {
+  filter: drop-shadow(0 0 8px currentColor);
+  transition: stroke-dashoffset 1s ease;
+}
+
+.gauge-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .panorama-content {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "left middle"
+      "right-top bottom-right"
+      "bottom-middle bottom-middle";
+  }
+}
+
+@media (max-width: 1024px) {
+  .panorama-content {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "middle"
+      "right-top"
+      "bottom-middle"
+      "bottom-right";
+  }
+
+  .prediction-gauges {
+    grid-template-columns: 1fr;
+  }
+
+  .intent-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .panorama-container {
+    padding: 1rem;
+  }
+
+  .panorama-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .key-metrics-banner {
+    flex-direction: column;
+  }
+
+  .metric-card {
+    min-width: 100%;
+  }
+
+  .itinerary-progress {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .itinerary-progress::before {
+    display: none;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_1",
+  "name": "进入现实世界",
+  "error": "Step 3 failed: name 're' is not defined",
+  "failed_step": "click button:has-text(\"登录账户\")",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3000/",
+    "title": "心域-心灵安放的港湾",
+    "visible_text": "Welcome to 我的心域\n\n选择你的进入方式\n\n以访客身份进入登录账户\n\n访客模式可快速体验，登录账户可同步数据。",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_1_20260128_184031.png"
+}

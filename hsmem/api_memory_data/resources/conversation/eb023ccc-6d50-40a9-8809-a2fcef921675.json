@@ -1,0 +1,24 @@
+{
+  "id": "eb023ccc-6d50-40a9-8809-a2fcef921675",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "你好"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "你好！"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T13:33:31.221414",
+  "metadata": {
+    "size": 135
+  }
+}

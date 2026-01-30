@@ -23,14 +23,14 @@ public class JwtUtils {
     @Value("${jwt.expiration:86400000}")
     private int jwtExpirationMs;
 
-    // 静态初始化块，确保 JWT 实现类被加载
+    // 静态初始化块：显式加载 JWT 实现与 Jackson 序列化类，避免 ServiceLoader 找不到实现导致 NoSuchElementException
     static {
         try {
-            // 显式加载 JWT 实现类，确保 ServiceLoader 可以找到
             Class.forName("io.jsonwebtoken.impl.DefaultJwtParserBuilder");
             Class.forName("io.jsonwebtoken.impl.DefaultJwtBuilder");
+            Class.forName("io.jsonwebtoken.jackson.io.JacksonDeserializer");
+            Class.forName("io.jsonwebtoken.jackson.io.JacksonSerializer");
         } catch (ClassNotFoundException e) {
-            // 如果类不存在，记录警告但不抛出异常
             System.err.println("Warning: JWT implementation classes not found: " + e.getMessage());
         }
     }

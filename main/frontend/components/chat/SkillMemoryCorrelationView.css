@@ -1,0 +1,105 @@
+/**
+ * 技能-记忆关联视图样式
+ */
+
+.skill-memory-correlation {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.skill-memory-correlation__header {
+  margin-bottom: 12px;
+}
+
+.skill-memory-correlation__header h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.skill-memory-correlation__subtitle {
+  font-size: 12px;
+  color: #666;
+}
+
+.skill-memory-correlation__empty {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 13px;
+}
+
+.skill-memory-correlation__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-memory-correlation__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill-memory-correlation__item:hover {
+  border-color: #40a9ff;
+  background: #f0f8ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skill-memory-correlation__item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.skill-memory-correlation__item-content {
+  flex: 1;
+}
+
+.skill-memory-correlation__item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.skill-memory-correlation__item-hint {
+  font-size: 11px;
+  color: #999;
+}
+
+.skill-memory-correlation__item-arrow {
+  font-size: 16px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.skill-memory-correlation__score {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skill-memory-correlation__score-label {
+  font-size: 12px;
+  color: #666;
+}
+
+.skill-memory-correlation__score-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1890ff;
+}

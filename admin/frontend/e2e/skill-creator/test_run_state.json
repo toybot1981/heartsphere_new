@@ -1,0 +1,10 @@
+{
+  "plan_file": "/Users/admin/Workspace/heartsphere_new/admin/frontend/e2e/skill-creator/test_plan.json",
+  "results_file": "/tmp/test_results_20260129_194406.json",
+  "passed_case_ids": [
+    "case_1",
+    "case_2"
+  ],
+  "failed_case_id": "case_3",
+  "timestamp": "2026-01-29T19:44:50.557517"
+}

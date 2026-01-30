@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_1",
+  "name": "登录管理端",
+  "error": "Step 6 failed: Page.wait_for_selector: Unexpected token \"second\" while parsing css selector \"1 second\". Did you mean to CSS.escape it?\nCall log:\n  - waiting for 1 second to be visible\n",
+  "failed_step": "wait for 1 second",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "管理后台登录\n\nHeartSphere Admin Console\n\n用户名\n密码\n进入系统返回应用首页",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_1_20260128_174336.png"
+}

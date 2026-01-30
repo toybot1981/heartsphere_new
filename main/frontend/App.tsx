@@ -37,7 +37,7 @@ import { ThemeTestPage } from './components/ThemeTestPage';
 import { GameStateProvider, useGameState } from './contexts/GameStateContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DEFAULT_GAME_STATE } from './contexts/constants/defaultState';
-import { convertErasToWorldScenes, convertBackendMainStoryToCharacter, convertBackendCharacterToFrontend } from './utils/dataTransformers';
+import { convertErasToWorldScenes, convertBackendMainStoryToCharacter, convertBackendCharacterToFrontend, convertBackendScriptToScenario } from './utils/dataTransformers';
 import { showSyncErrorToast } from './utils/toast';
 import { useEraHandlers } from './hooks/useEraHandlers';
 import { useNavigationHandlers } from './hooks/useNavigationHandlers';
@@ -520,44 +520,44 @@ const AppContent: React.FC = () => {
       }});
       console.log('[App] 步骤4完成: 用户信息已更新到state');
       
-      // 游客登录后，调用标准API获取场景和角色
-      // 后端会根据游客身份自动返回预置场景（ID: 50）和角色（ID: 315-320）
+      // 游客登录后，调用标准API获取世界、场景和角色
+      // 后端会为访客创建默认世界「心域」及预置场景（日常生活助手）、角色
       try {
         const token = responseData.token;
         
-        console.log('[App] 步骤5: 调用场景API获取预置场景...');
-        // 调用标准API，后端会自动返回游客预置内容
+        console.log('[App] 步骤5: 获取世界列表...');
+        const worlds = await worldApi.getAllWorlds(token);
+        console.log('[App] 步骤5完成: 获取到世界', worlds?.length || 0, '个', worlds);
+        
+        console.log('[App] 步骤6: 调用场景API获取预置场景...');
         const eras = await eraApi.getAllEras(token);
-        console.log('[App] 步骤5完成: 获取到场景', eras?.length || 0, '个', eras);
+        console.log('[App] 步骤6完成: 获取到场景', eras?.length || 0, '个', eras);
         
-        console.log('[App] 步骤6: 调用角色API获取预置角色...');
+        console.log('[App] 步骤7: 调用角色API获取预置角色...');
         const characters = await characterApi.getAllCharacters(token);
-        console.log('[App] 步骤6完成: 获取到角色', characters?.length || 0, '个', characters);
+        console.log('[App] 步骤7完成: 获取到角色', characters?.length || 0, '个', characters);
         
-        console.log('[App] 步骤7: 转换场景和角色数据...');
-        // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
+        console.log('[App] 步骤8: 转换场景和角色数据...');
         const { convertErasToWorldScenes } = await import('./utils/dataTransformers');
         const guestWorldScenes = convertErasToWorldScenes(
-          [], // 游客没有worlds
+          worlds || [],
           eras,
           characters,
           undefined, // scripts
           undefined, // mainStories
           false // isSharedMode
         );
-        console.log('[App] 步骤7完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
+        console.log('[App] 步骤8完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
         
-        console.log('[App] 步骤8: 更新场景列表到state...');
-        // 更新场景列表（只包含预置场景）
+        console.log('[App] 步骤9: 更新场景列表到state...');
         dispatch({ type: 'SET_USER_WORLD_SCENES', payload: guestWorldScenes });
         
-        // 设置选中的场景（如果有场景，选择第一个）
         if (guestWorldScenes.length > 0) {
-          console.log('[App] 步骤9: 设置选中场景', guestWorldScenes[0].id);
+          console.log('[App] 步骤10: 设置选中场景', guestWorldScenes[0].id);
           dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestWorldScenes[0].id });
         }
         
-        console.log('[App] 步骤10: 跳转到entryPoint页面...');
+        console.log('[App] 步骤11: 跳转到entryPoint页面...');
         // 跳转到 entryPoint
         dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
         dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
@@ -691,14 +691,11 @@ const AppContent: React.FC = () => {
     //   return [...WORLD_SCENES, ...gameState.customScenes];
     // }
     
-    // 强制从数据库获取：登录用户使用 userWorldScenes（从数据库加载），游客使用预置场景
-    if (gameState.userProfile && !gameState.userProfile.isGuest) {
-      // 登录用户：只使用从数据库获取的用户专属场景（不再使用本地缓存）
-      return gameState.userWorldScenes || []; // 如果为空，说明还在加载中
-    } else {
-      // 游客：使用本地预置场景（不再使用自定义场景）
-      return WORLD_SCENES;
+    // 优先使用 userWorldScenes（含游客初始化后的「日常生活助手」等），为空时回退到 WORLD_SCENES（现已为空，依赖后端）
+    if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
+      return gameState.userWorldScenes;
     }
+    return WORLD_SCENES;
   }, [gameState.userProfile, gameState.userWorldScenes, showInitializationWizard]);
   
   // 为了保持向后兼容，创建一个函数
@@ -759,12 +756,46 @@ const AppContent: React.FC = () => {
     ? currentSceneLocal.scripts?.find(s => String(s.id) === String(gameState.editingScenarioId))
     : null;
   
+  // 将后端脚本转换为 CustomScenario 格式（包含解析后的 nodes）
   const currentScenarioLocal = gameState.selectedScenarioId && currentSceneLocal
-    ? currentSceneLocal.scripts?.find(s => {
-        const scenarioId = String(s.id);
-        const selectedId = String(gameState.selectedScenarioId);
-        return scenarioId === selectedId;
-      })
+    ? (() => {
+        const script = currentSceneLocal.scripts?.find(s => {
+          const scenarioId = String(s.id);
+          const selectedId = String(gameState.selectedScenarioId);
+          return scenarioId === selectedId;
+        });
+        if (!script) return null;
+        
+        // 将后端脚本格式转换为 CustomScenario 格式
+        // 需要将 UserScript 格式转换为 CustomScenario
+        try {
+          const scriptId = typeof script.id === 'string' ? parseInt(script.id, 10) : (typeof script.id === 'number' ? script.id : 0);
+          if (isNaN(scriptId) || scriptId <= 0) {
+            console.warn('[App] 无效的剧本ID:', script.id);
+            return null;
+          }
+          
+          return convertBackendScriptToScenario(
+            {
+              id: scriptId,
+              title: script.title,
+              description: script.description || null,
+              content: script.content,
+              sceneCount: script.sceneCount || 0,
+              characterIds: script.characterIds || null,
+              tags: script.tags || null,
+              worldId: script.worldId || 0, // UserScript 要求 number，如果没有则使用 0
+              eraId: script.eraId || 0, // UserScript 要求 number，如果没有则使用 0
+              createdAt: '',
+              updatedAt: ''
+            },
+            currentSceneLocal.id
+          );
+        } catch (error) {
+          console.error('[App] 转换剧本失败:', error, { script, sceneId: currentSceneLocal.id });
+          return null;
+        }
+      })()
     : null;
 
   return (
@@ -867,44 +898,44 @@ const AppContent: React.FC = () => {
                 }});
                 console.log('[游客登录] 步骤4完成: 用户信息已更新到state');
                 
-                // 游客登录后，调用标准API获取场景和角色
-                // 后端会根据游客身份自动返回预置场景（ID: 50）和角色（ID: 315-320）
+                // 游客登录后，调用标准API获取世界、场景和角色
+                // 后端会为访客创建默认世界「心域」及预置场景（日常生活助手）、角色
                 try {
                   const token = responseData.token;
                   
-                  console.log('[游客登录] 步骤5: 调用场景API获取预置场景...');
-                  // 调用标准API，后端会自动返回游客预置内容
+                  console.log('[游客登录] 步骤5: 获取世界列表...');
+                  const worlds = await worldApi.getAllWorlds(token);
+                  console.log('[游客登录] 步骤5完成: 获取到世界', worlds?.length || 0, '个', worlds);
+                  
+                  console.log('[游客登录] 步骤6: 调用场景API获取预置场景...');
                   const eras = await eraApi.getAllEras(token);
-                  console.log('[游客登录] 步骤5完成: 获取到场景', eras?.length || 0, '个', eras);
+                  console.log('[游客登录] 步骤6完成: 获取到场景', eras?.length || 0, '个', eras);
                   
-                  console.log('[游客登录] 步骤6: 调用角色API获取预置角色...');
+                  console.log('[游客登录] 步骤7: 调用角色API获取预置角色...');
                   const characters = await characterApi.getAllCharacters(token);
-                  console.log('[游客登录] 步骤6完成: 获取到角色', characters?.length || 0, '个', characters);
+                  console.log('[游客登录] 步骤7完成: 获取到角色', characters?.length || 0, '个', characters);
                   
-                  console.log('[游客登录] 步骤7: 转换场景和角色数据...');
-                  // 使用数据转换工具将后端数据转换为前端需要的WorldScene格式
+                  console.log('[游客登录] 步骤8: 转换场景和角色数据...');
                   const { convertErasToWorldScenes } = await import('./utils/dataTransformers');
                   const guestWorldScenes = convertErasToWorldScenes(
-                    [], // 游客没有worlds
+                    worlds || [],
                     eras,
                     characters,
                     undefined, // scripts
                     undefined, // mainStories
                     false // isSharedMode
                   );
-                  console.log('[游客登录] 步骤7完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
+                  console.log('[游客登录] 步骤8完成: 转换后的场景数据', guestWorldScenes?.length || 0, '个', guestWorldScenes);
                   
-                  console.log('[游客登录] 步骤8: 更新场景列表到state...');
-                  // 更新场景列表（只包含预置场景）
+                  console.log('[游客登录] 步骤9: 更新场景列表到state...');
                   dispatch({ type: 'SET_USER_WORLD_SCENES', payload: guestWorldScenes });
                   
-                  // 设置选中的场景（如果有场景，选择第一个）
                   if (guestWorldScenes.length > 0) {
-                    console.log('[游客登录] 步骤9: 设置选中场景', guestWorldScenes[0].id);
+                    console.log('[游客登录] 步骤10: 设置选中场景', guestWorldScenes[0].id);
                     dispatch({ type: 'SET_SELECTED_SCENE_ID', payload: guestWorldScenes[0].id });
                   }
                   
-                  console.log('[游客登录] 步骤10: 跳转到entryPoint页面...');
+                  console.log('[游客登录] 步骤11: 跳转到entryPoint页面...');
                   // 跳转到 entryPoint
                   dispatch({ type: 'SET_CURRENT_SCREEN', payload: 'entryPoint' });
                   dispatch({ type: 'SET_SHOW_WELCOME_OVERLAY', payload: false });
@@ -1279,33 +1310,42 @@ const AppContent: React.FC = () => {
                   scenes={allScenes}
                   token={token}
                   onSave={async () => {
-                      // 刷新剧本数据
+                      // 刷新剧本数据 - 完整刷新所有场景数据
                       try {
+                          // 重新加载所有数据
+                          const worlds = await worldApi.getAllWorlds(token);
+                          const eras = await eraApi.getAllEras(token);
+                          const characters = await characterApi.getAllCharacters(token);
                           const scripts = await scriptApi.getAllScripts(token);
-                          // 更新场景中的剧本列表
-                          const updatedScenes = gameState.userWorldScenes.map(scene => {
-                            const sceneScripts = scripts.filter(s => s.eraId?.toString() === scene.id).map(script => ({
-                              id: script.id.toString(),
-                              title: script.title,
-                              description: script.description || null,
-                              content: script.content,
-                              sceneCount: script.sceneCount || 0,
-                              eraId: script.eraId || null,
-                              worldId: script.worldId || null,
-                              characterIds: script.characterIds || null,
-                              tags: script.tags || null
-                            }));
-                            return {
-                              ...scene,
-                              scripts: sceneScripts
-                            };
+                          const userMainStories = await userMainStoryApi.getAll(token);
+                          
+                          // 使用 convertErasToWorldScenes 完整转换
+                          const { convertErasToWorldScenes } = await import('./utils/dataTransformers');
+                          const updatedUserWorldScenes = convertErasToWorldScenes(
+                              worlds,
+                              eras,
+                              characters,
+                              scripts,
+                              userMainStories
+                          );
+
+                          // 保留原有的 memories
+                          const scenesWithMemories = updatedUserWorldScenes.map(scene => {
+                              const existingScene = gameState.userWorldScenes.find(s => s.id === scene.id);
+                              return {
+                                  ...scene,
+                                  memories: existingScene?.memories
+                              };
                           });
-                          dispatch({ type: 'SET_USER_WORLD_SCENES', payload: updatedScenes });
+
+                          dispatch({ type: 'SET_USER_WORLD_SCENES', payload: scenesWithMemories });
+                          dispatch({ type: 'SET_CUSTOM_SCENARIOS', payload: [] }); // 清空本地缓存
                           dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });
                       } catch (error) {
                           console.error('刷新剧本数据失败:', error);
+                          // 即使刷新失败，也关闭编辑页面
+                          dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });
                       }
-                      dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });
                   }}
                   onCancel={() => {
                       dispatch({ type: 'SET_EDITING_SCRIPT', payload: null });

@@ -6,11 +6,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
+    /** 按昵称查找 username 以指定前缀开头的用户（访客再次进入：昵称=名称且 username 以 guest_ 开头），按 id 降序取第一个 */
+    List<User> findTop1ByNicknameAndUsernameStartingWithOrderByIdDesc(String nickname, String usernamePrefix);
     Optional<User> findByEmail(String email);
     Optional<User> findByWechatOpenid(String wechatOpenid);
     Boolean existsByUsername(String username);

@@ -43,7 +43,7 @@ export const CharacterSkillManagement: React.FC<CharacterSkillManagementProps> =
       setError(null);
 
       const [skills, bindings] = await Promise.all([
-        skillService.getAllSkills(undefined, token || undefined),
+        skillService.getAllSkills(undefined, token || undefined, false), // 获取所有技能，包括没有 mcpToolConfig 的
         skillService.getEquippedSkills(characterId, token || undefined),
       ]);
 

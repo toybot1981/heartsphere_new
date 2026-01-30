@@ -1,0 +1,15 @@
+{
+  "id": "bea7a488-a1d9-44c3-9eb4-6964bf2b4c97",
+  "resource_id": "b08e7d9b-749f-4f57-97ac-1f6224c2f8e5",
+  "content": "我喜欢Python和JavaScript编程\n我每天都会写代码，这是我最喜欢的事情",
+  "summary": "用户有 2 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-15T22:51:17.762280",
+  "updated_at": "2026-01-15T22:51:17.762293"
+}

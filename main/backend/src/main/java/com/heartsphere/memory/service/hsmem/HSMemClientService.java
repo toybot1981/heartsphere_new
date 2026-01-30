@@ -8,6 +8,7 @@ import com.heartsphere.memory.util.HSMemLogHelper;
 import com.heartsphere.memory.util.PerformanceLogger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -29,9 +30,10 @@ import java.util.Map;
  * @date 2026-01-16
  */
 @Service
+@ConditionalOnProperty(name = "heartsphere.memory.hsmem.mode", havingValue = "remote")
 @RequiredArgsConstructor
 @Slf4j
-public class HSMemClientService {
+public class HSMemClientService implements HSMemApi {
     
     private final WebClient webClient;
     private final MemoryProperties memoryProperties;
@@ -566,6 +568,26 @@ public class HSMemClientService {
             HSMemLogHelper.logError(operation, requestId, e, context, durationMs);
             throw new RuntimeException("获取资源列表失败: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public HSMemResponse.MemorizeData memorizeItems(HSMemItemsRequest request) {
+        throw new UnsupportedOperationException("memorizeItems 仅支持 local 模式，请设置 heartsphere.memory.hsmem.mode=local");
+    }
+
+    @Override
+    public Map<String, Object> getItem(String itemId) {
+        throw new UnsupportedOperationException("getItem 仅支持 local 模式，请设置 heartsphere.memory.hsmem.mode=local");
+    }
+
+    @Override
+    public boolean deleteItem(String itemId) {
+        throw new UnsupportedOperationException("deleteItem 仅支持 local 模式，请设置 heartsphere.memory.hsmem.mode=local");
+    }
+
+    @Override
+    public boolean updateItem(String itemId, Map<String, Object> updates) {
+        throw new UnsupportedOperationException("updateItem 仅支持 local 模式，请设置 heartsphere.memory.hsmem.mode=local");
     }
     
     /**

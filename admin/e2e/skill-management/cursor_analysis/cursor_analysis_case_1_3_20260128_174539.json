@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_3",
+  "name": "打开专业创建器",
+  "error": "Step 3 failed: Locator.wait_for: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"text=专业创建器\") to be visible\n",
+  "failed_step": "click text=专业创建器",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin?section=skills",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "管理后台登录\n\nHeartSphere Admin Console\n\n用户名\n密码\n进入系统返回应用首页",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_3_20260128_174413.png"
+}

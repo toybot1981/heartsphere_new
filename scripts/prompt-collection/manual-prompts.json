@@ -1,0 +1,73 @@
+[
+  {
+    "name": "main-emotion-analysis-default",
+    "category_code": "main-emotion-analysis",
+    "description": "主项目的默认情感分析提示词",
+    "system_prompt": null,
+    "user_prompt": "请分析以下文本的情绪状态，并返回JSON格式的结果。\n\n文本内容：\n{text}\n\n{context}\n\n请分析并返回JSON格式结果，包含以下字段：\n{\n  \"primaryEmotion\": \"主要情绪类型（happy/excited/content/peaceful/hopeful/grateful/calm/thoughtful/focused/relaxed/sad/anxious/angry/lonely/tired/confused）\",\n  \"secondaryEmotions\": [\"次要情绪类型数组（可选）\"],\n  \"intensity\": \"情绪强度（mild/moderate/strong）\",\n  \"confidence\": 分析置信度（0-1之间的小数）,\n  \"emotionTags\": [\"情绪标签数组，如['工作压力', '情感困扰']\"],\n  \"keyPhrases\": [\"关键短语数组，最能体现情绪的短语\"],\n  \"reasoning\": \"分析理由（简要说明为什么得出这个结论）\"\n}\n\n注意：\n- 要深入理解文本的隐含情绪，不仅仅是表面文字\n- 考虑上下文的情绪背景\n- 识别情绪的混合状态\n- 评估情绪的强度和真实性\n- 只返回JSON，不要包含其他文字",
+    "variables": {
+      "text": {
+        "type": "string",
+        "description": "要分析的文本内容",
+        "required": true
+      },
+      "context": {
+        "type": "string",
+        "description": "上下文信息（对话历史、时间等）",
+        "required": false
+      }
+    },
+    "example_data": {},
+    "source_file": "main/backend/src/main/java/com/heartsphere/emotion/service/EmotionService.java",
+    "source_line": 132,
+    "source_variable": "buildEmotionAnalysisPrompt"
+  },
+  {
+    "name": "main-letter-generation-character",
+    "category_code": "main-letter-generation",
+    "description": "主项目的角色信件生成提示词",
+    "system_prompt": null,
+    "user_prompt": "角色信息：\n姓名：{characterName}\n角色：{characterRole}\n简介：{characterBio}\n说话风格：{speechStyle}\n\n来信类型：{letterType}\n\n{emotionInfo}\n\n{journalInfo}\n\n请根据以上信息，生成一封温暖的信件。要求：\n1. 使用JSON格式返回：{\"title\": \"信件标题\", \"content\": \"信件正文\"}\n2. 信件应该充满情感，像真正的朋友一样表达关心\n3. 根据角色性格和说话风格调整语言\n4. 结合用户的情绪状态和日记内容，让信件更个性化\n5. 信件长度适中，既不过于简短也不过于冗长",
+    "variables": {
+      "characterName": {
+        "type": "string",
+        "description": "角色姓名",
+        "required": true
+      },
+      "characterRole": {
+        "type": "string",
+        "description": "角色身份",
+        "required": true
+      },
+      "characterBio": {
+        "type": "string",
+        "description": "角色简介",
+        "required": true
+      },
+      "speechStyle": {
+        "type": "string",
+        "description": "说话风格",
+        "required": false
+      },
+      "letterType": {
+        "type": "string",
+        "description": "来信类型",
+        "required": true
+      },
+      "emotionInfo": {
+        "type": "string",
+        "description": "用户情绪信息",
+        "required": false
+      },
+      "journalInfo": {
+        "type": "string",
+        "description": "用户日记信息",
+        "required": false
+      }
+    },
+    "example_data": {},
+    "source_file": "main/backend/src/main/java/com/heartsphere/mailbox/service/ESoulLetterGenerator.java",
+    "source_line": 94,
+    "source_variable": "buildLetterPrompt"
+  }
+]

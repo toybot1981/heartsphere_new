@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "app_url": "http://localhost:3000",
+    "test_scope": "Smoke test - 进入现实世界",
+    "priority": "high"
+  },
+  "requirements": ["用户可以进入现实世界界面"],
+  "test_cases": [
+    {
+      "id": "case_1_1",
+      "name": "进入现实世界",
+      "description": "测试从入口点进入现实世界界面",
+      "steps": [
+        "navigate to http://localhost:3000",
+        "wait for 2 seconds",
+        "click text=进入现实",
+        "wait for 3 seconds",
+        "verify text=写今日"
+      ],
+      "expected_result": "成功进入现实世界界面，显示写今日按钮",
+      "priority": "high",
+      "status": "pending"
+    }
+  ],
+  "test_suites": [{"id": "suite_1", "name": "Smoke", "description": "冒烟测试", "test_cases": ["case_1_1"]}]
+}

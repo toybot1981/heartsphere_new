@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heartsphere.aiagent.dto.request.TextGenerationRequest;
 import com.heartsphere.aiagent.dto.response.TextGenerationResponse;
 import com.heartsphere.aiagent.service.AIService;
+import com.heartsphere.shared.dto.PromptRenderResponse;
+import com.heartsphere.shared.service.PromptTemplateIntegrationService;
 import com.heartsphere.skill.entity.SkillDefinition;
 import com.heartsphere.skill.entity.SkillInstruction;
 import com.heartsphere.skill.entity.SkillResource;
@@ -29,10 +31,11 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandler {
-    
+
     private final AIService aiService;
+    private final PromptTemplateIntegrationService templateService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     @Override
     public Object execute(
         SkillDefinition skill,
@@ -42,15 +45,19 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
         SkillExecutor.SkillExecutionContext context
     ) {
         try {
-            log.info("使用大模型执行技能: skillId={}, characterId={}", 
+            log.info("使用大模型执行技能: skillId={}, characterId={}",
                 skill.getSkillId(), context.getCharacterId());
-            
-            // 1. 构建系统指令（基于Level 2指令）
-            String systemInstruction = buildSystemInstruction(skill, instructions);
-            
-            // 2. 构建用户提示（基于参数和Level 3资源）
-            String userPrompt = buildUserPrompt(skill, parameters, resources, context);
-            
+
+            // 1. 默认系统指令与用户提示（fallback）
+            String defaultSystem = buildSystemInstruction(skill, instructions);
+            String defaultUser = buildUserPrompt(skill, parameters, resources, context);
+            // 2. 从提示词管理获取，取不到时用默认
+            Map<String, Object> variables = buildSkillExecutionVariables(skill, instructions, parameters, resources);
+            PromptRenderResponse prompts = templateService.getPrompts(
+                    "skill-execution", variables, defaultSystem, defaultUser);
+            String systemInstruction = prompts.getSystemPrompt();
+            String userPrompt = prompts.getUserPrompt();
+
             // 3. 解析execution_config获取workflow（如果有）
             Map<String, Object> workflow = extractWorkflow(skill.getExecutionConfig());
             
@@ -70,8 +77,62 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
     
     /**
      * 构建系统指令
+     * 支持向后兼容：优先使用 skill_content，如果没有则使用 skill_instructions 表
      */
     private String buildSystemInstruction(SkillDefinition skill, List<SkillInstruction> instructions) {
+        StringBuilder sb = new StringBuilder();
+        
+        // 优先使用新格式：skill_content
+        if (skill.getSkillContent() != null && !skill.getSkillContent().isEmpty()) {
+            return buildSystemInstructionFromSkillContent(skill);
+        }
+        
+        // 降级使用旧格式：skill_instructions 表
+        log.debug("技能 {} 使用旧格式 skill_instructions，建议迁移到 skill_content", skill.getSkillId());
+        return buildSystemInstructionFromInstructions(skill, instructions);
+    }
+    
+    /**
+     * 从 skill_content 构建系统指令（新格式）
+     */
+    private String buildSystemInstructionFromSkillContent(SkillDefinition skill) {
+        String skillContent = skill.getSkillContent();
+        
+        // 提取 YAML 元数据后的 Markdown 指令部分
+        // skill_content 格式：---\nYAML元数据\n---\n\nMarkdown指令内容
+        int yamlEndIndex = skillContent.indexOf("---\n", 4); // 跳过第一个 ---
+        if (yamlEndIndex > 0) {
+            String instructionPart = skillContent.substring(yamlEndIndex + 4).trim();
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("你是一个专业的").append(skill.getName()).append("助手。\n\n");
+            sb.append("技能描述: ").append(skill.getDescription() != null ? skill.getDescription() : "").append("\n\n");
+            sb.append("执行指南:\n");
+            sb.append(instructionPart).append("\n\n");
+            sb.append("请以JSON格式返回执行结果，包含以下字段：\n");
+            sb.append("- success: 是否成功（boolean）\n");
+            sb.append("- result: 执行结果（object，包含具体的技能输出）\n");
+            sb.append("- message: 执行说明（string，可选）\n");
+            
+            return sb.toString();
+        }
+        
+        // 如果没有找到 YAML 分隔符，整个内容作为指令
+        StringBuilder sb = new StringBuilder();
+        sb.append("你是一个专业的").append(skill.getName()).append("助手。\n\n");
+        sb.append(skillContent).append("\n\n");
+        sb.append("请以JSON格式返回执行结果，包含以下字段：\n");
+        sb.append("- success: 是否成功（boolean）\n");
+        sb.append("- result: 执行结果（object，包含具体的技能输出）\n");
+        sb.append("- message: 执行说明（string，可选）\n");
+        
+        return sb.toString();
+    }
+    
+    /**
+     * 从 skill_instructions 表构建系统指令（旧格式）
+     */
+    private String buildSystemInstructionFromInstructions(SkillDefinition skill, List<SkillInstruction> instructions) {
         StringBuilder sb = new StringBuilder();
         
         // 技能基本信息
@@ -149,10 +210,74 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
         
         // 执行要求
         sb.append("请根据系统指令中的指南，使用提供的参数和资源执行技能，并返回JSON格式的结果。");
-        
+
         return sb.toString();
     }
-    
+
+    /**
+     * 构建技能执行模板变量（供提示词管理渲染）
+     */
+    private Map<String, Object> buildSkillExecutionVariables(
+            SkillDefinition skill,
+            List<SkillInstruction> instructions,
+            Map<String, Object> parameters,
+            List<SkillResource> resources) {
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("skillName", skill.getName());
+        vars.put("skillDescription", skill.getDescription() != null ? skill.getDescription() : "");
+        vars.put("instructionPart", extractInstructionPart(skill, instructions));
+        StringBuilder parametersBlock = new StringBuilder();
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            parametersBlock.append("- ").append(entry.getKey()).append(": ");
+            if (entry.getValue() instanceof Collection) {
+                parametersBlock.append(entry.getValue());
+            } else if (entry.getValue() instanceof Map) {
+                parametersBlock.append(entry.getValue());
+            } else {
+                parametersBlock.append(entry.getValue());
+            }
+            parametersBlock.append("\n");
+        }
+        vars.put("parametersBlock", parametersBlock.toString());
+        StringBuilder resourcesBlock = new StringBuilder();
+        if (resources != null && !resources.isEmpty()) {
+            for (SkillResource resource : resources) {
+                if ("TEMPLATE".equals(resource.getResourceType()) || "EXAMPLE".equals(resource.getResourceType()) || "CONFIG".equals(resource.getResourceType())) {
+                    resourcesBlock.append("- ").append(resource.getResourceName()).append(": ");
+                    if (resource.getResourceContent() != null) {
+                        resourcesBlock.append(resource.getResourceContent());
+                    }
+                    resourcesBlock.append("\n");
+                }
+            }
+        }
+        vars.put("resourcesBlock", resourcesBlock.toString());
+        return vars;
+    }
+
+    private String extractInstructionPart(SkillDefinition skill, List<SkillInstruction> instructions) {
+        if (skill.getSkillContent() != null && !skill.getSkillContent().isEmpty()) {
+            String content = skill.getSkillContent();
+            int yamlEnd = content.indexOf("---\n", 4);
+            if (yamlEnd > 0) {
+                return content.substring(yamlEnd + 4).trim();
+            }
+            return content;
+        }
+        if (instructions != null) {
+            List<SkillInstruction> sorted = instructions.stream()
+                    .filter(inst -> inst.getInstructionLevel() == 2)
+                    .sorted(Comparator.comparing(SkillInstruction::getExecutionOrder, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < sorted.size(); i++) {
+                sb.append(i + 1).append(". ").append(sorted.get(i).getInstructionText()).append("\n");
+            }
+            return sb.toString();
+        }
+        return "";
+    }
+
     /**
      * 提取workflow配置
      */
@@ -348,9 +473,10 @@ public class LLMBasedSkillExecutor implements SkillExecutor.SkillExecutionHandle
             // 调用AI服务
             TextGenerationResponse response = aiService.generateText(userId, request);
             
+            String content = response.getContent() != null ? response.getContent() : "";
             log.info("大模型执行技能成功: skillId={}, responseLength={}", 
-                skill.getSkillId(), 
-                response.getContent() != null ? response.getContent().length() : 0);
+                skill.getSkillId(), content.length());
+            log.info("大模型执行技能响应内容: {}", content);
             
             return response;
             

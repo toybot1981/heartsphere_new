@@ -1,0 +1,9 @@
+{
+  "results_file": "admin/backend/api-tests/skills/results.json",
+  "passed_case_ids": [
+    "case_get_all",
+    "case_get_by_id_not_found"
+  ],
+  "failed_case_id": null,
+  "plan_file": "admin/backend/api-tests/skills/api_test_plan.json"
+}

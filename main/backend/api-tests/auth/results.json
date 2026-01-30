@@ -1,0 +1,98 @@
+{
+  "plan_file": "main/backend/api-tests/auth/api_test_plan.json",
+  "base_url": "http://localhost:8081",
+  "started_at": "2026-01-29T21:57:02.793211",
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "suite_id": "suite_1",
+      "case_id": "case_1_1",
+      "name": "GET /api/health",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_2",
+      "case_id": "case_2_1",
+      "name": "游客登录（新访客）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_2",
+      "case_id": "case_2_2",
+      "name": "游客登录（同名称再次进入）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_3",
+      "case_id": "case_3_1",
+      "name": "获取访客的世界列表",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_4",
+      "case_id": "case_4_1",
+      "name": "获取访客的场景列表",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_5",
+      "case_id": "case_5_1",
+      "name": "获取访客的角色列表",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_6",
+      "case_id": "case_6_1",
+      "name": "获取访客的对话日志列表",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-01-29T21:57:05.047754"
+}

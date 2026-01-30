@@ -66,7 +66,14 @@ public class SkillController {
     }
     
     /**
-     * 获取可用技能（有 function_schema 的技能）
+     * 获取可用技能（有 mcp_tool_config 的技能，用于工具调用）
+     * 
+     * 注意：
+     * - 已移除 function_schema 判断，改用 mcp_tool_config
+     * - 只返回符合新规范（Claude Skills）的技能
+     * - 旧格式技能（使用 function_schema）已被删除
+     * 
+     * @return 可用技能列表（有 mcp_tool_config 的技能）
      */
     @GetMapping("/available")
     public ResponseEntity<ApiResponse<List<SkillDefinitionDTO>>> getAvailableSkills() {
@@ -96,8 +103,8 @@ public class SkillController {
      * - 用户服务：需要认证，验证角色属于当前用户
      * - 管理服务：可选认证，如果提供token则验证，否则允许访问（用于内部调用）
      * 
-     * 返回格式：保持向后兼容，只返回有 function_schema 的技能（Function Calling）
-     * 注意：为了支持提示词驱动技能，前端应该调用 /character/{characterId}/all 获取完整列表
+     * 返回格式：保持向后兼容，只返回有 mcp_tool_config 的技能（工具调用）
+     * 注意：已移除 function_schema 判断，改用 mcp_tool_config。为了支持提示词驱动技能，前端应该调用 /character/{characterId}/all 获取完整列表
      */
     @GetMapping("/character/{characterId}/available")
     public ResponseEntity<ApiResponse<List<FunctionDefinitionDTO>>> getCharacterAvailableSkills(
@@ -155,9 +162,10 @@ public class SkillController {
                 .build())
             .collect(Collectors.toList());
         
-        // 提取没有 function_schema 的技能（提示词驱动）
+        // 提取没有 mcp_tool_config 的技能（提示词驱动）
+        // 注意：已移除 functionSchema 判断，改用 mcpToolConfig
         List<CharacterAvailableSkillsDTO.PromptDrivenSkillDTO> promptDrivenSkills = skills.stream()
-            .filter(skill -> skill.getFunctionSchema() == null || skill.getFunctionSchema().isEmpty())
+            .filter(skill -> (skill.getMcpToolConfig() == null || skill.getMcpToolConfig().isEmpty()))
             .map(skill -> CharacterAvailableSkillsDTO.PromptDrivenSkillDTO.builder()
                 .skillId(skill.getSkillId())
                 .name(skill.getName())
@@ -289,7 +297,7 @@ public class SkillController {
             .maxLevel(skill.getMaxLevel())
             .baseValue(skill.getBaseValue())
             .iconUrl(skill.getIconUrl())
-            .functionSchema(skill.getFunctionSchema())
+            // 已移除：functionSchema (废弃，改用 mcpToolConfig)
             .executionType(skill.getExecutionType())
             .executionConfig(skill.getExecutionConfig())
             .autoTriggerKeywords(skill.getAutoTriggerKeywords())
@@ -298,6 +306,12 @@ public class SkillController {
             .version(skill.getVersion())
             .author(skill.getAuthor())
             .isSystemSkill(skill.getIsSystemSkill())
+            // 新增字段
+            .license(skill.getLicense())
+            .compatibility(skill.getCompatibility())
+            .metadata(skill.getMetadata())
+            .skillContent(skill.getSkillContent())
+            .mcpToolConfig(skill.getMcpToolConfig())
             .createdAt(skill.getCreatedAt())
             .updatedAt(skill.getUpdatedAt())
             .build();
@@ -316,7 +330,7 @@ public class SkillController {
         skill.setMaxLevel(dto.getMaxLevel() != null ? dto.getMaxLevel() : 100);
         skill.setBaseValue(dto.getBaseValue() != null ? dto.getBaseValue() : 0);
         skill.setIconUrl(dto.getIconUrl());
-        skill.setFunctionSchema(dto.getFunctionSchema());
+        // 已移除：functionSchema (废弃，改用 mcpToolConfig)
         skill.setExecutionType(dto.getExecutionType() != null ? dto.getExecutionType() : "RULE_BASED");
         skill.setExecutionConfig(dto.getExecutionConfig());
         skill.setAutoTriggerKeywords(dto.getAutoTriggerKeywords());
@@ -325,6 +339,12 @@ public class SkillController {
         skill.setVersion(dto.getVersion() != null ? dto.getVersion() : "1.0.0");
         skill.setAuthor(dto.getAuthor());
         skill.setIsSystemSkill(dto.getIsSystemSkill() != null ? dto.getIsSystemSkill() : false);
+        // 新增字段
+        skill.setLicense(dto.getLicense());
+        skill.setCompatibility(dto.getCompatibility());
+        skill.setMetadata(dto.getMetadata());
+        skill.setSkillContent(dto.getSkillContent());
+        skill.setMcpToolConfig(dto.getMcpToolConfig());
         return skill;
     }
     
@@ -339,7 +359,7 @@ public class SkillController {
         if (dto.getMaxLevel() != null) skill.setMaxLevel(dto.getMaxLevel());
         if (dto.getBaseValue() != null) skill.setBaseValue(dto.getBaseValue());
         if (dto.getIconUrl() != null) skill.setIconUrl(dto.getIconUrl());
-        if (dto.getFunctionSchema() != null) skill.setFunctionSchema(dto.getFunctionSchema());
+        // 已移除：functionSchema (废弃，改用 mcpToolConfig)
         if (dto.getExecutionType() != null) skill.setExecutionType(dto.getExecutionType());
         if (dto.getExecutionConfig() != null) skill.setExecutionConfig(dto.getExecutionConfig());
         if (dto.getAutoTriggerKeywords() != null) skill.setAutoTriggerKeywords(dto.getAutoTriggerKeywords());
@@ -347,5 +367,11 @@ public class SkillController {
         if (dto.getMaxUsagePerDay() != null) skill.setMaxUsagePerDay(dto.getMaxUsagePerDay());
         if (dto.getVersion() != null) skill.setVersion(dto.getVersion());
         if (dto.getAuthor() != null) skill.setAuthor(dto.getAuthor());
+        // 新增字段
+        if (dto.getLicense() != null) skill.setLicense(dto.getLicense());
+        if (dto.getCompatibility() != null) skill.setCompatibility(dto.getCompatibility());
+        if (dto.getMetadata() != null) skill.setMetadata(dto.getMetadata());
+        if (dto.getSkillContent() != null) skill.setSkillContent(dto.getSkillContent());
+        if (dto.getMcpToolConfig() != null) skill.setMcpToolConfig(dto.getMcpToolConfig());
     }
 }

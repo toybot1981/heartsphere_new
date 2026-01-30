@@ -1,0 +1,27 @@
+{
+  "name": "Admin API health and auth example",
+  "base_url": "http://localhost:8085",
+  "backend_service": "admin-backend",
+  "auth": "none",
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "Health",
+      "description": "Health check endpoint",
+      "test_cases": [
+        {
+          "id": "case_1",
+          "name": "GET health",
+          "description": "GET /api/admin/health or similar",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/admin/health",
+              "expected_status": 200
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

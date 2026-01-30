@@ -1,0 +1,14 @@
+{
+  "results_file": "main/backend/api-tests/auth/results.json",
+  "passed_case_ids": [
+    "case_1_1",
+    "case_2_1",
+    "case_2_2",
+    "case_3_1",
+    "case_4_1",
+    "case_5_1",
+    "case_6_1"
+  ],
+  "failed_case_id": null,
+  "plan_file": "main/backend/api-tests/auth/api_test_plan.json"
+}

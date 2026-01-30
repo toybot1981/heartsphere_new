@@ -1,12 +1,52 @@
 /**
  * 日记记忆查看模态框
- * 展示从日记中提取的记忆
+ * 展示从 HSMem 接口获取的用户记忆（对话/日记等提取的记忆）
  */
 
 import React, { useEffect, useState } from 'react';
-import { useMemorySystem } from '../../services/memory-system';
 import { UserMemory, MemoryType, MemoryImportance, MemorySource } from '../../services/memory-system/types/MemoryTypes';
+import { mapHSMemToBackendType } from '../../services/memory-system/utils/memoryTypeMapper';
+import { memoryApi } from '../../services/api/memory';
 import { logger } from '../../utils/logger';
+
+/** 将 HSMem 返回的 item 转为 UserMemory 展示 */
+function hsmemItemToUserMemory(item: Record<string, any>, userId: number): UserMemory {
+  const id = String(item.id ?? `hsmem_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+  const content = item.content ?? item.text ?? item.summary ?? '';
+  const memoryType = mapHSMemToBackendType(item.memory_type ?? item.type ?? 'general');
+  const imp = item.importance;
+  let importance: MemoryImportance = MemoryImportance.NORMAL;
+  if (typeof imp === 'number') {
+    if (imp >= 0.8) importance = MemoryImportance.CORE;
+    else if (imp >= 0.5) importance = MemoryImportance.IMPORTANT;
+    else if (imp >= 0.2) importance = MemoryImportance.NORMAL;
+    else importance = MemoryImportance.TEMPORARY;
+  } else if (typeof imp === 'string') {
+    const lower = (imp as string).toLowerCase();
+    if (lower === 'core' || lower === 'high') importance = MemoryImportance.CORE;
+    else if (lower === 'important' || lower === 'medium') importance = MemoryImportance.IMPORTANT;
+    else if (lower === 'temporary' || lower === 'low') importance = MemoryImportance.TEMPORARY;
+  }
+  const createdAt = item.created_at ?? item.timestamp ?? item.created_at_ts;
+  const timestamp = typeof createdAt === 'number' ? createdAt : (typeof createdAt === 'string' ? new Date(createdAt).getTime() : Date.now());
+  const source = (item.source ?? item.resource_type ?? 'journal').toString().toLowerCase().includes('journal')
+    ? MemorySource.JOURNAL
+    : MemorySource.CONVERSATION;
+  return {
+    id,
+    userId,
+    memoryType,
+    importance,
+    content,
+    structuredData: item.categories?.length ? { tags: item.categories } : undefined,
+    source,
+    sourceId: item.resource_id ?? item.source_id,
+    timestamp,
+    lastUsedAt: item.last_accessed_at ? new Date(item.last_accessed_at).getTime() : undefined,
+    usageCount: item.access_count ?? item.usage_count ?? 0,
+    confidence: typeof item.confidence === 'number' ? item.confidence : 0.7,
+  };
+}
 
 interface JournalMemoryModalProps {
   userId: number;
@@ -67,14 +107,6 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
   onClose,
   journalId,
 }) => {
-  const memorySystem = useMemorySystem({
-    enabled: true,
-    autoExtraction: true,
-    aiEnhanced: true,
-    userId,
-    useRemoteStorage: true, // 使用远程存储连接到Redis/MongoDB
-  });
-
   const [memories, setMemories] = useState<UserMemory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<{
@@ -84,54 +116,59 @@ export const JournalMemoryModal: React.FC<JournalMemoryModalProps> = ({
   }>({});
 
   useEffect(() => {
-    if (!isOpen || !memorySystem.isReady) return;
+    if (!isOpen || !userId || userId <= 0) return;
 
     const loadMemories = async () => {
       setIsLoading(true);
       try {
-        // 只加载来源为日记的记忆
-        const allMemories = await memorySystem.searchMemories({
-          ...filter,
-          limit: 100,
-        });
-        
-        // 筛选出来源为日记的记忆
-        let journalMemories = allMemories.filter(m => m.source === MemorySource.JOURNAL);
-        
-        // 如果指定了日记ID，进一步筛选
-        if (journalId) {
-          journalMemories = journalMemories.filter(m => m.sourceId === journalId);
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        if (!token) {
+          logger.warn('[JournalMemoryModal] 未登录，无法加载 HSMem 记忆');
+          setMemories([]);
+          return;
         }
-        
-        setMemories(journalMemories);
-        
-        logger.info('[JournalMemoryModal] 加载日记记忆成功', {
-          total: journalMemories.length,
+
+        logger.info('[JournalMemoryModal] 从 HSMem 加载用户记忆', { userId, journalId });
+
+        const res = await memoryApi.getItems(userId, token);
+        const items = Array.isArray(res?.items) ? res.items : [];
+        const rawTotal = typeof res?.total === 'number' ? res.total : 0;
+
+        const mapped: UserMemory[] = (items as Record<string, any>[])
+          .map((item) => hsmemItemToUserMemory(item, userId))
+          .filter((m) => {
+            if (filter.keyword && !m.content?.toLowerCase().includes(filter.keyword.toLowerCase())) return false;
+            if (filter.memoryType && m.memoryType !== filter.memoryType) return false;
+            if (filter.importance && m.importance !== filter.importance) return false;
+            if (journalId && m.sourceId !== journalId) return false;
+            return true;
+          });
+
+        setMemories(mapped);
+
+        logger.info('[JournalMemoryModal] HSMem 记忆加载完成', {
+          total: mapped.length,
+          rawCount: rawTotal,
           journalId,
         });
       } catch (error) {
-        logger.error('[JournalMemoryModal] 加载记忆失败', error);
+        logger.error('[JournalMemoryModal] 加载 HSMem 记忆失败', {
+          error,
+          userId,
+          journalId,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
+        setMemories([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadMemories();
-  }, [isOpen, memorySystem.isReady, userId, filter, journalId]);
+  }, [isOpen, userId, filter.keyword, filter.memoryType, filter.importance, journalId]);
 
-  const handleDelete = async (memoryId: string) => {
-    if (!confirm('确定要删除这条记忆吗？')) {
-      return;
-    }
-
-    try {
-      await memorySystem.system?.deleteMemory(memoryId);
-      setMemories(memories.filter(m => m.id !== memoryId));
-      logger.info('[JournalMemoryModal] 删除记忆成功', { memoryId });
-    } catch (error) {
-      logger.error('[JournalMemoryModal] 删除记忆失败', error);
-      alert('删除失败，请重试');
-    }
+  const handleDelete = async (_memoryId: string) => {
+    alert('HSMem 记忆暂不支持在此删除');
   };
 
   if (!isOpen) return null;

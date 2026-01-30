@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "created_at": "2026-01-30T00:00:00Z",
+    "app_url": "http://localhost:3005/admin",
+    "test_scope": "记忆管理页面：登录、进入记忆系统、6 个 Tab 切换与内容展示",
+    "priority": "high",
+    "prerequisites": [
+      "Admin 前端运行在 http://localhost:3005/admin",
+      "Admin 后端运行在 http://localhost:8085",
+      "管理员账号：admin / 指定密码（如 Tyx@19811009）",
+      "Python 3.8+ 和 Playwright 已安装"
+    ],
+    "notes": [
+      "先需求分析：记忆管理含 6 个 Tab（用户记忆、HSMem查询、记忆提取追溯、资源管理、记忆项管理、类别管理），本计划覆盖登录、进入页面、切换各 Tab 并验证对应内容",
+      "使用中文 UI，步骤使用 text= 或稳定选择器"
+    ]
+  },
+  "requirements": [
+    "管理员可以登录管理端并进入记忆系统管理页面",
+    "记忆管理页面展示「用户记忆管理」标题及 6 个 Tab",
+    "切换至各 Tab 时展示对应内容（用户记忆、HSMem查询、记忆提取追溯、资源管理、记忆项管理、类别管理）"
+  ],
+  "test_suites": [
+    {
+      "id": "suite_login_nav",
+      "name": "登录与进入记忆管理",
+      "description": "登录并进入记忆系统管理页面",
+      "test_cases": ["case_1", "case_2"]
+    },
+    {
+      "id": "suite_tabs",
+      "name": "Tab 切换与内容",
+      "description": "验证 6 个 Tab 可切换且内容正确",
+      "test_cases": ["case_3", "case_4", "case_5", "case_6", "case_7", "case_8"]
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "case_1",
+      "name": "登录管理端",
+      "description": "使用管理员账号登录 Admin 前端",
+      "steps": [
+        "navigate to http://localhost:3005/admin",
+        "wait for 3 seconds",
+        "wait for input[type=\"text\"]",
+        "type \"admin\" in input[type=\"text\"]",
+        "type \"Tyx@19811009\" in input[type=\"password\"]",
+        "wait for 1 second",
+        "click button:has-text(\"进入系统\")",
+        "wait for 5 seconds",
+        "verify text=系统概览"
+      ],
+      "expected_result": "登录成功，页面出现系统概览或管理端主界面",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2",
+      "name": "进入记忆系统管理",
+      "description": "从侧栏进入记忆系统，再点击「用户记忆」进入用户记忆管理页面",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "verify text=记忆系统概览",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "verify text=用户记忆管理"
+      ],
+      "expected_result": "进入记忆管理页面，显示用户记忆管理标题",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_3",
+      "name": "Tab 用户记忆（Admin API）",
+      "description": "进入用户记忆子页后默认展示用户记忆内容",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "verify text=用户记忆管理",
+        "verify text=快速检索"
+      ],
+      "expected_result": "展示快速检索与用户记忆相关区域",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_4",
+      "name": "Tab HSMem查询",
+      "description": "进入用户记忆页后点击 HSMem查询 Tab 展示查询表单",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "click text=HSMem查询",
+        "wait for 3 seconds",
+        "verify text=HSMem记忆查询"
+      ],
+      "expected_result": "展示 HSMem 查询区域与查询文本输入",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_5",
+      "name": "Tab 记忆提取追溯",
+      "description": "进入用户记忆页后点击记忆提取追溯 Tab",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "click text=记忆提取追溯",
+        "wait for 3 seconds",
+        "verify text=记忆提取追溯"
+      ],
+      "expected_result": "展示记忆提取追溯内容",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_6",
+      "name": "Tab 资源管理",
+      "description": "进入用户记忆页后点击资源管理 Tab",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "click text=资源管理",
+        "wait for 3 seconds",
+        "verify text=资源管理"
+      ],
+      "expected_result": "展示资源管理（Resource Layer）内容",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_7",
+      "name": "Tab 记忆项管理",
+      "description": "进入用户记忆页后点击记忆项管理 Tab",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "click text=记忆项管理",
+        "wait for 3 seconds",
+        "verify text=记忆项管理"
+      ],
+      "expected_result": "展示记忆项管理（Item Layer）内容",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_8",
+      "name": "Tab 类别管理",
+      "description": "进入用户记忆页后点击类别管理 Tab",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=memory",
+        "wait for 5 seconds",
+        "click text=用户记忆",
+        "wait for 3 seconds",
+        "click text=类别管理",
+        "wait for 3 seconds",
+        "verify text=类别管理"
+      ],
+      "expected_result": "展示类别管理（Category Layer）内容",
+      "priority": "medium",
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "f7fe8a31-400a-4d6a-a6f3-1128ece5a8b4",
+  "name": "ui_preferences",
+  "summary": "关于 ui_preferences 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "3c1505f0-9852-466e-bd73-7bc1ba2c09b4"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-15T22:51:17.785659",
+  "updated_at": "2026-01-15T22:51:17.785674",
+  "version": 1
+}

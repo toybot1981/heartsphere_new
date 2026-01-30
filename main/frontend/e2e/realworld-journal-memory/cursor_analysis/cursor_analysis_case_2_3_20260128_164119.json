@@ -1,0 +1,9 @@
+{
+  "case_id": "case_2_3",
+  "name": "删除日记",
+  "error": "not enough values to unpack (expected 3, got 2)",
+  "failed_step": null,
+  "database": null,
+  "page_context": {},
+  "screenshot": null
+}

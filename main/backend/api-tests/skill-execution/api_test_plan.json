@@ -1,0 +1,34 @@
+{
+  "name": "Main 技能执行 API",
+  "base_url": "http://localhost:8081",
+  "backend_service": "main-backend",
+  "auth": "bearer",
+  "test_suites": [
+    {
+      "id": "suite_execute",
+      "name": "技能执行",
+      "description": "POST /api/skills/execute 执行技能；需认证（JWT 或 API Key）",
+      "test_cases": [
+        {
+          "id": "case_execute_post",
+          "name": "POST 执行技能",
+          "description": "POST /api/skills/execute，请求体含 skillId、characterId、parameters；期望 200，响应含 code",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/skills/execute",
+              "body": {
+                "skillId": "test-skill",
+                "characterId": null,
+                "parameters": {},
+                "additionalContext": null
+              },
+              "expected_status": 200,
+              "expected_body_contains": "code"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

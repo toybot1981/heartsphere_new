@@ -1,0 +1,1 @@
+export { capabilityApi } from './capability';

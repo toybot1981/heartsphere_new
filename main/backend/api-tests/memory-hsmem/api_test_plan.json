@@ -1,0 +1,181 @@
+{
+  "metadata": {
+    "created_at": "2026-01-30",
+    "test_scope": "Main 后端 Memory / HSMem 兼容 API：memorize、retrieve、statistics、categories、items、resources",
+    "requirements": [
+      "REQ-1 游客登录并保存 token，供后续需认证接口使用",
+      "REQ-2 GET /hsmem/statistics 返回 200 且含 resources_count、items_count、categories_count",
+      "REQ-3 GET /hsmem/categories 返回 200 且含 categories、total",
+      "REQ-4 GET /hsmem/resources 返回 200 且含 resources、total",
+      "REQ-5 POST /hsmem/memorize/conversation 需认证，返回 resource_id、items_count、categories",
+      "REQ-6 POST /hsmem/memorize/text 需认证，返回 resource_id、items_count",
+      "REQ-7 POST /hsmem/memorize/document 需认证，返回 resource_id、items_count",
+      "REQ-8 POST /hsmem/retrieve 需认证，返回 method、items",
+      "REQ-9 GET /hsmem/items 需认证，返回 items、total"
+    ]
+  },
+  "base_url": "http://localhost:8081",
+  "backend_service": "main-backend",
+  "auth": "none",
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "登录",
+      "description": "游客登录，保存 token 供后续 HSMem 接口使用",
+      "test_cases": [
+        {
+          "id": "case_1_1",
+          "name": "游客登录",
+          "description": "POST /api/auth/guest-login，保存 token",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/auth/guest-login",
+              "body": { "nickname": "HSMem API 测试访客" },
+              "expected_status": 200,
+              "expected_body_contains": "token",
+              "save_token_path": "data.token"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_2",
+      "name": "统计与分类与资源（无需认证）",
+      "description": "GET statistics、categories、resources",
+      "test_cases": [
+        {
+          "id": "case_2_1",
+          "name": "GET /hsmem/statistics",
+          "description": "获取记忆统计",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/memory/v1/hsmem/statistics",
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_2_2",
+          "name": "GET /hsmem/categories",
+          "description": "获取所有分类",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/memory/v1/hsmem/categories",
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_2_3",
+          "name": "GET /hsmem/resources",
+          "description": "获取所有资源",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/memory/v1/hsmem/resources",
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_3",
+      "name": "记忆化（需认证）",
+      "description": "POST memorize/conversation、memorize/text、memorize/document",
+      "test_cases": [
+        {
+          "id": "case_3_1",
+          "name": "POST /hsmem/memorize/conversation",
+          "description": "记忆化对话，期望 resource_id、items_count、categories",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/memory/v1/hsmem/memorize/conversation",
+              "body": {
+                "messages": [
+                  { "role": "user", "content": { "text": "我喜欢跑步，每天晨跑。" } },
+                  { "role": "assistant", "content": { "text": "很好的习惯！" } }
+                ]
+              },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_3_2",
+          "name": "POST /hsmem/memorize/text",
+          "description": "记忆化文本",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/memory/v1/hsmem/memorize/text",
+              "body": { "text": "这是一段测试文本，用于记忆化。" },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_3_3",
+          "name": "POST /hsmem/memorize/document",
+          "description": "记忆化文档",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/memory/v1/hsmem/memorize/document",
+              "body": { "title": "测试文档", "content": "文档内容摘要。" },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_4",
+      "name": "检索与记忆项（需认证）",
+      "description": "POST retrieve、GET items",
+      "test_cases": [
+        {
+          "id": "case_4_1",
+          "name": "POST /hsmem/retrieve",
+          "description": "检索记忆",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/memory/v1/hsmem/retrieve",
+              "body": {
+                "queries": [ { "role": "user", "content": { "text": "偏好" } } ],
+                "limit": 5
+              },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_4_2",
+          "name": "GET /hsmem/items",
+          "description": "获取当前用户记忆项列表",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/memory/v1/hsmem/items",
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -183,7 +183,7 @@ heartconnect:
       wormhole: true   # 虫洞传送门
       quantum: true    # 量子传送门
 
-# 技能选择配置
+# 技能选择配置（纯 LLM 驱动，已移除规则驱动）
 skill:
   selection:
     # LLM 驱动配置
@@ -196,10 +196,6 @@ skill:
       model: ${SKILL_LLM_MODEL:gpt-4}  # LLM 模型
       temperature: ${SKILL_LLM_TEMPERATURE:0.3}  # 温度参数
       max-tokens: ${SKILL_LLM_MAX_TOKENS:1000}  # 最大 Token 数
-    # 规则驱动配置（降级方案）
-    rule-driven:
-      enabled: ${SKILL_RULE_DRIVEN_ENABLED:true}  # 是否启用规则驱动
-      fallback: ${SKILL_RULE_DRIVEN_FALLBACK:true}  # 是否作为降级方案
     # 缓存配置
     cache:
       level1-ttl: ${SKILL_CACHE_LEVEL1_TTL:3600}  # Level 1 缓存 TTL（秒）
@@ -223,7 +219,10 @@ heartsphere:
       batch-size: 10
     # HSMem 服务配置
     hsmem:
-      base-url: ${HSMEM_BASE_URL:http://localhost:8000}  # HSMem 服务地址，可通过环境变量覆盖
+      mode: ${HSMEM_MODE:local}   # local=Main内置实现（默认），remote=外部HSMem服务
+      local:
+        base-path: ${HSMEM_LOCAL_BASE_PATH:./memory_data}
+      base-url: ${HSMEM_BASE_URL:http://localhost:8000}  # HSMem 服务地址，mode=remote 时使用
       timeout: 30  # 请求超时时间（秒）
       retry:
         enabled: true  # 是否启用重试
@@ -270,6 +269,8 @@ logging:
     com.heartsphere.memory.service.HSMemClientService: INFO
     # Memory Controller 日志
     com.heartsphere.memory.controller.MemoryController: INFO
+    # HSMem 模式启动日志（HSMemModeRunner）
+    com.heartsphere.memory.config: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

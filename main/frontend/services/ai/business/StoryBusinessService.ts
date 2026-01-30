@@ -5,6 +5,7 @@
 
 import { AIService } from '../AIService';
 import { StoryNode, CustomScenario } from '../../../types';
+import { renderPromptTemplate } from '../../api/prompt/promptApi';
 
 /**
  * 故事业务服务
@@ -90,12 +91,55 @@ The content MUST be in Chinese. The story should be engaging, with clear charact
    */
   async generateScenarioFromPrompt(prompt: string): Promise<CustomScenario | null> {
     try {
-      const systemPrompt = `You are a creative director for an interactive visual novel game.
+      // 默认系统提示词（作为fallback）
+      const defaultSystemPrompt = `You are a creative director for an interactive visual novel game.
 Based on the user's idea, generate a branching scenario structure in JSON format.
-JSON Structure: { "title": "...", "description": "...", "startNodeId": "node_1", "nodes": { "node_1": { "id": "node_1", "title": "...", "prompt": "...", "options": [...] } } }
-Create at least 3-4 nodes with choices. The content MUST be in Chinese.`;
 
-      const responseText = await this.aiService.generateTextString(prompt, systemPrompt, { jsonMode: true });
+Required JSON Structure:
+{
+  "title": "剧本标题（简洁有力，吸引人）",
+  "description": "剧本简介（100-200字，描述故事背景、主要冲突和核心体验，让玩家了解这个剧本的魅力和玩法）",
+  "startNodeId": "node_1",
+  "nodes": {
+    "node_1": {
+      "id": "node_1",
+      "title": "节点标题",
+      "prompt": "节点内容描述（用于AI生成对话）",
+      "options": [
+        {
+          "id": "option_1",
+          "text": "选项文本",
+          "targetNodeId": "node_2"
+        }
+      ]
+    }
+  }
+}
+
+Requirements:
+1. "title" must be a concise, attractive title (10-20 characters)
+2. "description" must be a detailed introduction (100-200 characters) that describes:
+   - Story background and setting
+   - Main conflicts or themes
+   - Core gameplay experience
+   - What makes this scenario engaging
+3. Create at least 3-4 nodes with meaningful choices
+4. All content MUST be in Chinese
+5. Ensure the description is engaging and helps players understand the scenario's appeal`;
+
+      // 从后端获取提示词模板（分类代码：scenario-generation）
+      const promptResponse = await renderPromptTemplate(
+        'scenario-generation',
+        { userPrompt: prompt },
+        defaultSystemPrompt,
+        prompt
+      );
+
+      // 使用后端返回的系统提示词，如果没有则使用默认值
+      const systemPrompt = promptResponse?.systemPrompt || defaultSystemPrompt;
+      const userPrompt = promptResponse?.userPrompt || prompt;
+
+      const responseText = await this.aiService.generateTextString(userPrompt, systemPrompt, { jsonMode: true });
       const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const scenarioData = JSON.parse(jsonStr);
 

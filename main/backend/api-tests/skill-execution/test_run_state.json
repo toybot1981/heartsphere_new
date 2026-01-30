@@ -1,0 +1,8 @@
+{
+  "results_file": "main/backend/api-tests/skill-execution/results.json",
+  "passed_case_ids": [
+    "case_execute_post"
+  ],
+  "failed_case_id": null,
+  "plan_file": "main/backend/api-tests/skill-execution/api_test_plan.json"
+}

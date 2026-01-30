@@ -1,0 +1,17 @@
+{
+  "id": "cc2bbc58-2c78-4631-90dd-c7511e666961",
+  "resource_id": "74404ec8-23cf-44e3-ad6d-41304acb5621",
+  "content": "先生既爱诗词，那咱们不妨聊聊诗词创作之法",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-23T06:35:55.010338",
+  "updated_at": "2026-01-23T06:35:55.010354",
+  "user_id": "user_70",
+  "agent_id": "character_292"
+}

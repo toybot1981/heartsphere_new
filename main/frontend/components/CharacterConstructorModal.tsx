@@ -14,6 +14,7 @@ import { getToken } from '../services/api/base/tokenStorage';
 import { LazyImage } from './LazyImage';
 import { generateVariantUrl, type ImageVariants } from '../utils/imageResolution';
 import { constructCharacterAvatarPrompt, constructCharacterBackgroundPrompt } from '../utils/promptConstructors';
+import { useGameState } from '../contexts/GameStateContext';
 
 interface CharacterConstructorModalProps {
   scene: WorldScene;
@@ -28,20 +29,51 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedCharacter, setGeneratedCharacter] = useState<Character | null>(null);
+  const { state: gameState } = useGameState();
   
-  // 从token或localStorage获取用户ID
-  const getUserIdFromToken = (): number | null => {
+  // 从多个来源获取用户ID（使用 useMemo 缓存结果，避免重复计算和警告）
+  const userId = React.useMemo((): number | null => {
     try {
-      // 优先从localStorage的user_info获取
+      // 方法1: 优先从gameState获取（最可靠）
+      if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userProfile.id) {
+        const profileId = gameState.userProfile.id;
+        if (typeof profileId === 'number' && profileId > 0) {
+          return profileId;
+        } else if (typeof profileId === 'string' && /^\d+$/.test(profileId)) {
+          const userIdNum = parseInt(profileId, 10);
+          if (!isNaN(userIdNum) && userIdNum > 0) {
+            return userIdNum;
+          }
+        }
+      }
+      
+      // 方法2: 从localStorage的user_info获取
       const userInfo = localStorage.getItem('user_info');
       if (userInfo) {
         const user = JSON.parse(userInfo);
         if (user.id) {
-          return user.id;
+          // 确保是数字类型
+          const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+          if (!isNaN(userIdNum) && userIdNum > 0) {
+            return userIdNum;
+          }
         }
       }
       
-      // 如果localStorage中没有，尝试从token解析（如果token包含用户ID信息）
+      // 方法3: 从localStorage的HEARTSPHERE_MEMORY_CORE_V1获取
+      const stored = localStorage.getItem('HEARTSPHERE_MEMORY_CORE_V1');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const parsedUserId = parsed?.userProfile?.id;
+        if (parsedUserId) {
+          const userIdNum = typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
+          if (!isNaN(userIdNum) && userIdNum > 0) {
+            return userIdNum;
+          }
+        }
+      }
+      
+      // 方法4: 从token解析（如果token包含用户ID信息）
       const token = getToken();
       if (token) {
         try {
@@ -55,17 +87,25 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
             const paddedBase64 = base64 + '='.repeat((4 - base64.length % 4) % 4);
             const decoded = JSON.parse(atob(paddedBase64));
             // 尝试不同的字段名
-            return decoded.userId || decoded.id || decoded.sub || null;
+            const userIdValue = decoded.userId || decoded.id || decoded.sub;
+            if (userIdValue) {
+              // 确保是数字类型
+              const userIdNum = typeof userIdValue === 'string' ? parseInt(userIdValue, 10) : userIdValue;
+              if (!isNaN(userIdNum) && userIdNum > 0) {
+                return userIdNum;
+              }
+            }
           }
         } catch (e) {
-          // token解析失败，忽略
+          // token解析失败，静默忽略
         }
       }
     } catch (error) {
-      console.error('获取用户ID失败:', error);
+      // 只在真正出错时记录错误
+      console.error('[CharacterConstructorModal] 获取用户ID失败:', error);
     }
     return null;
-  };
+  }, [gameState.userProfile]); // 依赖 gameState.userProfile，当用户信息更新时重新计算
   
   // Edit Mode State - Tab状态
   const [activeTab, setActiveTab] = useState<'basic' | 'skills' | 'memory' | 'growth' | 'capability'>('basic');
@@ -374,7 +414,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
         : characterToEdit.id;
 
       const token = getToken();
-      const userId = getUserIdFromToken();
+      // userId 已经在组件级别使用 useMemo 缓存
 
       return (
           <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
@@ -387,7 +427,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 onClick={() => setActiveTab('basic')}
                 className="px-4 py-2 text-sm font-medium transition-colors"
                 style={{
-                  color: activeTab === 'basic' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                  color: activeTab === 'basic' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-secondary, #CBD5E1)',
                   borderBottom: activeTab === 'basic' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
                 }}
                 onMouseEnter={(e) => {
@@ -397,7 +437,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 }}
                 onMouseLeave={(e) => {
                   if (activeTab !== 'basic') {
-                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                    e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
                   }
                 }}
               >
@@ -409,7 +449,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     onClick={() => setActiveTab('skills')}
                     className="px-4 py-2 text-sm font-medium transition-colors"
                     style={{
-                      color: activeTab === 'skills' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      color: activeTab === 'skills' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-secondary, #CBD5E1)',
                       borderBottom: activeTab === 'skills' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
                     }}
                     onMouseEnter={(e) => {
@@ -419,7 +459,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     }}
                     onMouseLeave={(e) => {
                       if (activeTab !== 'skills') {
-                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
                       }
                     }}
                   >
@@ -429,7 +469,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     onClick={() => setActiveTab('memory')}
                     className="px-4 py-2 text-sm font-medium transition-colors"
                     style={{
-                      color: activeTab === 'memory' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      color: activeTab === 'memory' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-secondary, #CBD5E1)',
                       borderBottom: activeTab === 'memory' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
                     }}
                     onMouseEnter={(e) => {
@@ -439,7 +479,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     }}
                     onMouseLeave={(e) => {
                       if (activeTab !== 'memory') {
-                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
                       }
                     }}
                   >
@@ -449,7 +489,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     onClick={() => setActiveTab('growth')}
                     className="px-4 py-2 text-sm font-medium transition-colors"
                     style={{
-                      color: activeTab === 'growth' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      color: activeTab === 'growth' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-secondary, #CBD5E1)',
                       borderBottom: activeTab === 'growth' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
                     }}
                     onMouseEnter={(e) => {
@@ -459,7 +499,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     }}
                     onMouseLeave={(e) => {
                       if (activeTab !== 'growth') {
-                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
                       }
                     }}
                   >
@@ -469,7 +509,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     onClick={() => setActiveTab('capability')}
                     className="px-4 py-2 text-sm font-medium transition-colors"
                     style={{
-                      color: activeTab === 'capability' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-tertiary)',
+                      color: activeTab === 'capability' ? 'var(--color-primary-light, #818cf8)' : 'var(--text-secondary, #CBD5E1)',
                       borderBottom: activeTab === 'capability' ? '2px solid var(--color-primary-light, #818cf8)' : 'none',
                     }}
                     onMouseEnter={(e) => {
@@ -479,7 +519,7 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                     }}
                     onMouseLeave={(e) => {
                       if (activeTab !== 'capability') {
-                        e.currentTarget.style.color = 'var(--text-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
                       }
                     }}
                   >
@@ -1208,11 +1248,11 @@ export const CharacterConstructorModal: React.FC<CharacterConstructorModalProps>
                 />
               </div>
             )}
-            {activeTab === 'capability' && characterId && userId && (
+            {activeTab === 'capability' && characterId && (
               <div className="role-capability-panel">
                 <RoleCapabilityPanel
                   characterId={characterId}
-                  userId={userId}
+                  userId={userId || 0} // 传递数字类型，0表示无效
                   characterName={characterToEdit.name}
                 />
               </div>

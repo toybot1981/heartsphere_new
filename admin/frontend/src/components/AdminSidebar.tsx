@@ -68,7 +68,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
                 { section: 'items', label: '剧本物品', icon: '🎁' },
                 { section: 'main-stories', label: '主线剧情', icon: '📖' },
                 { section: 'graph', label: 'Graph流程编辑器', icon: '🔄' },
-                { section: 'skills', label: '技能管理', icon: '⚡' },
                 { section: 'resources', label: '资源管理', icon: '🖼️' },
                 { section: 'images', label: '图片管理', icon: '🖼️' },
                 { section: 'videos', label: '视频管理', icon: '🎬' }
@@ -100,6 +99,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
             label: 'AI 智能体',
             icon: '🤖',
             items: [
+                { section: 'skills', label: '技能管理', icon: '⚡' },
+                { section: 'mcp-management', label: 'MCP 管理', icon: '🔌' },
                 { section: 'mentis-management', label: 'Mentis 管理', icon: '🤖' },
                 { section: 'agent-mind-management', label: 'Agent Mind 管理', icon: '🧠' },
                 { section: 'multi-agent-management', label: '多智能体协作', icon: '🤝' },

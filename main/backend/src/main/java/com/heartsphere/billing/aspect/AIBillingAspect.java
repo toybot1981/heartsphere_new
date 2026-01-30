@@ -69,7 +69,7 @@ public class AIBillingAspect {
         String initialProvider = extractProvider(requestObj);
         String initialModelCode = extractModelCode(requestObj);
         
-        log.info("[计费] 开始计费检查: userId={}, provider={}, model={}, quotaType={}, usageType={}", 
+        log.debug("[计费] 开始计费检查: userId={}, provider={}, model={}, quotaType={}, usageType={}", 
                 userId, initialProvider, initialModelCode, quotaType, usageType);
         
         // 如果provider和model为null，尝试从统一路由服务或用户配置获取
@@ -78,7 +78,7 @@ public class AIBillingAspect {
         AIModelConfigDTO modelConfigFromRouting = null; // 保存从统一路由获取的模型配置
         
         if ((provider == null || provider.isEmpty()) && (modelCode == null || modelCode.isEmpty())) {
-            log.info("[计费] provider和model为null，尝试从统一路由服务获取");
+            log.debug("[计费] provider和model为null，尝试从统一路由服务获取");
             try {
                 // 根据usageType确定capability类型
                 String capability = getCapabilityFromUsageType(usageType);
@@ -87,7 +87,7 @@ public class AIBillingAspect {
                 modelCode = modelConfigFromRouting.getModelName();
                 // 设置到请求对象中，这样AIServiceImpl就不需要再设置了
                 setProviderAndModel(requestObj, provider, modelCode);
-                log.info("[计费] 从统一路由服务获取到模型: provider={}, model={}", provider, modelCode);
+                log.debug("[计费] 从统一路由服务获取到模型: provider={}, model={}", provider, modelCode);
             } catch (Exception e) {
                 log.warn("[计费] 统一路由服务获取失败，尝试从用户配置获取: {}", e.getMessage());
                 try {
@@ -98,7 +98,7 @@ public class AIBillingAspect {
                         provider = userProvider;
                         modelCode = userModel;
                         setProviderAndModel(requestObj, provider, modelCode);
-                        log.info("[计费] 从用户配置获取到模型: provider={}, model={}", provider, modelCode);
+                        log.debug("[计费] 从用户配置获取到模型: provider={}, model={}", provider, modelCode);
                     }
                 } catch (Exception ex) {
                     log.warn("[计费] 从用户配置获取失败: {}", ex.getMessage());
@@ -121,7 +121,7 @@ public class AIBillingAspect {
         Optional<Long> pricingModelIdOpt = Optional.empty();
         if (finalModelConfig != null && finalModelConfig.getId() != null) {
             pricingModelIdOpt = Optional.of(finalModelConfig.getId());
-            log.info("[计费] 使用模型配置ID作为定价模型ID: modelConfigId={}", finalModelConfig.getId());
+            log.debug("[计费] 使用模型配置ID作为定价模型ID: modelConfigId={}", finalModelConfig.getId());
         }
         
         // 如果无法获取模型配置ID，无法继续计费
@@ -134,7 +134,7 @@ public class AIBillingAspect {
         String actualProvider = finalProvider;
         if (finalModelConfig != null && finalModelConfig.getProvider() != null && !finalModelConfig.getProvider().isEmpty()) {
             actualProvider = finalModelConfig.getProvider();
-            log.info("[计费] 使用模型配置中的provider: {} (原provider: {})", actualProvider, finalProvider);
+            log.debug("[计费] 使用模型配置中的provider: {} (原provider: {})", actualProvider, finalProvider);
         }
         
         // 查找计费系统中的provider（使用模型配置中的provider名称）
@@ -142,7 +142,7 @@ public class AIBillingAspect {
         
         // 如果计费系统中的provider不存在，尝试自动创建
         if (providerIdOpt.isEmpty()) {
-            log.info("[计费] 计费系统中的provider不存在，尝试自动创建: provider={}", actualProvider);
+            log.debug("[计费] 计费系统中的provider不存在，尝试自动创建: provider={}", actualProvider);
             try {
                 // 创建或获取provider
                 String providerDisplayName = getProviderDisplayName(actualProvider);
@@ -150,7 +150,7 @@ public class AIBillingAspect {
                     modelLookupService.findOrCreateProvider(actualProvider, providerDisplayName);
                 providerIdOpt = Optional.of(aiProvider.getId());
                 
-                log.info("[计费] 自动创建provider成功: providerId={}, provider={}", 
+                log.debug("[计费] 自动创建provider成功: providerId={}, provider={}", 
                         providerIdOpt.get(), actualProvider);
             } catch (Exception e) {
                 log.error("[计费] 自动创建provider失败: provider={}, error={}", 
@@ -163,7 +163,7 @@ public class AIBillingAspect {
         Long providerId = providerIdOpt.get();
         Long modelId = pricingModelIdOpt.get(); // 统一使用 ai_model_config.id
         
-        log.info("[计费] 模型配置查找成功: modelId={} (ai_model_config), providerId={}", 
+        log.debug("[计费] 模型配置查找成功: modelId={} (ai_model_config), providerId={}", 
                 modelId, providerId);
         
         // 检查资源池余额（在配额检查之前）
@@ -171,7 +171,7 @@ public class AIBillingAspect {
                 resourcePoolService.getPool(providerId);
         if (poolOpt.isPresent()) {
             com.heartsphere.billing.entity.ProviderResourcePool pool = poolOpt.get();
-            log.info("[计费] 资源池余额检查: providerId={}, availableBalance={}", 
+            log.debug("[计费] 资源池余额检查: providerId={}, availableBalance={}", 
                     providerId, pool.getAvailableBalance());
             if (pool.getAvailableBalance().compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 log.warn("资源池余额不足，阻止服务调用: providerId={}, availableBalance={}", 
@@ -179,17 +179,17 @@ public class AIBillingAspect {
                 throw new QuotaInsufficientException("resource_pool", 0L, 0L);
             }
         } else {
-            log.info("[计费] 资源池不存在，将自动创建: providerId={}", providerId);
+            log.debug("[计费] 资源池不存在，将自动创建: providerId={}", providerId);
         }
         
         // 预估使用量（用于配额检查）
         Long estimatedAmount = estimateUsage(requestObj, usageType);
-        log.info("[计费] 预估使用量: userId={}, quotaType={}, estimatedAmount={}", 
+        log.debug("[计费] 预估使用量: userId={}, quotaType={}, estimatedAmount={}", 
                 userId, quotaType, estimatedAmount);
         
         // 检查是否启用配额拦截开关
         boolean quotaEnforcementEnabled = systemConfigService.isBillingQuotaEnforcementEnabled();
-        log.info("[计费] 配额拦截开关状态: enabled={}", quotaEnforcementEnabled);
+        log.debug("[计费] 配额拦截开关状态: enabled={}", quotaEnforcementEnabled);
         
         // 检查用户配额
         boolean hasUserQuota = quotaService.hasEnoughQuota(userId, quotaType, estimatedAmount);
@@ -213,7 +213,7 @@ public class AIBillingAspect {
                 // 如果资源池有余额，允许使用
                 if (poolBalance.compareTo(java.math.BigDecimal.ZERO) > 0) {
                     canUseResourcePool = true;
-                    log.info("[计费] 配额拦截已关闭，用户配额不足但资源池有余额，允许使用资源池: userId={}, poolBalance={}", 
+                    log.debug("[计费] 配额拦截已关闭，用户配额不足但资源池有余额，允许使用资源池: userId={}, poolBalance={}", 
                             userId, poolBalance);
                 } else {
                     log.warn("[计费] 配额拦截已关闭，用户配额不足且资源池余额也为0: userId={}, quotaType={}, required={}, poolBalance={}", 
@@ -231,7 +231,7 @@ public class AIBillingAspect {
                 throw new QuotaInsufficientException(quotaType, estimatedAmount, 0L);
             }
         } else {
-            log.info("[计费] 用户配额检查通过: userId={}, quotaType={}, estimatedAmount={}", 
+            log.debug("[计费] 用户配额检查通过: userId={}, quotaType={}, estimatedAmount={}", 
                     userId, quotaType, estimatedAmount);
         }
         
@@ -241,7 +241,7 @@ public class AIBillingAspect {
             && args[2] instanceof StreamResponseHandler;
         
         if (isStreamCall) {
-            log.info("[计费] 流式调用模式: userId={}, provider={}, model={}", userId, finalProvider, finalModelCode);
+            log.debug("[计费] 流式调用模式: userId={}, provider={}, model={}", userId, finalProvider, finalModelCode);
             // 流式调用：包装handler，在done=true时进行计费
             @SuppressWarnings("unchecked")
             StreamResponseHandler<TextGenerationResponse> originalHandler = 
@@ -253,7 +253,7 @@ public class AIBillingAspect {
                 
                 // 如果完成，进行计费
                 if (done) {
-                    log.info("[计费] 流式调用完成，开始计费: userId={}, provider={}, model={}", 
+                    log.debug("[计费] 流式调用完成，开始计费: userId={}, provider={}, model={}", 
                             userId, finalProvider, finalModelCode);
                     recordUsage(userId, providerId, modelId, usageType, requestObj, response, null, quotaType);
                 }
@@ -275,14 +275,14 @@ public class AIBillingAspect {
                 throw e;
             }
         } else {
-            log.info("[计费] 同步调用模式，开始执行AI服务: userId={}, provider={}, model={}", 
+            log.debug("[计费] 同步调用模式，开始执行AI服务: userId={}, provider={}, model={}", 
                     userId, finalProvider, finalModelCode);
             // 同步调用：正常处理
             Object result = null;
             Exception exception = null;
             try {
                 result = joinPoint.proceed();
-                log.info("[计费] AI服务调用成功: userId={}, provider={}, model={}", 
+                log.debug("[计费] AI服务调用成功: userId={}, provider={}, model={}", 
                         userId, finalProvider, finalModelCode);
             } catch (Exception e) {
                 exception = e;
@@ -567,18 +567,18 @@ public class AIBillingAspect {
                 }
             } else if (result instanceof ImageGenerationResponse) {
                 ImageGenerationResponse response = (ImageGenerationResponse) result;
-                log.info("[计费] 处理图像生成响应: hasUsage={}, hasImages={}", 
+                log.debug("[计费] 处理图像生成响应: hasUsage={}, hasImages={}", 
                     response.getUsage() != null, response.getImages() != null);
                 
                 if (response.getUsage() != null && response.getUsage().getImagesGenerated() != null) {
                     imageCount = response.getUsage().getImagesGenerated();
                     tokenConsumed = imageCount.longValue();
-                    log.info("[计费] 从usage中提取图像数量: imageCount={}, tokenConsumed={}", 
+                    log.debug("[计费] 从usage中提取图像数量: imageCount={}, tokenConsumed={}", 
                         imageCount, tokenConsumed);
                 } else if (response.getImages() != null) {
                     imageCount = response.getImages().size();
                     tokenConsumed = imageCount.longValue();
-                    log.info("[计费] 从images列表中提取图像数量: imageCount={}, tokenConsumed={}", 
+                    log.debug("[计费] 从images列表中提取图像数量: imageCount={}, tokenConsumed={}", 
                         imageCount, tokenConsumed);
                 } else {
                     log.warn("[计费] 图像生成响应中未找到usage或images，无法确定图像数量");
@@ -604,10 +604,10 @@ public class AIBillingAspect {
             // 使用定价模型ID（ai_model_config的ID）计算费用
             BigDecimal costAmount = BigDecimal.ZERO;
             try {
-                log.info("[计费] 开始计算费用: userId={}, modelId={}, usageType={}, " +
+                log.debug("[计费] 开始计算费用: userId={}, modelId={}, usageType={}, " +
                         "imageCount={}", userId, modelId, usageType, imageCount);
                 costAmount = pricingService.calculateCost(modelId, usageType, usageData);
-                log.info("[计费] 费用计算完成: userId={}, modelId={}, usageType={}, costAmount={}, " +
+                log.debug("[计费] 费用计算完成: userId={}, modelId={}, usageType={}, costAmount={}, " +
                         "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
                         "audioDuration={}, videoDuration={}, success={}",
                         userId, modelId, usageType, costAmount,
@@ -630,7 +630,7 @@ public class AIBillingAspect {
                 
                 if (hasUserQuota) {
                     // 用户配额充足，扣除用户配额
-                    log.info("[计费] 开始扣除用户配额: userId={}, quotaType={}, tokenConsumed={}", 
+                    log.debug("[计费] 开始扣除用户配额: userId={}, quotaType={}, tokenConsumed={}", 
                             userId, quotaType, tokenConsumed);
                     boolean deducted = quotaService.consumeQuota(userId, quotaType, tokenConsumed);
                     if (!deducted) {
@@ -638,19 +638,19 @@ public class AIBillingAspect {
                                 userId, quotaType, tokenConsumed);
                         useResourcePoolOnly = true;
                     } else {
-                        log.info("[计费] 用户配额扣除成功: userId={}, quotaType={}, tokenConsumed={}", 
+                        log.debug("[计费] 用户配额扣除成功: userId={}, quotaType={}, tokenConsumed={}", 
                                 userId, quotaType, tokenConsumed);
                     }
                 } else {
                     // 用户配额不足，仅使用资源池
-                    log.info("[计费] 用户配额不足，将仅使用资源池: userId={}, quotaType={}, tokenConsumed={}", 
+                    log.debug("[计费] 用户配额不足，将仅使用资源池: userId={}, quotaType={}, tokenConsumed={}", 
                             userId, quotaType, tokenConsumed);
                     useResourcePoolOnly = true;
                 }
             }
             
             // 记录使用记录（使用 ai_model_config 的模型ID）
-            log.info("[计费] 准备记录使用情况: userId={}, providerId={}, modelId={}, usageType={}, " +
+            log.debug("[计费] 准备记录使用情况: userId={}, providerId={}, modelId={}, usageType={}, " +
                     "inputTokens={}, outputTokens={}, totalTokens={}, imageCount={}, " +
                     "audioDuration={}, videoDuration={}, costAmount={}, tokenConsumed={}, status={}",
                     userId, providerId, modelId, usageType,
@@ -666,7 +666,7 @@ public class AIBillingAspect {
                 success ? "success" : "failed",
                 errorMessage
             );
-            log.info("[计费] 使用记录已保存: userId={}, providerId={}, modelId={}, usageType={}, " +
+            log.debug("[计费] 使用记录已保存: userId={}, providerId={}, modelId={}, usageType={}, " +
                     "imageCount={}, tokenConsumed={}, status={}", 
                     userId, providerId, modelId, usageType, imageCount, tokenConsumed,
                     success ? "success" : "failed");
@@ -676,21 +676,21 @@ public class AIBillingAspect {
             if (success && costAmount.compareTo(BigDecimal.ZERO) > 0) {
                 try {
                     if (useResourcePoolOnly) {
-                        log.info("[计费] 仅使用资源池，开始扣除资源池余额: providerId={}, costAmount={}", 
+                        log.debug("[计费] 仅使用资源池，开始扣除资源池余额: providerId={}, costAmount={}", 
                                 providerId, costAmount);
                     } else {
-                        log.info("[计费] 扣除资源池余额（同时已扣除用户配额）: providerId={}, costAmount={}", 
+                        log.debug("[计费] 扣除资源池余额（同时已扣除用户配额）: providerId={}, costAmount={}", 
                                 providerId, costAmount);
                     }
                     resourcePoolService.deductBalance(providerId, costAmount);
-                    log.info("[计费] 资源池余额扣除成功: providerId={}, costAmount={}", providerId, costAmount);
+                    log.debug("[计费] 资源池余额扣除成功: providerId={}, costAmount={}", providerId, costAmount);
                 } catch (Exception e) {
                     log.error("[计费] 扣除资源池余额失败: providerId={}, amount={}", providerId, costAmount, e);
                     // 不抛出异常，避免影响主流程
                 }
             }
             
-            log.info("[计费] 计费流程完成: userId={}, providerId={}, modelId={}, costAmount={}, success={}", 
+            log.debug("[计费] 计费流程完成: userId={}, providerId={}, modelId={}, costAmount={}, success={}", 
                     userId, providerId, modelId, costAmount, success);
             
         } catch (Exception e) {

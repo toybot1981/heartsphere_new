@@ -50,6 +50,11 @@ public interface MentisManagementService {
     Map<String, Object> callMcpTool(Long id, String toolName, Map<String, Object> arguments);
     
     /**
+     * 切换 MCP 配置的启用/禁用状态
+     */
+    MentisMcpConfigDTO toggleMcpConfig(Long id, Boolean enabled);
+    
+    /**
      * 通知 Mentis 后端重新加载配置
      */
     void notifyMentisReload();

@@ -203,6 +203,7 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] 1.3 Add frontend component
 - [ ] 1.4 Write tests
 ```
+若变更包含 E2E/自动化测试：测试任务须遵循**测试覆盖原则**——不断扩展用例直至该功能模块所有功能全部测试成功（见 Best Practices / 测试覆盖原则）。若变更**涉及前端页面功能**，tasks.md 中须包含「提供自动化测试方案」任务，且方案由 **web-automation-testing** 技能完成，测试资产存放于对应前端项目专有目录（如 `admin/frontend/e2e/<feature>/`）。
 
 5. **Create design.md when needed:**
 Create `design.md` if any of the following apply; otherwise omit it:
@@ -374,6 +375,12 @@ notifications/spec.md
 ```
 
 ## Best Practices
+
+### 测试覆盖原则（Testing Coverage）
+对功能模块进行自动化测试时，**应不断扩展用例，直到该模块所有功能全部测试成功为止**。即：先覆盖核心路径，再按模块内步骤/入口逐项补充用例（如向导每一步、列表的增删改查），每轮扩展后重新执行完整测试，失败则交 Agent 分析修复再跑，直到全部通过。适用于 E2E / 自动化测试计划与提案中的测试任务。
+
+### 提案与前端 E2E 测试方案（Frontend E2E in Proposals）
+涉及**前端页面功能**的提案，tasks.md 须包含「提供自动化测试方案」任务；方案由 **web-automation-testing** 技能完成，测试资产存放于对应前端项目专有目录（如 `admin/frontend/e2e/<feature>/`、`main/frontend/e2e/<feature>/`）。技能执行时先对目标模块/功能点做需求分析，再围绕需求编写用例（见 web-automation-testing 技能说明）。
 
 ### Simplicity First
 - Default to <100 lines of new code

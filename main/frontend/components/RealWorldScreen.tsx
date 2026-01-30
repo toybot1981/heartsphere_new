@@ -19,6 +19,16 @@ import { PhotoAlbumModal } from './PhotoAlbumModal';
 import { scenePluginApi, userPluginApi } from '../services/api/plugin';
 import type { ScenePluginDTO } from '../services/api/plugin/scenePlugin';
 import type { Plugin } from '../services/api/plugin/pluginTypes';
+import { 
+  filterEntriesByDateRange, 
+  groupEntriesByDate, 
+  sortEntries, 
+  type DateRange, 
+  type DateRangeFilter,
+  type SortBy,
+  type GroupBy,
+  getTodayDateString
+} from '../utils/journalFilters';
 
 interface RealWorldScreenProps {
   entries: JournalEntry[];
@@ -62,6 +72,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [memoryModalUserId, setMemoryModalUserId] = useState<number | null>(null);
   const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   
@@ -72,6 +83,9 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>(null);
+  const [sortBy, setSortBy] = useState<SortBy>('date');
+  const [groupBy, setGroupBy] = useState<GroupBy>(null);
   
   // Note Sync State
   const [showNoteSyncModal, setShowNoteSyncModal] = useState(false);
@@ -303,6 +317,36 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     setNewTitle('');
     setNewContent('');
     setNewTags([]);
+    setTagInput('');
+    setUploadedImageUrl(undefined);
+    setUploadedImageVariants(undefined);
+    setMirrorInsight(null);
+    setIsEditing(false);
+    setIsCreating(true);
+  };
+
+  // 写今日：快速创建今天的日记
+  const handleWriteToday = (event: MouseEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedEntry(null);
+    setNewTitle('今日');
+    setNewContent('');
+    setNewTags([]);
+    setTagInput('');
+    setUploadedImageUrl(undefined);
+    setUploadedImageVariants(undefined);
+    setMirrorInsight(null);
+    setIsEditing(false);
+    setIsCreating(true);
+  };
+
+  // 从模板写今日
+  const handleWriteTodayFromTemplate = async (template: JournalTemplate): Promise<void> => {
+    setSelectedEntry(null);
+    setNewTitle(template.title);
+    setNewContent(template.content);
+    setNewTags(template.tags.split(',').map(t => t.trim()).filter(Boolean));
     setTagInput('');
     setUploadedImageUrl(undefined);
     setUploadedImageVariants(undefined);
@@ -696,7 +740,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
   };
 
   // Filter entries based on search and tag
-  const filteredEntries = entries.filter(entry => {
+  let filteredEntries = entries.filter(entry => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const matchesTitle = entry.title.toLowerCase().includes(query);
@@ -710,8 +754,257 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
     return true;
   });
 
-  // Sort entries by timestamp descending
-  const sortedEntries = [...filteredEntries].sort((a, b) => b.timestamp - a.timestamp);
+  // Apply date range filter
+  if (dateRange) {
+    filteredEntries = filterEntriesByDateRange(filteredEntries, { range: dateRange });
+  }
+
+  // Sort entries
+  const sortedEntries = sortEntries(filteredEntries, sortBy);
+
+  // 提取条目卡片渲染逻辑（仅内容，不包含外层包装）
+  const renderEntryCard = (entry: JournalEntry) => (
+      <>
+          <div 
+            className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{
+              background: 'var(--gradient-primary)',
+              opacity: 0.2,
+            }}
+          />
+          {entry.imageUrl ? (
+              <div className="h-40 w-full overflow-hidden relative">
+                  <img src={entry.imageUrl} alt="Visual" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(to top, var(--bg-primary) 90%, var(--bg-primary) 60%, transparent)',
+                    }}
+                  />
+              </div>
+          ) : (
+              <div 
+                className="h-40 w-full flex items-center justify-center relative overflow-hidden"
+                style={{
+                  background: 'var(--gradient-bg)',
+                }}
+              >
+                  <div 
+                    className="absolute inset-0 opacity-50"
+                    style={{
+                      background: 'radial-gradient(circle at 50% 50%, var(--color-primary) 20%, transparent 70%)',
+                    }}
+                  />
+                  <div className="text-4xl opacity-40 group-hover:opacity-60 transition-opacity">📝</div>
+              </div>
+          )}
+          <div className="p-5 flex-1 flex flex-col relative z-10">
+              <div className="flex justify-between items-start mb-2">
+                  <h3 
+                    className="font-bold text-lg line-clamp-1 transition-colors"
+                    style={{ color: 'var(--text-primary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--color-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                  >
+                    {entry.title}
+                  </h3>
+                  {entry.insight && (
+                      <span 
+                        className="text-[10px] px-2 py-0.5 rounded-full border shadow-lg"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--color-primary)',
+                          borderColor: 'var(--color-primary)',
+                          boxShadow: 'var(--shadow-primary)',
+                        }}
+                      >
+                          🔮 已解析
+                      </span>
+                  )}
+              </div>
+              <p 
+                className="text-sm line-clamp-3 mb-3 flex-1 leading-relaxed transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }}
+              >
+                  {entry.content}
+              </p>
+              {entry.insight && (
+                  <div 
+                    className="border rounded-lg p-3 mb-3"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderColor: 'var(--color-primary)',
+                    }}
+                  >
+                      <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm">🔮</span>
+                          <h4 
+                            className="font-bold text-xs uppercase tracking-wider"
+                            style={{ color: 'var(--color-primary)' }}
+                          >
+                            Mirror of Truth
+                          </h4>
+                      </div>
+                      <p 
+                        className="text-xs italic leading-relaxed"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        "{entry.insight}"
+                      </p>
+                  </div>
+              )}
+              {entry.tags && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                      {entry.tags.split(',').map((tag, idx) => {
+                          const trimmedTag = tag.trim();
+                          if (!trimmedTag) return null;
+                          return (
+                              <span
+                                  key={idx}
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedTag(trimmedTag);
+                                      setIsCreating(false);
+                                  }}
+                                  className="text-[10px] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+                                  style={{
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    color: 'var(--color-primary)',
+                                    borderColor: 'var(--color-primary)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                                    e.currentTarget.style.color = 'white';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                    e.currentTarget.style.color = 'var(--color-primary)';
+                                  }}
+                              >
+                                  {trimmedTag}
+                              </span>
+                          );
+                      })}
+                  </div>
+              )}
+              <div 
+                className="flex items-center justify-between pt-4 border-t mt-auto"
+                style={{ borderColor: 'var(--bg-secondary)' }}
+              >
+                  <span 
+                    className="text-xs transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-tertiary)';
+                    }}
+                  >
+                      {new Date(entry.timestamp).toLocaleDateString('zh-CN', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                      })}
+                  </span>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e: MouseEvent<HTMLButtonElement>) => { 
+                          e.stopPropagation(); 
+                          setPreviewEntry(entry);
+                          setShowPreview(true);
+                        }} 
+                        className="p-2 rounded-full shadow-lg transition-all gradient-button"
+                        style={{ color: 'white' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                        }}
+                        title="预览详情"
+                      >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                      </button>
+                      {!isGuest && scenePlugins.length > 0 && (
+                        <button 
+                          onClick={(e: MouseEvent<HTMLButtonElement>) => { 
+                            e.stopPropagation(); 
+                            showAlert(`可以使用插件处理这篇日志: ${entry.title}`, '提示', 'info');
+                          }} 
+                          className="p-2 rounded-full shadow-lg transition-all gradient-primary"
+                          style={{ color: 'white' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                          }}
+                          title="使用插件处理此日志"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                          </svg>
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
+                        className="p-2 rounded-full shadow-lg transition-all gradient-button"
+                        style={{ color: 'white' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                        }}
+                        title="带着问题进入心域"
+                      >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                      </button>
+                      <button 
+                        onClick={(e: MouseEvent<HTMLButtonElement>) => handleDeleteClick(entry.id, e)} 
+                        className="p-2 rounded-full transition-all"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--text-secondary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.6)';
+                          e.currentTarget.style.color = '#FCA5A5';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }}
+                      >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                      </button>
+                  </div>
+              </div>
+          </div>
+          <div 
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+            style={{
+              background: 'linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent)',
+              transform: 'translateX(-100%)',
+              animation: 'shimmer 2s infinite'
+            }}
+          />
+      </>
+  );
 
   return (
     <>
@@ -828,6 +1121,70 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       </button>
                   )}
               </div>
+              {/* Date Range Filters */}
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setDateRange(dateRange === 'today' ? null : 'today')}
+                  className="px-3 py-1 text-xs rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: dateRange === 'today' ? 'var(--color-primary)' : 'var(--bg-card)',
+                    color: dateRange === 'today' ? 'white' : 'var(--text-secondary)',
+                    border: `1px solid ${dateRange === 'today' ? 'var(--color-primary)' : 'var(--border-color-overlay)'}`,
+                  }}
+                >
+                  今日
+                </button>
+                <button
+                  onClick={() => setDateRange(dateRange === 'week' ? null : 'week')}
+                  className="px-3 py-1 text-xs rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: dateRange === 'week' ? 'var(--color-primary)' : 'var(--bg-card)',
+                    color: dateRange === 'week' ? 'white' : 'var(--text-secondary)',
+                    border: `1px solid ${dateRange === 'week' ? 'var(--color-primary)' : 'var(--border-color-overlay)'}`,
+                  }}
+                >
+                  本周
+                </button>
+                <button
+                  onClick={() => setDateRange(dateRange === 'month' ? null : 'month')}
+                  className="px-3 py-1 text-xs rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: dateRange === 'month' ? 'var(--color-primary)' : 'var(--bg-card)',
+                    color: dateRange === 'month' ? 'white' : 'var(--text-secondary)',
+                    border: `1px solid ${dateRange === 'month' ? 'var(--color-primary)' : 'var(--border-color-overlay)'}`,
+                  }}
+                >
+                  本月
+                </button>
+              </div>
+              {/* Sort & Group Controls */}
+              <div className="flex gap-2 items-center">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortBy)}
+                  className="px-2 py-1 text-xs rounded-lg"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color-overlay)',
+                  }}
+                >
+                  <option value="date">按日期</option>
+                  <option value="updated">按更新</option>
+                </select>
+                <button
+                  onClick={() => setGroupBy(groupBy === 'day' ? null : 'day')}
+                  className="px-2 py-1 text-xs rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: groupBy === 'day' ? 'var(--color-primary)' : 'var(--bg-card)',
+                    color: groupBy === 'day' ? 'white' : 'var(--text-secondary)',
+                    border: `1px solid ${groupBy === 'day' ? 'var(--color-primary)' : 'var(--border-color-overlay)'}`,
+                  }}
+                  title="按日分组"
+                >
+                  分组
+                </button>
+              </div>
               {/* Note Sync Button - 根据配置显示/隐藏 */}
               {syncButtonEnabled && (
               <Button 
@@ -922,6 +1279,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                               return;
                           }
                           
+                          setMemoryModalUserId(userId);
                           setShowMemoryModal(true);
                       } catch (error) {
                           logger.error('[RealWorldScreen] 获取用户信息失败', error);
@@ -935,6 +1293,15 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   🧠 我的记忆
               </Button>
               )}
+              {/* Write Today Button */}
+              <Button 
+                onClick={handleWriteToday} 
+                className="shadow-lg gradient-button"
+                style={{ boxShadow: 'var(--shadow-primary)' }}
+                title="快速写今日日记"
+              >
+                  ✍️ 写今日
+              </Button>
               {/* New Record Button */}
               <Button 
                 onClick={handleCreateClick} 
@@ -1180,284 +1547,89 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                       <p style={{ color: 'var(--text-secondary)' }}>暂无记录</p>
                   </div>
               ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-                      {sortedEntries.map(entry => (
-                          <div 
-                            key={entry.id} 
-                            onClick={(event: MouseEvent<HTMLDivElement>) => {
-                              // 点击卡片时打开预览，而不是直接编辑
-                              setPreviewEntry(entry);
-                              setShowPreview(true);
-                            }}
-                            className="group relative rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02]"
-                            style={{
-                                backgroundColor: 'var(--bg-card)',
-                                border: '1px solid var(--bg-secondary)',
-                                boxShadow: 'var(--shadow-md)',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-primary)';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--bg-secondary)';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                            }}
-                          >
-                              {/* Memory Slice Effect - Gradient Border */}
-                              <div 
-                                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                                style={{
-                                  background: 'var(--gradient-primary)',
-                                  opacity: 0.2,
-                                }}
-                              />
-                              
-                              {entry.imageUrl ? (
-                                  <div className="h-40 w-full overflow-hidden relative">
-                                      <img src={entry.imageUrl} alt="Visual" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                      <div 
-                                        className="absolute inset-0"
-                                        style={{
-                                          background: 'linear-gradient(to top, var(--bg-primary) 90%, var(--bg-primary) 60%, transparent)',
-                                        }}
-                                      />
-                                  </div>
-                              ) : (
-                                  <div 
-                                    className="h-40 w-full flex items-center justify-center relative overflow-hidden"
-                                    style={{
-                                      background: 'var(--gradient-bg)',
-                                    }}
-                                  >
-                                      <div 
-                                        className="absolute inset-0 opacity-50"
-                                        style={{
-                                          background: 'radial-gradient(circle at 50% 50%, var(--color-primary) 20%, transparent 70%)',
-                                        }}
-                                      />
-                                      <div className="text-4xl opacity-40 group-hover:opacity-60 transition-opacity">📝</div>
-                                  </div>
-                              )}
-                              
-                              <div className="p-5 flex-1 flex flex-col relative z-10">
-                                  <div className="flex justify-between items-start mb-2">
+                  <div className="pb-20">
+                      {groupBy ? (
+                          // 分组显示
+                          (() => {
+                              const grouped = groupEntriesByDate(sortedEntries, groupBy);
+                              const groupKeys = Object.keys(grouped).sort((a, b) => {
+                                  if (groupBy === 'day') {
+                                      return b.localeCompare(a); // 日期倒序
+                                  } else {
+                                      return b.localeCompare(a); // 周倒序
+                                  }
+                              });
+                              return groupKeys.map(groupKey => (
+                                  <div key={groupKey} className="mb-8">
                                       <h3 
-                                        className="font-bold text-lg line-clamp-1 transition-colors"
-                                        style={{ color: 'var(--text-primary)' }}
-                                        onMouseEnter={(e) => {
-                                          e.currentTarget.style.color = 'var(--color-primary)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          e.currentTarget.style.color = 'var(--text-primary)';
-                                        }}
+                                          className="text-sm font-bold mb-4 uppercase tracking-wider"
+                                          style={{ color: 'var(--color-primary)' }}
                                       >
-                                        {entry.title}
+                                          {groupBy === 'day' 
+                                              ? new Date(groupKey).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+                                              : `第 ${groupKey.split('-W')[1]} 周 (${groupKey.split('-')[0]})`
+                                          }
                                       </h3>
-                                      {entry.insight && (
-                                          <span 
-                                            className="text-[10px] px-2 py-0.5 rounded-full border shadow-lg"
-                                            style={{
-                                              backgroundColor: 'var(--bg-secondary)',
-                                              color: 'var(--color-primary)',
-                                              borderColor: 'var(--color-primary)',
-                                              boxShadow: 'var(--shadow-primary)',
-                                            }}
-                                          >
-                                              🔮 已解析
-                                          </span>
-                                      )}
-                                  </div>
-                                  <p 
-                                    className="text-sm line-clamp-3 mb-3 flex-1 leading-relaxed transition-colors"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.color = 'var(--text-primary)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.color = 'var(--text-secondary)';
-                                    }}
-                                  >
-                                      {entry.content}
-                                  </p>
-                                  
-                                  {/* Mirror Insight Display */}
-                                  {entry.insight && (
-                                      <div 
-                                        className="border rounded-lg p-3 mb-3"
-                                        style={{
-                                          backgroundColor: 'var(--bg-secondary)',
-                                          borderColor: 'var(--color-primary)',
-                                        }}
-                                      >
-                                          <div className="flex items-center gap-2 mb-1">
-                                              <span className="text-sm">🔮</span>
-                                              <h4 
-                                                className="font-bold text-xs uppercase tracking-wider"
-                                                style={{ color: 'var(--color-primary)' }}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                          {grouped[groupKey].map(entry => (
+                                              <div 
+                                                  key={entry.id} 
+                                                  onClick={(event: MouseEvent<HTMLDivElement>) => {
+                                                      setPreviewEntry(entry);
+                                                      setShowPreview(true);
+                                                  }}
+                                                  className="group relative rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+                                                  style={{
+                                                      backgroundColor: 'var(--bg-card)',
+                                                      border: '1px solid var(--bg-secondary)',
+                                                      boxShadow: 'var(--shadow-md)',
+                                                  }}
+                                                  onMouseEnter={(e) => {
+                                                      e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                                      e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                                  }}
+                                                  onMouseLeave={(e) => {
+                                                      e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                                                      e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                                  }}
                                               >
-                                                Mirror of Truth
-                                              </h4>
-                                          </div>
-                                          <p 
-                                            className="text-xs italic leading-relaxed"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                          >
-                                            "{entry.insight}"
-                                          </p>
-                                      </div>
-                                  )}
-                                  
-                                  {/* Tags Display */}
-                                  {entry.tags && (
-                                      <div className="flex flex-wrap gap-1 mb-3">
-                                          {entry.tags.split(',').map((tag, idx) => {
-                                              const trimmedTag = tag.trim();
-                                              if (!trimmedTag) return null;
-                                              return (
-                                                  <span
-                                                      key={idx}
-                                                      onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          setSelectedTag(trimmedTag);
-                                                          setIsCreating(false);
-                                                      }}
-                                                      className="text-[10px] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
-                                                      style={{
-                                                        backgroundColor: 'var(--bg-secondary)',
-                                                        color: 'var(--color-primary)',
-                                                        borderColor: 'var(--color-primary)',
-                                                      }}
-                                                      onMouseEnter={(e) => {
-                                                        e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
-                                                        e.currentTarget.style.color = 'white';
-                                                      }}
-                                                      onMouseLeave={(e) => {
-                                                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
-                                                        e.currentTarget.style.color = 'var(--color-primary)';
-                                                      }}
-                                                  >
-                                                      {trimmedTag}
-                                                  </span>
-                                              );
-                                          })}
-                                      </div>
-                                  )}
-                                  
-                                  <div 
-                                    className="flex items-center justify-between pt-4 border-t mt-auto"
-                                    style={{ borderColor: 'var(--bg-secondary)' }}
-                                  >
-                                      <span 
-                                        className="text-xs transition-colors"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                        onMouseEnter={(e) => {
-                                          e.currentTarget.style.color = 'var(--text-secondary)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          e.currentTarget.style.color = 'var(--text-tertiary)';
-                                        }}
-                                      >
-                                          {new Date(entry.timestamp).toLocaleDateString('zh-CN', { 
-                                              year: 'numeric', 
-                                              month: 'long', 
-                                              day: 'numeric' 
-                                          })}
-                                      </span>
-                                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button 
-                                            onClick={(e: MouseEvent<HTMLButtonElement>) => { 
-                                              e.stopPropagation(); 
-                                              setPreviewEntry(entry);
-                                              setShowPreview(true);
-                                            }} 
-                                            className="p-2 rounded-full shadow-lg transition-all gradient-button"
-                                            style={{ color: 'white' }}
-                                            onMouseEnter={(e) => {
-                                              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                                            }}
-                                            title="预览详情"
-                                          >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                              </svg>
-                                          </button>
-                                          {/* 插件入口 - 与日志融合 */}
-                                          {!isGuest && scenePlugins.length > 0 && (
-                                            <button 
-                                              onClick={(e: MouseEvent<HTMLButtonElement>) => { 
-                                                e.stopPropagation(); 
-                                                // 可以传递日志内容给插件使用
-                                                showAlert(`可以使用插件处理这篇日志: ${entry.title}`, '提示', 'info');
-                                              }} 
-                                              className="p-2 rounded-full shadow-lg transition-all gradient-primary"
-                                              style={{ color: 'white' }}
-                                              onMouseEnter={(e) => {
-                                                e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                                              }}
-                                              onMouseLeave={(e) => {
-                                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                                              }}
-                                              title="使用插件处理此日志"
-                                            >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                                              </svg>
-                                            </button>
-                                          )}
-                                          <button 
-                                            onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onExplore(entry); }} 
-                                            className="p-2 rounded-full shadow-lg transition-all gradient-button"
-                                            style={{ color: 'white' }}
-                                            onMouseEnter={(e) => {
-                                              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                                            }}
-                                            title="带着问题进入心域"
-                                          >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                          </button>
-                                          <button 
-                                            onClick={(e: MouseEvent<HTMLButtonElement>) => handleDeleteClick(entry.id, e)} 
-                                            className="p-2 rounded-full transition-all"
-                                            style={{
-                                              backgroundColor: 'var(--bg-secondary)',
-                                              color: 'var(--text-secondary)',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.6)';
-                                              e.currentTarget.style.color = '#FCA5A5';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
-                                              e.currentTarget.style.color = 'var(--text-secondary)';
-                                            }}
-                                          >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                                          </button>
+                                                  {renderEntryCard(entry)}
+                                              </div>
+                                          ))}
                                       </div>
                                   </div>
-                              </div>
-                              
-                              {/* Shimmer Effect on Hover */}
-                              <div 
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                                style={{
-                                  background: 'linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent)',
-                                }} 
-                                   style={{
-                                       transform: 'translateX(-100%)',
-                                       animation: 'shimmer 2s infinite'
-                                   }}
-                              />
+                              ));
+                          })()
+                      ) : (
+                          // 非分组显示
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {sortedEntries.map(entry => (
+                                  <div 
+                                      key={entry.id} 
+                                      onClick={(event: MouseEvent<HTMLDivElement>) => {
+                                          setPreviewEntry(entry);
+                                          setShowPreview(true);
+                                      }}
+                                      className="group relative rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+                                      style={{
+                                          backgroundColor: 'var(--bg-card)',
+                                          border: '1px solid var(--bg-secondary)',
+                                          boxShadow: 'var(--shadow-md)',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                          e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                          e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                          e.currentTarget.style.borderColor = 'var(--bg-secondary)';
+                                          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                      }}
+                                  >
+                                      {renderEntryCard(entry)}
+                                  </div>
+                              ))}
                           </div>
-                      ))}
+                      )}
                   </div>
               )}
           </div>
@@ -1912,26 +2084,18 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
       {/* 日记记忆查看模态框 */}
       {showMemoryModal && !isGuest && userName && (
           <JournalMemoryModal
-              userId={(() => {
+              userId={memoryModalUserId ?? (() => {
                   try {
-                      // 方法1: 从gameState获取
                       if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userProfile.id) {
                           const profileId = gameState.userProfile.id;
-                          if (typeof profileId === 'number') {
-                              return profileId;
-                          } else if (typeof profileId === 'string' && /^\d+$/.test(profileId)) {
-                              return parseInt(profileId, 10);
-                          }
+                          if (typeof profileId === 'number') return profileId;
+                          if (typeof profileId === 'string' && /^\d+$/.test(profileId)) return parseInt(profileId, 10);
                       }
-                      
-                      // 方法2: 从localStorage获取
                       const stored = localStorage.getItem('HEARTSPHERE_MEMORY_CORE_V1');
                       if (stored) {
                           const parsed = JSON.parse(stored);
                           const parsedUserId = parsed?.userProfile?.id;
-                          if (parsedUserId) {
-                              return typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
-                          }
+                          if (parsedUserId) return typeof parsedUserId === 'number' ? parsedUserId : parseInt(String(parsedUserId), 10);
                       }
                       return 0;
                   } catch (e) {
@@ -1940,7 +2104,7 @@ export const RealWorldScreen: React.FC<RealWorldScreenProps> = ({
                   }
               })()}
               isOpen={showMemoryModal}
-              onClose={() => setShowMemoryModal(false)}
+              onClose={() => { setShowMemoryModal(false); setMemoryModalUserId(null); }}
           />
       )}
 

@@ -52,6 +52,11 @@ public class HSMemResponse<T> {
         private Integer items_count;
         
         /**
+         * 新建记忆项 ID 列表（memorizeItems 时可用）
+         */
+        private List<String> item_ids;
+        
+        /**
          * 分类列表
          */
         private List<Category> categories;

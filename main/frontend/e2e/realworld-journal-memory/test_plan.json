@@ -1,0 +1,284 @@
+{
+  "metadata": {
+    "created_at": "2026-01-28T00:00:00Z",
+    "app_url": "http://localhost:3000",
+    "test_scope": "现实世界日记与记忆提取功能自动化测试",
+    "priority": "high",
+    "prerequisites": [
+      "Main 前端运行在 http://localhost:3000",
+      "Main 后端运行在 http://localhost:8081",
+      "测试账号：tongyexin/123456（或使用游客模式）",
+      "Python 3.8+ 和 Playwright 已安装",
+      "web-automation-testing 技能可用"
+    ],
+    "notes": [
+      "本测试计划针对 main 工程的现实世界日记功能和记忆提取功能",
+      "仅用例 1（进入现实世界）含登录与进入现实世界；用例 2～10 接在现实世界后执行，不刷新、不回到 EntryPoint",
+      "上一用例未通过时不执行下一用例（遇失败即停止，后续用例标记为 skipped）",
+      "使用中文 UI，需要支持中文文案的选择器",
+      "SPA 应用，不依赖 URL 变化，使用特征文案验证状态",
+      "记忆提取是异步的，需要适当的等待时间"
+    ]
+  },
+  "requirements": [
+    "REQ-1: 用户可以进入现实世界界面",
+    "REQ-2: 用户可以创建、编辑、删除日记",
+    "REQ-3: 用户可以使用写今日功能快速创建日记",
+    "REQ-4: 系统可以从日记中自动提取记忆；用户可以查看从日记中提取的记忆",
+    "REQ-5: 用户可以搜索和筛选日记；日记列表正确展示",
+    "REQ-7: 无记忆时模态框显示空状态或暂无记忆（可选）",
+    "REQ-8: 搜索无结果时显示空状态或提示（可选）"
+  ],
+  "test_cases": [
+    {
+      "id": "case_1_1",
+      "name": "进入现实世界",
+      "description": "测试从入口点进入现实世界界面",
+      "steps": [
+        "navigate to http://localhost:3000",
+        "wait for 2 seconds",
+        "click button:has-text(\"登录账户\")",
+        "wait for 2 seconds",
+        "type \"tongyexin\" into input[type='text']:first-of-type",
+        "type \"123456\" into input[type='password']",
+        "click button[class*=\"shadow-indigo\"]",
+        "wait for 5 seconds",
+        "click text=进入现实",
+        "wait for 3 seconds",
+        "verify text=写今日"
+      ],
+      "expected_result": "成功进入现实世界界面，显示写今日按钮",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2_1",
+      "name": "新建日记",
+      "description": "测试创建新日记的功能（接在进入现实世界后，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click text=新记录",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"测试日记标题\" into input[placeholder='标题（可选，默认为日期）']",
+        "type \"这是测试日记内容，用于验证记忆提取功能。我的名字是张三，我喜欢编程和阅读。\" into textarea",
+        "wait for 1 second",
+        "click button:has-text(\"保存\")",
+        "wait for 5 seconds",
+        "verify text=测试日记标题"
+      ],
+      "expected_result": "日记创建成功，出现在列表中，记忆提取功能被触发",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2_2",
+      "name": "编辑日记",
+      "description": "测试编辑已存在日记的功能（接在现实世界，不刷新）；点击标题打开预览模态框后需点击「编辑」进入编辑面板",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click text=测试日记标题",
+        "wait for 2 seconds",
+        "click button:has-text(\"编辑\")",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "fill \"测试日记标题 - 已编辑\" into input[placeholder='标题（可选，默认为日期）']",
+        "wait for 1 second",
+        "click button:has-text(\"保存\")",
+        "wait for 3 seconds",
+        "verify text=测试日记标题 - 已编辑"
+      ],
+      "expected_result": "日记编辑成功，列表中显示更新后的标题",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_2_3",
+      "name": "删除日记",
+      "description": "测试删除日记的功能（接在现实世界，不刷新）；点击标题打开预览后点删除，原生 confirm 由执行器自动接受",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click text=测试日记标题 - 已编辑",
+        "wait for 2 seconds",
+        "wait for button:has-text(\"删除\")",
+        "click button:has-text(\"删除\")",
+        "wait for 3 seconds",
+        "verify text=测试日记标题 - 已编辑 not visible"
+      ],
+      "expected_result": "日记删除成功，从列表中移除",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_3_1",
+      "name": "写今日功能",
+      "description": "测试使用写今日快速创建日记的功能（接在现实世界，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click text=写今日",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"今天是一个测试日，用于验证写今日功能。\" into textarea",
+        "wait for 1 second",
+        "click button:has-text(\"保存\")",
+        "wait for 5 seconds",
+        "verify text=今日",
+        "verify text=今天是一个测试日"
+      ],
+      "expected_result": "使用写今日创建日记成功，标题自动设置为今日",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_4_1",
+      "name": "打开日记记忆模态框",
+      "description": "测试打开查看从日记中提取的记忆模态框（接在现实世界后，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click button[title*=\"查看从日记中提取的记忆\"]",
+        "wait for 5 seconds",
+        "verify text=日记记忆"
+      ],
+      "expected_result": "记忆模态框成功打开，显示记忆相关界面",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_4_2",
+      "name": "验证记忆展示",
+      "description": "测试记忆模态框中记忆的展示功能；接在 case_4_1 后模态框已打开，直接校验内容",
+      "steps": [
+        "verify text=日记记忆",
+        "wait for 2 seconds",
+        "verify text=张三"
+      ],
+      "expected_result": "记忆模态框显示提取的记忆，记忆类型正确分类",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_4_3",
+      "name": "验证记忆提取异步完成",
+      "description": "测试创建日记后记忆提取的异步完成（接在现实世界，不刷新）；先关闭记忆模态框再新建日记",
+      "steps": [
+        "click button:has-text(\"关闭\")",
+        "wait for 2 seconds",
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click text=新记录",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"记忆提取测试\" into input[placeholder='标题（可选，默认为日期）']",
+        "type \"我的名字是李四，我喜欢音乐和旅行。\" into textarea",
+        "wait for 1 second",
+        "click button:has-text(\"保存\")",
+        "wait for 5 seconds",
+        "click button[title*=\"查看从日记中提取的记忆\"]",
+        "wait for 5 seconds",
+        "verify text=李四"
+      ],
+      "expected_result": "记忆提取异步完成，记忆内容正确提取和展示",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_5_1",
+      "name": "查看日记列表",
+      "description": "测试日记列表的展示功能（接在现实世界，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "verify text=写今日"
+      ],
+      "expected_result": "日记列表正确显示，可以查看所有日记条目",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_5_2",
+      "name": "搜索日记",
+      "description": "测试日记搜索功能（接在现实世界，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "wait for input[placeholder*=\"搜索\"]",
+        "type \"测试\" into input[placeholder*=\"搜索\"]",
+        "wait for 2 seconds",
+        "verify text=测试"
+      ],
+      "expected_result": "搜索功能正常工作，显示匹配的日记条目",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_4_4",
+      "name": "记忆模态框空状态",
+      "description": "测试再次打开日记记忆模态框（接在 case_4_3 后，先关闭模态框再打开）",
+      "steps": [
+        "click button:has-text(\"关闭\")",
+        "wait for 2 seconds",
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "click button[title*=\"查看从日记中提取的记忆\"]",
+        "wait for 5 seconds",
+        "verify text=日记记忆"
+      ],
+      "expected_result": "记忆模态框再次打开并显示日记记忆标题",
+      "priority": "low",
+      "status": "pending"
+    },
+    {
+      "id": "case_5_3",
+      "name": "搜索无结果",
+      "description": "测试搜索无匹配结果时的展示（接在现实世界，不刷新）",
+      "steps": [
+        "verify text=写今日",
+        "wait for 2 seconds",
+        "wait for input[placeholder*=\"搜索\"]",
+        "type \"不存在的关键词xyz\" into input[placeholder*=\"搜索\"]",
+        "wait for 2 seconds",
+        "verify text=写今日"
+      ],
+      "expected_result": "搜索无结果时显示空状态或无结果提示，界面不报错",
+      "priority": "low",
+      "status": "pending"
+    }
+  ],
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "进入现实世界",
+      "description": "测试进入现实世界界面的功能",
+      "test_cases": ["case_1_1"]
+    },
+    {
+      "id": "suite_2",
+      "name": "日记 CRUD 操作",
+      "description": "测试日记的创建、编辑、删除功能",
+      "test_cases": ["case_2_1", "case_2_2", "case_2_3"]
+    },
+    {
+      "id": "suite_3",
+      "name": "写今日功能",
+      "description": "测试写今日快速创建日记功能",
+      "test_cases": ["case_3_1"]
+    },
+    {
+      "id": "suite_4",
+      "name": "记忆提取功能",
+      "description": "测试从日记中提取记忆和查看记忆功能",
+      "test_cases": ["case_4_1", "case_4_2", "case_4_3", "case_4_4"]
+    },
+    {
+      "id": "suite_5",
+      "name": "日记列表和筛选",
+      "description": "测试日记列表展示和搜索功能",
+      "test_cases": ["case_5_1", "case_5_2", "case_5_3"]
+    }
+  ]
+}

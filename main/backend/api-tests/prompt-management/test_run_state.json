@@ -1,0 +1,10 @@
+{
+  "results_file": "main/backend/api-tests/prompt-management/results.json",
+  "passed_case_ids": [
+    "case_1_1",
+    "case_1_2",
+    "case_1_3"
+  ],
+  "failed_case_id": null,
+  "plan_file": "main/backend/api-tests/prompt-management/api_test_plan.json"
+}

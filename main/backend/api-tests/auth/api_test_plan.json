@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "created_at": "2026-01-29",
+    "test_scope": "Main 后端认证与访客流程：健康检查、游客登录、场景/角色/对话获取",
+    "requirements": [
+      "REQ-1 健康检查",
+      "REQ-2 游客登录（新访客）",
+      "REQ-3 游客登录（同名称再次进入）",
+      "REQ-5 获取访客的世界列表",
+      "REQ-6 获取访客的场景列表",
+      "REQ-7 获取访客的角色列表",
+      "REQ-8 获取访客的对话日志列表"
+    ]
+  },
+  "base_url": "http://localhost:8081",
+  "backend_service": "main-backend",
+  "auth": "none",
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "健康检查",
+      "description": "GET /api/health",
+      "test_cases": [
+        {
+          "id": "case_1_1",
+          "name": "GET /api/health",
+          "description": "健康检查返回 200 且含 status",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/health",
+              "expected_status": 200,
+              "expected_body_contains": "status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_2",
+      "name": "游客登录",
+      "description": "POST /api/auth/guest-login，新访客与同名称再次进入；第一步保存 token 供后续用例使用",
+      "test_cases": [
+        {
+          "id": "case_2_1",
+          "name": "游客登录（新访客）",
+          "description": "首次使用昵称登录，返回 token，并保存 token 供场景/角色/对话接口使用",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/auth/guest-login",
+              "body": { "nickname": "API测试访客" },
+              "expected_status": 200,
+              "expected_body_contains": "token",
+              "save_token_path": "data.token"
+            }
+          ]
+        },
+        {
+          "id": "case_2_2",
+          "name": "游客登录（同名称再次进入）",
+          "description": "同一昵称再次请求，返回原账号 token，isFirstLogin 为 false",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/auth/guest-login",
+              "body": { "nickname": "API测试访客" },
+              "expected_status": 200,
+              "expected_body_contains": "token"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_3",
+      "name": "场景（世界）",
+      "description": "GET /api/worlds，需 Bearer token（由上一步 guest-login 保存）",
+      "test_cases": [
+        {
+          "id": "case_3_1",
+          "name": "获取访客的世界列表",
+          "description": "使用 guest-login 返回的 token 获取当前用户的世界列表",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/worlds",
+              "expected_status": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_4",
+      "name": "场景（时代）",
+      "description": "GET /api/eras，需 Bearer token",
+      "test_cases": [
+        {
+          "id": "case_4_1",
+          "name": "获取访客的场景列表",
+          "description": "获取当前用户的所有时代（场景）",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/eras",
+              "expected_status": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_5",
+      "name": "角色",
+      "description": "GET /api/characters，需 Bearer token",
+      "test_cases": [
+        {
+          "id": "case_5_1",
+          "name": "获取访客的角色列表",
+          "description": "获取当前用户的所有角色（含游客初始化默认角色）",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/characters",
+              "expected_status": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suite_6",
+      "name": "对话",
+      "description": "GET /api/conversation-logs，需 Bearer token",
+      "test_cases": [
+        {
+          "id": "case_6_1",
+          "name": "获取访客的对话日志列表",
+          "description": "获取当前用户的对话日志列表（可为空）",
+          "steps": [
+            {
+              "method": "GET",
+              "path": "/api/conversation-logs",
+              "expected_status": 200
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

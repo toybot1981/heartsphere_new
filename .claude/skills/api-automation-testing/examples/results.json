@@ -1,0 +1,27 @@
+{
+  "plan_file": ".claude/skills/api-automation-testing/examples/example_api_test_plan.json",
+  "base_url": "http://localhost:8085",
+  "started_at": "2026-01-29T19:38:36.571565",
+  "summary": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "suite_id": "suite_1",
+      "case_id": "case_1",
+      "name": "GET health",
+      "status": "failed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "failed",
+          "error": "Expected status 200, got 500"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-01-29T19:38:36.612351"
+}

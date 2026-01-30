@@ -1,0 +1,24 @@
+{
+  "id": "c8672478-5a1f-4018-979d-dca438fdc97a",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "用时间块法帮我安排今天的工作"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "<|FunctionCallBegin|>[{\"name\": \"task_breakdown\", \"parameters\": {\"task\": \"使用时间块法安排今天的工作\"}}]<|FunctionCallEnd|>"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T15:16:24.078607",
+  "metadata": {
+    "size": 373
+  }
+}

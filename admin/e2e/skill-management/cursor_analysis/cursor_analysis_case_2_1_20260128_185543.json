@@ -1,0 +1,14 @@
+{
+  "case_id": "case_2_1",
+  "name": "AI 生成简单描述",
+  "error": "Step 5 failed: Page.wait_for_selector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator(\"textarea, input[placeholder*=\\\"描述\\\"]\") to be visible\n",
+  "failed_step": "wait for textarea, input[placeholder*=\"描述\"]",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin?section=skills",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "HEARTSPHERE\n📊\n概览 Dashboard\n📚\n内容管理\n👥\n用户管理\n🔌\nAI 接入与计费\n🤖\nAI 智能体\n⚡\n技能管理\n🔌\nMCP 管理\n🤖\nMentis 管理\n🧠\nAgent Mind 管理\n🤝\n多智能体协作\n⚙️\n系统配置\n🔧\nDEVOPS 工作台\n🔗\n连接服务\n🎓\n教育版管理\n\nAdministrator\n\nSystem Root\n\n技能管理\nAdmin Mode\n退出登录\n📊\n系统概览\n⚡\n技能管理\n关闭其他\n关闭所有\n专业技能创建器\n关闭\n选择创建方式\nAI生成\n文件导入\n选择模板\n基础信息\n元数据配置\n指令编写\nMCP工具配置\n执行配置\n资源管理\n预览与验证\n选择创建方式\n\n请选择您希望使用的技能创建方式。我们推荐使用 AI 生成，它可以根据您的描述自动生成完整的技能定义。\n\n🤖\nAI 自动生成（推荐）\n\n输入自然语言描述，AI 将自动生成完整的技能定义，包括基础信息、指令、MCP 配置等。\n\n✓ 快速便捷\n✓ 自动填充所有字段\n✓ 符合规范要求\n📄\n文件导入\n\n上传已有的 skill.md 文件或直接粘贴 Markdown 内容，系统将自动解析并填充表单。\n\n✓ 支持 .md 文件\n✓ 支持文本粘贴\n✓ 自动解析 YAML 和 Markdown\n✏️\n手动编辑\n\n使用分步骤表单手动创建技能，适合需要精细控制的场景。\n\n✓ 完全自定义\n✓ 分步骤填写\n✓ 详细提示和示例\n上一步",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_2_1_20260128_185513.png"
+}

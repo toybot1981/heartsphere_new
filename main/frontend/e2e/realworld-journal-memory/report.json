@@ -1,0 +1,3108 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-29T19:10:30.199793",
+    "plan_file": "main/frontend/e2e/realworld-journal-memory/test_plan.json",
+    "total_iterations": 1,
+    "max_iterations": 1000,
+    "interrupted": false
+  },
+  "execution_history": [
+    {
+      "iteration": 1,
+      "plan_file": "main/frontend/e2e/realworld-journal-memory/test_plan.json",
+      "results_file": "/tmp/test_results_20260129_190759.json",
+      "summary": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "passed_with_warnings": 0
+      },
+      "timestamp": "2026-01-29T19:07:59.466670",
+      "timeline_events": [
+        {
+          "event": "iteration_started",
+          "timestamp": "2026-01-29T19:07:59.466670",
+          "metadata": {
+            "iteration": 1
+          }
+        },
+        {
+          "event": "iteration_completed",
+          "timestamp": "2026-01-29T19:10:30.185796",
+          "metadata": {
+            "iteration": 1,
+            "summary": {
+              "total": 12,
+              "passed": 12,
+              "failed": 0,
+              "skipped": 0,
+              "passed_with_warnings": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "fix_history": [],
+  "final_results": {
+    "execution_start": "2026-01-29T19:07:59.661177",
+    "test_cases": {
+      "case_1_1": {
+        "case_id": "case_1_1",
+        "name": "进入现实世界",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "navigate to http://localhost:3000",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:14.030457",
+            "duration_ms": 2691
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:16.722363",
+            "duration_ms": 2004
+          },
+          {
+            "step_number": 3,
+            "description": "click button:has-text(\"登录账户\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:18.726490",
+            "duration_ms": 748
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:19.475121",
+            "duration_ms": 2004
+          },
+          {
+            "step_number": 5,
+            "description": "type \"tongyexin\" into input[type='text']:first-of-type",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:21.479299",
+            "duration_ms": 229
+          },
+          {
+            "step_number": 6,
+            "description": "type \"123456\" into input[type='password']",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:21.708461",
+            "duration_ms": 234
+          },
+          {
+            "step_number": 7,
+            "description": "click button[class*=\"shadow-indigo\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:21.942473",
+            "duration_ms": 635
+          },
+          {
+            "step_number": 8,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:22.578142",
+            "duration_ms": 5013
+          },
+          {
+            "step_number": 9,
+            "description": "click text=进入现实",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:27.591353",
+            "duration_ms": 783
+          },
+          {
+            "step_number": 10,
+            "description": "wait for 3 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:28.375139",
+            "duration_ms": 3021
+          },
+          {
+            "step_number": 11,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:31.397234",
+            "duration_ms": 69
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_1_1_20260129_190831.png",
+        "started_at": "2026-01-29T19:08:14.030354",
+        "completed_at": "2026-01-29T19:08:31.716141",
+        "duration_ms": 17686,
+        "content_anomalies": []
+      },
+      "case_2_1": {
+        "case_id": "case_2_1",
+        "name": "新建日记",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:32.150277",
+            "duration_ms": 12
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:32.175567",
+            "duration_ms": 2006
+          },
+          {
+            "step_number": 3,
+            "description": "click text=新记录",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:34.181632",
+            "duration_ms": 658
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:34.840192",
+            "duration_ms": 2058
+          },
+          {
+            "step_number": 5,
+            "description": "wait for textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:36.898743",
+            "duration_ms": 41
+          },
+          {
+            "step_number": 6,
+            "description": "type \"测试日记标题\" into input[placeholder='标题（可选，默认为日期）']",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:36.940089",
+            "duration_ms": 431
+          },
+          {
+            "step_number": 7,
+            "description": "type \"这是测试日记内容，用于验证记忆提取功能。我的名字是张三，我喜欢编程和阅读。\" into textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:37.371157",
+            "duration_ms": 316
+          },
+          {
+            "step_number": 8,
+            "description": "wait for 1 second",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:37.687839",
+            "duration_ms": 1088
+          },
+          {
+            "step_number": 9,
+            "description": "click button:has-text(\"保存\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:38.776770",
+            "duration_ms": 691
+          },
+          {
+            "step_number": 10,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:39.468450",
+            "duration_ms": 5004
+          },
+          {
+            "step_number": 11,
+            "description": "verify text=测试日记标题",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:44.473164",
+            "duration_ms": 27
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_2_1_20260129_190844.png",
+        "started_at": "2026-01-29T19:08:32.150221",
+        "completed_at": "2026-01-29T19:08:44.507469",
+        "duration_ms": 12357,
+        "content_anomalies": []
+      },
+      "case_2_2": {
+        "case_id": "case_2_2",
+        "name": "编辑日记",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:44.754834",
+            "duration_ms": 6
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:44.765789",
+            "duration_ms": 2006
+          },
+          {
+            "step_number": 3,
+            "description": "click text=测试日记标题",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:46.771816",
+            "duration_ms": 1091
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:47.863018",
+            "duration_ms": 2007
+          },
+          {
+            "step_number": 5,
+            "description": "click button:has-text(\"编辑\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:49.870325",
+            "duration_ms": 723
+          },
+          {
+            "step_number": 6,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:50.593583",
+            "duration_ms": 2004
+          },
+          {
+            "step_number": 7,
+            "description": "wait for textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:52.598239",
+            "duration_ms": 64
+          },
+          {
+            "step_number": 8,
+            "description": "fill \"测试日记标题 - 已编辑\" into input[placeholder='标题（可选，默认为日期）']",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:52.662293",
+            "duration_ms": 404
+          },
+          {
+            "step_number": 9,
+            "description": "wait for 1 second",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:53.067062",
+            "duration_ms": 1040
+          },
+          {
+            "step_number": 10,
+            "description": "click button:has-text(\"保存\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:54.107524",
+            "duration_ms": 862
+          },
+          {
+            "step_number": 11,
+            "description": "wait for 3 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:54.969635",
+            "duration_ms": 3043
+          },
+          {
+            "step_number": 12,
+            "description": "verify text=测试日记标题 - 已编辑",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:08:58.013350",
+            "duration_ms": 1077
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_2_2_20260129_190859.png",
+        "started_at": "2026-01-29T19:08:44.754745",
+        "completed_at": "2026-01-29T19:08:59.376739",
+        "duration_ms": 14622,
+        "content_anomalies": []
+      },
+      "case_2_3": {
+        "case_id": "case_2_3",
+        "name": "删除日记",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:00.281753",
+            "duration_ms": 9
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:00.326374",
+            "duration_ms": 2185
+          },
+          {
+            "step_number": 3,
+            "description": "click text=测试日记标题 - 已编辑",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:02.512181",
+            "duration_ms": 1078
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:03.590547",
+            "duration_ms": 2578
+          },
+          {
+            "step_number": 5,
+            "description": "wait for button:has-text(\"删除\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:06.169570",
+            "duration_ms": 1221
+          },
+          {
+            "step_number": 6,
+            "description": "click button:has-text(\"删除\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:07.390641",
+            "duration_ms": 1587
+          },
+          {
+            "step_number": 7,
+            "description": "wait for 3 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:08.978303",
+            "duration_ms": 3050
+          },
+          {
+            "step_number": 8,
+            "description": "verify text=测试日记标题 - 已编辑 not visible",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:12.028696",
+            "duration_ms": 10
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_2_3_20260129_190912.png",
+        "started_at": "2026-01-29T19:09:00.281674",
+        "completed_at": "2026-01-29T19:09:12.074733",
+        "duration_ms": 11793,
+        "content_anomalies": []
+      },
+      "case_3_1": {
+        "case_id": "case_3_1",
+        "name": "写今日功能",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:12.464182",
+            "duration_ms": 17
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:12.490956",
+            "duration_ms": 2024
+          },
+          {
+            "step_number": 3,
+            "description": "click text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:14.515238",
+            "duration_ms": 626
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:15.141593",
+            "duration_ms": 2003
+          },
+          {
+            "step_number": 5,
+            "description": "wait for textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:17.144581",
+            "duration_ms": 9
+          },
+          {
+            "step_number": 6,
+            "description": "type \"今天是一个测试日，用于验证写今日功能。\" into textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:17.154337",
+            "duration_ms": 234
+          },
+          {
+            "step_number": 7,
+            "description": "wait for 1 second",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:17.388580",
+            "duration_ms": 1009
+          },
+          {
+            "step_number": 8,
+            "description": "click button:has-text(\"保存\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:18.397767",
+            "duration_ms": 696
+          },
+          {
+            "step_number": 9,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:19.094455",
+            "duration_ms": 5002
+          },
+          {
+            "step_number": 10,
+            "description": "verify text=今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:24.097291",
+            "duration_ms": 7
+          },
+          {
+            "step_number": 11,
+            "description": "verify text=今天是一个测试日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:24.109582",
+            "duration_ms": 5
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_3_1_20260129_190924.png",
+        "started_at": "2026-01-29T19:09:12.464024",
+        "completed_at": "2026-01-29T19:09:24.117887",
+        "duration_ms": 11654,
+        "content_anomalies": []
+      },
+      "case_4_1": {
+        "case_id": "case_4_1",
+        "name": "打开日记记忆模态框",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:24.371358",
+            "duration_ms": 5
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:24.381365",
+            "duration_ms": 2009
+          },
+          {
+            "step_number": 3,
+            "description": "click button[title*=\"查看从日记中提取的记忆\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:26.391260",
+            "duration_ms": 1695
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:28.086659",
+            "duration_ms": 5010
+          },
+          {
+            "step_number": 5,
+            "description": "verify text=日记记忆",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:33.096779",
+            "duration_ms": 33
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_4_1_20260129_190933.png",
+        "started_at": "2026-01-29T19:09:24.371297",
+        "completed_at": "2026-01-29T19:09:33.139031",
+        "duration_ms": 8767,
+        "content_anomalies": []
+      },
+      "case_4_2": {
+        "case_id": "case_4_2",
+        "name": "验证记忆展示",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=日记记忆",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:33.495841",
+            "duration_ms": 25
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:33.544022",
+            "duration_ms": 2005
+          },
+          {
+            "step_number": 3,
+            "description": "verify text=张三",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:35.549603",
+            "duration_ms": 16
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_4_2_20260129_190935.png",
+        "started_at": "2026-01-29T19:09:33.495757",
+        "completed_at": "2026-01-29T19:09:35.580675",
+        "duration_ms": 2084,
+        "content_anomalies": []
+      },
+      "case_4_3": {
+        "case_id": "case_4_3",
+        "name": "验证记忆提取异步完成",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "click button:has-text(\"关闭\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:36.013489",
+            "duration_ms": 1023
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:37.037034",
+            "duration_ms": 2003
+          },
+          {
+            "step_number": 3,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:39.040463",
+            "duration_ms": 7
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:39.054341",
+            "duration_ms": 2006
+          },
+          {
+            "step_number": 5,
+            "description": "click text=新记录",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:41.061087",
+            "duration_ms": 584
+          },
+          {
+            "step_number": 6,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:41.645390",
+            "duration_ms": 2017
+          },
+          {
+            "step_number": 7,
+            "description": "wait for textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:43.663026",
+            "duration_ms": 32
+          },
+          {
+            "step_number": 8,
+            "description": "type \"记忆提取测试\" into input[placeholder='标题（可选，默认为日期）']",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:43.695274",
+            "duration_ms": 264
+          },
+          {
+            "step_number": 9,
+            "description": "type \"我的名字是李四，我喜欢音乐和旅行。\" into textarea",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:43.959515",
+            "duration_ms": 329
+          },
+          {
+            "step_number": 10,
+            "description": "wait for 1 second",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:44.289305",
+            "duration_ms": 1008
+          },
+          {
+            "step_number": 11,
+            "description": "click button:has-text(\"保存\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:45.297755",
+            "duration_ms": 617
+          },
+          {
+            "step_number": 12,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:45.914806",
+            "duration_ms": 5163
+          },
+          {
+            "step_number": 13,
+            "description": "click button[title*=\"查看从日记中提取的记忆\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:51.078174",
+            "duration_ms": 1383
+          },
+          {
+            "step_number": 14,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:52.461247",
+            "duration_ms": 5983
+          },
+          {
+            "step_number": 15,
+            "description": "verify text=李四",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:09:58.444617",
+            "duration_ms": 786
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_4_3_20260129_190959.png",
+        "started_at": "2026-01-29T19:09:36.013430",
+        "completed_at": "2026-01-29T19:09:59.430504",
+        "duration_ms": 23417,
+        "content_anomalies": []
+      },
+      "case_5_1": {
+        "case_id": "case_5_1",
+        "name": "查看日记列表",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:00.437835",
+            "duration_ms": 209
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:00.782246",
+            "duration_ms": 2026
+          },
+          {
+            "step_number": 3,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:02.808915",
+            "duration_ms": 40
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_5_1_20260129_191002.png",
+        "started_at": "2026-01-29T19:10:00.437547",
+        "completed_at": "2026-01-29T19:10:02.897582",
+        "duration_ms": 2460,
+        "content_anomalies": []
+      },
+      "case_5_2": {
+        "case_id": "case_5_2",
+        "name": "搜索日记",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:03.205514",
+            "duration_ms": 32
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:03.267665",
+            "duration_ms": 2027
+          },
+          {
+            "step_number": 3,
+            "description": "wait for input[placeholder*=\"搜索\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:05.295490",
+            "duration_ms": 96
+          },
+          {
+            "step_number": 4,
+            "description": "type \"测试\" into input[placeholder*=\"搜索\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:05.392180",
+            "duration_ms": 523
+          },
+          {
+            "step_number": 5,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:05.915633",
+            "duration_ms": 2132
+          },
+          {
+            "step_number": 6,
+            "description": "verify text=测试",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:08.048631",
+            "duration_ms": 10
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_5_2_20260129_191009.png",
+        "started_at": "2026-01-29T19:10:03.205469",
+        "completed_at": "2026-01-29T19:10:09.398963",
+        "duration_ms": 6193,
+        "content_anomalies": []
+      },
+      "case_4_4": {
+        "case_id": "case_4_4",
+        "name": "记忆模态框空状态",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "click button:has-text(\"关闭\")",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:09.711316",
+            "duration_ms": 766
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:10.477531",
+            "duration_ms": 2003
+          },
+          {
+            "step_number": 3,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:12.481420",
+            "duration_ms": 42
+          },
+          {
+            "step_number": 4,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:12.596667",
+            "duration_ms": 2146
+          },
+          {
+            "step_number": 5,
+            "description": "click button[title*=\"查看从日记中提取的记忆\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:14.743709",
+            "duration_ms": 1327
+          },
+          {
+            "step_number": 6,
+            "description": "wait for 5 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:16.071354",
+            "duration_ms": 5175
+          },
+          {
+            "step_number": 7,
+            "description": "verify text=日记记忆",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:21.247127",
+            "duration_ms": 141
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_4_4_20260129_191022.png",
+        "started_at": "2026-01-29T19:10:09.711232",
+        "completed_at": "2026-01-29T19:10:22.231884",
+        "duration_ms": 12520,
+        "content_anomalies": []
+      },
+      "case_5_3": {
+        "case_id": "case_5_3",
+        "name": "搜索无结果",
+        "status": "passed",
+        "steps": [
+          {
+            "step_number": 1,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:22.887392",
+            "duration_ms": 24
+          },
+          {
+            "step_number": 2,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:22.948325",
+            "duration_ms": 2046
+          },
+          {
+            "step_number": 3,
+            "description": "wait for input[placeholder*=\"搜索\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:24.994974",
+            "duration_ms": 197
+          },
+          {
+            "step_number": 4,
+            "description": "type \"不存在的关键词xyz\" into input[placeholder*=\"搜索\"]",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:25.192713",
+            "duration_ms": 1594
+          },
+          {
+            "step_number": 5,
+            "description": "wait for 2 seconds",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:26.787702",
+            "duration_ms": 2095
+          },
+          {
+            "step_number": 6,
+            "description": "verify text=写今日",
+            "status": "passed",
+            "executed_at": "2026-01-29T19:10:28.882799",
+            "duration_ms": 42
+          }
+        ],
+        "error": null,
+        "screenshot": "/tmp/test_case_5_3_20260129_191028.png",
+        "started_at": "2026-01-29T19:10:22.886051",
+        "completed_at": "2026-01-29T19:10:28.934477",
+        "duration_ms": 6048,
+        "content_anomalies": []
+      }
+    },
+    "summary": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "passed_with_warnings": 0
+    },
+    "timeline": [
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:08:14.030373",
+        "metadata": {
+          "case_id": "case_1_1",
+          "name": "进入现实世界"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:14.030465",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 1,
+          "description": "navigate to http://localhost:3000"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:16.722382",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:18.726504",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 3,
+          "description": "click button:has-text(\"登录账户\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:19.475140",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:21.479314",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 5,
+          "description": "type \"tongyexin\" into input[type='text']:first-of-type"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:21.708476",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 6,
+          "description": "type \"123456\" into input[type='password']"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:21.942492",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 7,
+          "description": "click button[class*=\"shadow-indigo\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:22.578164",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 8,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:27.591436",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 9,
+          "description": "click text=进入现实"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:28.375159",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 10,
+          "description": "wait for 3 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:31.397281",
+        "metadata": {
+          "case_id": "case_1_1",
+          "step_number": 11,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:08:31.716175",
+        "metadata": {
+          "case_id": "case_1_1",
+          "status": "passed",
+          "duration_ms": 17686
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:08:32.150238",
+        "metadata": {
+          "case_id": "case_2_1",
+          "name": "新建日记"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:32.150283",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:32.175605",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:34.181646",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 3,
+          "description": "click text=新记录"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:34.840209",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:36.898768",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 5,
+          "description": "wait for textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:36.940110",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 6,
+          "description": "type \"测试日记标题\" into input[placeholder='标题（可选，默认为日期）']"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:37.371192",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 7,
+          "description": "type \"这是测试日记内容，用于验证记忆提取功能。我的名字是张三，我喜欢编程和阅读。\" into textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:37.687853",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 8,
+          "description": "wait for 1 second"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:38.776790",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 9,
+          "description": "click button:has-text(\"保存\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:39.468463",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 10,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:44.473220",
+        "metadata": {
+          "case_id": "case_2_1",
+          "step_number": 11,
+          "description": "verify text=测试日记标题"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:08:44.507488",
+        "metadata": {
+          "case_id": "case_2_1",
+          "status": "passed",
+          "duration_ms": 12357
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:08:44.754761",
+        "metadata": {
+          "case_id": "case_2_2",
+          "name": "编辑日记"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:44.754850",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:44.765799",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:46.771851",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 3,
+          "description": "click text=测试日记标题"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:47.863040",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:49.870346",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 5,
+          "description": "click button:has-text(\"编辑\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:50.593604",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 6,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:52.598263",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 7,
+          "description": "wait for textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:52.662312",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 8,
+          "description": "fill \"测试日记标题 - 已编辑\" into input[placeholder='标题（可选，默认为日期）']"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:53.067091",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 9,
+          "description": "wait for 1 second"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:54.107547",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 10,
+          "description": "click button:has-text(\"保存\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:54.969657",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 11,
+          "description": "wait for 3 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:08:58.013385",
+        "metadata": {
+          "case_id": "case_2_2",
+          "step_number": 12,
+          "description": "verify text=测试日记标题 - 已编辑"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:08:59.376772",
+        "metadata": {
+          "case_id": "case_2_2",
+          "status": "passed",
+          "duration_ms": 14622
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:09:00.281695",
+        "metadata": {
+          "case_id": "case_2_3",
+          "name": "删除日记"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:00.282318",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:00.326392",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:02.512200",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 3,
+          "description": "click text=测试日记标题 - 已编辑"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:03.590567",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:06.169643",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 5,
+          "description": "wait for button:has-text(\"删除\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:07.390671",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 6,
+          "description": "click button:has-text(\"删除\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:08.978370",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 7,
+          "description": "wait for 3 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:12.028865",
+        "metadata": {
+          "case_id": "case_2_3",
+          "step_number": 8,
+          "description": "verify text=测试日记标题 - 已编辑 not visible"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:09:12.074759",
+        "metadata": {
+          "case_id": "case_2_3",
+          "status": "passed",
+          "duration_ms": 11793
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:09:12.464044",
+        "metadata": {
+          "case_id": "case_3_1",
+          "name": "写今日功能"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:12.464191",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:12.490996",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:14.515274",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 3,
+          "description": "click text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:15.141615",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:17.144599",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 5,
+          "description": "wait for textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:17.154364",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 6,
+          "description": "type \"今天是一个测试日，用于验证写今日功能。\" into textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:17.388604",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 7,
+          "description": "wait for 1 second"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:18.397792",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 8,
+          "description": "click button:has-text(\"保存\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:19.094476",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 9,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:24.097310",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 10,
+          "description": "verify text=今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:24.109602",
+        "metadata": {
+          "case_id": "case_3_1",
+          "step_number": 11,
+          "description": "verify text=今天是一个测试日"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:09:24.117903",
+        "metadata": {
+          "case_id": "case_3_1",
+          "status": "passed",
+          "duration_ms": 11654
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:09:24.371318",
+        "metadata": {
+          "case_id": "case_4_1",
+          "name": "打开日记记忆模态框"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:24.371364",
+        "metadata": {
+          "case_id": "case_4_1",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:24.381386",
+        "metadata": {
+          "case_id": "case_4_1",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:26.391276",
+        "metadata": {
+          "case_id": "case_4_1",
+          "step_number": 3,
+          "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:28.086678",
+        "metadata": {
+          "case_id": "case_4_1",
+          "step_number": 4,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:33.096795",
+        "metadata": {
+          "case_id": "case_4_1",
+          "step_number": 5,
+          "description": "verify text=日记记忆"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:09:33.139049",
+        "metadata": {
+          "case_id": "case_4_1",
+          "status": "passed",
+          "duration_ms": 8767
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:09:33.495775",
+        "metadata": {
+          "case_id": "case_4_2",
+          "name": "验证记忆展示"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:33.495851",
+        "metadata": {
+          "case_id": "case_4_2",
+          "step_number": 1,
+          "description": "verify text=日记记忆"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:33.544045",
+        "metadata": {
+          "case_id": "case_4_2",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:35.549625",
+        "metadata": {
+          "case_id": "case_4_2",
+          "step_number": 3,
+          "description": "verify text=张三"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:09:35.580691",
+        "metadata": {
+          "case_id": "case_4_2",
+          "status": "passed",
+          "duration_ms": 2084
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:09:36.013446",
+        "metadata": {
+          "case_id": "case_4_3",
+          "name": "验证记忆提取异步完成"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:36.013496",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 1,
+          "description": "click button:has-text(\"关闭\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:37.037064",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:39.040487",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 3,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:39.054356",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:41.061808",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 5,
+          "description": "click text=新记录"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:41.645404",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 6,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:43.663046",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 7,
+          "description": "wait for textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:43.695296",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 8,
+          "description": "type \"记忆提取测试\" into input[placeholder='标题（可选，默认为日期）']"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:43.959532",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 9,
+          "description": "type \"我的名字是李四，我喜欢音乐和旅行。\" into textarea"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:44.289328",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 10,
+          "description": "wait for 1 second"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:45.297774",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 11,
+          "description": "click button:has-text(\"保存\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:45.914828",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 12,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:51.078219",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 13,
+          "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:52.461267",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 14,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:09:58.444634",
+        "metadata": {
+          "case_id": "case_4_3",
+          "step_number": 15,
+          "description": "verify text=李四"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:09:59.430542",
+        "metadata": {
+          "case_id": "case_4_3",
+          "status": "passed",
+          "duration_ms": 23417
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:10:00.437578",
+        "metadata": {
+          "case_id": "case_5_1",
+          "name": "查看日记列表"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:00.437851",
+        "metadata": {
+          "case_id": "case_5_1",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:00.782271",
+        "metadata": {
+          "case_id": "case_5_1",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:02.808938",
+        "metadata": {
+          "case_id": "case_5_1",
+          "step_number": 3,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:10:02.897605",
+        "metadata": {
+          "case_id": "case_5_1",
+          "status": "passed",
+          "duration_ms": 2460
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:10:03.205483",
+        "metadata": {
+          "case_id": "case_5_2",
+          "name": "搜索日记"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:03.205518",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:03.267689",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:05.295515",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 3,
+          "description": "wait for input[placeholder*=\"搜索\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:05.392200",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 4,
+          "description": "type \"测试\" into input[placeholder*=\"搜索\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:05.915652",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 5,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:08.048672",
+        "metadata": {
+          "case_id": "case_5_2",
+          "step_number": 6,
+          "description": "verify text=测试"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:10:09.398997",
+        "metadata": {
+          "case_id": "case_5_2",
+          "status": "passed",
+          "duration_ms": 6193
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:10:09.711258",
+        "metadata": {
+          "case_id": "case_4_4",
+          "name": "记忆模态框空状态"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:09.711324",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 1,
+          "description": "click button:has-text(\"关闭\")"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:10.477548",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:12.481442",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 3,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:12.596682",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 4,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:14.743727",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 5,
+          "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:16.071392",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 6,
+          "description": "wait for 5 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:21.247147",
+        "metadata": {
+          "case_id": "case_4_4",
+          "step_number": 7,
+          "description": "verify text=日记记忆"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:10:22.231909",
+        "metadata": {
+          "case_id": "case_4_4",
+          "status": "passed",
+          "duration_ms": 12520
+        }
+      },
+      {
+        "event": "case_started",
+        "timestamp": "2026-01-29T19:10:22.886108",
+        "metadata": {
+          "case_id": "case_5_3",
+          "name": "搜索无结果"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:22.887451",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 1,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:22.948345",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 2,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:24.994994",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 3,
+          "description": "wait for input[placeholder*=\"搜索\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:25.192731",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 4,
+          "description": "type \"不存在的关键词xyz\" into input[placeholder*=\"搜索\"]"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:26.787728",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 5,
+          "description": "wait for 2 seconds"
+        }
+      },
+      {
+        "event": "step_executed",
+        "timestamp": "2026-01-29T19:10:28.882866",
+        "metadata": {
+          "case_id": "case_5_3",
+          "step_number": 6,
+          "description": "verify text=写今日"
+        }
+      },
+      {
+        "event": "case_completed",
+        "timestamp": "2026-01-29T19:10:28.934501",
+        "metadata": {
+          "case_id": "case_5_3",
+          "status": "passed",
+          "duration_ms": 6048
+        }
+      }
+    ],
+    "execution_end": "2026-01-29T19:10:29.953883"
+  },
+  "timeline": [
+    {
+      "event": "iteration_started",
+      "timestamp": "2026-01-29T19:07:59.466670",
+      "metadata": {
+        "iteration": 1
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:08:14.030373",
+      "metadata": {
+        "case_id": "case_1_1",
+        "name": "进入现实世界"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:14.030465",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3000"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:16.722382",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:18.726504",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 3,
+        "description": "click button:has-text(\"登录账户\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:19.475140",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:21.479314",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 5,
+        "description": "type \"tongyexin\" into input[type='text']:first-of-type"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:21.708476",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 6,
+        "description": "type \"123456\" into input[type='password']"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:21.942492",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 7,
+        "description": "click button[class*=\"shadow-indigo\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:22.578164",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 8,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:27.591436",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 9,
+        "description": "click text=进入现实"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:28.375159",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 10,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:31.397281",
+      "metadata": {
+        "case_id": "case_1_1",
+        "step_number": 11,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:08:31.716175",
+      "metadata": {
+        "case_id": "case_1_1",
+        "status": "passed",
+        "duration_ms": 17686
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:08:32.150238",
+      "metadata": {
+        "case_id": "case_2_1",
+        "name": "新建日记"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:32.150283",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:32.175605",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:34.181646",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 3,
+        "description": "click text=新记录"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:34.840209",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:36.898768",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 5,
+        "description": "wait for textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:36.940110",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 6,
+        "description": "type \"测试日记标题\" into input[placeholder='标题（可选，默认为日期）']"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:37.371192",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 7,
+        "description": "type \"这是测试日记内容，用于验证记忆提取功能。我的名字是张三，我喜欢编程和阅读。\" into textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:37.687853",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 8,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:38.776790",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 9,
+        "description": "click button:has-text(\"保存\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:39.468463",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 10,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:44.473220",
+      "metadata": {
+        "case_id": "case_2_1",
+        "step_number": 11,
+        "description": "verify text=测试日记标题"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:08:44.507488",
+      "metadata": {
+        "case_id": "case_2_1",
+        "status": "passed",
+        "duration_ms": 12357
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:08:44.754761",
+      "metadata": {
+        "case_id": "case_2_2",
+        "name": "编辑日记"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:44.754850",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:44.765799",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:46.771851",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 3,
+        "description": "click text=测试日记标题"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:47.863040",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:49.870346",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 5,
+        "description": "click button:has-text(\"编辑\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:50.593604",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 6,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:52.598263",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 7,
+        "description": "wait for textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:52.662312",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 8,
+        "description": "fill \"测试日记标题 - 已编辑\" into input[placeholder='标题（可选，默认为日期）']"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:53.067091",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 9,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:54.107547",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 10,
+        "description": "click button:has-text(\"保存\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:54.969657",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 11,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:08:58.013385",
+      "metadata": {
+        "case_id": "case_2_2",
+        "step_number": 12,
+        "description": "verify text=测试日记标题 - 已编辑"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:08:59.376772",
+      "metadata": {
+        "case_id": "case_2_2",
+        "status": "passed",
+        "duration_ms": 14622
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:09:00.281695",
+      "metadata": {
+        "case_id": "case_2_3",
+        "name": "删除日记"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:00.282318",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:00.326392",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:02.512200",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 3,
+        "description": "click text=测试日记标题 - 已编辑"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:03.590567",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:06.169643",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 5,
+        "description": "wait for button:has-text(\"删除\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:07.390671",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 6,
+        "description": "click button:has-text(\"删除\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:08.978370",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 7,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:12.028865",
+      "metadata": {
+        "case_id": "case_2_3",
+        "step_number": 8,
+        "description": "verify text=测试日记标题 - 已编辑 not visible"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:09:12.074759",
+      "metadata": {
+        "case_id": "case_2_3",
+        "status": "passed",
+        "duration_ms": 11793
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:09:12.464044",
+      "metadata": {
+        "case_id": "case_3_1",
+        "name": "写今日功能"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:12.464191",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:12.490996",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:14.515274",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 3,
+        "description": "click text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:15.141615",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:17.144599",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 5,
+        "description": "wait for textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:17.154364",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 6,
+        "description": "type \"今天是一个测试日，用于验证写今日功能。\" into textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:17.388604",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 7,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:18.397792",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 8,
+        "description": "click button:has-text(\"保存\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:19.094476",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 9,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:24.097310",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 10,
+        "description": "verify text=今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:24.109602",
+      "metadata": {
+        "case_id": "case_3_1",
+        "step_number": 11,
+        "description": "verify text=今天是一个测试日"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:09:24.117903",
+      "metadata": {
+        "case_id": "case_3_1",
+        "status": "passed",
+        "duration_ms": 11654
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:09:24.371318",
+      "metadata": {
+        "case_id": "case_4_1",
+        "name": "打开日记记忆模态框"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:24.371364",
+      "metadata": {
+        "case_id": "case_4_1",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:24.381386",
+      "metadata": {
+        "case_id": "case_4_1",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:26.391276",
+      "metadata": {
+        "case_id": "case_4_1",
+        "step_number": 3,
+        "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:28.086678",
+      "metadata": {
+        "case_id": "case_4_1",
+        "step_number": 4,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:33.096795",
+      "metadata": {
+        "case_id": "case_4_1",
+        "step_number": 5,
+        "description": "verify text=日记记忆"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:09:33.139049",
+      "metadata": {
+        "case_id": "case_4_1",
+        "status": "passed",
+        "duration_ms": 8767
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:09:33.495775",
+      "metadata": {
+        "case_id": "case_4_2",
+        "name": "验证记忆展示"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:33.495851",
+      "metadata": {
+        "case_id": "case_4_2",
+        "step_number": 1,
+        "description": "verify text=日记记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:33.544045",
+      "metadata": {
+        "case_id": "case_4_2",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:35.549625",
+      "metadata": {
+        "case_id": "case_4_2",
+        "step_number": 3,
+        "description": "verify text=张三"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:09:35.580691",
+      "metadata": {
+        "case_id": "case_4_2",
+        "status": "passed",
+        "duration_ms": 2084
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:09:36.013446",
+      "metadata": {
+        "case_id": "case_4_3",
+        "name": "验证记忆提取异步完成"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:36.013496",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 1,
+        "description": "click button:has-text(\"关闭\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:37.037064",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:39.040487",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 3,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:39.054356",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:41.061808",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 5,
+        "description": "click text=新记录"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:41.645404",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 6,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:43.663046",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 7,
+        "description": "wait for textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:43.695296",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 8,
+        "description": "type \"记忆提取测试\" into input[placeholder='标题（可选，默认为日期）']"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:43.959532",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 9,
+        "description": "type \"我的名字是李四，我喜欢音乐和旅行。\" into textarea"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:44.289328",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 10,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:45.297774",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 11,
+        "description": "click button:has-text(\"保存\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:45.914828",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 12,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:51.078219",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 13,
+        "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:52.461267",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 14,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:09:58.444634",
+      "metadata": {
+        "case_id": "case_4_3",
+        "step_number": 15,
+        "description": "verify text=李四"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:09:59.430542",
+      "metadata": {
+        "case_id": "case_4_3",
+        "status": "passed",
+        "duration_ms": 23417
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:10:00.437578",
+      "metadata": {
+        "case_id": "case_5_1",
+        "name": "查看日记列表"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:00.437851",
+      "metadata": {
+        "case_id": "case_5_1",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:00.782271",
+      "metadata": {
+        "case_id": "case_5_1",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:02.808938",
+      "metadata": {
+        "case_id": "case_5_1",
+        "step_number": 3,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:10:02.897605",
+      "metadata": {
+        "case_id": "case_5_1",
+        "status": "passed",
+        "duration_ms": 2460
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:10:03.205483",
+      "metadata": {
+        "case_id": "case_5_2",
+        "name": "搜索日记"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:03.205518",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:03.267689",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:05.295515",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 3,
+        "description": "wait for input[placeholder*=\"搜索\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:05.392200",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 4,
+        "description": "type \"测试\" into input[placeholder*=\"搜索\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:05.915652",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 5,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:08.048672",
+      "metadata": {
+        "case_id": "case_5_2",
+        "step_number": 6,
+        "description": "verify text=测试"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:10:09.398997",
+      "metadata": {
+        "case_id": "case_5_2",
+        "status": "passed",
+        "duration_ms": 6193
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:10:09.711258",
+      "metadata": {
+        "case_id": "case_4_4",
+        "name": "记忆模态框空状态"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:09.711324",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 1,
+        "description": "click button:has-text(\"关闭\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:10.477548",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:12.481442",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 3,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:12.596682",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 4,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:14.743727",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 5,
+        "description": "click button[title*=\"查看从日记中提取的记忆\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:16.071392",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 6,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:21.247147",
+      "metadata": {
+        "case_id": "case_4_4",
+        "step_number": 7,
+        "description": "verify text=日记记忆"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:10:22.231909",
+      "metadata": {
+        "case_id": "case_4_4",
+        "status": "passed",
+        "duration_ms": 12520
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-29T19:10:22.886108",
+      "metadata": {
+        "case_id": "case_5_3",
+        "name": "搜索无结果"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:22.887451",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 1,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:22.948345",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 2,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:24.994994",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 3,
+        "description": "wait for input[placeholder*=\"搜索\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:25.192731",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 4,
+        "description": "type \"不存在的关键词xyz\" into input[placeholder*=\"搜索\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:26.787728",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 5,
+        "description": "wait for 2 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-29T19:10:28.882866",
+      "metadata": {
+        "case_id": "case_5_3",
+        "step_number": 6,
+        "description": "verify text=写今日"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-29T19:10:28.934501",
+      "metadata": {
+        "case_id": "case_5_3",
+        "status": "passed",
+        "duration_ms": 6048
+      }
+    },
+    {
+      "event": "iteration_completed",
+      "timestamp": "2026-01-29T19:10:30.185796",
+      "metadata": {
+        "iteration": 1,
+        "summary": {
+          "total": 12,
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "passed_with_warnings": 0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total_tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "passed_with_warnings": 0,
+    "success_rate": 100.0
+  }
+}

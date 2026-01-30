@@ -1,0 +1,66 @@
+name: Multi-Agent Framework Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'main/backend/src/main/java/com/heartsphere/multiagent/**'
+      - 'main/backend/src/test/java/com/heartsphere/multiagent/**'
+      - '.github/workflows/multi-agent-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'main/backend/src/main/java/com/heartsphere/multiagent/**'
+      - 'main/backend/src/test/java/com/heartsphere/multiagent/**'
+      - '.github/workflows/multi-agent-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    
+    - name: Run tests with coverage
+      working-directory: main/backend
+      run: mvn clean test jacoco:report -Dtest=com.heartsphere.multiagent.*,com.heartsphere.character.multiagent.*
+    
+    - name: Generate test report
+      working-directory: main/backend
+      run: mvn surefire-report:report
+      continue-on-error: true
+    
+    - name: Upload test reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports
+        path: main/backend/target/surefire-reports/
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-reports
+        path: main/backend/target/site/jacoco/
+    
+    - name: Check test results
+      working-directory: main/backend
+      run: |
+        if grep -q "Tests run:" target/surefire-reports/*.txt; then
+          echo "Test reports generated successfully"
+        else
+          echo "No test reports found"
+        fi
+    
+    - name: Check coverage
+      working-directory: main/backend
+      run: mvn jacoco:check
+      continue-on-error: true

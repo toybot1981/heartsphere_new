@@ -107,38 +107,38 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       responseData = await response.text();
     }
     
-    // 辅助函数：检测是否为认证错误
-    const isAuthError = (status: number, message: string): boolean => {
-      // 检测401状态码
-      if (status === 401) {
-        return true;
-      }
-      // 检测错误消息中是否包含认证相关的关键词
-      const authErrorKeywords = [
-        '无效的管理员token',
-        'JWT验证失败',
-        'token 为空',
-        '无法从token中提取用户名',
-        '管理员不存在',
-        '管理员账号已被禁用',
-        '登录已过期',
-        '需要管理员认证',
-        'unauthorized',
-        'token expired',
-        'invalid token'
-      ];
-      const lowerMessage = message.toLowerCase();
-      return authErrorKeywords.some(keyword => 
-        lowerMessage.includes(keyword.toLowerCase())
-      );
-    };
-    
     // 优先检测 401 未授权错误（token 过期）
+    // 注意：只有在明确是管理员token过期时才触发，避免API Key认证失败等误判
     if (response.status === 401) {
-      console.warn('[request] 检测到 401 未授权错误，token 可能已过期');
-      // 使用统一的 token 过期处理机制
-      triggerTokenExpiry();
-      throw new Error('登录已过期，请重新登录');
+      // 检查错误消息，只有在明确是token过期时才触发
+      let errorMessage = '';
+      if (responseData && typeof responseData === 'object') {
+        errorMessage = (responseData as any).message || '';
+      } else if (typeof responseData === 'string') {
+        errorMessage = responseData;
+      }
+      
+      // 只有在明确是管理员token相关错误时才触发token过期
+      const isAdminTokenError = errorMessage && (
+        errorMessage.includes('无效的管理员token') ||
+        errorMessage.includes('JWT验证失败') ||
+        errorMessage.includes('token 为空') ||
+        errorMessage.includes('无法从token中提取用户名') ||
+        errorMessage.includes('登录已过期') ||
+        errorMessage.includes('需要管理员认证') ||
+        errorMessage.toLowerCase().includes('unauthorized') && errorMessage.toLowerCase().includes('admin')
+      );
+      
+      if (isAdminTokenError) {
+        console.warn('[request] 检测到管理员token过期:', errorMessage);
+        // 使用统一的 token 过期处理机制
+        triggerTokenExpiry();
+        throw new Error('登录已过期，请重新登录');
+      } else {
+        // 其他401错误（如API Key认证失败）不触发token过期
+        console.warn('[request] 检测到401错误，但不是管理员token过期:', errorMessage);
+        throw new Error(errorMessage || '未授权访问');
+      }
     }
     
     // 处理 ApiResponse 格式的响应
@@ -147,10 +147,19 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       // 检查响应状态码
       if (responseData.code !== 200 && responseData.code !== 0) {
         const errorMessage = responseData.message || `请求失败: ${responseData.code}`;
-        // 检测是否为认证错误
-        if (isAuthError(response.status, errorMessage)) {
-          console.warn('[request] 检测到认证错误，token 可能已过期:', errorMessage);
-          // 使用统一的 token 过期处理机制
+        // 仅当明确是管理员 token 错误时才跳转登录，避免业务错误（如 AI 生成失败）误触发
+        const isAdminTokenError = (
+          response.status === 401 &&
+          (errorMessage.includes('无效的管理员token') ||
+            errorMessage.includes('JWT验证失败') ||
+            errorMessage.includes('token 为空') ||
+            errorMessage.includes('无法从token中提取用户名') ||
+            errorMessage.includes('登录已过期') ||
+            errorMessage.includes('需要管理员认证') ||
+            (errorMessage.toLowerCase().includes('unauthorized') && errorMessage.toLowerCase().includes('admin')))
+        );
+        if (isAdminTokenError) {
+          console.warn('[request] 检测到管理员 token 过期:', errorMessage);
           triggerTokenExpiry();
           throw new Error('登录已过期，请重新登录');
         }
@@ -159,10 +168,14 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       // 如果响应不成功（HTTP状态码不是2xx），也抛出错误
       if (!response.ok) {
         const errorMessage = responseData.message || `请求失败: ${response.status} ${response.statusText}`;
-        // 检测是否为认证错误
-        if (isAuthError(response.status, errorMessage)) {
-          console.warn('[request] 检测到认证错误，token 可能已过期:', errorMessage);
-          // 使用统一的 token 过期处理机制
+        const isAdminTokenError = response.status === 401 && (
+          errorMessage.includes('无效的管理员token') ||
+          errorMessage.includes('JWT验证失败') ||
+          errorMessage.includes('登录已过期') ||
+          errorMessage.includes('需要管理员认证')
+        );
+        if (isAdminTokenError) {
+          console.warn('[request] 检测到管理员 token 过期:', errorMessage);
           triggerTokenExpiry();
           throw new Error('登录已过期，请重新登录');
         }
@@ -184,16 +197,19 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
       } else if (typeof responseData === 'string') {
         errorMessage = responseData;
       }
-      // 检测是否为认证错误
-      if (isAuthError(response.status, errorMessage)) {
-        console.warn('[request] 检测到认证错误，token 可能已过期:', errorMessage);
-        // 触发 token 过期事件（只触发一次）
+      const isAdminTokenError = response.status === 401 && (
+        errorMessage.includes('无效的管理员token') ||
+        errorMessage.includes('JWT验证失败') ||
+        errorMessage.includes('登录已过期') ||
+        errorMessage.includes('需要管理员认证')
+      );
+      if (isAdminTokenError) {
+        console.warn('[request] 检测到管理员 token 过期:', errorMessage);
         if (!tokenExpiredEventDispatched) {
           tokenExpiredEventDispatched = true;
           window.dispatchEvent(new CustomEvent('admin-token-expired', {
             detail: { reason: 'auth_error', status: response.status, message: errorMessage }
           }));
-          // 3秒后重置标志，允许重新登录后再次检测
           setTimeout(() => {
             tokenExpiredEventDispatched = false;
           }, 3000);
@@ -208,30 +224,17 @@ export const request = async <T>(url: string, options?: RequestOptions): Promise
   } catch (error: any) {
     console.error(`[Admin API Request] ${method} ${fullUrl} 失败:`, error);
     
-    // 在catch块中也检测认证错误（处理网络错误或其他异常情况）
+    // 仅在明确为管理员 token 过期时才跳转登录（避免业务错误误触发）
     if (error && error.message) {
       const errorMessage = String(error.message);
-      const authErrorKeywords = [
-        '无效的管理员token',
-        'JWT验证失败',
-        'token 为空',
-        '无法从token中提取用户名',
-        '管理员不存在',
-        '管理员账号已被禁用',
-        '登录已过期',
-        '需要管理员认证',
-        'unauthorized',
-        'token expired',
-        'invalid token'
-      ];
-      
-      const isAuthError = authErrorKeywords.some(keyword => 
-        errorMessage.toLowerCase().includes(keyword.toLowerCase())
+      const isAdminTokenExpired = (
+        errorMessage.includes('登录已过期，请重新登录') ||
+        errorMessage.includes('无效的管理员token') ||
+        errorMessage.includes('JWT验证失败') ||
+        errorMessage.includes('需要管理员认证')
       );
-      
-      if (isAuthError) {
-        console.warn('[request] 在错误处理中检测到认证错误，token 可能已过期:', errorMessage);
-        // 使用统一的 token 过期处理机制
+      if (isAdminTokenExpired) {
+        console.warn('[request] 检测到管理员 token 过期:', errorMessage);
         triggerTokenExpiry();
         throw new Error('登录已过期，请重新登录');
       }

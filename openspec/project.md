@@ -387,6 +387,36 @@
   - 前端组件：关键组件有测试
 - **测试结构**: Given-When-Then 模式
 
+#### API 和 web 测试用例方案 ⭐
+项目遵循统一的「API 和 web 测试用例方案」，创建提案或编写测试时按以下约定执行；细则见下方「提案与前端自动化测试」「关键 API 自动化测试资产位置」。
+
+| 维度 | Web 方案 | API 方案 |
+|------|----------|----------|
+| **触发条件** | 提案涉及前端页面功能 | 关键 API 模块需提供/维护自动化测试 |
+| **执行技能** | web-automation-testing | api-automation-testing |
+| **统一流程** | 先对目标模块/功能点进行需求分析，再围绕需求编写用例 | 同上 |
+| **资产存放** | 对应前端项目 `e2e/<feature>/`（如 `admin/frontend/e2e/<feature>/`、`main/frontend/e2e/<feature>/`） | 对应后端项目 `api-tests/<feature>/`（如 `main/backend/api-tests/<feature>/`、`admin/backend/api-tests/<feature>/`） |
+| **失败处理** | 失败即终止，结果交 Agent 修复后由 Agent 再次发起测试 | 查看后台日志 → 交 Agent 修复 → 使用 `scripts/start/` 下对应脚本重启后台 → Agent 再次发起测试直至通过 |
+
+详见下方「提案与前端自动化测试」「关键 API 自动化测试资产位置」。
+
+#### 提案与自动化测试任务 ⭐
+- **规范**: 编写 OpenSpec 提案时，提案的**任务列表**中必须根据开发范围包含以下测试方案任务：
+  - **涉及 API 开发时**：须列出「创建 API 自动化测试方案」的任务。
+  - **涉及 Web 页面开发时**：须列出「创建 Web 自动化测试方案」的任务。
+
+#### 提案与前端自动化测试 ⭐
+- **规范**: 创建 OpenSpec 提案时，若变更**涉及前端页面功能**，提案中**必须提供自动化测试方案**（见上「提案与自动化测试任务」：须在任务列表中列出创建 Web 自动化测试方案的任务）。
+- **执行**: 该方案由 **web-automation-testing** 技能完成（编写测试计划、执行、失败交 Agent 修复、扩展直至模块功能全覆盖）。技能执行时**先对目标模块/功能点进行需求分析，再围绕需求开展用例编写**，与技能内的「编写用例流程」保持一致。
+- **存放位置**: 测试方案资产（test_plan.json、README、报告等）保存在**对应前端项目下的专有目录**（如 `admin/frontend/e2e/<feature>/`、`main/frontend/e2e/<feature>/`），不放在项目根或与前端分离的通用 e2e 根目录。
+
+#### 关键 API 自动化测试资产位置 ⭐
+- **规范**: 提案涉及 API 开发时，须在提案任务列表中列出「创建 API 自动化测试方案」的任务（见上「提案与自动化测试任务」）。关键 API 模块的自动化测试计划与用例由 **api-automation-testing** 技能执行与维护；编写时**先对目标 API 模块进行需求分析，再围绕需求编写用例**。
+- **存放位置**: 测试资产（api_test_plan.json、README、results.json、report、agent_failure_summary.md、test_run_state.json）存放在**对应后端项目下的专有目录**，例如：
+  - Main 技能执行：`main/backend/api-tests/skill-execution/`
+  - Admin 技能管理：`admin/backend/api-tests/skills/`
+- **执行与失败处理**: 使用 `.claude/skills/api-automation-testing/scripts/api_test_executor.py` 执行计划；失败时按技能约定查看后台日志、交 Agent 修复并执行 `scripts/start/` 下对应脚本重启后再测。详见 api-automation-testing 技能文档。
+
 **参考文档**：详细测试规范请参考 `docs/12-开发指南/开发规范/心域开发指南.md` 第5节
 
 ### Git Workflow
@@ -564,6 +594,9 @@ Closes #123
 ---
 
 ## 更新日志
+
+### 2025-01-29
+- 添加 **提案与自动化测试任务** 规则：提案涉及 API 开发时须在任务列表中列出「创建 API 自动化测试方案」的任务；涉及 Web 页面开发时须列出「创建 Web 自动化测试方案」的任务
 
 ### 2025-01-09
 - 添加 **API URL 定义标准**，明确前后端路径定义规范，避免 URL 路径重复问题

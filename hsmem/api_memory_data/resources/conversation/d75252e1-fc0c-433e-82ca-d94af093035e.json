@@ -1,0 +1,24 @@
+{
+  "id": "d75252e1-fc0c-433e-82ca-d94af093035e",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "哈哈"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": {
+          "text": "ty1，看你笑得这么开心，看来这故事把你逗乐啦！接着唐老鸭就和小精灵一起往城堡赶去，准备去瞧瞧野兽到底咋回事。 "
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-28T00:40:27.409257",
+  "metadata": {
+    "size": 433
+  }
+}

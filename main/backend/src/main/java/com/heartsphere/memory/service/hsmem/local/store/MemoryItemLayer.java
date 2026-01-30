@@ -150,6 +150,54 @@ public class MemoryItemLayer {
         }
     }
 
+    /** 删除记忆项（文件 + 索引） */
+    public boolean delete(Path itemsBasePath, String itemId) {
+        try {
+            Path filePath = itemsBasePath.resolve(itemId + ".json");
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+            Map<String, Object> index = loadIndex(itemsBasePath);
+            if (index.remove(itemId) != null) {
+                saveIndex(itemsBasePath, index);
+            }
+            return true;
+        } catch (Exception e) {
+            log.warn("MemoryItemLayer.delete failed: itemId={}", itemId, e);
+            return false;
+        }
+    }
+
+    /** 部分更新记忆项（仅更新允许的字段：content、summary、importance、categories、metadata、updated_at） */
+    public boolean update(Path itemsBasePath, String itemId, Map<String, Object> updates) {
+        Optional<Map<String, Object>> opt = get(itemsBasePath, itemId);
+        if (opt.isEmpty()) return false;
+        Map<String, Object> item = new LinkedHashMap<>(opt.get());
+        if (updates.containsKey("content")) item.put("content", updates.get("content"));
+        if (updates.containsKey("summary")) item.put("summary", updates.get("summary"));
+        if (updates.containsKey("importance")) item.put("importance", updates.get("importance"));
+        if (updates.containsKey("categories")) item.put("categories", updates.get("categories"));
+        if (updates.containsKey("metadata")) item.put("metadata", updates.get("metadata"));
+        item.put("updated_at", Instant.now().toString());
+        try {
+            Path filePath = itemsBasePath.resolve(itemId + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(filePath.toFile(), item);
+            Map<String, Object> index = loadIndex(itemsBasePath);
+            Object entry = index.get(itemId);
+            if (entry instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> indexEntry = (Map<String, Object>) entry;
+                if (updates.containsKey("categories")) indexEntry.put("categories", updates.get("categories"));
+                indexEntry.put("updated_at", item.get("updated_at"));
+                saveIndex(itemsBasePath, index);
+            }
+            return true;
+        } catch (Exception e) {
+            log.warn("MemoryItemLayer.update failed: itemId={}", itemId, e);
+            return false;
+        }
+    }
+
     private Map<String, Object> loadIndex(Path itemsBasePath) {
         Path indexPath = itemsBasePath.resolve(INDEX_FILE);
         try {

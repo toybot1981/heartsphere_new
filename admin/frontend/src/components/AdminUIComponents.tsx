@@ -65,6 +65,15 @@ export const TextArea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement
     />
 );
 
+export const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
+    <select 
+        {...props} 
+        className={`w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all ${props.className || ''}`}
+    >
+        {props.children}
+    </select>
+);
+
 export const ConfigSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6 bg-slate-900/50 p-4 rounded-lg border border-slate-700">
         <h4 className="text-sm font-bold text-indigo-300 border-b border-indigo-500/20 pb-2 mb-4 uppercase tracking-widest">{title}</h4>

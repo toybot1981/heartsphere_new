@@ -1,0 +1,38 @@
+{
+  "3f5eca12-ed30-4937-851d-d233eb5a3734": {
+    "name": "preferences",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.045410",
+    "updated_at": "2026-01-15T22:50:09.045412"
+  },
+  "17213a28-1c2c-4bd1-b8a9-e6d9d3d70725": {
+    "name": "user_profile",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.045866",
+    "updated_at": "2026-01-15T22:50:09.045870"
+  },
+  "1177919e-58d6-4730-a4cf-a1a95d183520": {
+    "name": "habits",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.046265",
+    "updated_at": "2026-01-15T22:50:09.046267"
+  },
+  "949d8cd0-c7eb-4fad-84dc-70217f1b0c94": {
+    "name": "behavior",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.046681",
+    "updated_at": "2026-01-15T22:50:09.046684"
+  },
+  "bde49339-18bf-460a-add3-e2dd749224c1": {
+    "name": "personal_info",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.047564",
+    "updated_at": "2026-01-15T22:50:09.047573"
+  },
+  "12c3cbc9-7b50-4021-8067-23d071485492": {
+    "name": "basic_info",
+    "item_count": 1,
+    "created_at": "2026-01-15T22:50:09.048545",
+    "updated_at": "2026-01-15T22:50:09.048552"
+  }
+}

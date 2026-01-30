@@ -1,0 +1,9 @@
+{
+  "case_id": "case_4_2",
+  "name": "验证记忆展示",
+  "error": "not enough values to unpack (expected 3, got 2)",
+  "failed_step": null,
+  "database": null,
+  "page_context": {},
+  "screenshot": null
+}

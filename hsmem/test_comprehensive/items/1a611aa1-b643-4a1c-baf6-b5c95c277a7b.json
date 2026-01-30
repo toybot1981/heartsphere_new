@@ -1,0 +1,15 @@
+{
+  "id": "1a611aa1-b643-4a1c-baf6-b5c95c277a7b",
+  "resource_id": "b08e7d9b-749f-4f57-97ac-1f6224c2f8e5",
+  "content": "我叫李四，是一名软件工程师",
+  "summary": "个人信息: 我叫李四，是一名软件工程师",
+  "memory_type": "personal_info",
+  "importance": 0.8,
+  "categories": [
+    "personal_info",
+    "basic_info"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-15T22:51:17.766768",
+  "updated_at": "2026-01-15T22:51:17.766779"
+}

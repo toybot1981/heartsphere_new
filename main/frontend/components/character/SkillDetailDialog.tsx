@@ -29,16 +29,17 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
 
   const isEquipped = !!binding;
 
-  // 解析 function_schema
-  let functionSchema: any = null;
+  // 已移除：functionSchema (废弃，改用 mcpToolConfig)
+  // 解析 mcp_tool_config
+  let mcpToolConfig: any = null;
   try {
-    if (skill.functionSchema) {
-      functionSchema = typeof skill.functionSchema === 'string' 
-        ? JSON.parse(skill.functionSchema) 
-        : skill.functionSchema;
+    if (skill.mcpToolConfig) {
+      mcpToolConfig = typeof skill.mcpToolConfig === 'string' 
+        ? JSON.parse(skill.mcpToolConfig) 
+        : skill.mcpToolConfig;
     }
   } catch (e) {
-    console.error('Failed to parse function schema:', e);
+    console.error('Failed to parse MCP tool config:', e);
   }
 
   // 解析 execution_config
@@ -110,12 +111,12 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
           <button
             onClick={onClose}
             className="text-2xl leading-none transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
+            style={{ color: 'var(--text-secondary, #CBD5E1)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'var(--text-primary)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.color = 'var(--text-secondary, #CBD5E1)';
             }}
           >
             ×
@@ -128,7 +129,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
           <div>
             <h3 
               className="text-sm font-semibold mb-2"
-              style={{ color: 'var(--text-tertiary)' }}
+              style={{ color: 'var(--text-secondary, #CBD5E1)' }}
             >
               描述
             </h3>
@@ -141,7 +142,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
               <div>
                 <div 
                   className="text-xs mb-1"
-                  style={{ color: 'var(--text-tertiary)' }}
+                  style={{ color: 'var(--text-secondary, #CBD5E1)' }}
                 >
                   分类
                 </div>
@@ -155,19 +156,19 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
             )}
             {skill.skillType && (
               <div>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>类型</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-secondary, #CBD5E1)' }}>类型</div>
                 <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{skill.skillType}</div>
               </div>
             )}
             {skill.executionType && (
               <div>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>执行类型</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-secondary, #CBD5E1)' }}>执行类型</div>
                 <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{skill.executionType}</div>
               </div>
             )}
             {skill.version && (
               <div>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>版本</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-secondary, #CBD5E1)' }}>版本</div>
                 <div className="font-medium" style={{ color: 'var(--text-primary)' }}>v{skill.version}</div>
               </div>
             )}
@@ -184,7 +185,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
             >
               <h3 
                 className="text-sm font-semibold mb-3"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
                 装备状态
               </h3>
@@ -192,7 +193,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                 <div>
                   <div 
                     className="text-xs mb-1"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    style={{ color: 'var(--text-secondary, #CBD5E1)' }}
                   >
                     启用状态
                   </div>
@@ -210,7 +211,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                 <div>
                   <div 
                     className="text-xs mb-1"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    style={{ color: 'var(--text-secondary, #CBD5E1)' }}
                   >
                     自动触发
                   </div>
@@ -219,7 +220,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                     style={{ 
                       color: binding.autoTrigger 
                         ? 'var(--color-warning, #fcd34d)' 
-                        : 'var(--text-tertiary)' 
+                        : 'var(--text-secondary, #CBD5E1)' 
                     }}
                   >
                     {binding.autoTrigger ? '是' : '否'}
@@ -228,7 +229,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                 <div>
                   <div 
                     className="text-xs mb-1"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    style={{ color: 'var(--text-secondary, #CBD5E1)' }}
                   >
                     优先级
                   </div>
@@ -242,7 +243,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                 <div>
                   <div 
                     className="text-xs mb-1"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    style={{ color: 'var(--text-secondary, #CBD5E1)' }}
                   >
                     使用次数
                   </div>
@@ -257,14 +258,14 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
             </div>
           )}
 
-          {/* Function Schema */}
-          {functionSchema && (
+          {/* MCP 工具配置 */}
+          {mcpToolConfig && (
             <div>
               <h3 
                 className="text-sm font-semibold mb-2"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
-                函数参数
+                MCP 工具配置
               </h3>
               <div 
                 className="rounded-lg p-4 border"
@@ -277,7 +278,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
                   className="text-xs overflow-x-auto"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  {JSON.stringify(functionSchema, null, 2)}
+                  {JSON.stringify(mcpToolConfig, null, 2)}
                 </pre>
               </div>
             </div>
@@ -286,7 +287,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
           {/* 执行配置 */}
           {executionConfig && (
             <div>
-              <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-tertiary)' }}>执行配置</h3>
+              <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary, #CBD5E1)' }}>执行配置</h3>
               <div
                 className="rounded-lg p-4 border"
                 style={{
@@ -309,7 +310,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
             <div>
               <h3 
                 className="text-sm font-semibold mb-2"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
                 自动触发关键词
               </h3>
@@ -336,7 +337,7 @@ export const SkillDetailDialog: React.FC<SkillDetailDialogProps> = ({
             <div>
               <div 
                 className="text-xs mb-1"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
                 作者
               </div>

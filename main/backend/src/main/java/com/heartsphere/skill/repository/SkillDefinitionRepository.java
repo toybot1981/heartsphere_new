@@ -81,9 +81,10 @@ public interface SkillDefinitionRepository extends JpaRepository<SkillDefinition
     void deleteBySkillId(String skillId);
     
     /**
-     * 查找可用的技能（有 function_schema 的技能）
+     * 查找可用的技能（有 mcp_tool_config 的技能，用于工具调用）
+     * 注意：已移除 function_schema 判断，改用 mcp_tool_config
      */
-    @Query("SELECT s FROM SkillDefinition s WHERE s.functionSchema IS NOT NULL AND s.functionSchema != ''")
+    @Query("SELECT s FROM SkillDefinition s WHERE s.mcpToolConfig IS NOT NULL AND s.mcpToolConfig != ''")
     List<SkillDefinition> findAvailableSkills();
     
     /**
@@ -93,8 +94,9 @@ public interface SkillDefinitionRepository extends JpaRepository<SkillDefinition
     List<SkillDefinition> findAutoTriggerSkills();
     
     /**
-     * 根据分类查找可用技能
+     * 根据分类查找可用技能（有 mcp_tool_config 的技能）
+     * 注意：已移除 function_schema 判断，改用 mcp_tool_config
      */
-    @Query("SELECT s FROM SkillDefinition s WHERE s.category = :category AND s.functionSchema IS NOT NULL AND s.functionSchema != ''")
+    @Query("SELECT s FROM SkillDefinition s WHERE s.category = :category AND s.mcpToolConfig IS NOT NULL AND s.mcpToolConfig != ''")
     List<SkillDefinition> findAvailableSkillsByCategory(@Param("category") String category);
 }

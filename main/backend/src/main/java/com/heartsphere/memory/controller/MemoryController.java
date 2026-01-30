@@ -11,11 +11,10 @@ import com.heartsphere.memory.dto.hsmem.*;
 import com.heartsphere.memory.service.LongMemoryService;
 import com.heartsphere.memory.service.MemoryExtractor;
 import com.heartsphere.memory.service.ShortMemoryService;
-import com.heartsphere.memory.service.hsmem.HSMemClientService;
+import com.heartsphere.memory.service.hsmem.HSMemApi;
 import com.heartsphere.memory.service.impl.MySQLLongMemoryService;
 import com.heartsphere.memory.repository.jpa.ChatMessageRepository;
 import com.heartsphere.memory.entity.ChatMessageEntity;
-import com.heartsphere.memory.util.MemoryEntityConverter;
 import com.heartsphere.memory.entity.CharacterKnowledgeAssetEntity;
 import com.heartsphere.memory.dto.CreateKnowledgeAssetRequest;
 import com.heartsphere.memory.dto.KnowledgeAssetResponse;
@@ -40,7 +39,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -57,11 +60,9 @@ import java.util.stream.Collectors;
 @Tag(name = "记忆系统", description = "记忆系统API")
 public class MemoryController {
     
-    private final LongMemoryService longMemoryService;
-    private final MySQLLongMemoryService mySQLLongMemoryService;
     private final ShortMemoryService shortMemoryService;
     private final MemoryExtractor memoryExtractor;
-    private final HSMemClientService hsmemClientService;
+    private final HSMemApi hsmemApi;
     private final com.heartsphere.service.MembershipService membershipService;
     private final ChatMessageRepository chatMessageRepository;
     private final CharacterKnowledgeAssetService characterKnowledgeAssetService;
@@ -143,27 +144,32 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
-            // 转换为UserMemory
-            UserMemory memory = UserMemory.builder()
-                .id(UUID.randomUUID().toString())
-                .userId(userId)
-                .type(request.getMemoryType())
-                .importance(request.getImportance())
-                .content(request.getContent())
-                .structuredData(request.getStructuredData())
-                .source(request.getSource())
-                .sourceId(request.getSourceId())
-                .confidence(request.getConfidence() != null ? request.getConfidence() : 0.7)
-                .tags(request.getTags())
-                .metadata(request.getMetadata())
-                .createdAt(Instant.now())
-                .lastAccessedAt(Instant.now())
-                .accessCount(0)
-                .build();
-            
-            // 保存记忆
-            mySQLLongMemoryService.saveMemory(memory);
-            
+            HSMemItemInput item = HSMemMemoryMapper.fromSaveMemoryRequest(request, userId);
+            HSMemItemsRequest req = new HSMemItemsRequest(formatUserIdForHsmem(userId), List.of(item));
+            HSMemResponse.MemorizeData result = hsmemApi.memorizeItems(req);
+            UserMemory memory = null;
+            if (result != null && result.getItem_ids() != null && !result.getItem_ids().isEmpty()) {
+                Map<String, Object> created = hsmemApi.getItem(result.getItem_ids().get(0));
+                memory = HSMemMemoryMapper.fromHSMemItem(created);
+            }
+            if (memory == null) {
+                memory = UserMemory.builder()
+                    .id(UUID.randomUUID().toString())
+                    .userId(userId)
+                    .type(request.getMemoryType())
+                    .importance(request.getImportance())
+                    .content(request.getContent())
+                    .structuredData(request.getStructuredData())
+                    .source(request.getSource())
+                    .sourceId(request.getSourceId())
+                    .confidence(request.getConfidence() != null ? request.getConfidence() : 0.7)
+                    .tags(request.getTags())
+                    .metadata(request.getMetadata())
+                    .createdAt(Instant.now())
+                    .lastAccessedAt(Instant.now())
+                    .accessCount(0)
+                    .build();
+            }
             return ResponseEntity.ok(ApiResponse.success(memory));
         } catch (Exception e) {
             log.error("保存用户记忆失败: userId={}", userId, e);
@@ -199,29 +205,23 @@ public class MemoryController {
                 log.info("用户ID格式不是数字，跳过游客检查: userId={}", userId);
             }
             
-            // 转换为UserMemory列表
-            List<UserMemory> memories = requests.stream()
-                .map(request -> UserMemory.builder()
-                    .id(UUID.randomUUID().toString())
-                    .userId(userId)
-                    .type(request.getMemoryType())
-                    .importance(request.getImportance())
-                    .content(request.getContent())
-                    .structuredData(request.getStructuredData())
-                    .source(request.getSource())
-                    .sourceId(request.getSourceId())
-                    .confidence(request.getConfidence() != null ? request.getConfidence() : 0.7)
-                    .tags(request.getTags())
-                    .metadata(request.getMetadata())
-                    .createdAt(Instant.now())
-                    .lastAccessedAt(Instant.now())
-                    .accessCount(0)
-                    .build())
+            List<HSMemItemInput> items = requests.stream()
+                .map(r -> HSMemMemoryMapper.fromSaveMemoryRequest(r, userId))
+                .filter(it -> it != null)
                 .collect(Collectors.toList());
-            
-            // 批量保存记忆
-            mySQLLongMemoryService.saveMemories(memories);
-            
+            if (items.isEmpty()) {
+                return ResponseEntity.ok(ApiResponse.success(List.of()));
+            }
+            HSMemItemsRequest req = new HSMemItemsRequest(formatUserIdForHsmem(userId), items);
+            hsmemApi.memorizeItems(req);
+            HSMemResponse.ItemsData itemsData = hsmemApi.getItems(formatUserIdForHsmem(userId));
+            List<UserMemory> memories = (itemsData != null && itemsData.getItems() != null)
+                ? itemsData.getItems().stream()
+                    .map(HSMemMemoryMapper::fromHSMemItem)
+                    .filter(m -> m != null)
+                    .limit(requests.size())
+                    .collect(Collectors.toList())
+                : List.of();
             return ResponseEntity.ok(ApiResponse.success(memories));
         } catch (Exception e) {
             log.error("批量保存用户记忆失败: userId={}", userId, e);
@@ -237,6 +237,7 @@ public class MemoryController {
             @Parameter(description = "查询关键词") @RequestParam(required = false, defaultValue = "") String query,
             @Parameter(description = "返回数量限制") @RequestParam(defaultValue = "10") int limit,
             @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[Main-记忆] 获得记忆-搜索长期记忆: 入参 userId={}, query={}, limit={}", userId, query, limit);
         try {
             // 验证用户权限
             String authenticatedUserId = getAuthenticatedUserId(userDetails);
@@ -269,19 +270,20 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
-            // 检查是否为游客（体验会员）- 游客不生成记忆，返回空列表或提示
-            try {
-                Long userIdLong = Long.parseLong(userId);
-                if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-                    log.info("游客用户尝试查询记忆，返回空列表: userId={}", userId);
-                    return ResponseEntity.ok(ApiResponse.success(List.of()));
-                }
-            } catch (NumberFormatException e) {
-                // 如果userId不是数字，继续执行
-                log.info("用户ID格式不是数字，跳过游客检查: userId={}", userId);
-            }
-            
-            List<UserMemory> memories = longMemoryService.retrieveRelevantMemories(userId, query, limit);
+            // 允许体验会员查看自己的记忆（只读）；写操作（保存/更新）仍会在别处做游客校验
+            HSMemRetrieveRequest retrieveRequest = new HSMemRetrieveRequest();
+            retrieveRequest.setQueries(List.of(new HSMemMessage("user", Map.of("text", query != null ? query : ""))));
+            retrieveRequest.setLimit(limit);
+            retrieveRequest.setWhere(Map.of("user_id", formatUserIdForHsmem(userId)));
+            HSMemResponse.RetrieveData retrieveData = hsmemApi.retrieve(retrieveRequest);
+            List<UserMemory> memories = (retrieveData != null && retrieveData.getItems() != null)
+                ? retrieveData.getItems().stream()
+                    .map(HSMemMemoryMapper::fromHSMemItem)
+                    .filter(m -> m != null)
+                    .collect(Collectors.toList())
+                : List.of();
+            log.info("[Main-记忆] 获得记忆-搜索长期记忆: 数据源=HSMem(retrieve), 返回条数={}", memories.size());
+            log.info("[Main-记忆] 获得记忆-搜索长期记忆-返回: 条数={}", memories != null ? memories.size() : 0);
             return ResponseEntity.ok(ApiResponse.success(memories));
         } catch (Exception e) {
             log.error("搜索用户记忆失败: userId={}, query={}", userId, query, e);
@@ -304,19 +306,17 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
-            // 获取记忆
-            UserMemory memory = mySQLLongMemoryService.getMemoryById(memoryId);
-            if (memory == null) {
+            Map<String, Object> item = hsmemApi.getItem(memoryId);
+            if (item == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("记忆不存在"));
             }
-            
-            // 验证记忆属于该用户
-            if (!memory.getUserId().equals(userId)) {
+            String itemUserId = (String) item.get("user_id");
+            if (itemUserId != null && !itemUserId.equals(formatUserIdForHsmem(userId)) && !itemUserId.equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("无权访问该记忆"));
             }
-            
+            UserMemory memory = HSMemMemoryMapper.fromHSMemItem(item);
             return ResponseEntity.ok(ApiResponse.success(memory));
         } catch (Exception e) {
             log.error("获取记忆失败: userId={}, memoryId={}", userId, memoryId, e);
@@ -340,42 +340,28 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
-            // 获取现有记忆
-            UserMemory existingMemory = mySQLLongMemoryService.getMemoryById(memoryId);
-            if (existingMemory == null) {
+            Map<String, Object> existing = hsmemApi.getItem(memoryId);
+            if (existing == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("记忆不存在"));
             }
-            
-            // 验证记忆属于该用户
-            if (!existingMemory.getUserId().equals(userId)) {
+            String itemUserId = (String) existing.get("user_id");
+            if (itemUserId != null && !itemUserId.equals(formatUserIdForHsmem(userId)) && !itemUserId.equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("无权更新该记忆"));
             }
-            
-            // 更新记忆（只更新提供的字段）
-            UserMemory updatedMemory = UserMemory.builder()
-                .id(memoryId)
-                .userId(userId)
-                .type(request.getMemoryType() != null ? request.getMemoryType() : existingMemory.getType())
-                .importance(request.getImportance() != null ? request.getImportance() : existingMemory.getImportance())
-                .content(request.getContent() != null ? request.getContent() : existingMemory.getContent())
-                .structuredData(request.getStructuredData() != null ? request.getStructuredData() : existingMemory.getStructuredData())
-                .source(request.getSource() != null ? request.getSource() : existingMemory.getSource())
-                .sourceId(request.getSourceId() != null ? request.getSourceId() : existingMemory.getSourceId())
-                .confidence(request.getConfidence() != null ? request.getConfidence() : existingMemory.getConfidence())
-                .tags(request.getTags() != null ? request.getTags() : existingMemory.getTags())
-                .metadata(request.getMetadata() != null ? request.getMetadata() : existingMemory.getMetadata())
-                .createdAt(existingMemory.getCreatedAt()) // 保留创建时间
-                .lastAccessedAt(Instant.now())
-                .accessCount(existingMemory.getAccessCount())
-                .build();
-            
-            // 更新记忆
-            mySQLLongMemoryService.updateMemory(updatedMemory);
-            
-            // 重新获取更新后的记忆
-            UserMemory result = mySQLLongMemoryService.getMemoryById(memoryId);
+            Map<String, Object> updates = HSMemMemoryMapper.toUpdateMap(request);
+            if (updates.isEmpty()) {
+                UserMemory result = HSMemMemoryMapper.fromHSMemItem(existing);
+                return ResponseEntity.ok(ApiResponse.success(result));
+            }
+            boolean updated = hsmemApi.updateItem(memoryId, updates);
+            if (!updated) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("更新记忆失败"));
+            }
+            Map<String, Object> after = hsmemApi.getItem(memoryId);
+            UserMemory result = HSMemMemoryMapper.fromHSMemItem(after);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("更新记忆失败: userId={}, memoryId={}", userId, memoryId, e);
@@ -398,22 +384,21 @@ public class MemoryController {
                     .body(ApiResponse.error("无权访问该用户的数据"));
             }
             
-            // 获取记忆以验证所有权
-            UserMemory memory = mySQLLongMemoryService.getMemoryById(memoryId);
-            if (memory == null) {
+            Map<String, Object> item = hsmemApi.getItem(memoryId);
+            if (item == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("记忆不存在"));
             }
-            
-            // 验证记忆属于该用户
-            if (!memory.getUserId().equals(userId)) {
+            String itemUserId = (String) item.get("user_id");
+            if (itemUserId != null && !itemUserId.equals(formatUserIdForHsmem(userId)) && !itemUserId.equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("无权删除该记忆"));
             }
-            
-            // 删除记忆
-            mySQLLongMemoryService.deleteMemory(memoryId);
-            
+            boolean deleted = hsmemApi.deleteItem(memoryId);
+            if (!deleted) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("删除记忆失败"));
+            }
             return ResponseEntity.ok(ApiResponse.success(null));
         } catch (Exception e) {
             log.error("删除记忆失败: userId={}, memoryId={}", userId, memoryId, e);
@@ -455,13 +440,10 @@ public class MemoryController {
                 return ResponseEntity.ok(ApiResponse.success(List.of()));
             }
             
-            // 提取记忆
             List<UserMemory> extractedMemories = memoryExtractor.extractMemories(userId, messages);
             if (extractedMemories == null || extractedMemories.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.success(List.of()));
             }
-            
-            // 设置sourceId为会话ID
             extractedMemories.forEach(memory -> {
                 if (memory.getSourceId() == null || memory.getSourceId().isEmpty()) {
                     memory.setSourceId(sessionId);
@@ -470,13 +452,16 @@ public class MemoryController {
                     memory.setSource(MemorySource.CONVERSATION);
                 }
             });
-            
-            // 保存提取的记忆
-            mySQLLongMemoryService.saveMemories(extractedMemories);
-            
+            List<HSMemItemInput> items = extractedMemories.stream()
+                .map(m -> HSMemMemoryMapper.fromUserMemory(m, userId))
+                .filter(it -> it != null)
+                .collect(Collectors.toList());
+            if (!items.isEmpty()) {
+                HSMemItemsRequest req = new HSMemItemsRequest(formatUserIdForHsmem(userId), items);
+                hsmemApi.memorizeItems(req);
+            }
             log.info("从会话提取记忆成功: userId={}, sessionId={}, count={}", 
                 userId, sessionId, extractedMemories.size());
-            
             return ResponseEntity.ok(ApiResponse.success(extractedMemories));
         } catch (Exception e) {
             log.error("从会话提取记忆失败: userId={}, sessionId={}", userId, sessionId, e);
@@ -521,7 +506,7 @@ public class MemoryController {
                     .body(ApiResponse.error("未登录或无法获取用户信息"));
             }
             
-            log.info("[MemoryController] 用户认证成功: userId={}, 准备调用 HSMemClientService", authenticatedUserId);
+            log.info("[MemoryController] 用户认证成功: userId={}, 准备调用 HSMem", authenticatedUserId);
             
             // 自动设置 user_id（如果请求中没有提供）
             if (request.getUser_id() == null || request.getUser_id().isEmpty()) {
@@ -536,9 +521,9 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            log.info("[MemoryController] 调用 HSMemClientService.memorizeConversation");
-            HSMemResponse.MemorizeData result = hsmemClientService.memorizeConversation(request);
-            log.info("[MemoryController] HSMemClientService 调用成功: resourceId={}, itemsCount={}", 
+            log.info("[MemoryController] 调用 HSMem memorizeConversation");
+            HSMemResponse.MemorizeData result = hsmemApi.memorizeConversation(request);
+            log.info("[MemoryController] HSMem 调用成功: resourceId={}, itemsCount={}", 
                 result.getResource_id(), result.getItems_count());
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
@@ -567,7 +552,7 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            HSMemResponse.MemorizeData result = hsmemClientService.memorizeText(request);
+            HSMemResponse.MemorizeData result = hsmemApi.memorizeText(request);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("记忆化文本失败", e);
@@ -595,7 +580,7 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            HSMemResponse.MemorizeData result = hsmemClientService.memorizeDocument(request);
+            HSMemResponse.MemorizeData result = hsmemApi.memorizeDocument(request);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("记忆化文档失败", e);
@@ -635,7 +620,7 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            HSMemResponse.RetrieveData result = hsmemClientService.retrieve(request);
+            HSMemResponse.RetrieveData result = hsmemApi.retrieve(request);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("检索记忆失败", e);
@@ -648,7 +633,7 @@ public class MemoryController {
     @GetMapping("/hsmem/statistics")
     public ResponseEntity<ApiResponse<HSMemResponse.StatisticsData>> getStatistics() {
         try {
-            HSMemResponse.StatisticsData result = hsmemClientService.getStatistics();
+            HSMemResponse.StatisticsData result = hsmemApi.getStatistics();
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("获取统计信息失败", e);
@@ -661,7 +646,7 @@ public class MemoryController {
     @GetMapping("/hsmem/categories")
     public ResponseEntity<ApiResponse<HSMemResponse.CategoriesData>> getCategories() {
         try {
-            HSMemResponse.CategoriesData result = hsmemClientService.getCategories();
+            HSMemResponse.CategoriesData result = hsmemApi.getCategories();
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("获取分类列表失败", e);
@@ -675,6 +660,7 @@ public class MemoryController {
     public ResponseEntity<ApiResponse<HSMemResponse.ItemsData>> getItems(
             @Parameter(description = "用户ID（可选）") @RequestParam(required = false) String user_id,
             @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[Main-记忆] 获得记忆-HSMem列表: 入参 user_id={}", user_id);
         try {
             // 从认证信息中提取用户ID
             String authenticatedUserId = getAuthenticatedUserId(userDetails);
@@ -682,11 +668,13 @@ public class MemoryController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("未登录或无法获取用户信息"));
             }
+            log.info("[Main-记忆] 获得记忆-HSMem列表: authenticatedUserId={}", authenticatedUserId);
             
             // 如果没有提供 user_id，使用认证用户的ID
             String userIdToQuery = user_id;
             if (userIdToQuery == null || userIdToQuery.isEmpty()) {
                 userIdToQuery = formatUserIdForHsmem(authenticatedUserId);
+                log.info("[Main-记忆] 获得记忆-HSMem列表: user_id 为空，使用认证用户 userIdToQuery={}", userIdToQuery);
             } else {
                 // 验证 user_id 是否与认证用户一致
                 String formattedUserId = formatUserIdForHsmem(authenticatedUserId);
@@ -697,7 +685,11 @@ public class MemoryController {
             }
             
             // 调用 hsmem 服务
-            HSMemResponse.ItemsData result = hsmemClientService.getItems(userIdToQuery);
+            HSMemResponse.ItemsData result = hsmemApi.getItems(userIdToQuery);
+            int itemsCount = (result != null && result.getItems() != null) ? result.getItems().size() : 0;
+            Integer total = (result != null && result.getTotal() != null) ? result.getTotal() : 0;
+            log.info("[Main-记忆] 获得记忆-HSMem列表: 数据源=HSMem(getItems), items条数={}, total={}", itemsCount, total);
+            log.info("[Main-记忆] 获得记忆-HSMem列表-返回: items条数={}, total={}", itemsCount, total);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("获取记忆项列表失败: user_id={}", user_id, e);
@@ -711,7 +703,7 @@ public class MemoryController {
     public ResponseEntity<ApiResponse<HSMemResponse.ResourcesData>> getResources() {
         try {
             // TODO: 添加管理员权限验证
-            HSMemResponse.ResourcesData result = hsmemClientService.getResources();
+            HSMemResponse.ResourcesData result = hsmemApi.getResources();
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             log.error("获取资源列表失败", e);

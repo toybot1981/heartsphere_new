@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_1",
+  "name": "进入现实世界",
+  "error": "Step 5 failed: Locator.fill: Unexpected token \"text\" while parsing css selector \"\" into input[type=\"text\"]:first-of-type\". Did you mean to CSS.escape it?\nCall log:\n  - waiting for \" into input[type=\"text\"]:first-of-type\n",
+  "failed_step": "type \"tongyexin\" into input[type=\"text\"]:first-of-type",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3000/",
+    "title": "心域-心灵安放的港湾",
+    "visible_text": "身份连接\n\n绑定身份以保存记忆、解锁心域全部功能。\n\n登录\n注册\n微信登录\n用户名\n密码\n登录\n\n登录即代表您同意 《心域用户协议》 及 《隐私政策》\n\nWelcome to 我的心域\n\n选择你的进入方式\n\n以访客身份进入登录账户\n\n访客模式可快速体验，登录账户可同步数据。",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_1_20260128_164342.png"
+}

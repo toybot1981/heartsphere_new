@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { getSectionMetadata } from '../utils/sectionMetadata';
+import { useLocation } from 'react-router-dom';
+import { getSectionMetadata, isValidSection } from '../utils/sectionMetadata';
 
 export type SectionType = 
     | 'dashboard' 
@@ -36,6 +37,7 @@ export type SectionType =
     | 'edu-analytics'
     | 'edu-settings'
     | 'mentis-management'
+    | 'mcp-management'
     | 'agent-mind-management'
     | 'devops-workbench'
     | 'devops-overview'
@@ -345,6 +347,16 @@ export const AdminStateProvider: React.FC<{ children: ReactNode }> = ({ children
     useEffect(() => {
         saveTabsToStorage(openTabs);
     }, [openTabs]);
+
+    // 深链：URL ?section=xxx 时打开对应 section（挂载或 search 变化时，便于 e2e 与直接链接）
+    const location = useLocation();
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const sectionParam = params.get('section');
+        if (sectionParam && isValidSection(sectionParam)) {
+            openTab(sectionParam);
+        }
+    }, [location.search, openTab]);
     
     useEffect(() => {
         saveActiveTabIdToStorage(activeTabId);

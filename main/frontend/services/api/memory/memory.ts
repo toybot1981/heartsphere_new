@@ -6,7 +6,7 @@
  */
 
 import { request } from '../base/request';
-import { UserMemory, MemorySearchOptions } from '../../memory-system/types/MemoryTypes';
+import { UserMemory, MemorySearchOptions, MemorySource } from '../../memory-system/types/MemoryTypes';
 import { logger } from '../../../utils/logger';
 
 /**
@@ -64,6 +64,36 @@ interface ApiUserMemory {
  * 将 API 格式转换为客户端格式
  */
 function normalizeMemory(apiMemory: ApiUserMemory, userId: string | number): UserMemory {
+  // 规范化 source 字段：后端可能返回 "JOURNAL" (大写)，前端期望 "journal" (小写)
+  // 导入 MemorySource 类型
+  const MemorySource = {
+    CONVERSATION: 'conversation',
+    JOURNAL: 'journal',
+    BEHAVIOR: 'behavior',
+    MANUAL: 'manual',
+    SYSTEM: 'system',
+  } as const;
+  
+  let normalizedSource: string = apiMemory.source || MemorySource.CONVERSATION;
+  if (apiMemory.source) {
+    const sourceLower = apiMemory.source.toLowerCase();
+    // 映射后端枚举值到前端枚举值
+    if (sourceLower === 'journal' || apiMemory.source === 'JOURNAL') {
+      normalizedSource = MemorySource.JOURNAL;
+    } else if (sourceLower === 'conversation' || apiMemory.source === 'CONVERSATION') {
+      normalizedSource = MemorySource.CONVERSATION;
+    } else if (sourceLower === 'behavior' || apiMemory.source === 'USER_INPUT') {
+      normalizedSource = MemorySource.BEHAVIOR;
+    } else if (sourceLower === 'manual' || apiMemory.source === 'MANUAL_CREATE') {
+      normalizedSource = MemorySource.MANUAL;
+    } else if (sourceLower === 'system' || apiMemory.source === 'SYSTEM_DETECTED') {
+      normalizedSource = MemorySource.SYSTEM;
+    } else {
+      // 默认值：如果无法匹配，使用小写格式
+      normalizedSource = sourceLower;
+    }
+  }
+  
   return {
     id: apiMemory.id,
     userId: Number(userId),
@@ -71,7 +101,7 @@ function normalizeMemory(apiMemory: ApiUserMemory, userId: string | number): Use
     importance: apiMemory.importance,
     content: apiMemory.content,
     structuredData: apiMemory.structuredData,
-    source: apiMemory.source,
+    source: normalizedSource as any, // 类型转换，因为前端 MemorySource 是枚举
     sourceId: apiMemory.sourceId,
     timestamp: apiMemory.createdAt ? new Date(apiMemory.createdAt).getTime() : Date.now(),
     usageCount: apiMemory.accessCount || 0,

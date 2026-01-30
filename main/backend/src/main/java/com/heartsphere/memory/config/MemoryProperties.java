@@ -87,7 +87,17 @@ public class MemoryProperties {
     @Data
     public static class HSMem {
         /**
-         * HSMem 服务基础URL，默认 http://localhost:8000
+         * 模式：remote=调用外部HSMem服务，local=使用Main内置实现（默认）
+         */
+        private String mode = "local";
+
+        /**
+         * 本地实现配置（mode=local 时生效）
+         */
+        private Local local = new Local();
+
+        /**
+         * HSMem 服务基础URL，默认 http://localhost:8000（mode=remote 时使用）
          */
         private String baseUrl = "http://localhost:8000";
         
@@ -105,6 +115,14 @@ public class MemoryProperties {
          * 慢请求阈值（毫秒），默认1000ms
          */
         private long slowRequestThresholdMs = 1000;
+
+        @Data
+        public static class Local {
+            /**
+             * 文件存储根目录，与 HSMem 目录结构一致（resources/items/categories）
+             */
+            private String basePath = "./memory_data";
+        }
         
         @Data
         public static class Retry {

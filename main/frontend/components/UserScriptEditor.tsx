@@ -28,6 +28,27 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
     const [loading, setLoading] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
 
+    // 辅助函数：将 eraId 转换为场景 ID 格式（era_数字）
+    const formatEraIdToSceneId = (eraId: number | string | null | undefined): string => {
+        if (!eraId) return '';
+        const numId = typeof eraId === 'string' ? parseInt(eraId, 10) : eraId;
+        if (isNaN(numId) || numId <= 0) return '';
+        return `era_${numId}`;
+    };
+
+    // 辅助函数：从场景 ID 格式（era_数字）提取数字
+    const extractEraIdFromSceneId = (sceneId: string | null | undefined): number | null => {
+        if (!sceneId || typeof sceneId !== 'string') return null;
+        // 如果是 "era_175" 格式，提取数字部分
+        if (sceneId.startsWith('era_')) {
+            const numId = parseInt(sceneId.substring(4), 10);
+            return isNaN(numId) || numId <= 0 ? null : numId;
+        }
+        // 如果是纯数字字符串，直接解析
+        const numId = parseInt(sceneId, 10);
+        return isNaN(numId) || numId <= 0 ? null : numId;
+    };
+
     // 初始化表单数据
     useEffect(() => {
         if (script) {
@@ -48,10 +69,13 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                     }
                 }
                 
+                // 将后端的数字 eraId 转换为场景 ID 格式（era_数字）
+                const sceneId = formatEraIdToSceneId(script.eraId);
+                
                 const initialFormData = {
                     title: script.title || '',
                     description: script.description || '',
-                    eraId: script.eraId?.toString() || '',
+                    eraId: sceneId, // 使用场景 ID 格式
                     worldId: script.worldId?.toString() || '',
                     nodes: JSON.stringify(content.nodes || {}, null, 2),
                     startNodeId: content.startNodeId || 'start',
@@ -77,10 +101,13 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                     }
                 }
                 
+                // 将后端的数字 eraId 转换为场景 ID 格式（era_数字）
+                const sceneId = formatEraIdToSceneId(script.eraId);
+                
                 setFormData({
                     title: script.title || '',
                     description: script.description || '',
-                    eraId: script.eraId?.toString() || '',
+                    eraId: sceneId, // 使用场景 ID 格式
                     worldId: script.worldId?.toString() || '',
                     nodes: '{}',
                     startNodeId: 'start',
@@ -95,36 +122,45 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
     // 加载场景的角色列表
     useEffect(() => {
         const loadCharacters = async () => {
-            if (formData.eraId) {
-                try {
-                    const eraId = parseInt(formData.eraId);
-                    const chars = await characterApi.getCharactersByEraId(eraId, token);
-                    // 转换为Character格式
-                    const formattedChars: Character[] = chars.map(char => ({
-                        id: char.id.toString(),
-                        name: char.name,
-                        age: char.age || 0,
-                        role: '未定义',
-                        bio: char.description || '',
-                        avatarUrl: '',
-                        backgroundUrl: '',
-                        themeColor: 'indigo-500',
-                        colorAccent: '#6366f1',
-                        firstMessage: '',
-                        systemInstruction: '',
-                        voiceName: 'Aoede',
-                        tags: [],
-                        speechStyle: '',
-                        catchphrases: [],
-                        secrets: '',
-                        motivations: ''
-                    }));
-                    setCharacters(formattedChars);
-                } catch (error) {
-                    console.error('加载角色失败:', error);
+            // 检查 eraId 是否存在且有效
+            if (!formData.eraId || formData.eraId.trim() === '') {
+                setCharacters([]);
+                return;
+            }
+            
+            try {
+                // 从场景 ID 格式（era_数字）提取数字
+                const eraId = extractEraIdFromSceneId(formData.eraId);
+                if (!eraId) {
+                    console.warn('无效的 eraId:', formData.eraId);
                     setCharacters([]);
+                    return;
                 }
-            } else {
+                
+                const chars = await characterApi.getCharactersByEraId(eraId, token);
+                // 转换为Character格式
+                const formattedChars: Character[] = chars.map(char => ({
+                    id: char.id.toString(),
+                    name: char.name,
+                    age: char.age || 0,
+                    role: '未定义',
+                    bio: char.description || '',
+                    avatarUrl: '',
+                    backgroundUrl: '',
+                    themeColor: 'indigo-500',
+                    colorAccent: '#6366f1',
+                    firstMessage: '',
+                    systemInstruction: '',
+                    voiceName: 'Aoede',
+                    tags: [],
+                    speechStyle: '',
+                    catchphrases: [],
+                    secrets: '',
+                    motivations: ''
+                }));
+                setCharacters(formattedChars);
+            } catch (error) {
+                console.error('加载角色失败:', error);
                 setCharacters([]);
             }
         };
@@ -159,9 +195,33 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 return;
             }
 
+            // 验证 nodes 不为空
+            if (!nodes || typeof nodes !== 'object' || Array.isArray(nodes) || Object.keys(nodes).length === 0) {
+                showAlert('剧本节点不能为空，请至少创建一个节点', '缺少节点', 'warning');
+                setLoading(false);
+                return;
+            }
+
+            // 验证 startNodeId 是否有效
+            const startNodeId = formData.startNodeId || 'start';
+            if (!nodes[startNodeId]) {
+                // 如果指定的 startNodeId 无效，使用第一个节点
+                const firstNodeId = Object.keys(nodes)[0];
+                if (firstNodeId) {
+                    console.warn('[UserScriptEditor] startNodeId 无效，使用第一个节点:', {
+                        originalStartNodeId: startNodeId,
+                        fallbackNodeId: firstNodeId,
+                    });
+                } else {
+                    showAlert('无法确定起始节点，请检查节点数据', '节点错误', 'error');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             // 构建剧本内容，包含参与角色信息
             const contentData: any = {
-                startNodeId: formData.startNodeId || 'start',
+                startNodeId: nodes[startNodeId] ? startNodeId : Object.keys(nodes)[0],
                 nodes: nodes
             };
             
@@ -193,8 +253,8 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
             } else if (script.worldId) {
                 worldId = parseInt(script.worldId.toString());
             } else if (formData.eraId) {
-                // 从场景中获取 worldId
-                const scene = scenes.find(s => s.id === formData.eraId || s.id === `era_${formData.eraId}`);
+                // 从场景中获取 worldId（formData.eraId 已经是场景 ID 格式，如 "era_175"）
+                const scene = scenes.find(s => s.id === formData.eraId);
                 if (scene && scene.worldId) {
                     worldId = typeof scene.worldId === 'number' ? scene.worldId : parseInt(scene.worldId.toString());
                 }
@@ -207,6 +267,9 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 return;
             }
 
+            // 从场景 ID 格式（era_数字）提取数字，用于保存到后端
+            const eraIdForSave = extractEraIdFromSceneId(formData.eraId);
+            
             const scriptData = {
                 title: formData.title,
                 description: formData.description || '',
@@ -215,7 +278,7 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 characterIds: characterIds,
                 tags: formData.tags || null,
                 worldId: worldId,
-                eraId: formData.eraId ? parseInt(formData.eraId) : undefined
+                eraId: eraIdForSave || undefined
             };
 
             if (script.id) {
@@ -285,15 +348,152 @@ export const UserScriptEditor: React.FC<UserScriptEditorProps> = ({
                 }))
             });
 
+            // 验证生成的 nodes 不为空
+            if (!result.nodes || typeof result.nodes !== 'object' || Array.isArray(result.nodes) || Object.keys(result.nodes).length === 0) {
+                console.error('[UserScriptEditor] AI生成的nodes无效:', result);
+                showAlert('AI生成的剧本节点为空，请重试', '生成失败', 'error');
+                return;
+            }
+
+            // 验证 startNodeId 是否有效
+            const validStartNodeId = result.startNodeId && result.nodes[result.startNodeId] 
+                ? result.startNodeId 
+                : Object.keys(result.nodes)[0];
+            
+            if (!validStartNodeId) {
+                console.error('[UserScriptEditor] 无法确定有效的startNodeId:', result);
+                showAlert('AI生成的剧本起始节点无效，请重试', '生成失败', 'error');
+                return;
+            }
+
             // 更新表单数据
             setFormData({
                 ...formData,
                 nodes: JSON.stringify(result.nodes, null, 2),
-                startNodeId: result.startNodeId,
+                startNodeId: validStartNodeId,
                 participatingCharacters: selectedCharacters.map(char => char.id) // 设置参与角色
             });
 
-            showAlert('AI剧本生成成功！', '生成成功', 'success');
+            // 自动保存生成的剧本
+            try {
+                // 解析节点数据（已经验证过，这里直接使用）
+                const nodes = result.nodes;
+                
+                // 构建剧本内容
+                const contentData: any = {
+                    startNodeId: validStartNodeId,
+                    nodes: nodes
+                };
+                
+                // 如果有参与角色，添加到内容中
+                if (selectedCharacters.length > 0) {
+                    contentData.participatingCharacters = selectedCharacters.map(char => char.id);
+                }
+
+                // 构建characterIds（JSON数组格式）
+                let characterIds = null;
+                if (selectedCharacters.length > 0) {
+                    const charIds = selectedCharacters
+                        .map(char => {
+                            const numId = typeof char.id === 'string' ? parseInt(char.id) : char.id;
+                            return isNaN(numId) ? null : numId;
+                        })
+                        .filter(id => id !== null);
+                    if (charIds.length > 0) {
+                        characterIds = JSON.stringify(charIds);
+                    }
+                }
+
+                // 获取 worldId
+                let worldId = null;
+                if (formData.worldId) {
+                    worldId = parseInt(formData.worldId);
+                } else if (script?.worldId) {
+                    worldId = parseInt(script.worldId.toString());
+                } else if (formData.eraId) {
+                    // 从场景 ID 格式（era_数字）提取数字，用于查找场景
+                    const eraIdNum = extractEraIdFromSceneId(formData.eraId);
+                    
+                    // 查找场景（优先使用 formData.eraId，因为它是场景 ID 格式）
+                    const scene = scenes.find(s => s.id === formData.eraId);
+                    
+                    if (scene && scene.worldId) {
+                        worldId = typeof scene.worldId === 'number' ? scene.worldId : parseInt(scene.worldId.toString());
+                    }
+                }
+                
+                if (!worldId || isNaN(worldId)) {
+                    console.warn('[UserScriptEditor] 无法确定worldId，跳过自动保存:', {
+                        formDataWorldId: formData.worldId,
+                        scriptWorldId: script?.worldId,
+                        formDataEraId: formData.eraId,
+                        scenes: scenes.map(s => ({ id: s.id, worldId: s.worldId })),
+                    });
+                    showAlert('AI剧本生成成功！请手动保存（无法确定世界ID）', '生成成功', 'success');
+                    return;
+                }
+
+                // 从场景 ID 格式（era_数字）提取数字，用于保存到后端
+                const eraIdNum = extractEraIdFromSceneId(formData.eraId);
+
+                const scriptData = {
+                    title: formData.title,
+                    description: formData.description || '',
+                    content: JSON.stringify(contentData),
+                    sceneCount: Object.keys(nodes).length,
+                    characterIds: characterIds,
+                    tags: formData.tags || null,
+                    worldId: worldId,
+                    eraId: eraIdNum
+                };
+
+                // 验证保存的数据
+                console.log('[UserScriptEditor] 准备保存AI生成的剧本:', {
+                    title: scriptData.title,
+                    eraId: scriptData.eraId,
+                    worldId: scriptData.worldId,
+                    nodesCount: Object.keys(nodes).length,
+                    startNodeId: validStartNodeId,
+                    contentPreview: JSON.stringify(contentData).substring(0, 200),
+                });
+
+                let savedScriptId: number | null = null;
+                if (script?.id) {
+                    // 更新现有剧本
+                    await scriptApi.updateScript(script.id, scriptData, token);
+                    savedScriptId = script.id;
+                    console.log('[UserScriptEditor] AI生成的剧本已自动保存（更新）:', script.id);
+                } else {
+                    // 创建新剧本
+                    const createdScript = await scriptApi.createScript(scriptData, token);
+                    savedScriptId = createdScript.id;
+                    console.log('[UserScriptEditor] AI生成的剧本已自动保存（创建）:', createdScript.id);
+                }
+                
+                // 验证保存后的数据
+                if (savedScriptId) {
+                    try {
+                        const savedScript = await scriptApi.getScript(savedScriptId, token);
+                        const savedContent = JSON.parse(savedScript.content || '{}');
+                        console.log('[UserScriptEditor] 验证保存后的剧本数据:', {
+                            scriptId: savedScriptId,
+                            hasNodes: !!savedContent.nodes,
+                            nodesCount: savedContent.nodes ? Object.keys(savedContent.nodes).length : 0,
+                            startNodeId: savedContent.startNodeId,
+                        });
+                    } catch (verifyError) {
+                        console.error('[UserScriptEditor] 验证保存后的剧本数据失败:', verifyError);
+                    }
+                }
+                
+                showAlert('AI剧本生成并保存成功！', '生成成功', 'success');
+                
+                // 调用 onSave 回调以刷新场景数据
+                onSave();
+            } catch (saveError: any) {
+                console.error('[UserScriptEditor] 自动保存AI生成的剧本失败:', saveError);
+                showAlert('AI剧本生成成功，但自动保存失败: ' + (saveError.message || '未知错误') + '。请手动保存。', '保存失败', 'warning');
+            }
         } catch (error: any) {
             console.error('AI生成剧本失败:', error);
             let errorMsg = '生成失败，请稍后重试';

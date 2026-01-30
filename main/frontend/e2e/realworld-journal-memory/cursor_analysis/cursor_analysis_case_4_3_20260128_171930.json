@@ -1,0 +1,14 @@
+{
+  "case_id": "case_4_3",
+  "name": "验证记忆提取异步完成",
+  "error": "Step 3 failed: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text(\\\"登录账户\\\")\")\n",
+  "failed_step": "click button:has-text(\"登录账户\")",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3000/",
+    "title": "心域-心灵安放的港湾",
+    "visible_text": "记忆中枢\n\nREALITY DATABASE\n\n今日\n本周\n本月\n按日期\n按更新\n分组\n🧠 我的记忆\n✍️ 写今日\n+ 新记录\n添加插件\nDAILY RESONANCE\ntongyexin，你好！欢迎来到心之领域，开启新的心灵探索。\n\n\"此刻，你内心最渴望实现的梦想是什么呢？\"\n\n📝\nhello\n\nhello\n\n2025年12月10日",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_4_3_20260128_171812.png"
+}

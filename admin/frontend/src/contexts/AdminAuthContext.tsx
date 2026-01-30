@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../services/api';
 import { showAlert } from "../utils/dialog";
 import { startHandlingTokenExpiry, completeHandlingTokenExpiry } from '../utils/tokenExpiryHandler';
+import { tokenStorage } from '@heartsphere/shared-frontend';
 
 interface AdminAuthContextType {
     isAuthenticated: boolean;
@@ -48,6 +49,7 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     const logout = useCallback(() => {
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_role');
+        tokenStorage.removeAdminToken().catch(() => {});
         setAdminToken(null);
         setAdminRole(null);
         setIsAuthenticated(false);
@@ -56,24 +58,17 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
         setLoginError('');
     }, []);
 
-    // 监听token过期事件 - 使用统一的处理机制，确保只处理一次
+    // 监听 token 失效/过期事件：清除认证并强制返回登录页
     useEffect(() => {
         const handleTokenExpired = (event?: Event) => {
-            // 使用统一的处理机制，确保只处理一次
             if (!startHandlingTokenExpiry()) {
                 console.log('[AdminAuthContext] Token过期事件已在处理中，跳过重复处理');
                 return;
             }
-            
-            console.log('[AdminAuthContext] Token已过期，清除认证状态并跳转到登录页面', event);
-            
-            // 清除所有认证状态
+            console.log('[AdminAuthContext] Token 已失效，清除认证状态并返回登录页面', event);
             logout();
-            
-            // 立即跳转到根路径，AppContent 会根据 isAuthenticated 自动显示登录页面
+            // 跳转到根路径，未认证时 AppContent 会渲染登录页
             navigate('/', { replace: true });
-            
-            // 显示提示信息（延迟显示，确保页面已跳转）
             setTimeout(() => {
                 showAlert('登录已过期，请重新登录', '提示', 'warning');
             }, 300);

@@ -1,0 +1,10 @@
+{
+  "plan_file": "/Users/admin/Workspace/heartsphere_new/admin/frontend/e2e/memory-management/test_plan.json",
+  "results_file": "/Users/admin/Workspace/heartsphere_new/admin/frontend/e2e/memory-management/results.json",
+  "passed_case_ids": [
+    "case_1",
+    "case_2"
+  ],
+  "failed_case_id": "case_3",
+  "timestamp": "2026-01-30T08:50:41.433697"
+}

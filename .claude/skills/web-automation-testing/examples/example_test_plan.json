@@ -1,0 +1,101 @@
+{
+  "metadata": {
+    "created_at": "2026-01-28T00:00:00",
+    "app_url": "http://localhost:3000",
+    "test_scope": "User authentication and basic navigation",
+    "priority": "high"
+  },
+  "requirements": [
+    "Users can log in with valid credentials",
+    "Users cannot log in with invalid credentials",
+    "Users can navigate to different pages",
+    "Users can log out successfully"
+  ],
+  "test_cases": [
+    {
+      "id": "case_1",
+      "name": "Valid Login Test",
+      "description": "Test that users can log in with valid credentials",
+      "steps": [
+        "navigate to http://localhost:3000/login",
+        "wait for #username-input",
+        "type \"testuser\" in #username-input",
+        "type \"password123\" in #password-input",
+        "click #login-button",
+        "wait for navigation",
+        "verify text=Dashboard"
+      ],
+      "expected_result": "User should be logged in and redirected to dashboard",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2",
+      "name": "Invalid Login Test",
+      "description": "Test that users cannot log in with invalid credentials",
+      "steps": [
+        "navigate to http://localhost:3000/login",
+        "wait for #username-input",
+        "type \"invalid\" in #username-input",
+        "type \"wrongpass\" in #password-input",
+        "click #login-button",
+        "wait for 2 seconds",
+        "verify text=Invalid credentials"
+      ],
+      "expected_result": "Error message should be displayed",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_3",
+      "name": "Navigation Test",
+      "description": "Test navigation between pages",
+      "steps": [
+        "navigate to http://localhost:3000",
+        "wait for networkidle",
+        "click text=About",
+        "wait for navigation",
+        "verify text=About Us",
+        "click text=Home",
+        "wait for navigation",
+        "verify text=Welcome"
+      ],
+      "expected_result": "User should be able to navigate between pages",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_4",
+      "name": "Logout Test",
+      "description": "Test that users can log out",
+      "steps": [
+        "navigate to http://localhost:3000/login",
+        "wait for #username-input",
+        "type \"testuser\" in #username-input",
+        "type \"password123\" in #password-input",
+        "click #login-button",
+        "wait for navigation",
+        "click text=Logout",
+        "wait for navigation",
+        "verify text=Login"
+      ],
+      "expected_result": "User should be logged out and redirected to login page",
+      "priority": "medium",
+      "status": "pending"
+    }
+  ],
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "Authentication Suite",
+      "description": "Tests for login, logout, and authentication",
+      "test_cases": ["case_1", "case_2", "case_4"]
+    },
+    {
+      "id": "suite_2",
+      "name": "Navigation Suite",
+      "description": "Tests for page navigation",
+      "test_cases": ["case_3"]
+    }
+  ]
+}

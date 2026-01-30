@@ -1,0 +1,16 @@
+{
+  "id": "3d920307-9c63-4e5e-ac6c-9a58a6a3d996",
+  "resource_id": "109c1de2-1b32-4f9f-956e-b329901eff6f",
+  "content": "我喜欢跑步，每天晨跑",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-29T23:35:59.197858",
+  "updated_at": "2026-01-29T23:35:59.197862",
+  "user_id": "user_282"
+}

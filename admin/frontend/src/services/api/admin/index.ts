@@ -42,6 +42,7 @@ import { adminHeartSphereConnectionApi } from './heartSphereConnection';
 import { adminMemoryApi } from './memory';
 import { adminGraphApi } from './graph';
 import { adminChronosLettersApi } from './chronosLetters';
+import { adminContactFormsApi } from './contactForms';
 import { adminPluginApi } from './plugin';
 import { promptApi } from './prompt';
 import { adminEntityApi } from './entity';
@@ -79,6 +80,7 @@ export {
   adminMemoryApi,
   adminGraphApi,
   adminChronosLettersApi,
+  adminContactFormsApi,
   adminPluginApi,
   promptApi,
   adminEntityApi,
@@ -178,6 +180,7 @@ export const adminApi = {
 
   // 超时空信箱管理
   chronosLetters: adminChronosLettersApi,
+  contactForms: adminContactFormsApi,
 
   // 插件管理
   plugin: adminPluginApi,

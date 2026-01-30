@@ -1,0 +1,15 @@
+{
+  "id": "f8de86f7-9990-427d-b4e5-7fd37ce77e07",
+  "resource_id": "a4eb497f-03c3-4c9e-a1dc-e4291eaec9d9",
+  "content": "我每天都会写代码，这是我最喜欢的事情",
+  "summary": "用户有 1 个习惯",
+  "memory_type": "habit",
+  "importance": 0.6,
+  "categories": [
+    "habits",
+    "behavior"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-15T23:20:03.681208",
+  "updated_at": "2026-01-15T23:20:03.681211"
+}

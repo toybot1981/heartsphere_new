@@ -141,11 +141,24 @@ export function convertBackendScriptToScenario(
     }
     
     // 确保 startNodeId 有效
-    const startNodeId = scenarioContent.startNodeId || Object.keys(nodes)[0] || '';
+    const availableNodeIds = Object.keys(nodes);
+    let startNodeId = scenarioContent.startNodeId || availableNodeIds[0] || '';
+    
+    // 如果指定的 startNodeId 无效，尝试使用第一个可用节点
     if (startNodeId && !nodes[startNodeId]) {
       console.warn('[convertBackendScriptToScenario] startNodeId 无效，使用第一个节点:', {
         startNodeId: scenarioContent.startNodeId,
-        availableNodes: Object.keys(nodes),
+        availableNodes: availableNodeIds,
+      });
+      startNodeId = availableNodeIds[0] || '';
+    }
+    
+    // 如果 nodes 为空，记录警告
+    if (availableNodeIds.length === 0) {
+      console.warn('[convertBackendScriptToScenario] nodes 为空，无法设置有效的 startNodeId:', {
+        scriptId: script.id,
+        scriptTitle: script.title,
+        scenarioContent: scenarioContent,
       });
     }
     

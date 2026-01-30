@@ -1,0 +1,50 @@
+{
+  "plan_file": "main/backend/api-tests/prompt-management/api_test_plan.json",
+  "base_url": "http://localhost:8081",
+  "started_at": "2026-01-29T23:56:09.668101",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "suite_id": "suite_1",
+      "case_id": "case_1_1",
+      "name": "渲染（带默认值 fallback）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_1",
+      "case_id": "case_1_2",
+      "name": "渲染（带默认值，验证 data）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "suite_id": "suite_1",
+      "case_id": "case_1_3",
+      "name": "渲染（中文变量无乱码）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-01-29T23:56:09.823379"
+}

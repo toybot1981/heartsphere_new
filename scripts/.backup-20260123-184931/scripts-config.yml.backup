@@ -1,0 +1,701 @@
+scripts:
+  # ==================== 代码扫描 (scan) ====================
+  - id: code-scan-eslint
+    name: ESLint 代码扫描
+    category: scan
+    description: 使用 ESLint 扫描前端代码质量
+    script: scripts/scan/eslint-scan.sh
+    type: shell
+    timeout: 600
+    requires:
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 扫描模块（留空表示全部）
+      - name: fix
+        type: boolean
+        default: false
+        description: 是否自动修复问题
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: code-scan-sonar
+    name: SonarQube 代码扫描
+    category: scan
+    description: 使用 SonarQube 进行代码质量分析
+    script: scripts/scan/sonar-scan.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - java
+      - maven
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 扫描模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: code-scan-security
+    name: 安全漏洞扫描
+    category: scan
+    description: 扫描代码中的安全漏洞
+    script: scripts/scan/security-scan.sh
+    type: shell
+    timeout: 1200
+    requires:
+      - node
+      - java
+    parameters:
+      - name: severity
+        type: enum
+        values: [low, medium, high, critical]
+        default: medium
+        description: 最低严重级别
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  # ==================== 测试 (test) ====================
+  - id: test-unit
+    name: 单元测试
+    category: test
+    description: 运行所有单元测试
+    script: scripts/test/run-unit-tests.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - java
+      - maven
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis, shared]
+        default: ""
+        description: 测试模块（留空表示全部）
+      - name: coverage
+        type: boolean
+        default: true
+        description: 是否生成覆盖率报告
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: test-integration
+    name: 集成测试
+    category: test
+    description: 运行集成测试
+    script: scripts/test/run-integration-tests.sh
+    type: shell
+    timeout: 3600
+    requires:
+      - java
+      - maven
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis, shared]
+        default: ""
+        description: 测试模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: test-e2e
+    name: E2E 测试
+    category: test
+    description: 运行端到端测试
+    script: scripts/test/run-e2e-tests.sh
+    type: shell
+    timeout: 3600
+    requires:
+      - node
+    parameters:
+      - name: browser
+        type: enum
+        values: [chromium, firefox, webkit, all]
+        default: chromium
+        description: 测试浏览器
+      - name: headless
+        type: boolean
+        default: true
+        description: 无头模式
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: test-all
+    name: 运行所有测试
+    category: test
+    description: 运行单元测试、集成测试和 E2E 测试
+    script: scripts/run-tests.sh
+    type: shell
+    timeout: 7200
+    requires:
+      - java
+      - maven
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis, shared]
+        default: ""
+        description: 测试模块（留空表示全部）
+      - name: testType
+        type: enum
+        values: [unit, integration, e2e, all]
+        default: all
+        description: 测试类型
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  # ==================== 构建 (build) ====================
+  - id: build-all
+    name: 全量构建
+    category: build
+    description: 构建所有模块（main, admin, company, edu, mentis）
+    script: scripts/build/build-all.sh
+    type: shell
+    timeout: 3600
+    requires:
+      - java
+      - maven
+      - node
+    parameters:
+      - name: clean
+        type: boolean
+        default: false
+        description: 是否清理缓存
+      - name: skipTests
+        type: boolean
+        default: false
+        description: 是否跳过测试
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: build-module
+    name: 单模块构建
+    category: build
+    description: 构建指定模块
+    script: scripts/build/build-module.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - java
+      - maven
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: [main, admin, company, edu, mentis, shared]
+        required: true
+        description: 模块名称
+      - name: clean
+        type: boolean
+        default: false
+        description: 是否清理缓存
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: build-frontend
+    name: 前端构建
+    category: build
+    description: 构建所有前端项目
+    script: scripts/build/build-frontend.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - node
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 前端模块（留空表示全部）
+      - name: mode
+        type: enum
+        values: [development, production]
+        default: production
+        description: 构建模式
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: build-backend
+    name: 后端构建
+    category: build
+    description: 构建所有后端项目或指定模块
+    script: scripts/build/build-backend.sh
+    type: shell
+    timeout: 2400
+    requires:
+      - java
+      - maven
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 后端模块（留空表示全部）
+      - name: skipTests
+        type: boolean
+        default: false
+        description: 是否跳过测试
+    # 参数传递方式：按位置传递，第一个参数是 module，第二个参数是 skipTests（true/false）
+    # 脚本会接收: ./build-backend.sh <module> <skipTests>
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  # ==================== 部署 (deploy) ====================
+  - id: deploy-backend-dev
+    name: 开发环境后端部署
+    category: deploy
+    description: 部署后端到开发环境
+    script: deploy/deploy-backend-dev.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - ssh
+      - docker
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 部署模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+    confirmRequired: false
+
+  - id: deploy-frontend-dev
+    name: 开发环境前端部署
+    category: deploy
+    description: 部署前端到开发环境
+    script: deploy/deploy-frontend-dev.sh
+    type: shell
+    timeout: 1200
+    requires:
+      - ssh
+    parameters:
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 部署模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+    confirmRequired: false
+
+  - id: deploy-backend-prod
+    name: 生产环境后端部署
+    category: deploy
+    description: 部署后端到生产环境
+    script: deploy/deploy-backend-prod.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - ssh
+      - docker
+    parameters:
+      - name: version
+        type: string
+        required: true
+        description: 部署版本
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 部署模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+    environments:
+      - prod
+    confirmRequired: true
+    riskLevel: high
+
+  - id: deploy-frontend-prod
+    name: 生产环境前端部署
+    category: deploy
+    description: 部署前端到生产环境
+    script: deploy/deploy-frontend-prod.sh
+    type: shell
+    timeout: 1200
+    requires:
+      - ssh
+    parameters:
+      - name: version
+        type: string
+        required: true
+        description: 部署版本
+      - name: module
+        type: enum
+        values: ["", main, admin, company, edu, mentis]
+        default: ""
+        description: 部署模块（留空表示全部）
+    permissions:
+      - SUPER_ADMIN
+    environments:
+      - prod
+    confirmRequired: true
+    riskLevel: high
+
+  - id: deploy-all-dev
+    name: 开发环境全量部署
+    category: deploy
+    description: 部署所有模块到开发环境
+    script: deploy/deploy-all-dev.sh
+    type: shell
+    timeout: 3600
+    requires:
+      - ssh
+      - docker
+    parameters:
+      - name: skipBuild
+        type: boolean
+        default: false
+        description: 是否跳过构建步骤
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+    confirmRequired: false
+
+  # ==================== 数据库 (database) ====================
+  - id: backup-databases
+    name: 数据库备份
+    category: database
+    description: 备份所有数据库
+    script: sql/backup_all_databases.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - mysql
+    parameters:
+      - name: backupDir
+        type: string
+        default: sql/backups
+        description: 备份目录
+      - name: compress
+        type: boolean
+        default: true
+        description: 是否压缩备份文件
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: restore-database
+    name: 数据库恢复
+    category: database
+    description: 从备份文件恢复数据库
+    script: sql/restore_database.sh
+    type: shell
+    timeout: 1800
+    requires:
+      - mysql
+    parameters:
+      - name: backupFile
+        type: string
+        required: true
+        description: 备份文件路径
+      - name: database
+        type: string
+        required: true
+        description: 目标数据库名称
+    permissions:
+      - SUPER_ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: true
+    riskLevel: high
+
+  - id: migrate-database
+    name: 数据库迁移
+    category: database
+    description: 执行数据库迁移脚本
+    script: deploy/migrate-database.sh
+    type: shell
+    timeout: 600
+    requires:
+      - mysql
+    parameters:
+      - name: environment
+        type: enum
+        values: [dev, test, prod]
+        required: true
+        description: 目标环境
+      - name: version
+        type: string
+        description: 迁移到指定版本（可选）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: true
+    riskLevel: medium
+
+  - id: database-query
+    name: 数据库查询
+    category: database
+    description: 执行 SQL 查询
+    script: sql/execute-query.sh
+    type: shell
+    timeout: 300
+    requires:
+      - mysql
+    parameters:
+      - name: database
+        type: string
+        required: true
+        description: 数据库名称
+      - name: query
+        type: string
+        required: true
+        description: SQL 查询语句
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: database-stats
+    name: 数据库统计
+    category: database
+    description: 查看数据库统计信息
+    script: sql/database-stats.sh
+    type: shell
+    timeout: 300
+    requires:
+      - mysql
+    parameters:
+      - name: database
+        type: string
+        description: 数据库名称（可选，不填则显示所有）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  # ==================== 服务器 (server) ====================
+  - id: server-status
+    name: 服务器状态
+    category: server
+    description: 查看服务器运行状态
+    script: scripts/server/server-status.sh
+    type: shell
+    timeout: 60
+    requires: []
+    parameters:
+      - name: service
+        type: string
+        description: 服务名称（可选，如：main-backend, admin-backend）
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: server-start
+    name: 启动服务
+    category: server
+    description: 启动指定服务
+    script: scripts/server/start-service.sh
+    type: shell
+    timeout: 300
+    requires: []
+    parameters:
+      - name: service
+        type: string
+        required: true
+        description: 服务名称（main-backend, admin-backend, main-frontend 等）
+      - name: environment
+        type: enum
+        values: [dev, test, prod]
+        default: dev
+        description: 运行环境
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+    confirmRequired: false
+
+  - id: server-stop
+    name: 停止服务
+    category: server
+    description: 停止指定服务
+    script: scripts/server/stop-service.sh
+    type: shell
+    timeout: 120
+    requires: []
+    parameters:
+      - name: service
+        type: string
+        required: true
+        description: 服务名称
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: server-restart
+    name: 重启服务
+    category: server
+    description: 重启指定服务
+    script: scripts/server/restart-service.sh
+    type: shell
+    timeout: 300
+    requires: []
+    parameters:
+      - name: service
+        type: string
+        required: true
+        description: 服务名称
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: true
+    riskLevel: medium
+
+  - id: server-logs
+    name: 查看服务日志
+    category: server
+    description: 查看指定服务的日志
+    script: scripts/server/view-logs.sh
+    type: shell
+    timeout: 60
+    requires: []
+    parameters:
+      - name: service
+        type: string
+        required: true
+        description: 服务名称
+      - name: lines
+        type: string
+        default: "100"
+        description: 显示行数
+      - name: follow
+        type: boolean
+        default: false
+        description: 是否实时跟踪
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false
+
+  - id: server-health-check
+    name: 健康检查
+    category: server
+    description: 检查所有服务的健康状态
+    script: scripts/server/health-check.sh
+    type: shell
+    timeout: 120
+    requires: []
+    parameters: []
+    permissions:
+      - SUPER_ADMIN
+      - ADMIN
+    environments:
+      - dev
+      - test
+      - prod
+    confirmRequired: false

@@ -1,0 +1,18 @@
+{
+  "id": "b3b21f1c-a3d3-49ea-993b-81638d46e208",
+  "modality": "conversation",
+  "data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": {
+          "text": "测试"
+        }
+      }
+    ]
+  },
+  "created_at": "2026-01-26T13:28:23.788211",
+  "metadata": {
+    "size": 69
+  }
+}

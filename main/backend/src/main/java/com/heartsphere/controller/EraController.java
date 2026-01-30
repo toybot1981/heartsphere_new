@@ -50,29 +50,7 @@ public class EraController {
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        // 检查是否为游客（体验会员）
-        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-            // 游客模式：返回硬编码的系统预置场景（ID: 50，日常生活助手）
-            java.util.Optional<com.heartsphere.entity.SystemEra> presetEra = systemEraRepository.findById(50L);
-            if (presetEra.isPresent() && presetEra.get().getIsActive()) {
-                com.heartsphere.entity.SystemEra systemEra = presetEra.get();
-                EraDTO eraDTO = new EraDTO();
-                eraDTO.setId(systemEra.getId());
-                eraDTO.setName(systemEra.getName());
-                eraDTO.setDescription(systemEra.getDescription());
-                eraDTO.setImageUrl(systemEra.getImageUrl());
-                eraDTO.setSystemEraId(systemEra.getId());
-                eraDTO.setStyle(systemEra.getStyle() != null ? systemEra.getStyle() : "minimalist");
-                // 生成图片多分辨率版本
-                if (systemEra.getImageUrl() != null && imageUrlUtils != null) {
-                    eraDTO.setImageVariants(imageUrlUtils.generateImageVariants(systemEra.getImageUrl()));
-                }
-                return ResponseEntity.ok(java.util.Arrays.asList(eraDTO));
-            }
-            return ResponseEntity.ok(new java.util.ArrayList<>());
-        }
-        
-        // 正常模式：直接获取当前用户在指定世界中的时代
+        // 游客与正式用户统一：按当前用户在库中的时代返回
         List<Era> eras = eraRepository.findByWorld_IdAndUser_Id(worldId, userDetails.getId());
         List<EraDTO> eraDTOs = eras.stream()
             .map(DTOMapper::toEraDTO)
@@ -89,31 +67,7 @@ public class EraController {
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        // 检查是否为游客（体验会员）
-        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-            // 游客模式：返回硬编码的系统预置场景（ID: 50，日常生活助手）
-            java.util.Optional<com.heartsphere.entity.SystemEra> presetEra = systemEraRepository.findById(50L);
-            if (presetEra.isPresent() && presetEra.get().getIsActive()) {
-                // 将 SystemEra 转换为 EraDTO
-                com.heartsphere.entity.SystemEra systemEra = presetEra.get();
-                EraDTO eraDTO = new EraDTO();
-                eraDTO.setId(systemEra.getId());
-                eraDTO.setName(systemEra.getName());
-                eraDTO.setDescription(systemEra.getDescription());
-                eraDTO.setImageUrl(systemEra.getImageUrl());
-                eraDTO.setSystemEraId(systemEra.getId());
-                eraDTO.setStyle(systemEra.getStyle() != null ? systemEra.getStyle() : "minimalist");
-                // 生成图片多分辨率版本
-                if (systemEra.getImageUrl() != null && imageUrlUtils != null) {
-                    eraDTO.setImageVariants(imageUrlUtils.generateImageVariants(systemEra.getImageUrl()));
-                }
-                return ResponseEntity.ok(java.util.Arrays.asList(eraDTO));
-            }
-            // 如果预置场景不存在，返回空列表
-            return ResponseEntity.ok(new java.util.ArrayList<>());
-        }
-        
-        // 正常模式：返回当前用户的所有场景
+        // 游客与正式用户统一：返回当前用户在库中的场景
         List<Era> eras = eraRepository.findByUser_Id(userDetails.getId());
         List<EraDTO> eraDTOs = eras.stream()
             .map(DTOMapper::toEraDTO)

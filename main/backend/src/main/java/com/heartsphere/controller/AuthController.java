@@ -73,6 +73,9 @@ public class AuthController {
     com.heartsphere.service.MembershipService membershipService;
 
     @Autowired
+    com.heartsphere.service.GuestInitializationService guestInitializationService;
+
+    @Autowired
     com.heartsphere.repository.SubscriptionPlanRepository subscriptionPlanRepository;
 
     @PostMapping("/login")
@@ -451,89 +454,62 @@ public class AuthController {
     }
 
     /**
-     * 游客登录 - 自动创建临时用户并分配体验会员
+     * 游客登录 - 访客名称即昵称并参与构成用户名；同名称再次进入则直接返回原账号 token
      */
     @PostMapping("/guest-login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> guestLogin(
             @RequestBody(required = false) Map<String, String> request) {
         try {
-            // 为每个游客创建独立的临时用户
-            // 用户名格式：guest_<timestamp>_<random>
-            String guestUsername = generateUniqueGuestUsername();
-            
-            // 生成临时邮箱（格式：guest_<timestamp>_<random>@guest.temp）
+            String nickname = (request != null && request.containsKey("nickname") && request.get("nickname") != null && !request.get("nickname").trim().isEmpty())
+                ? request.get("nickname").trim()
+                : "游客";
+
+            // 再次进入：按昵称查找已存在的 guest（username 以 guest_ 开头），且为体验会员
+            java.util.List<User> existingList = userRepository.findTop1ByNicknameAndUsernameStartingWithOrderByIdDesc(nickname, "guest_");
+            if (!existingList.isEmpty()) {
+                User existingGuest = existingList.get(0);
+                Optional<com.heartsphere.entity.Membership> membership = membershipService.getUserMembership(existingGuest.getId());
+                if (membership.isPresent() && "trial".equals(membership.get().getPlanType())) {
+                    com.heartsphere.entity.Membership trialMembership = membership.get();
+                    com.heartsphere.entity.SubscriptionPlan trialPlan = subscriptionPlanRepository.findByTypeAndIsActiveTrueOrderBySortOrderAsc("trial")
+                        .stream().findFirst().orElse(null);
+                    String jwt = jwtUtils.generateJwtTokenFromUsername(existingGuest.getUsername());
+                    UserDetailsImpl userDetails = UserDetailsImpl.build(existingGuest);
+                    SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
+                    Map<String, Object> resp = buildGuestLoginResponse(existingGuest, jwt, trialMembership, trialPlan, false);
+                    return ResponseEntity.ok(ApiResponse.success("游客登录成功", resp));
+                }
+            }
+
+            // 新建访客：用户名由名称构成 guest_<slug>_<唯一后缀>
+            String guestUsername = generateUniqueGuestUsername(nickname);
             String guestEmail = guestUsername + "@guest.temp";
-            
-            // 生成随机密码（游客不需要密码，但User实体要求非空）
             String randomPassword = java.util.UUID.randomUUID().toString();
-            
-            // 创建新的临时用户
             User guestUser = new User();
             guestUser.setUsername(guestUsername);
             guestUser.setEmail(guestEmail);
             guestUser.setPassword(encoder.encode(randomPassword));
-            // 如果用户提供了昵称，使用提供的昵称，否则使用默认的"游客"
-            String nickname = (request != null && request.containsKey("nickname") && request.get("nickname") != null && !request.get("nickname").trim().isEmpty())
-                ? request.get("nickname").trim()
-                : "游客";
             guestUser.setNickname(nickname);
             guestUser.setIsEnabled(true);
-            
             guestUser = userRepository.save(guestUser);
-            
-            // 为每个临时用户创建独立的体验会员记录
+
             com.heartsphere.entity.Membership trialMembership = membershipService.getOrCreateTrialMembership(guestUser.getId());
-            
-            // 获取体验会员计划信息
-            com.heartsphere.entity.SubscriptionPlan trialPlan = null;
+            com.heartsphere.entity.SubscriptionPlan trialPlan = subscriptionPlanRepository.findByTypeAndIsActiveTrueOrderBySortOrderAsc("trial")
+                .stream().findFirst().orElse(null);
+
             try {
-                java.util.List<com.heartsphere.entity.SubscriptionPlan> plans = 
-                    subscriptionPlanRepository.findByTypeAndIsActiveTrueOrderBySortOrderAsc("trial");
-                if (!plans.isEmpty()) {
-                    trialPlan = plans.get(0);
-                }
+                guestInitializationService.initializeForGuest(guestUser);
             } catch (Exception e) {
-                // 如果无法获取计划信息，继续执行
                 java.util.logging.Logger.getLogger(AuthController.class.getName())
-                    .warning("无法获取体验会员计划信息: " + e.getMessage());
+                    .warning("游客默认场景初始化失败: " + e.getMessage());
             }
-            
-            // 直接生成JWT Token（游客用户不需要通过密码认证）
+
             String jwt = jwtUtils.generateJwtTokenFromUsername(guestUser.getUsername());
-            
-            // 设置认证上下文（用于后续请求）
             UserDetailsImpl userDetails = UserDetailsImpl.build(guestUser);
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            
-            // 构建响应
-            Map<String, Object> resp = new HashMap<>();
-            resp.put("token", jwt);
-            resp.put("id", guestUser.getId());
-            resp.put("username", guestUser.getUsername());
-            resp.put("email", guestUser.getEmail());
-            resp.put("nickname", guestUser.getNickname());
-            resp.put("avatar", guestUser.getAvatar());
-            resp.put("isGuest", true);
-            resp.put("isFirstLogin", true);
-            
-            // 添加会员信息
-            Map<String, Object> membershipInfo = new HashMap<>();
-            membershipInfo.put("type", "trial");
-            membershipInfo.put("planType", trialMembership.getPlanType());
-            if (trialPlan != null) {
-                membershipInfo.put("textTokenQuota", trialPlan.getTextTokenQuota());
-            }
-            resp.put("membership", membershipInfo);
-            
-            // 游客不需要初始化世界数据，直接返回空列表
-            resp.put("worlds", new java.util.ArrayList<>());
-            
-            // 添加预置场景和角色ID（硬编码）
-            resp.put("presetEraId", 50L); // 日常生活助手
-            resp.put("presetCharacterIds", java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L));
-            
+            SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
+            Map<String, Object> resp = buildGuestLoginResponse(guestUser, jwt, trialMembership, trialPlan, true);
             return ResponseEntity.ok(ApiResponse.success("游客登录成功", resp));
         } catch (Exception e) {
             java.util.logging.Logger.getLogger(AuthController.class.getName())
@@ -543,28 +519,50 @@ public class AuthController {
                 .body(ApiResponse.error("游客登录失败: " + e.getMessage()));
         }
     }
-    
+
+    private Map<String, Object> buildGuestLoginResponse(User guestUser, String jwt,
+            com.heartsphere.entity.Membership trialMembership,
+            com.heartsphere.entity.SubscriptionPlan trialPlan, boolean isFirstLogin) {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("token", jwt);
+        resp.put("id", guestUser.getId());
+        resp.put("username", guestUser.getUsername());
+        resp.put("email", guestUser.getEmail());
+        resp.put("nickname", guestUser.getNickname());
+        resp.put("avatar", guestUser.getAvatar());
+        resp.put("isGuest", true);
+        resp.put("isFirstLogin", isFirstLogin);
+        Map<String, Object> membershipInfo = new HashMap<>();
+        membershipInfo.put("type", "trial");
+        membershipInfo.put("planType", trialMembership.getPlanType());
+        if (trialPlan != null) {
+            membershipInfo.put("textTokenQuota", trialPlan.getTextTokenQuota());
+        }
+        resp.put("membership", membershipInfo);
+        resp.put("worlds", new java.util.ArrayList<>());
+        resp.put("presetEraId", 50L);
+        resp.put("presetCharacterIds", java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L));
+        return resp;
+    }
+
     /**
-     * 生成唯一的游客用户名
-     * 格式：guest_<timestamp>_<random>
+     * 生成唯一的游客用户名：guest_<名称的规范化>_<唯一后缀>
      */
-    private String generateUniqueGuestUsername() {
-        String baseUsername = "guest_" + System.currentTimeMillis() + "_" + 
-            java.util.UUID.randomUUID().toString().substring(0, 8);
-        
-        // 确保用户名唯一
+    private String generateUniqueGuestUsername(String nickname) {
+        String slug = nickname.replaceAll("[^a-zA-Z0-9\\u4e00-\\u9fa5_]", "_");
+        if (slug.length() > 20) slug = slug.substring(0, 20);
+        if (slug.isEmpty()) slug = "guest";
+        String suffix = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String username = "guest_" + slug + "_" + suffix;
         int attempts = 0;
-        String username = baseUsername;
         while (userRepository.existsByUsername(username) && attempts < 10) {
-            username = "guest_" + System.currentTimeMillis() + "_" + 
-                java.util.UUID.randomUUID().toString().substring(0, 8);
+            suffix = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            username = "guest_" + slug + "_" + suffix;
             attempts++;
         }
-        
         if (attempts >= 10) {
             throw new BusinessException("无法生成唯一的游客用户名，请稍后重试");
         }
-        
         return username;
     }
 

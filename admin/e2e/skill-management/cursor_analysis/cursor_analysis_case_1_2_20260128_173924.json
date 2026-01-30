@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_2",
+  "name": "进入技能管理",
+  "error": "Step 3 failed: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"text=内容管理\")\n",
+  "failed_step": "click text=内容管理",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "管理后台登录\n\nHeartSphere Admin Console\n\n用户名\n密码\n进入系统返回应用首页",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_2_20260128_173606.png"
+}

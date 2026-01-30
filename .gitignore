@@ -43,6 +43,9 @@ logs/
 *.sqlite
 *.sqlite3backend/uploads/
 
+# HSMem local 模式存储（main/backend/memory_data 等）
+**/memory_data/
+
 # 包含敏感信息的配置文件（使用环境变量替代）
 backend/src/main/resources/application-local.yml
 backend/src/main/resources/application-prod.yml

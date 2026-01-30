@@ -1,0 +1,51 @@
+name: 测试环境完整部署
+description: 包含安全扫描、代码扫描、测试、构建、部署的完整流程
+environment: test
+project: ""  # 通用流程，适用于所有项目
+steps:
+  - name: 安全扫描
+    scriptId: code-scan-security
+    order: 1
+    required: true
+    parallel: false
+    parameters:
+      severity: medium
+  
+  - name: 代码扫描
+    scriptId: code-scan-eslint
+    order: 2
+    dependsOn: [1]
+    required: true
+    parallel: false
+    parameters:
+      module: ""
+      fix: false
+  
+  - name: 单元测试
+    scriptId: test-unit
+    order: 3
+    dependsOn: [2]
+    required: true
+    parallel: false
+    parameters:
+      module: ""
+      coverage: true
+  
+  - name: 构建
+    scriptId: build-all
+    order: 4
+    dependsOn: [3]
+    required: true
+    parallel: false
+    parameters:
+      clean: false
+      skipTests: false
+  
+  - name: 部署到测试环境
+    scriptId: deploy-all-dev
+    order: 5
+    dependsOn: [4]
+    required: true
+    parallel: false
+    parameters:
+      skipBuild: true

@@ -68,10 +68,11 @@ export const useHistoryInitialization = ({
         // Scenario Mode: 确保 scenarioState 已初始化
         
         // 验证 customScenario.nodes 存在
-        if (!customScenario.nodes || typeof customScenario.nodes !== 'object') {
+        if (!customScenario.nodes || typeof customScenario.nodes !== 'object' || Array.isArray(customScenario.nodes)) {
           console.error('[useHistoryInitialization] customScenario.nodes 不存在或格式错误:', {
             hasNodes: !!customScenario.nodes,
             nodesType: typeof customScenario.nodes,
+            isArray: Array.isArray(customScenario.nodes),
             customScenarioId: customScenario.id,
             customScenarioTitle: customScenario.title,
             customScenarioKeys: Object.keys(customScenario),
@@ -90,6 +91,27 @@ export const useHistoryInitialization = ({
           return;
         }
         
+        // 检查 nodes 是否为空
+        const availableNodes = Object.keys(customScenario.nodes || {});
+        if (availableNodes.length === 0) {
+          console.error('[useHistoryInitialization] 剧本 nodes 为空，无法初始化场景:', {
+            customScenarioId: customScenario.id,
+            customScenarioTitle: customScenario.title,
+            startNodeId: customScenario.startNodeId,
+          });
+          // 使用普通模式初始化作为降级方案
+          if (!isStoryMode) {
+            const initMsg: Message = {
+              id: 'init_scenario_error',
+              role: 'model',
+              text: character.firstMessage || '剧本数据不完整（缺少节点），无法初始化场景。',
+              timestamp: Date.now(),
+            };
+            onUpdateHistory([initMsg]);
+          }
+          return;
+        }
+        
         let targetNodeId = scenarioState?.currentNodeId;
 
         // 如果 scenarioState 未初始化或 currentNodeId 无效，使用 startNodeId
@@ -98,21 +120,43 @@ export const useHistoryInitialization = ({
 
           // 验证 startNodeId 是否有效
           if (!targetNodeId || !customScenario.nodes[targetNodeId]) {
-            console.error('[useHistoryInitialization] startNodeId 无效:', {
-              startNodeId: customScenario.startNodeId,
-              availableNodes: Object.keys(customScenario.nodes),
-            });
-            // 使用普通模式初始化作为降级方案
-            if (!isStoryMode) {
-              const initMsg: Message = {
-                id: 'init_scenario_error',
-                role: 'model',
-                text: character.firstMessage || '剧本起始节点无效，无法初始化场景。',
-                timestamp: Date.now(),
-              };
-              onUpdateHistory([initMsg]);
+            // 如果 startNodeId 无效但 nodes 不为空，尝试使用第一个节点
+            const firstNodeId = availableNodes[0];
+            if (firstNodeId && customScenario.nodes[firstNodeId]) {
+              console.warn('[useHistoryInitialization] startNodeId 无效，使用第一个可用节点作为起始节点:', {
+                originalStartNodeId: customScenario.startNodeId,
+                fallbackNodeId: firstNodeId,
+                availableNodes: availableNodes,
+                nodesCount: availableNodes.length,
+                customScenarioId: customScenario.id,
+                customScenarioTitle: customScenario.title,
+              });
+              targetNodeId = firstNodeId;
+              // 更新 scenarioState
+              if (onUpdateScenarioState) {
+                onUpdateScenarioState(targetNodeId);
+              }
+            } else {
+              // 如果连第一个节点都无效，使用降级方案
+              console.error('[useHistoryInitialization] 无法找到有效的起始节点:', {
+                startNodeId: customScenario.startNodeId,
+                targetNodeId: targetNodeId,
+                availableNodes: availableNodes,
+                nodesCount: availableNodes.length,
+                customScenarioId: customScenario.id,
+                customScenarioTitle: customScenario.title,
+              });
+              if (!isStoryMode) {
+                const initMsg: Message = {
+                  id: 'init_scenario_error',
+                  role: 'model',
+                  text: character.firstMessage || '剧本起始节点无效，无法初始化场景。',
+                  timestamp: Date.now(),
+                };
+                onUpdateHistory([initMsg]);
+              }
+              return;
             }
-            return;
           }
 
           // 更新 scenarioState

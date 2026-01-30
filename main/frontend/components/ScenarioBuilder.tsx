@@ -225,8 +225,8 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
 
   useEffect(() => {
     if (initialScenario) {
-      setTitle(initialScenario.title);
-      setDescription(initialScenario.description);
+      setTitle(initialScenario.title || '');
+      setDescription(initialScenario.description || '');
       setNodes(initialScenario.nodes || { 'start': { id: 'start', title: '开场场景', prompt: '描述一个阳光明媚的大学早晨。介绍樱向用户跑来的场景。', options: [] } });
       setSelectedNodeId(initialScenario.startNodeId || 'start');
     }
@@ -324,8 +324,8 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
     try {
       const scenario = await aiService.generateScenarioFromPrompt(magicPrompt);
       if (scenario) {
-        setTitle(scenario.title);
-        setDescription(scenario.description);
+        setTitle(scenario.title || '');
+        setDescription(scenario.description || '');
         setNodes(scenario.nodes);
         setSelectedNodeId(scenario.startNodeId);
         setShowMagicModal(false);
@@ -377,12 +377,12 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
             </h3>
             <p 
               className="text-sm mb-4"
-              style={{ color: 'var(--text-tertiary)' }}
+              style={{ color: 'var(--text-secondary, #CBD5E1)' }}
             >
               输入一个简单的想法（例如："一个关于在闹鬼的图书馆里寻找丢失书籍的恐怖故事"），AI 将为您构建完整的剧情分支。
             </p>
             <textarea 
-              value={magicPrompt} 
+              value={magicPrompt || ''} 
               onChange={e => setMagicPrompt(e.target.value)} 
               placeholder="在这里输入你的创意..." 
               className="w-full h-32 border rounded-xl p-4 outline-none resize-none mb-6" 
@@ -514,7 +514,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
             <div>
               <label 
                 className="block text-xs mb-1"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
                 剧本标题
               </label>
@@ -538,12 +538,12 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
             <div>
               <label 
                 className="block text-xs mb-1"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary, #CBD5E1)' }}
               >
                 简介
               </label>
               <textarea 
-                value={description} 
+                value={description || ''} 
                 onChange={e => setDescription(e.target.value)} 
                 className="w-full rounded px-3 py-2 border text-sm outline-none h-20 resize-none" 
                 style={{
@@ -662,10 +662,11 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
                 </label>
                 <button 
                   onClick={addOption} 
-                  className="text-xs px-3 py-1 rounded transition-colors"
+                  className="text-xs px-3 py-1 rounded transition-colors font-medium"
                   style={{
                     backgroundColor: 'var(--color-success, rgba(34, 197, 94, 0.5))',
-                    color: 'var(--color-success, #86efac)',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--color-success, rgba(34, 197, 94, 0.7))';
@@ -818,7 +819,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
               <div>
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>描述（可选）</label>
                 <textarea
-                  value={createEventForm.description}
+                  value={createEventForm.description || ''}
                   onChange={(e) => setCreateEventForm({ ...createEventForm, description: e.target.value })}
                   placeholder="事件描述..."
                   rows={3}
@@ -978,7 +979,7 @@ export const ScenarioBuilder: React.FC<ScenarioBuilderProps> = ({
               <div>
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>描述（可选）</label>
                 <textarea
-                  value={createItemForm.description}
+                  value={createItemForm.description || ''}
                   onChange={(e) => setCreateItemForm({ ...createItemForm, description: e.target.value })}
                   placeholder="物品描述..."
                   rows={3}

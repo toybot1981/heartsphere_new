@@ -1,0 +1,100 @@
+.agent-execution-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.agent-execution-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.agent-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #fff;
+}
+
+.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.agent-id {
+  color: #999;
+  font-size: 12px;
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-text {
+  font-size: 14px;
+  color: #666;
+}
+
+.expand-icon {
+  margin-left: 8px;
+  color: #999;
+  font-size: 12px;
+}
+
+.agent-card-content {
+  padding: 16px;
+  background: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+}
+
+.error-content,
+.result-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error-content strong,
+.result-content strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.error-content pre,
+.result-content pre {
+  margin: 0;
+  padding: 12px;
+  background: #fff;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.error-content pre {
+  color: #c62828;
+}
+
+.result-content pre {
+  color: #333;
+}

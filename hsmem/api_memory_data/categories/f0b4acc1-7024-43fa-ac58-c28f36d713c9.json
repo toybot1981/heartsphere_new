@@ -1,0 +1,13 @@
+{
+  "id": "f0b4acc1-7024-43fa-ac58-c28f36d713c9",
+  "name": "behavior",
+  "summary": "关于 behavior 的记忆",
+  "description": "包含 1 个记忆项",
+  "item_ids": [
+    "c0d517ca-0b79-42f5-84a1-3865c34b3f56"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-29T23:35:59.201715",
+  "updated_at": "2026-01-29T23:35:59.201718",
+  "version": 1
+}

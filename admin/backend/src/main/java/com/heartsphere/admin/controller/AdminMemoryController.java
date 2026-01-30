@@ -221,6 +221,8 @@ public class AdminMemoryController extends BaseAdminController {
             @RequestParam(defaultValue = "20") int size) {
         validateAdmin(authHeader);
         
+        log.info("[Admin-记忆] 用户记忆管理-获取记忆: 入参 userId={}, memoryType={}, page={}, size={}", userId, memoryType, page, size);
+        
         try {
             String userIdStr = String.valueOf(userId);
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -262,6 +264,9 @@ public class AdminMemoryController extends BaseAdminController {
             List<UserMemoryDTO> results = memoryPage.getContent().stream()
                 .map(entity -> convertToDTO(entity, user))
                 .collect(Collectors.toList());
+            
+            log.info("[Admin-记忆] 用户记忆管理-查询结果: 数据源=MySQL(Admin库userMemoryRepository), totalElements={}, 本页条数={}", memoryPage.getTotalElements(), results.size());
+            log.info("[Admin-记忆] 用户记忆管理-返回: content条数={}, totalElements={}, totalPages={}", results.size(), memoryPage.getTotalElements(), memoryPage.getTotalPages());
             
             Map<String, Object> response = new HashMap<>();
             response.put("content", results);

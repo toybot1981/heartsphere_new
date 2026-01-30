@@ -1,0 +1,8 @@
+# AgentScope 配置示例
+multiagent:
+  agentscope:
+    enabled: true
+    dashscope-api-key: ${DASHSCOPE_API_KEY:your-api-key-here}
+    model-name: qwen-max
+    stream: false
+    max-iters: 10

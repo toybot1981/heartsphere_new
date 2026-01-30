@@ -1,0 +1,26 @@
+{
+  "plan_file": "main/backend/api-tests/skill-execution/api_test_plan.json",
+  "base_url": "http://localhost:8081",
+  "started_at": "2026-01-29T21:44:10.623616",
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "suite_id": "suite_execute",
+      "case_id": "case_execute_post",
+      "name": "POST 执行技能",
+      "status": "passed",
+      "steps": [
+        {
+          "step_index": 0,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-01-29T21:44:10.644349"
+}

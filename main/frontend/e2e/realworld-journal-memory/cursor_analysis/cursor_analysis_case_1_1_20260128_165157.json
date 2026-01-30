@@ -1,0 +1,14 @@
+{
+  "case_id": "case_1_1",
+  "name": "进入现实世界",
+  "error": "Step 7 failed: Locator.click: Error: strict mode violation: locator(\"button:has-text(\\\"登录\\\")\") resolved to 4 elements:\n    1) <button class=\"flex-1 pb-3 text-sm font-bold transition-colors\">登录</button> aka get_by_role(\"button\", name=\"登录\").first\n    2) <button class=\"flex-1 pb-3 text-sm font-bold transition-colors\">微信登录</button> aka get_by_role(\"button\", name=\"微信登录\")\n    3) <button class=\"px-6 py-3 min-h-[44px] rounded-xl font-bold transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation gradient-button shadow-lg hover:-translate-y-0.5 border border-transparent w-full bg-gradient-to-r from-pink-500 to-indigo-600 shadow-lg shadow-indigo-500/20 mt-2\">登录</button> aka get_by_role(\"button\", name=\"登录\").nth(2)\n    4) <button class=\"px-6 py-3 min-h-[44px] rounded-xl font-bold transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation backdrop-blur-md border w-full \">登录账户</button> aka get_by_role(\"button\", name=\"登录账户\")\n\nCall log:\n  - waiting for locator(\"button:has-text(\\\"登录\\\")\")\n",
+  "failed_step": "click button:has-text(\"登录\")",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3000/",
+    "title": "心域-心灵安放的港湾",
+    "visible_text": "身份连接\n\n绑定身份以保存记忆、解锁心域全部功能。\n\n登录\n注册\n微信登录\n用户名\n密码\n登录\n\n登录即代表您同意 《心域用户协议》 及 《隐私政策》\n\nWelcome to 我的心域\n\n选择你的进入方式\n\n以访客身份进入登录账户\n\n访客模式可快速体验，登录账户可同步数据。",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_1_1_20260128_165035.png"
+}

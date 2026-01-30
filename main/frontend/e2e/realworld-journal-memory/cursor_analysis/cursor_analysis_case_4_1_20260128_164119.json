@@ -1,0 +1,9 @@
+{
+  "case_id": "case_4_1",
+  "name": "打开日记记忆模态框",
+  "error": "not enough values to unpack (expected 3, got 2)",
+  "failed_step": null,
+  "database": null,
+  "page_context": {},
+  "screenshot": null
+}

@@ -92,6 +92,16 @@ export const McpConfigManagement: React.FC = () => {
         setTestingConfigId(id);
     };
 
+    const handleToggle = async (id: number, enabled: boolean) => {
+        try {
+            await mentisMcpApi.toggleConfig(id, enabled);
+            await loadConfigs();
+        } catch (error) {
+            console.error('Failed to toggle config:', error);
+            alert('切换状态失败');
+        }
+    };
+
     const handleSave = async (config: McpConfigDTO) => {
         try {
             if (config.id) {
@@ -181,6 +191,16 @@ export const McpConfigManagement: React.FC = () => {
                                     )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                    <button
+                                        onClick={() => handleToggle(config.id!, !config.enabled)}
+                                        className={`${
+                                            config.enabled
+                                                ? 'text-orange-400 hover:text-orange-300'
+                                                : 'text-green-400 hover:text-green-300'
+                                        }`}
+                                    >
+                                        {config.enabled ? '禁用' : '启用'}
+                                    </button>
                                     <button
                                         onClick={() => handleTest(config.id!)}
                                         className="text-blue-400 hover:text-blue-300"

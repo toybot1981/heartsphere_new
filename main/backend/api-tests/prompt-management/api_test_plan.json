@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "created_at": "2026-01-29",
+    "test_scope": "Main 后端提示词管理相关 API：/api/prompts/render 渲染模板，UTF-8 无乱码",
+    "requirements": [
+      "REQ-1 按 categoryCode 渲染提示词模板（无默认值，有模板时返回 system/user prompt）",
+      "REQ-2 按 categoryCode + 默认值渲染（无模板时使用默认，有模板时使用模板）",
+      "REQ-3 响应 Content-Type 为 UTF-8，中文无乱码"
+    ]
+  },
+  "base_url": "http://localhost:8081",
+  "backend_service": "main-backend",
+  "auth": "none",
+  "test_suites": [
+    {
+      "id": "suite_1",
+      "name": "提示词渲染",
+      "description": "POST /api/prompts/render，按分类代码渲染模板",
+      "test_cases": [
+        {
+          "id": "case_1_1",
+          "name": "渲染（带默认值 fallback）",
+          "description": "categoryCode=skill-selection-level1，带 defaultSystemPrompt/defaultUserPrompt，返回 200 且含 systemPrompt",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/prompts/render?categoryCode=skill-selection-level1&defaultSystemPrompt=You+are+skill+assistant.&defaultUserPrompt=Select+most+relevant+skills.",
+              "body": { "userMessage": "help me check weather", "skillsList": "- weather\n", "maxCandidates": 10 },
+              "expected_status": 200,
+              "expected_body_contains": "systemPrompt"
+            }
+          ]
+        },
+        {
+          "id": "case_1_2",
+          "name": "渲染（带默认值，验证 data）",
+          "description": "categoryCode=main-emotion-analysis，返回 200 且含 data",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/prompts/render?categoryCode=main-emotion-analysis&defaultSystemPrompt=Emotion+expert.&defaultUserPrompt=Analyze+emotion.",
+              "body": { "text": "today is good" },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        },
+        {
+          "id": "case_1_3",
+          "name": "渲染（中文变量无乱码）",
+          "description": "请求体含中文，验证 UTF-8 无乱码，返回 200 且含 data",
+          "steps": [
+            {
+              "method": "POST",
+              "path": "/api/prompts/render?categoryCode=main-emotion-analysis&defaultSystemPrompt=%E4%BD%A0%E6%98%AF%E6%83%85%E7%BB%AA%E5%88%86%E6%9E%90%E4%B8%93%E5%AE%B6%E3%80%82&defaultUserPrompt=%E8%AF%B7%E5%88%86%E6%9E%90%E4%BB%A5%E4%B8%8B%E6%96%87%E6%9C%AC%E6%83%85%E7%BB%AA%E3%80%82",
+              "body": { "text": "今天心情很好" },
+              "expected_status": 200,
+              "expected_body_contains": "data"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

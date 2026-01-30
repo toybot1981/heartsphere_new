@@ -1,0 +1,18 @@
+{
+  "plan_file": "/Users/admin/Workspace/heartsphere_new/main/frontend/e2e/realworld-journal-memory/test_plan.json",
+  "results_file": "/tmp/test_results_20260129_190437.json",
+  "passed_case_ids": [
+    "case_1_1",
+    "case_2_1",
+    "case_2_2",
+    "case_2_3",
+    "case_3_1",
+    "case_4_1",
+    "case_4_2",
+    "case_4_3",
+    "case_5_1",
+    "case_5_2"
+  ],
+  "failed_case_id": "case_4_4",
+  "timestamp": "2026-01-29T19:07:23.107959"
+}

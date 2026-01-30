@@ -1,0 +1,17 @@
+{
+  "id": "f76cd094-9dea-4272-bcc1-9424e43b5660",
+  "resource_id": "140b5e25-3104-4e4d-b461-14b6888502a2",
+  "content": "你说的那美丽的风景，还有可爱的小动物，就像我生活的童话世界一样呢，到处都是美好",
+  "summary": "用户有 1 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-26T22:57:10.897576",
+  "updated_at": "2026-01-26T22:57:10.897601",
+  "user_id": "user_70",
+  "agent_id": "character_289"
+}

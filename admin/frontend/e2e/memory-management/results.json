@@ -1,0 +1,1169 @@
+{
+  "execution_start": "2026-01-30T08:51:25.391230",
+  "test_cases": {
+    "case_1": {
+      "case_id": "case_1",
+      "name": "登录管理端",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:40.819793",
+          "duration_ms": 3196
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:44.016655",
+          "duration_ms": 3044
+        },
+        {
+          "step_number": 3,
+          "description": "wait for input[type=\"text\"]",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:47.061275",
+          "duration_ms": 102
+        },
+        {
+          "step_number": 4,
+          "description": "type \"admin\" in input[type=\"text\"]",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:47.163774",
+          "duration_ms": 396
+        },
+        {
+          "step_number": 5,
+          "description": "type \"Tyx@19811009\" in input[type=\"password\"]",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:47.560196",
+          "duration_ms": 757
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 1 second",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:48.317380",
+          "duration_ms": 1003
+        },
+        {
+          "step_number": 7,
+          "description": "click button:has-text(\"进入系统\")",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:49.321209",
+          "duration_ms": 1050
+        },
+        {
+          "step_number": 8,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:50.371751",
+          "duration_ms": 5271
+        },
+        {
+          "step_number": 9,
+          "description": "verify text=系统概览",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:55.643061",
+          "duration_ms": 545
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_1_20260130_085156.png",
+      "started_at": "2026-01-30T08:51:40.819521",
+      "completed_at": "2026-01-30T08:51:56.389872",
+      "duration_ms": 15570,
+      "content_anomalies": []
+    },
+    "case_2": {
+      "case_id": "case_2",
+      "name": "进入记忆系统管理",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:56.705649",
+          "duration_ms": 2474
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:51:59.179975",
+          "duration_ms": 5011
+        },
+        {
+          "step_number": 3,
+          "description": "verify text=记忆系统概览",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:04.191315",
+          "duration_ms": 28
+        },
+        {
+          "step_number": 4,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:04.225205",
+          "duration_ms": 930
+        },
+        {
+          "step_number": 5,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:05.156091",
+          "duration_ms": 3016
+        },
+        {
+          "step_number": 6,
+          "description": "verify text=用户记忆管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:08.172915",
+          "duration_ms": 5
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_2_20260130_085208.png",
+      "started_at": "2026-01-30T08:51:56.705595",
+      "completed_at": "2026-01-30T08:52:08.179355",
+      "duration_ms": 11473,
+      "content_anomalies": []
+    },
+    "case_3": {
+      "case_id": "case_3",
+      "name": "Tab 用户记忆（Admin API）",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:08.220967",
+          "duration_ms": 2177
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:10.398583",
+          "duration_ms": 5113
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:15.512974",
+          "duration_ms": 1129
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:16.642938",
+          "duration_ms": 3102
+        },
+        {
+          "step_number": 5,
+          "description": "verify text=用户记忆管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:19.745287",
+          "duration_ms": 34
+        },
+        {
+          "step_number": 6,
+          "description": "verify text=快速检索",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:19.796113",
+          "duration_ms": 41
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_3_20260130_085219.png",
+      "started_at": "2026-01-30T08:52:08.220948",
+      "completed_at": "2026-01-30T08:52:19.888190",
+      "duration_ms": 11667,
+      "content_anomalies": []
+    },
+    "case_4": {
+      "case_id": "case_4",
+      "name": "Tab HSMem查询",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:20.180904",
+          "duration_ms": 2325
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:22.506436",
+          "duration_ms": 5006
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:27.513420",
+          "duration_ms": 773
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:28.286622",
+          "duration_ms": 3010
+        },
+        {
+          "step_number": 5,
+          "description": "click text=HSMem查询",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:31.297162",
+          "duration_ms": 572
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:31.870115",
+          "duration_ms": 3002
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=HSMem记忆查询",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:34.872567",
+          "duration_ms": 4
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_4_20260130_085234.png",
+      "started_at": "2026-01-30T08:52:20.180864",
+      "completed_at": "2026-01-30T08:52:34.879687",
+      "duration_ms": 14698,
+      "content_anomalies": []
+    },
+    "case_5": {
+      "case_id": "case_5",
+      "name": "Tab 记忆提取追溯",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:34.943196",
+          "duration_ms": 2209
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:37.153126",
+          "duration_ms": 5022
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:42.175900",
+          "duration_ms": 792
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:42.968490",
+          "duration_ms": 3180
+        },
+        {
+          "step_number": 5,
+          "description": "click text=记忆提取追溯",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:46.148594",
+          "duration_ms": 1014
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:47.163394",
+          "duration_ms": 3170
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=记忆提取追溯",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:50.333602",
+          "duration_ms": 80
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_5_20260130_085250.png",
+      "started_at": "2026-01-30T08:52:34.943160",
+      "completed_at": "2026-01-30T08:52:50.464562",
+      "duration_ms": 15521,
+      "content_anomalies": []
+    },
+    "case_6": {
+      "case_id": "case_6",
+      "name": "Tab 资源管理",
+      "status": "passed_with_warnings",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:50.627463",
+          "duration_ms": 2341
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:52.968988",
+          "duration_ms": 5007
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:57.976550",
+          "duration_ms": 563
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:52:58.539908",
+          "duration_ms": 3002
+        },
+        {
+          "step_number": 5,
+          "description": "click text=资源管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:01.542164",
+          "duration_ms": 560
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:02.102224",
+          "duration_ms": 3002
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=资源管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:05.105093",
+          "duration_ms": 6
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_6_20260130_085305.png",
+      "started_at": "2026-01-30T08:52:50.627412",
+      "completed_at": "2026-01-30T08:53:05.121784",
+      "duration_ms": 14494,
+      "content_anomalies": [
+        {
+          "step": "verify text=资源管理",
+          "anomaly_type": "error_keyword",
+          "details": "Page contains keyword: 404",
+          "cursor_analysis_path": "admin/frontend/e2e/memory-management/cursor_analysis/cursor_analysis_anomaly_case_6_20260130_085305.md"
+        }
+      ]
+    },
+    "case_7": {
+      "case_id": "case_7",
+      "name": "Tab 记忆项管理",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:05.192447",
+          "duration_ms": 2181
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:07.373604",
+          "duration_ms": 5015
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:12.389324",
+          "duration_ms": 586
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:12.975758",
+          "duration_ms": 3003
+        },
+        {
+          "step_number": 5,
+          "description": "click text=记忆项管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:15.979801",
+          "duration_ms": 597
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:16.577321",
+          "duration_ms": 3046
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=记忆项管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:19.623823",
+          "duration_ms": 164
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_7_20260130_085319.png",
+      "started_at": "2026-01-30T08:53:05.192402",
+      "completed_at": "2026-01-30T08:53:19.796009",
+      "duration_ms": 14603,
+      "content_anomalies": []
+    },
+    "case_8": {
+      "case_id": "case_8",
+      "name": "Tab 类别管理",
+      "status": "passed",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "navigate to http://localhost:3005/admin?section=memory",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:20.067717",
+          "duration_ms": 2509
+        },
+        {
+          "step_number": 2,
+          "description": "wait for 5 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:22.576814",
+          "duration_ms": 5066
+        },
+        {
+          "step_number": 3,
+          "description": "click text=用户记忆",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:27.642980",
+          "duration_ms": 997
+        },
+        {
+          "step_number": 4,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:28.640583",
+          "duration_ms": 3030
+        },
+        {
+          "step_number": 5,
+          "description": "click text=类别管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:31.671186",
+          "duration_ms": 576
+        },
+        {
+          "step_number": 6,
+          "description": "wait for 3 seconds",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:32.247229",
+          "duration_ms": 3002
+        },
+        {
+          "step_number": 7,
+          "description": "verify text=类别管理",
+          "status": "passed",
+          "executed_at": "2026-01-30T08:53:35.249618",
+          "duration_ms": 6
+        }
+      ],
+      "error": null,
+      "screenshot": "/tmp/test_case_8_20260130_085335.png",
+      "started_at": "2026-01-30T08:53:20.067666",
+      "completed_at": "2026-01-30T08:53:35.257810",
+      "duration_ms": 15189,
+      "content_anomalies": []
+    }
+  },
+  "summary": {
+    "total": 8,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "passed_with_warnings": 1
+  },
+  "timeline": [
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:51:40.819578",
+      "metadata": {
+        "case_id": "case_1",
+        "name": "登录管理端"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:40.819803",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:44.016770",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 2,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:47.061437",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 3,
+        "description": "wait for input[type=\"text\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:47.163785",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 4,
+        "description": "type \"admin\" in input[type=\"text\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:47.560220",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 5,
+        "description": "type \"Tyx@19811009\" in input[type=\"password\"]"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:48.317405",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 6,
+        "description": "wait for 1 second"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:49.322570",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 7,
+        "description": "click button:has-text(\"进入系统\")"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:50.371859",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 8,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:55.643113",
+      "metadata": {
+        "case_id": "case_1",
+        "step_number": 9,
+        "description": "verify text=系统概览"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:51:56.389900",
+      "metadata": {
+        "case_id": "case_1",
+        "status": "passed",
+        "duration_ms": 15570
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:51:56.705612",
+      "metadata": {
+        "case_id": "case_2",
+        "name": "进入记忆系统管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:56.705654",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:51:59.180007",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:04.191362",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 3,
+        "description": "verify text=记忆系统概览"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:04.225212",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 4,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:05.156236",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 5,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:08.172930",
+      "metadata": {
+        "case_id": "case_2",
+        "step_number": 6,
+        "description": "verify text=用户记忆管理"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:52:08.179364",
+      "metadata": {
+        "case_id": "case_2",
+        "status": "passed",
+        "duration_ms": 11473
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:52:08.220955",
+      "metadata": {
+        "case_id": "case_3",
+        "name": "Tab 用户记忆（Admin API）"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:08.220969",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:10.398612",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:15.513030",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:16.642950",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:19.745298",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 5,
+        "description": "verify text=用户记忆管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:19.796124",
+      "metadata": {
+        "case_id": "case_3",
+        "step_number": 6,
+        "description": "verify text=快速检索"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:52:19.888206",
+      "metadata": {
+        "case_id": "case_3",
+        "status": "passed",
+        "duration_ms": 11667
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:52:20.180879",
+      "metadata": {
+        "case_id": "case_4",
+        "name": "Tab HSMem查询"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:20.180909",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:22.506448",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:27.513432",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:28.286646",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:31.297186",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 5,
+        "description": "click text=HSMem查询"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:31.870228",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 6,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:34.872583",
+      "metadata": {
+        "case_id": "case_4",
+        "step_number": 7,
+        "description": "verify text=HSMem记忆查询"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:52:34.879702",
+      "metadata": {
+        "case_id": "case_4",
+        "status": "passed",
+        "duration_ms": 14698
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:52:34.943171",
+      "metadata": {
+        "case_id": "case_5",
+        "name": "Tab 记忆提取追溯"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:34.943198",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:37.153153",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:42.175954",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:42.968506",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:46.148641",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 5,
+        "description": "click text=记忆提取追溯"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:47.163405",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 6,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:50.333669",
+      "metadata": {
+        "case_id": "case_5",
+        "step_number": 7,
+        "description": "verify text=记忆提取追溯"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:52:50.464583",
+      "metadata": {
+        "case_id": "case_5",
+        "status": "passed",
+        "duration_ms": 15521
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:52:50.627428",
+      "metadata": {
+        "case_id": "case_6",
+        "name": "Tab 资源管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:50.627469",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:52.969052",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:57.976565",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:52:58.539916",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:01.542172",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 5,
+        "description": "click text=资源管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:02.102231",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 6,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:05.105109",
+      "metadata": {
+        "case_id": "case_6",
+        "step_number": 7,
+        "description": "verify text=资源管理"
+      }
+    },
+    {
+      "event": "page_content_anomaly",
+      "timestamp": "2026-01-30T08:53:05.121779",
+      "metadata": {
+        "case_id": "case_6",
+        "step": "verify text=资源管理",
+        "anomalies": [
+          "error_keyword"
+        ]
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:53:05.121786",
+      "metadata": {
+        "case_id": "case_6",
+        "status": "passed_with_warnings",
+        "duration_ms": 14494
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:53:05.192417",
+      "metadata": {
+        "case_id": "case_7",
+        "name": "Tab 记忆项管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:05.192451",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:07.373618",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:12.389333",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:12.975772",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:15.979830",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 5,
+        "description": "click text=记忆项管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:16.577333",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 6,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:19.623835",
+      "metadata": {
+        "case_id": "case_7",
+        "step_number": 7,
+        "description": "verify text=记忆项管理"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:53:19.796026",
+      "metadata": {
+        "case_id": "case_7",
+        "status": "passed",
+        "duration_ms": 14603
+      }
+    },
+    {
+      "event": "case_started",
+      "timestamp": "2026-01-30T08:53:20.067682",
+      "metadata": {
+        "case_id": "case_8",
+        "name": "Tab 类别管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:20.067722",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 1,
+        "description": "navigate to http://localhost:3005/admin?section=memory"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:22.576824",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 2,
+        "description": "wait for 5 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:27.642995",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 3,
+        "description": "click text=用户记忆"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:28.640602",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 4,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:31.671214",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 5,
+        "description": "click text=类别管理"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:32.247237",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 6,
+        "description": "wait for 3 seconds"
+      }
+    },
+    {
+      "event": "step_executed",
+      "timestamp": "2026-01-30T08:53:35.249626",
+      "metadata": {
+        "case_id": "case_8",
+        "step_number": 7,
+        "description": "verify text=类别管理"
+      }
+    },
+    {
+      "event": "case_completed",
+      "timestamp": "2026-01-30T08:53:35.257830",
+      "metadata": {
+        "case_id": "case_8",
+        "status": "passed",
+        "duration_ms": 15189
+      }
+    }
+  ],
+  "execution_end": "2026-01-30T08:53:35.374552"
+}

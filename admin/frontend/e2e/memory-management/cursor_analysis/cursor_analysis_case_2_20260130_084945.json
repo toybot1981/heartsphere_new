@@ -1,0 +1,14 @@
+{
+  "case_id": "case_2",
+  "name": "进入记忆系统管理",
+  "error": "Step 3 failed: Text '记忆系统概览' not found",
+  "failed_step": "verify text=记忆系统概览",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin?section=memory",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "管理后台登录\n\nHeartSphere Admin Console\n\n用户名\n密码\n进入系统返回应用首页",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_2_20260130_084945.png"
+}

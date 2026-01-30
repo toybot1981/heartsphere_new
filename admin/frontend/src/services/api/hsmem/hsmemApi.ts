@@ -130,6 +130,17 @@ export interface CategoryItemsResponse {
 // ========== Helper Functions ==========
 
 /**
+ * 将业务侧用户ID格式化为 HSMem 使用的 user_id（与 Main 端 formatUserIdForHsmem 一致）
+ * HSMem 记忆化时由 Main 写入为 "user_" + userId，查询时需使用相同格式才能按用户过滤
+ */
+export function formatUserIdForHsmem(userId: string | number | null | undefined): string | undefined {
+  if (userId == null || userId === '') return undefined;
+  const s = String(userId).trim();
+  if (!s) return undefined;
+  return s.startsWith('user_') ? s : `user_${s}`;
+}
+
+/**
  * 通用请求函数
  */
 async function hsmemRequest<T>(
@@ -251,10 +262,12 @@ export const hsmemApi = {
 
   /**
    * 获取所有记忆项（支持按用户ID过滤）
+   * 传入的 userId 会格式化为 HSMem 格式（user_xxx），与 Main 端写入时一致，便于与 user 表关联
    */
-  getAllItems: async (userId?: string): Promise<{ success: boolean; data: { items: MemoryItem[]; total: number } }> => {
-    const url = userId 
-      ? `/api/v1/memory/items?user_id=${encodeURIComponent(userId)}`
+  getAllItems: async (userId?: string | number): Promise<{ success: boolean; data: { items: MemoryItem[]; total: number } }> => {
+    const hsmemUserId = formatUserIdForHsmem(userId);
+    const url = hsmemUserId
+      ? `/api/v1/memory/items?user_id=${encodeURIComponent(hsmemUserId)}`
       : '/api/v1/memory/items';
     return hsmemRequest<{ success: boolean; data: { items: MemoryItem[]; total: number } }>(url);
   },

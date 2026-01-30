@@ -1,0 +1,31 @@
+# 技能应用引擎配置示例
+# 复制到 application.yml 或 application-dev.yml 中启用
+
+skill:
+  application:
+    # 是否启用技能应用引擎（默认：false，确保向后兼容）
+    enabled: false
+    
+    # 评分配置
+    scoring:
+      # 关键词权重
+      keyword-weight: 0.3
+      # 语义相似度权重
+      semantic-weight: 0.4
+      # 上下文匹配权重
+      context-weight: 0.35
+      # 内存触发权重
+      memory-weight: 0.25
+      # 评分阈值（0-100），只有综合得分 >= 阈值时技能才会被应用
+      threshold: 60
+      # 最多同时应用的技能数
+      max-concurrent-skills: 5
+    
+    # 执行配置
+    execution:
+      # 是否异步记录执行记录（推荐：true，避免阻塞 AI 响应）
+      async-record: true
+      # 记录保留天数（90天后自动归档）
+      record-retention-days: 90
+      # 归档批次大小
+      archive-batch-size: 1000

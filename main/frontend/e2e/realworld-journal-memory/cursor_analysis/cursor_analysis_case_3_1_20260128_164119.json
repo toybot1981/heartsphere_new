@@ -1,0 +1,9 @@
+{
+  "case_id": "case_3_1",
+  "name": "写今日功能",
+  "error": "not enough values to unpack (expected 3, got 2)",
+  "failed_step": null,
+  "database": null,
+  "page_context": {},
+  "screenshot": null
+}

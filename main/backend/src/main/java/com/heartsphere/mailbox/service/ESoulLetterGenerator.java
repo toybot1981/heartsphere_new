@@ -14,10 +14,6 @@ import com.heartsphere.mailbox.dto.ESoulLetterContent;
 import com.heartsphere.mailbox.enums.ESoulLetterType;
 import com.heartsphere.repository.CharacterRepository;
 import com.heartsphere.repository.JournalEntryRepository;
-import com.heartsphere.memory.repository.jpa.UserMemoryRepository;
-import com.heartsphere.memory.entity.UserMemoryEntity;
-import com.heartsphere.memory.model.MemoryImportance;
-import org.springframework.data.domain.PageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,7 +40,7 @@ public class ESoulLetterGenerator {
     private final JournalEntryRepository journalEntryRepository;
     private final CharacterRepository characterRepository;
     private final PromptTemplateIntegrationService templateService;
-    private final UserMemoryRepository userMemoryRepository;
+    private final HSMemApi hsmemApi;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
@@ -69,25 +65,21 @@ public class ESoulLetterGenerator {
                 .limit(5) // 只取最近5条日记
                 .collect(Collectors.toList());
             
-            // 获取用户的重要记忆（用于了解用户心境）
-            List<UserMemoryEntity> importantMemories = userMemoryRepository
-                .findByUserIdAndImportanceOrderByCreatedAtDesc(
-                    String.valueOf(userId),
-                    MemoryImportance.IMPORTANT,
-                    PageRequest.of(0, 10) // 获取最近10条重要记忆
-                );
-            
-            // 如果没有重要记忆，获取最近的记忆
-            if (importantMemories == null || importantMemories.isEmpty()) {
-                List<UserMemoryEntity> recentMemories = userMemoryRepository
-                    .findByUserIdOrderByCreatedAtDesc(String.valueOf(userId));
-                if (recentMemories != null && !recentMemories.isEmpty()) {
-                    importantMemories = recentMemories.stream()
-                        .limit(10)
-                        .collect(Collectors.toList());
-                }
+            // 获取用户记忆（来自 HSMem，按 importance 降序取前 10 条）
+            String hsmemUserId = "user_" + userId;
+            var itemsData = hsmemApi.getItems(hsmemUserId);
+            List<Map<String, Object>> importantMemories = new java.util.ArrayList<>();
+            if (itemsData != null && itemsData.getItems() != null && !itemsData.getItems().isEmpty()) {
+                importantMemories = itemsData.getItems().stream()
+                    .sorted((a, b) -> {
+                        double ia = a.get("importance") instanceof Number ? ((Number) a.get("importance")).doubleValue() : 0.5;
+                        double ib = b.get("importance") instanceof Number ? ((Number) b.get("importance")).doubleValue() : 0.5;
+                        return Double.compare(ib, ia);
+                    })
+                    .limit(10)
+                    .collect(Collectors.toList());
             }
-            
+
             // 构建AI提示词（硬编码作为fallback）
             String defaultPrompt = buildLetterPrompt(character, letterType, currentEmotion, recentJournals, importantMemories);
             
@@ -131,11 +123,11 @@ public class ESoulLetterGenerator {
             StringBuilder memoryInfo = new StringBuilder();
             if (importantMemories != null && !importantMemories.isEmpty()) {
                 memoryInfo.append("用户的重要记忆（用于了解用户的心境和经历）：\n");
-                for (UserMemoryEntity memory : importantMemories) {
-                    if (memory.getContent() != null && !memory.getContent().isEmpty()) {
-                        String content = memory.getContent().length() > 150 
-                            ? memory.getContent().substring(0, 150) + "..." 
-                            : memory.getContent();
+                for (Map<String, Object> memory : importantMemories) {
+                    Object contentObj = memory.get("content");
+                    if (contentObj != null && !contentObj.toString().isEmpty()) {
+                        String content = contentObj.toString();
+                        content = content.length() > 150 ? content.substring(0, 150) + "..." : content;
                         memoryInfo.append(String.format("- %s\n", content));
                     }
                 }
@@ -163,9 +155,17 @@ public class ESoulLetterGenerator {
                 defaultPrompt
             );
             
+            // 若模板返回的提示词仍含未替换占位符（如 {characterName}）或“请你提供”类占位说明，则使用默认构建的 prompt，避免 AI 回显模板
+            String userPrompt = prompts.getUserPrompt();
+            if (userPrompt != null && (userPrompt.contains("{characterName}") || userPrompt.contains("请你提供"))) {
+                log.warn("来信提示词模板含未替换占位符，使用默认 prompt: templateUserPrompt 前 80 字={}", 
+                    userPrompt.length() > 80 ? userPrompt.substring(0, 80) + "..." : userPrompt);
+                userPrompt = defaultPrompt;
+            }
+            
             // 调用AI生成来信内容
             TextGenerationRequest aiRequest = new TextGenerationRequest();
-            aiRequest.setPrompt(prompts.getUserPrompt());
+            aiRequest.setPrompt(userPrompt);
             aiRequest.setSystemInstruction(prompts.getSystemPrompt());
             aiRequest.setTemperature(0.8); // 较高的温度以获得更有创造性的内容
             aiRequest.setMaxTokens(1000);
@@ -191,7 +191,7 @@ public class ESoulLetterGenerator {
             ESoulLetterType letterType,
             EmotionRecord emotion,
             List<JournalEntry> journals,
-            List<UserMemoryEntity> memories) {
+            List<Map<String, Object>> memories) {
         
         StringBuilder prompt = new StringBuilder();
         
@@ -241,11 +241,11 @@ public class ESoulLetterGenerator {
         // 用户记忆信息
         if (memories != null && !memories.isEmpty()) {
             prompt.append("用户的重要记忆（用于了解用户的心境和经历，请自然地融入信件中）：\n");
-            for (UserMemoryEntity memory : memories) {
-                if (memory.getContent() != null && !memory.getContent().isEmpty()) {
-                    String content = memory.getContent().length() > 150 
-                        ? memory.getContent().substring(0, 150) + "..." 
-                        : memory.getContent();
+            for (Map<String, Object> memory : memories) {
+                Object contentObj = memory.get("content");
+                if (contentObj != null && !contentObj.toString().isEmpty()) {
+                    String content = contentObj.toString();
+                    content = content.length() > 150 ? content.substring(0, 150) + "..." : content;
                     prompt.append(String.format("- %s\n", content));
                 }
             }
@@ -308,7 +308,14 @@ public class ESoulLetterGenerator {
                 return content;
             }
         } catch (Exception e) {
-            log.warn("AI响应不是有效的JSON，尝试提取内容", e);
+            log.warn("AI响应不是有效的JSON，尝试提取内容: {}", e.getMessage());
+        }
+        
+        // 若 AI 返回的是“请你提供…”或含未替换占位符的模板文案，视为无效，直接返回默认来信内容
+        if (isTemplateOrPlaceholderResponse(aiResponse)) {
+            log.warn("AI 返回为占位/模板文案，使用默认来信内容: 响应前 80 字={}", 
+                aiResponse != null && aiResponse.length() > 80 ? aiResponse.substring(0, 80) + "..." : aiResponse);
+            return createDefaultLetterContent(letterType);
         }
         
         // 如果不是JSON格式，尝试提取标题和内容
@@ -337,6 +344,19 @@ public class ESoulLetterGenerator {
         return content;
     }
     
+    /**
+     * 判断 AI 响应是否为占位/模板文案（未替换的模板或“请你提供…”类说明），此类响应不应作为来信内容展示
+     */
+    private boolean isTemplateOrPlaceholderResponse(String aiResponse) {
+        if (aiResponse == null || aiResponse.isBlank()) {
+            return true;
+        }
+        String s = aiResponse.trim();
+        return s.contains("{characterName}") || s.contains("{characterRole}") || s.contains("{characterBio}")
+            || s.contains("{speechStyle}") || s.contains("{letterType}") || s.contains("{emotionInfo}")
+            || s.contains("{journalInfo}") || s.contains("请你提供具体的") || s.contains("以便我按照要求生成");
+    }
+
     /**
      * 从JSON字符串中提取值
      */

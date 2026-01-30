@@ -2,7 +2,6 @@ package com.heartsphere.memory.service;
 
 import com.heartsphere.memory.model.FactCategory;
 import com.heartsphere.memory.model.UserFact;
-import com.heartsphere.memory.model.UserMemory;
 import com.heartsphere.memory.model.UserPreference;
 
 import java.util.List;
@@ -116,28 +115,6 @@ public interface LongMemoryService {
      * @param key 偏好键
      */
     void deletePreference(String userId, String key);
-    
-    // ========== 记忆检索 ==========
-    
-    /**
-     * 检索相关记忆
-     * 
-     * @param userId 用户ID
-     * @param query 查询关键词
-     * @param limit 返回数量限制
-     * @return 用户记忆列表
-     */
-    List<UserMemory> retrieveRelevantMemories(String userId, String query, int limit);
-    
-    /**
-     * 根据上下文检索记忆
-     * 
-     * @param userId 用户ID
-     * @param context 上下文信息
-     * @param limit 返回数量限制
-     * @return 用户记忆列表
-     */
-    List<UserMemory> retrieveMemoriesByContext(String userId, Map<String, Object> context, int limit);
 }
 
 

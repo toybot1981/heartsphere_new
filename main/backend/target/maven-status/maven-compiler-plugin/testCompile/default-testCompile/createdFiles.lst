@@ -38,6 +38,7 @@ com/heartsphere/multiagent/util/TestAgentFactory$1.class
 com/heartsphere/mailbox/service/ResonanceMessageServiceTest.class
 com/heartsphere/character/multiagent/LifeAssistantRouterTest.class
 com/heartsphere/repository/WorldRepositoryTest.class
+com/heartsphere/controller/AuthControllerGuestTest.class
 com/heartsphere/emotion/controller/EmotionControllerTest.class
 com/heartsphere/ai/skill/engine/SkillSelectionCacheServiceTest.class
 com/heartsphere/controller/ImageControllerTest.class
@@ -64,6 +65,7 @@ com/heartsphere/multiagent/integration/MultiAgentCollaborationIntegrationTest.cl
 com/heartsphere/multiagent/orchestrator/LoadBalancerTest$1.class
 com/heartsphere/memory/controller/MemoryControllerTest.class
 com/heartsphere/controller/PaymentControllerTest.class
+com/heartsphere/multiagent/protocol/mcp/McpToolExecutorTest.class
 com/heartsphere/multiagent/core/BaseAgentTest.class
 com/heartsphere/multiagent/util/TestAgentFactory$2.class
 com/heartsphere/multiagent/orchestrator/TaskDecompositionServiceTest.class

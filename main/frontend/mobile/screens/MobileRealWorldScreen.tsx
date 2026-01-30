@@ -10,6 +10,15 @@ import { MobileLazyImage } from '../components/MobileLazyImage';
 import { MobileLazyBackgroundImage } from '../components/MobileLazyBackgroundImage';
 import { MobileInputStyles } from '../components/MobileStyleGuide';
 import { showConfirm } from '../../utils/dialog';
+import { 
+  filterEntriesByDateRange, 
+  groupEntriesByDate, 
+  sortEntries, 
+  type DateRange, 
+  type SortBy,
+  type GroupBy,
+  getTodayDateString
+} from '../../utils/journalFilters';
 
 interface MobileRealWorldProps {
   entries: JournalEntry[];
@@ -48,11 +57,25 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>(null);
+  const [sortBy, setSortBy] = useState<SortBy>('date');
+  const [groupBy, setGroupBy] = useState<GroupBy>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
   const startNew = () => {
       setSelectedEntry(null);
       setTitle('');
+      setContent('');
+      setNewTags([]);
+      setTagInput('');
+      setInsight(null);
+      setView('edit');
+  };
+
+  // 写今日：快速创建今天的日记
+  const startWriteToday = () => {
+      setSelectedEntry(null);
+      setTitle('今日');
       setContent('');
       setNewTags([]);
       setTagInput('');
@@ -189,7 +212,7 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
   };
   
   // Filter entries based on search and tag
-  const filteredEntries = entries.filter(entry => {
+  let filteredEntries = entries.filter(entry => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const matchesTitle = entry.title.toLowerCase().includes(query);
@@ -202,6 +225,94 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
     }
     return true;
   });
+
+  // Apply date range filter
+  if (dateRange) {
+    filteredEntries = filterEntriesByDateRange(filteredEntries, { range: dateRange });
+  }
+
+  // Sort entries
+  const sortedEntries = sortEntries(filteredEntries, sortBy);
+
+  // 提取条目卡片渲染逻辑
+  const renderEntryCard = (entry: JournalEntry) => (
+      <div 
+          onClick={() => openEntry(entry)} 
+          className="rounded-xl p-4 border active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--border-color-overlay)',
+          }}
+          onTouchStart={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+          }}
+          onTouchEnd={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+          }}
+          role="button"
+          tabIndex={0}
+          onKeyPress={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                  openEntry(entry);
+              }
+          }}
+      >
+          <div className="flex justify-between items-start mb-2">
+              <h3 
+                className="font-bold truncate flex-1"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {entry.title}
+              </h3>
+              <span
+                className="text-[10px]"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {new Date(entry.timestamp).toLocaleDateString()}
+              </span>
+          </div>
+          <p
+            className="text-sm line-clamp-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {entry.content}
+          </p>
+          {entry.tags && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                  {entry.tags.split(',').map((tag, idx) => {
+                      const trimmedTag = tag.trim();
+                      if (!trimmedTag) return null;
+                      return (
+                          <span
+                              key={idx}
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTag(trimmedTag);
+                              }}
+                              className="text-[10px] px-2 py-0.5 rounded-full border"
+                              style={{
+                                backgroundColor: 'var(--bg-info-alpha)',
+                                color: 'var(--color-info)',
+                                borderColor: 'var(--border-info-alpha)',
+                              }}
+                          >
+                              {trimmedTag}
+                          </span>
+                      );
+                  })}
+              </div>
+          )}
+          {entry.imageUrl && (
+              <MobileLazyBackgroundImage
+                  imageUrl={entry.imageUrl}
+                  className="mt-3 h-24 w-full rounded-lg opacity-80"
+                  displayWidth={400}
+                  purpose="small"
+                  placeholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100'%3E%3Crect fill='%23111' width='400' height='100'/%3E%3Ctext fill='%23666' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E加载中...%3C/text%3E%3C/svg%3E"
+              />
+          )}
+      </div>
+  );
 
   const handleSave = async () => {
       if (!title.trim() || !content.trim()) return;
@@ -335,15 +446,26 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                         记录你的现实瞬间
                       </p>
                   </div>
-                  <MobileTouchableButton
-                    onClick={startNew}
-                    variant="primary"
-                    size="lg"
-                    className="min-w-[48px] w-12 h-12 rounded-full shadow-lg font-bold text-2xl"
-                    aria-label="新建日记"
-                  >
-                    +
-                  </MobileTouchableButton>
+                  <div className="flex gap-2">
+                      <MobileTouchableButton
+                        onClick={startWriteToday}
+                        variant="primary"
+                        size="md"
+                        className="rounded-lg shadow-lg font-medium text-sm px-3"
+                        aria-label="写今日"
+                      >
+                        ✍️ 写今日
+                      </MobileTouchableButton>
+                      <MobileTouchableButton
+                        onClick={startNew}
+                        variant="primary"
+                        size="lg"
+                        className="min-w-[48px] w-12 h-12 rounded-full shadow-lg font-bold text-2xl"
+                        aria-label="新建日记"
+                      >
+                        +
+                      </MobileTouchableButton>
+                  </div>
               </div>
 
               {/* Search Bar */}
@@ -371,6 +493,81 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
                       inputMode="search"
                       aria-label="搜索日记"
                   />
+              </div>
+
+              {/* Date Range Filters & Sort/Group Controls */}
+              <div className="mb-4 flex flex-col gap-2">
+                  {/* Date Range Filters - Horizontal Scroll */}
+                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                      <MobileTouchableButton
+                          onClick={() => setDateRange(dateRange === 'today' ? null : 'today')}
+                          variant={dateRange === 'today' ? 'primary' : 'secondary'}
+                          size="sm"
+                          className="rounded-lg text-xs font-medium border whitespace-nowrap"
+                          style={{
+                            backgroundColor: dateRange === 'today' ? 'var(--color-primary)' : 'var(--bg-card)',
+                            color: dateRange === 'today' ? 'white' : 'var(--text-secondary)',
+                            borderColor: dateRange === 'today' ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                          }}
+                      >
+                          今日
+                      </MobileTouchableButton>
+                      <MobileTouchableButton
+                          onClick={() => setDateRange(dateRange === 'week' ? null : 'week')}
+                          variant={dateRange === 'week' ? 'primary' : 'secondary'}
+                          size="sm"
+                          className="rounded-lg text-xs font-medium border whitespace-nowrap"
+                          style={{
+                            backgroundColor: dateRange === 'week' ? 'var(--color-primary)' : 'var(--bg-card)',
+                            color: dateRange === 'week' ? 'white' : 'var(--text-secondary)',
+                            borderColor: dateRange === 'week' ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                          }}
+                      >
+                          本周
+                      </MobileTouchableButton>
+                      <MobileTouchableButton
+                          onClick={() => setDateRange(dateRange === 'month' ? null : 'month')}
+                          variant={dateRange === 'month' ? 'primary' : 'secondary'}
+                          size="sm"
+                          className="rounded-lg text-xs font-medium border whitespace-nowrap"
+                          style={{
+                            backgroundColor: dateRange === 'month' ? 'var(--color-primary)' : 'var(--bg-card)',
+                            color: dateRange === 'month' ? 'white' : 'var(--text-secondary)',
+                            borderColor: dateRange === 'month' ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                          }}
+                      >
+                          本月
+                      </MobileTouchableButton>
+                  </div>
+                  {/* Sort & Group Controls */}
+                  <div className="flex gap-2 items-center">
+                      <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as SortBy)}
+                          className="flex-1 min-h-[44px] px-3 py-2 text-sm rounded-lg border touch-manipulation"
+                          style={{
+                            backgroundColor: 'var(--bg-card)',
+                            color: 'var(--text-primary)',
+                            borderColor: 'var(--border-color-overlay)',
+                          }}
+                      >
+                          <option value="date">按日期</option>
+                          <option value="updated">按更新</option>
+                      </select>
+                      <MobileTouchableButton
+                          onClick={() => setGroupBy(groupBy === 'day' ? null : 'day')}
+                          variant={groupBy === 'day' ? 'primary' : 'secondary'}
+                          size="sm"
+                          className="rounded-lg text-xs font-medium border min-w-[60px]"
+                          style={{
+                            backgroundColor: groupBy === 'day' ? 'var(--color-primary)' : 'var(--bg-card)',
+                            color: groupBy === 'day' ? 'white' : 'var(--text-secondary)',
+                            borderColor: groupBy === 'day' ? 'var(--color-primary)' : 'var(--border-color-overlay)',
+                          }}
+                      >
+                          分组
+                      </MobileTouchableButton>
+                  </div>
               </div>
 
               {/* Tag Filter Pills */}
@@ -457,96 +654,46 @@ export const MobileRealWorld: React.FC<MobileRealWorldProps> = memo(({
               )}
 
               <div className="space-y-4">
-                  {filteredEntries.length === 0 && (
+                  {sortedEntries.length === 0 && (
                       <MobileEmptyState
-                          icon={searchQuery || selectedTag ? '🔍' : '📝'}
-                          title={searchQuery || selectedTag ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
-                          action={!searchQuery && !selectedTag ? {
+                          icon={searchQuery || selectedTag || dateRange ? '🔍' : '📝'}
+                          title={searchQuery || selectedTag || dateRange ? '没有找到匹配的日记' : '还没有日记，写一篇吧。'}
+                          action={!searchQuery && !selectedTag && !dateRange ? {
                               label: '开始记录',
                               onClick: startNew
                           } : undefined}
                       />
                   )}
-                  {filteredEntries.sort((a,b) => b.timestamp - a.timestamp).map(entry => (
-                      <div 
-                        key={entry.id} 
-                        onClick={() => openEntry(entry)} 
-                        className="rounded-xl p-4 border active:scale-[0.98] transition-transform touch-manipulation cursor-pointer"
-                        style={{
-                          backgroundColor: 'var(--bg-card)',
-                          borderColor: 'var(--border-color-overlay)',
-                        }}
-                        onTouchStart={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-                        }}
-                        onTouchEnd={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--bg-card)';
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                openEntry(entry);
-                            }
-                        }}
-                      >
-                          <div className="flex justify-between items-start mb-2">
-                              <h3 
-                                className="font-bold truncate flex-1"
-                                style={{ color: 'var(--text-primary)' }}
-                              >
-                                {entry.title}
-                              </h3>
-                              <span
-                                className="text-[10px]"
-                                style={{ color: 'var(--text-tertiary)' }}
-                              >
-                                {new Date(entry.timestamp).toLocaleDateString()}
-                              </span>
-                          </div>
-                          <p
-                            className="text-sm line-clamp-2"
-                            style={{ color: 'var(--text-secondary)' }}
-                          >
-                            {entry.content}
-                          </p>
-                          {entry.tags && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                  {entry.tags.split(',').map((tag, idx) => {
-                                      const trimmedTag = tag.trim();
-                                      if (!trimmedTag) return null;
-                                      return (
-                                          <span
-                                              key={idx}
-                                              onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setSelectedTag(trimmedTag);
-                                              }}
-                                              className="text-[10px] px-2 py-0.5 rounded-full border"
-                                              style={{
-                                                backgroundColor: 'var(--bg-info-alpha)',
-                                                color: 'var(--color-info)',
-                                                borderColor: 'var(--border-info-alpha)',
-                                              }}
-                                          >
-                                              {trimmedTag}
-                                          </span>
-                                      );
-                                  })}
+                  {(() => {
+                      if (groupBy) {
+                          const grouped = groupEntriesByDate(sortedEntries, groupBy);
+                          const groupKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+                          return groupKeys.map(groupKey => (
+                              <div key={groupKey} className="mb-6">
+                                  <h3 
+                                      className="text-sm font-bold mb-3 uppercase tracking-wider px-2"
+                                      style={{ color: 'var(--color-primary)' }}
+                                  >
+                                      {groupBy === 'day' 
+                                          ? new Date(groupKey).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+                                          : `第 ${groupKey.split('-W')[1]} 周 (${groupKey.split('-')[0]})`
+                                      }
+                                  </h3>
+                                  {grouped[groupKey].map(entry => (
+                                      <div key={entry.id} className="mb-3">
+                                          {renderEntryCard(entry)}
+                                      </div>
+                                  ))}
                               </div>
-                          )}
-                          {/* Phase 5: CSS背景图片优化 - 使用MobileLazyBackgroundImage替代backgroundImage */}
-                          {entry.imageUrl && (
-                              <MobileLazyBackgroundImage
-                                  imageUrl={entry.imageUrl}
-                                  className="mt-3 h-24 w-full rounded-lg opacity-80"
-                                  displayWidth={400}
-                                  purpose="small"
-                                  placeholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100'%3E%3Crect fill='%23111' width='400' height='100'/%3E%3Ctext fill='%23666' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E加载中...%3C/text%3E%3C/svg%3E"
-                              />
-                          )}
-                      </div>
-                  ))}
+                          ));
+                      } else {
+                          return sortedEntries.map(entry => (
+                              <div key={entry.id} className="mb-3">
+                                  {renderEntryCard(entry)}
+                              </div>
+                          ));
+                      }
+                  })()}
               </div>
               </MobileSmoothScroll>
           </div>

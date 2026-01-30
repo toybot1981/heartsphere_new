@@ -1,0 +1,14 @@
+{
+  "case_id": "case_3",
+  "name": "Tab 用户记忆（Admin API）",
+  "error": "Step 3 failed: Text '用户记忆管理' not found",
+  "failed_step": "verify text=用户记忆管理",
+  "database": null,
+  "page_context": {
+    "url": "http://localhost:3005/admin?section=memory",
+    "title": "HeartSphere - 统一管理后台",
+    "visible_text": "HEARTSPHERE\n📊\n概览 Dashboard\n📚\n内容管理\n👥\n用户管理\n🔌\nAI 接入与计费\n🤖\nAI 智能体\n⚙️\n系统配置\n🔧\nDEVOPS 工作台\n🔗\n连接服务\n🔗\n心域连接\n🧠\n记忆系统\n🎓\n教育版管理\n\nAdministrator\n\nSystem Root\n\n记忆系统管理\nAdmin Mode\n退出登录\n📊\n系统概览\n🧠\n记忆系统管理\n关闭其他\n关闭所有\n系统概览\n记忆测试\n用户记忆\n短时记忆\n长时记忆\n统计分析\n数据维护\n记忆系统概览\n刷新HSMEM数据\nHSMem服务状态\nhealthy\n\n资源总数: 44\n\n记忆项总数: 26\n\n分类总数: 49\n\n详细统计:\n\n资源: 44\n\n记忆项: 26\n\n分类: 49\n\n系统状态\n\n运行状态: NORMAL\n\n服务可用率: 100%\n\n数据统计\n\n用户总数: 13\n\n24小时活跃: 6\n\n记忆总量: 84\n\n性能指标\n\n平均响应时间: 0ms\n\n成功率: 100%\n\n缓存命中率: 0%\n\nRedis状态\n\n连接状态: 未连接\n\n活跃会话: 0\n\n总键数: 0\n\nMongoDB状态\n\n连接状态: 未连接\n\n总文档数: 0\n\n总集合数: 0",
+    "dom_snippet": null
+  },
+  "screenshot": "/tmp/test_case_3_20260130_085041.png"
+}

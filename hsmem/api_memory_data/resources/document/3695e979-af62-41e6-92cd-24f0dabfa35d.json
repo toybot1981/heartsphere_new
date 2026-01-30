@@ -1,0 +1,13 @@
+{
+  "id": "3695e979-af62-41e6-92cd-24f0dabfa35d",
+  "modality": "document",
+  "data": {
+    "title": "测试文档",
+    "content": "文档内容摘要。",
+    "author": null
+  },
+  "created_at": "2026-01-29T23:20:52.558564",
+  "metadata": {
+    "size": 110
+  }
+}

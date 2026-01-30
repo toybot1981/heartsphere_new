@@ -1,49 +1,12 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import { AdminStateProvider } from './contexts/AdminStateContext';
 import { AdminLogin } from './components/AdminLogin';
+import { AdminScreen } from './AdminScreen';
 
-// 懒加载管理页面
-const AdminMainPage = lazy(() => 
-  import('./AdminScreen')
-    .then(m => {
-      // 确保正确导出
-      if (m.AdminScreen) {
-        return { default: m.AdminScreen };
-      }
-      throw new Error('AdminScreen 未正确导出');
-    })
-    .catch((err) => {
-      console.error('加载 AdminScreen 失败:', err);
-      return { 
-        default: () => (
-          <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-            <div className="text-white text-center">
-              <p className="text-xl mb-4">加载失败</p>
-              <p className="text-slate-400 mb-4">{err.message || '请刷新页面'}</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700"
-              >
-                刷新
-              </button>
-            </div>
-          </div>
-        )
-      };
-    })
-);
-
-// 加载中占位符
-const LoadingFallback: React.FC = () => (
-  <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p className="text-gray-600">加载中...</p>
-    </div>
-  </div>
-);
+// 直接导入 AdminScreen，避免懒加载在 e2e/部分环境下动态 chunk 请求失败导致「加载失败」
+// 若需恢复懒加载以减小首包，可仅在生产构建使用 lazy，或确保 e2e 环境能稳定加载 chunk
 
 // 内部组件：处理认证和路由
 // 注意：此组件必须在 AdminAuthProvider 内部使用
@@ -64,13 +27,11 @@ const AppContent: React.FC = () => {
 
   // 已认证，显示管理界面
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin" element={<AdminMainPage />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/admin" element={<AdminScreen />} />
+      <Route path="*" element={<Navigate to="/admin" replace />} />
+    </Routes>
   );
 };
 

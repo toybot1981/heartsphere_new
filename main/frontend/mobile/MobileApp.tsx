@@ -17,6 +17,7 @@ import { showAlert, showConfirm } from '../utils/dialog';
 import { MobileLoginScreen } from './screens/MobileLoginScreen';
 import { MobileSettingsModal } from './components/modals/MobileSettingsModal';
 import type { ShareConfig } from '../services/api/heartconnect/types';
+import { convertBackendScriptToScenario } from '../utils/dataTransformers';
 
 // Phase 5优化: 使用懒加载导入Screen组件（除了ProfileSetup需要在初始化时使用）
 import { MobileProfileSetupScreen } from './screens/MobileProfileSetupScreen';
@@ -674,15 +675,12 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
 
     // --- SCENE & CHAR LOGIC ---
 
-    // 与PC版本保持一致：登录用户只使用userWorldScenes，游客使用WORLD_SCENES（不再使用本地缓存的 customScenes）
+    // 与PC版本保持一致：优先使用 userWorldScenes（含游客初始化后的场景），为空时才回退到 WORLD_SCENES
     const getCurrentScenes = () => {
-        if (gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes) {
-            // 登录用户：只使用从后端获取的用户专属场景
+        if (gameState.userWorldScenes && gameState.userWorldScenes.length > 0) {
             return gameState.userWorldScenes;
-        } else {
-            // 游客：使用本地预置场景
-            return WORLD_SCENES;
         }
+        return WORLD_SCENES;
     };
 
     const allScenes = getCurrentScenes();
@@ -760,7 +758,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
             ...(currentScene.scripts || []).map(script => {
               try {
                 // 使用统一的转换函数确保 nodes 格式正确
-                const { convertBackendScriptToScenario } = require('../../utils/dataTransformers');
                 return convertBackendScriptToScenario(script, currentScene.id);
               } catch (error) {
                 console.error('[MobileApp] 转换剧本失败:', { scriptId: script.id, error });
@@ -1055,7 +1052,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({ onSwitchToPC }) => {
         try {
             // 使用 useCharacterHandlers 的逻辑，但直接调用 API
             // 这里简化处理，直接调用 characterApi
-            const allScenes = gameState.userProfile && !gameState.userProfile.isGuest && gameState.userWorldScenes && gameState.userWorldScenes.length > 0
+            const allScenes = (gameState.userWorldScenes && gameState.userWorldScenes.length > 0)
                 ? gameState.userWorldScenes
                 : WORLD_SCENES;
             const currentScene = allScenes.find(s => s.id === sceneId);

@@ -280,20 +280,29 @@ async def get_category_items(category_name: str):
 
 # ==================== 记忆项 API ====================
 
+def _normalize_memory_item(item: dict) -> dict:
+    """确保返回的每条记忆项都包含 user_id 字段，便于与业务侧 user 关联；历史数据可能无此字段，统一为 null"""
+    out = dict(item)
+    if "user_id" not in out:
+        out["user_id"] = None
+    return out
+
+
 @app.get("/api/v1/memory/items")
 async def get_memory_items(user_id: Optional[str] = None):
     """
     获取所有记忆项
 
-    - **user_id**: 可选，按用户ID过滤
+    - **user_id**: 可选，按用户ID过滤（需与写入时格式一致，如 user_123）
     """
     try:
         items = await memory_service.get_all_items(user_id=user_id)
+        normalized = [_normalize_memory_item(it) for it in items]
         return {
             "success": True,
             "data": {
-                "items": items,
-                "total": len(items)
+                "items": normalized,
+                "total": len(normalized)
             }
         }
     except Exception as e:
@@ -311,10 +320,9 @@ async def get_memory_item(item_id: str):
         item = await memory_service.database.get_memory_item(item_id)
         if not item:
             raise HTTPException(status_code=404, detail=f"记忆项 {item_id} 不存在")
-        
         return {
             "success": True,
-            "data": item
+            "data": _normalize_memory_item(item)
         }
     except HTTPException:
         raise

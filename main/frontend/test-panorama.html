@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户画像全景地图 - 测试页面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import React from 'https://esm.sh/react@18';
+    import ReactDOM from 'https://esm.sh/react-dom@18';
+    import { UserProfilePanoramaMap } from './components/UserProfilePanoramaMap.tsx';
+    import { exampleUserProfileData } from './components/UserProfilePanoramaMap.example.ts';
+
+    function App() {
+      return React.createElement(UserProfilePanoramaMap, {
+        data: exampleUserProfileData,
+        title: "用户画像全景地图"
+      });
+    }
+
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>

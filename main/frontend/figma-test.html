@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma 测试 UI</title>
+  <link rel="stylesheet" href="/src/tokens.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px; /* 8px * 3 */
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: var(--font-size-h1, 2rem);
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .subtitle {
+      font-size: var(--font-size-body);
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .card h2 {
+      font-size: var(--font-size-h3, 1.25rem);
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .card p {
+      font-size: var(--font-size-body);
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+    .hint {
+      font-size: var(--font-size-body-sm);
+      color: var(--text-tertiary);
+      margin-top: 8px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      font-size: var(--font-size-body);
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity var(--transition-fast);
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary {
+      background: var(--color-primary);
+      color: white;
+      margin-right: 8px;
+    }
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .spacing-demo {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .spacing-demo span {
+      padding: 8px 16px;
+      background: var(--bg-hover);
+      border-radius: 8px;
+      font-size: var(--font-size-body-sm);
+      color: var(--text-secondary);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: var(--font-size-xs);
+      background: var(--color-primary);
+      color: white;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Figma 测试 UI</h1>
+    <p class="subtitle">基于项目 UX 规范（主题变量、8px 间距）的测试页面</p>
+
+    <div class="card">
+      <h2>从 Figma 还原设计 <span class="badge">ui-design-figma</span></h2>
+      <p>提供 Figma 设计链接（如 <code>https://www.figma.com/design/xxx/...</code>）后，可使用 Figma MCP 获取设计稿数据并导出资源，再按本项目的 UX 规范实现界面。</p>
+      <p class="hint">技能：ui-design-figma · 工具：get_figma_data、download_figma_images · 规范：openspec/project.md UX Design Guidelines</p>
+    </div>
+
+    <div class="card">
+      <h2>设计规范自检</h2>
+      <p>本页使用 CSS 变量（色彩、字体、间距），符合主题系统；间距以 8px 为基准。</p>
+      <div class="spacing-demo">
+        <span>8px</span><span>16px</span><span>24px</span><span>32px</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>操作</h2>
+      <p>在对话中粘贴 Figma 设计链接，即可从设计稿生成或更新本测试 UI。</p>
+      <button class="btn btn-primary">主按钮</button>
+      <button class="btn btn-secondary">次要按钮</button>
+    </div>
+  </div>
+</body>
+</html>

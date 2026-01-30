@@ -6,6 +6,7 @@ import com.heartsphere.admin.dto.PromptGenerateRequest;
 import com.heartsphere.admin.dto.PromptGenerateResponse;
 import com.heartsphere.shared.dto.PromptRenderResponse;
 import com.heartsphere.shared.entity.PromptTemplate;
+import com.heartsphere.shared.service.PromptTemplateIntegrationService;
 import com.heartsphere.admin.dto.ai.TextGenerationRequest;
 import com.heartsphere.admin.dto.ai.TextGenerationResponse;
 import com.heartsphere.admin.service.ai.AIService;
@@ -28,29 +29,49 @@ public class PromptAIGenerateService {
     
     @Autowired(required = false)
     private AIService aiService;
-    
+
     @Autowired
     private com.heartsphere.shared.service.PromptRenderService renderService;
-    
+
+    @Autowired(required = false)
+    private PromptTemplateIntegrationService templateService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
+    private static final String DEFAULT_SYSTEM_PROMPT_OPTIMIZE = "你是一个提示词优化专家。请根据用户提供的模板和上下文，生成优化后的提示词。";
+
     /**
      * AI生成提示词
+     * 系统提示与用户提示优先从提示词管理（admin-prompt-optimize）获取，取不到时使用代码内默认。
      */
     public PromptGenerateResponse generatePrompt(PromptTemplate template, PromptGenerateRequest request) {
         try {
             // 先渲染模板，得到基础提示词
-            PromptRenderResponse renderResponse = renderService.render(template, request.getVariables());
-            
-            // 构建AI生成请求
-            String generatePrompt = buildGeneratePrompt(template, renderResponse, request);
-            
+            PromptRenderResponse renderResponse = renderService.render(template, request.getVariables() != null ? request.getVariables() : new HashMap<>());
+
+            // 默认用户提示（buildGeneratePrompt）
+            String defaultUserPrompt = buildGeneratePrompt(template, renderResponse, request);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("templateName", template.getName());
+            variables.put("templateDescription", template.getDescription() != null ? template.getDescription() : "");
+            variables.put("originalSystemPrompt", renderResponse.getSystemPrompt());
+            variables.put("originalUserPrompt", renderResponse.getUserPrompt());
+            if (request.getContext() != null && !request.getContext().isEmpty()) {
+                variables.put("context", request.getContext());
+            }
+            PromptRenderResponse prompts = templateService != null
+                    ? templateService.getPrompts("admin-prompt-optimize", variables, DEFAULT_SYSTEM_PROMPT_OPTIMIZE, defaultUserPrompt)
+                    : null;
+            String systemInstruction = (prompts != null) ? prompts.getSystemPrompt() : DEFAULT_SYSTEM_PROMPT_OPTIMIZE;
+            String generatePrompt = (prompts != null && prompts.getUserPrompt() != null && !prompts.getUserPrompt().isEmpty())
+                    ? prompts.getUserPrompt() : defaultUserPrompt;
+
             TextGenerationRequest aiRequest = new TextGenerationRequest();
             aiRequest.setPrompt(generatePrompt);
-            aiRequest.setSystemInstruction("你是一个提示词优化专家。请根据用户提供的模板和上下文，生成优化后的提示词。");
+            aiRequest.setSystemInstruction(systemInstruction);
             aiRequest.setTemperature(0.7);
             aiRequest.setMaxTokens(2000);
-            
+
             // 调用AI服务（使用管理员ID 1作为默认用户）
             TextGenerationResponse aiResponse = aiService.generateText(1L, aiRequest);
             

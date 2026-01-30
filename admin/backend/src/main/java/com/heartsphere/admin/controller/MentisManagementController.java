@@ -107,4 +107,17 @@ public class MentisManagementController {
         Map<String, Object> result = mentisManagementService.callMcpTool(id, toolName, arguments);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+    
+    /**
+     * 切换 MCP 配置的启用/禁用状态
+     */
+    @Operation(summary = "切换 MCP 配置状态", description = "启用或禁用指定的 MCP 服务器配置")
+    @PatchMapping("/mcp/configs/{id}/toggle")
+    public ResponseEntity<ApiResponse<MentisMcpConfigDTO>> toggleMcpConfig(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> request) {
+        Boolean enabled = request != null ? request.get("enabled") : null;
+        MentisMcpConfigDTO updated = mentisManagementService.toggleMcpConfig(id, enabled);
+        return ResponseEntity.ok(ApiResponse.success(updated));
+    }
 }

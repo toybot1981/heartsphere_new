@@ -1,0 +1,9 @@
+{
+  "plan_file": "/Users/admin/Workspace/heartsphere_new/admin/e2e/skill-management/test_plan.json",
+  "results_file": "/tmp/test_results_20260129_125211.json",
+  "passed_case_ids": [
+    "case_1_1"
+  ],
+  "failed_case_id": "case_1_2",
+  "timestamp": "2026-01-29T12:52:41.054878"
+}

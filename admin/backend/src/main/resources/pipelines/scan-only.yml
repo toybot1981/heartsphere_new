@@ -1,0 +1,22 @@
+name: 仅扫描流程
+description: 仅执行安全扫描和代码扫描，不进行测试和部署
+environment: test
+project: ""  # 通用流程，适用于所有项目
+steps:
+  - name: 安全扫描
+    scriptId: code-scan-security
+    order: 1
+    required: true
+    parallel: false
+    parameters:
+      severity: medium
+  
+  - name: 代码扫描
+    scriptId: code-scan-eslint
+    order: 2
+    dependsOn: [1]
+    required: true
+    parallel: false
+    parameters:
+      module: ""
+      fix: false

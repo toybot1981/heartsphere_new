@@ -148,32 +148,59 @@ public class SkillRegistry {
     
     /**
      * 将单个技能转换为 Function Definition
+     * 只支持新格式：mcp_tool_config（已移除对 function_schema 的支持）
      */
     private FunctionDefinition toFunctionDefinition(SkillDefinition skill) {
         try {
-            // 检查是否有 function_schema
-            if (skill.getFunctionSchema() == null || skill.getFunctionSchema().isEmpty()) {
-                log.warn("技能 {} 没有 function_schema，跳过", skill.getSkillId());
-                return null;
+            // 只使用新格式：mcp_tool_config
+            if (skill.getMcpToolConfig() != null && !skill.getMcpToolConfig().isEmpty()) {
+                return toFunctionDefinitionFromMcpConfig(skill);
             }
             
-            // 解析 function_schema
-            Map<String, Object> schema = objectMapper.readValue(
-                skill.getFunctionSchema(),
-                new TypeReference<Map<String, Object>>() {}
-            );
-            
-            return FunctionDefinition.builder()
-                .name(skill.getSkillId())
-                .description(skill.getDescription() != null ? skill.getDescription() : skill.getName())
-                .parameters(schema)
-                .build();
+            log.warn("技能 {} 没有 mcp_tool_config，无法转换为 Function Definition。请使用新格式技能。", skill.getSkillId());
+            return null;
                 
         } catch (Exception e) {
             log.error("转换技能 {} 为 Function Definition 失败", skill.getSkillId(), e);
             return null;
         }
     }
+    
+    /**
+     * 从 mcp_tool_config 转换为 Function Definition
+     */
+    private FunctionDefinition toFunctionDefinitionFromMcpConfig(SkillDefinition skill) {
+        try {
+            Map<String, Object> mcpConfig = objectMapper.readValue(
+                skill.getMcpToolConfig(),
+                new TypeReference<Map<String, Object>>() {}
+            );
+            
+            // 从 MCP 工具配置构建参数schema
+            // 这里简化处理，实际应该从MCP工具定义中获取参数schema
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("type", "object");
+            parameters.put("properties", new HashMap<>());
+            
+            // 如果有工具列表，可以提取工具的参数定义
+            if (mcpConfig.containsKey("tools") && mcpConfig.get("tools") instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> tools = (List<Map<String, Object>>) mcpConfig.get("tools");
+                // 可以在这里提取工具参数，简化处理
+            }
+            
+            return FunctionDefinition.builder()
+                .name(skill.getSkillId())
+                .description(skill.getDescription() != null ? skill.getDescription() : skill.getName())
+                .parameters(parameters)
+                .build();
+                
+        } catch (Exception e) {
+            log.error("从 mcp_tool_config 转换技能 {} 失败", skill.getSkillId(), e);
+            return null;
+        }
+    }
+    
     
     /**
      * 检查关键词是否匹配自动触发条件

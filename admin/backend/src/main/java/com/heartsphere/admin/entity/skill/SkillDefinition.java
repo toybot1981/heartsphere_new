@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
 /**
  * 技能定义实体（Admin模块）
  * 对应表：skill_definitions
- * 
+ * <p>
+ * 与 skill-creator 规范对应：本表存储 SKILL.md（必选）— YAML frontmatter 映射到 name、description 等元数据字段，
+ * Markdown 指令存储于 skill_content；Bundled Resources 由 skill_resources 表存储，通过 skill_id 关联。
+ *
  * @author HeartSphere
  * @version 1.0
  */
@@ -79,7 +82,10 @@ public class SkillDefinition {
     /**
      * Function Calling JSON Schema（JSON格式）
      * 用于 AI Function Calling，定义技能的输入参数
+     * 
+     * @deprecated 已废弃，改用 mcp_tool_config。此字段保留仅用于数据库兼容性，业务逻辑不应再使用。
      */
+    @Deprecated
     @Column(name = "function_schema", columnDefinition = "TEXT")
     private String functionSchema;
     
@@ -133,6 +139,37 @@ public class SkillDefinition {
      */
     @Column(name = "is_system_skill", nullable = false)
     private Boolean isSystemSkill = false;
+    
+    /**
+     * 许可证信息
+     */
+    @Column(length = 100)
+    private String license;
+    
+    /**
+     * 兼容性信息（JSON格式）
+     */
+    @Column(length = 255)
+    private String compatibility;
+    
+    /**
+     * 自定义元数据（JSON格式）
+     */
+    @Column(columnDefinition = "TEXT")
+    private String metadata;
+    
+    /**
+     * 完整的 SKILL.md 格式内容（YAML元数据 + Markdown指令）
+     */
+    @Column(name = "skill_content", columnDefinition = "TEXT")
+    private String skillContent;
+    
+    /**
+     * MCP工具配置（JSON格式）
+     * 存储MCP服务器配置ID、工具名称列表、参数映射等
+     */
+    @Column(name = "mcp_tool_config", columnDefinition = "TEXT")
+    private String mcpToolConfig;
     
     /**
      * 创建时间

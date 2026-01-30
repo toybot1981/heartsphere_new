@@ -59,22 +59,22 @@ public class LLMMemoryExtractor implements MemoryExtractor {
                 .map(m -> "用户: " + m.getContent())
                 .collect(Collectors.toList()));
             
-            PromptRenderResponse prompts = templateService.getPrompts(
-                "memory",
+            PromptRenderResponse prompts = templateService.getPromptsByCategoryAndName(
+                "memory", "facts",
                 variables,
                 "你是一个专业的记忆提取专家，擅长从对话中提取用户的事实信息。请以JSON格式返回结果。",
                 defaultPrompt
             );
-            
+
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
             request.setPrompt(prompts.getUserPrompt());
             request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3); // 较低温度以获得更一致的结果
             request.setMaxTokens(2000);
-            
+
             TextGenerationResponse response = aiService.generateText(Long.parseLong(userId), request);
-            
+
             // 解析响应
             List<UserFact> facts = parseFactsFromResponse(response.getContent(), userId, messages);
             
@@ -236,20 +236,20 @@ public class LLMMemoryExtractor implements MemoryExtractor {
                 .map(m -> "用户: " + m.getContent())
                 .collect(Collectors.toList()));
             
-            PromptRenderResponse prompts = templateService.getPrompts(
-                "memory",
+            PromptRenderResponse prompts = templateService.getPromptsByCategoryAndName(
+                "memory", "preferences",
                 variables,
                 "你是一个专业的偏好提取专家，擅长从对话中提取用户的偏好信息。请以JSON格式返回结果。",
                 defaultPrompt
             );
-            
+
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
             request.setPrompt(prompts.getUserPrompt());
             request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(1500);
-            
+
             TextGenerationResponse response = aiService.generateText(Long.parseLong(userId), request);
             
             // 解析响应
@@ -401,22 +401,22 @@ public class LLMMemoryExtractor implements MemoryExtractor {
                 .map(m -> m.getRole().name() + ": " + m.getContent())
                 .collect(Collectors.toList()));
             
-            PromptRenderResponse prompts = templateService.getPrompts(
-                "memory",
+            PromptRenderResponse prompts = templateService.getPromptsByCategoryAndName(
+                "memory", "memories",
                 variables,
                 "你是一个专业的记忆提取专家，擅长从对话中提取重要的用户记忆。请以JSON格式返回结果。",
                 defaultPrompt
             );
-            
+
             // 调用AI服务
             TextGenerationRequest request = new TextGenerationRequest();
             request.setPrompt(prompts.getUserPrompt());
             request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(2000);
-            
+
             TextGenerationResponse response = aiService.generateText(Long.parseLong(userId), request);
-            
+
             // 解析响应
             return parseMemoriesFromResponse(response.getContent(), userId, messages);
             
@@ -569,30 +569,40 @@ public class LLMMemoryExtractor implements MemoryExtractor {
         }
         
         try {
-            // 构建提取提示词
-            String prompt = buildCharacterInteractionMemoryExtractionPrompt(characterId, userId, messages);
-            
-            // 调用AI服务
+            String defaultUserPrompt = buildCharacterInteractionMemoryExtractionPrompt(characterId, userId, messages);
+            String defaultSystemPrompt = "你是一个专业的角色记忆提取专家，擅长从对话中提取角色与用户的交互记忆。请以JSON格式返回结果。";
+            Map<String, Object> variables = new HashMap<>();
+            List<String> messageLines = new ArrayList<>();
+            for (ChatMessage message : messages) {
+                if (message.getRole() == MessageRole.USER) {
+                    messageLines.add("用户: " + message.getContent());
+                } else if (message.getRole() == MessageRole.ASSISTANT) {
+                    messageLines.add("角色: " + message.getContent());
+                }
+            }
+            variables.put("messages", messageLines);
+
+            PromptRenderResponse prompts = templateService.getPrompts(
+                    "memory-character-interaction", variables, defaultSystemPrompt, defaultUserPrompt);
+
             TextGenerationRequest request = new TextGenerationRequest();
-            request.setPrompt(prompt);
-            request.setSystemInstruction("你是一个专业的角色记忆提取专家，擅长从对话中提取角色与用户的交互记忆。请以JSON格式返回结果。");
+            request.setPrompt(prompts.getUserPrompt());
+            request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(2000);
-            
+
             TextGenerationResponse response = aiService.generateText(Long.parseLong(userId), request);
-            
-            // 解析响应
+
             List<CharacterInteractionMemory> memories = parseCharacterInteractionMemoriesFromResponse(
-                response.getContent(), characterId, userId, messages);
-            
+                    response.getContent(), characterId, userId, messages);
             return memories;
-            
+
         } catch (Exception e) {
             log.error("LLM提取角色交互记忆失败: characterId={}, userId={}", characterId, userId, e);
             return Collections.emptyList();
         }
     }
-    
+
     // ========== 提取角色场景记忆 ==========
     
     @Override
@@ -603,30 +613,41 @@ public class LLMMemoryExtractor implements MemoryExtractor {
         }
         
         try {
-            // 构建提取提示词
-            String prompt = buildCharacterSceneMemoryExtractionPrompt(characterId, eraId, messages);
-            
-            // 调用AI服务
+            String defaultUserPrompt = buildCharacterSceneMemoryExtractionPrompt(characterId, eraId, messages);
+            String defaultSystemPrompt = "你是一个专业的角色场景记忆提取专家，擅长从对话中提取角色在特定场景中的记忆。请以JSON格式返回结果。";
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("eraId", eraId);
+            List<String> messageLines = new ArrayList<>();
+            for (ChatMessage message : messages) {
+                if (message.getRole() == MessageRole.USER) {
+                    messageLines.add("用户: " + message.getContent());
+                } else if (message.getRole() == MessageRole.ASSISTANT) {
+                    messageLines.add("角色: " + message.getContent());
+                }
+            }
+            variables.put("messages", messageLines);
+
+            PromptRenderResponse prompts = templateService.getPrompts(
+                    "memory-character-scene", variables, defaultSystemPrompt, defaultUserPrompt);
+
             TextGenerationRequest request = new TextGenerationRequest();
-            request.setPrompt(prompt);
-            request.setSystemInstruction("你是一个专业的角色场景记忆提取专家，擅长从对话中提取角色在特定场景中的记忆。请以JSON格式返回结果。");
+            request.setPrompt(prompts.getUserPrompt());
+            request.setSystemInstruction(prompts.getSystemPrompt());
             request.setTemperature(0.3);
             request.setMaxTokens(2000);
-            
+
             TextGenerationResponse response = aiService.generateText(Long.parseLong(characterId), request);
-            
-            // 解析响应
+
             List<CharacterSceneMemory> memories = parseCharacterSceneMemoriesFromResponse(
-                response.getContent(), characterId, eraId, messages);
-            
+                    response.getContent(), characterId, eraId, messages);
             return memories;
-            
+
         } catch (Exception e) {
             log.error("LLM提取角色场景记忆失败: characterId={}, eraId={}", characterId, eraId, e);
             return Collections.emptyList();
         }
     }
-    
+
     // ========== 验证和清理 ==========
     
     @Override

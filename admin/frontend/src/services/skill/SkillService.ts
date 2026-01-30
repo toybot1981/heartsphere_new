@@ -14,8 +14,25 @@ export interface FunctionDefinition {
   parameters: Record<string, any>;
 }
 
+/** 技能资源项（Bundled Resources 列表项） */
+export interface SkillResourceItem {
+  id: number;
+  skillId: string;
+  resourceType: string;
+  resourceName: string;
+  fileName?: string;
+  filePath?: string;
+  fileSize?: number;
+  mimeType?: string;
+  description?: string;
+  orderIndex?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /**
  * 技能定义
+ * 注意：已移除废弃的 functionSchema 字段，改用 mcpToolConfig
  */
 export interface SkillDefinition {
   id?: number;
@@ -25,13 +42,19 @@ export interface SkillDefinition {
   category?: string;
   skillType?: string;
   executionType?: string;
-  functionSchema?: string;
+  // 已移除：functionSchema (废弃，改用 mcpToolConfig)
   executionConfig?: string;
   autoTriggerKeywords?: string;
   maxUsagePerDay?: number;
   version?: string;
   author?: string;
   isSystemSkill?: boolean;
+  // 新增字段：专业 Skill Creator 支持
+  license?: string;
+  compatibility?: string;
+  metadata?: string;
+  skillContent?: string;
+  mcpToolConfig?: string;
 }
 
 /**
@@ -204,6 +227,44 @@ export class SkillService {
       return (response as SkillDefinition) || null;
     } catch (error: any) {
       console.error('[SkillService] 获取技能详情失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取技能详情及关联的 Bundled Resources（单表视图一次性加载）
+   * @param skillId - 技能 ID
+   * @param token - 管理员 token
+   */
+  async getSkillByIdWithResources(
+    skillId: string,
+    token?: string | null
+  ): Promise<{ skill: SkillDefinition; resources: SkillResourceItem[] } | null> {
+    try {
+      if (!token) {
+        throw new Error('未登录');
+      }
+
+      const response = await request<
+        | { code: number; message: string; data: { skill: SkillDefinition; resources: SkillResourceItem[] } }
+        | { skill: SkillDefinition; resources: SkillResourceItem[] }
+      >(`/skills/${skillId}?includeResources=true`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response && typeof response === 'object') {
+        const data = 'data' in response && response.data ? response.data : response;
+        if (data && 'skill' in data && data.skill) {
+          return { skill: data.skill, resources: Array.isArray(data.resources) ? data.resources : [] };
+        }
+      }
+      return null;
+    } catch (error: any) {
+      console.error('[SkillService] 获取技能及资源失败:', error);
       return null;
     }
   }

@@ -16,6 +16,7 @@ export interface FunctionDefinition {
 
 /**
  * 技能定义
+ * 注意：已移除废弃的 functionSchema 字段，改用 mcpToolConfig
  */
 export interface SkillDefinition {
   id: number;
@@ -25,12 +26,18 @@ export interface SkillDefinition {
   category?: string;
   skillType?: string;
   executionType?: string;
-  functionSchema?: string;
+  // 已移除：functionSchema (废弃，改用 mcpToolConfig)
   autoTriggerKeywords?: string;
   maxUsagePerDay?: number;
   version?: string;
   author?: string;
   isSystemSkill?: boolean;
+  // 新增字段：专业 Skill Creator 支持
+  license?: string;
+  compatibility?: string;
+  metadata?: string;
+  skillContent?: string;
+  mcpToolConfig?: string;
 }
 
 /**
@@ -261,18 +268,24 @@ export class SkillService {
   }
 
   /**
-   * 获取所有可用技能
+   * 获取所有技能
+   * @param category - 可选，技能分类。如果提供，则只返回该分类的技能
+   * @param token - 可选，认证token
+   * @param availableOnly - 可选，如果为true，只返回有 mcpToolConfig 的可用技能（用于工具调用）
    */
-  async getAllSkills(category?: string, token?: string): Promise<SkillDefinition[]> {
+  async getAllSkills(category?: string, token?: string, availableOnly?: boolean): Promise<SkillDefinition[]> {
     try {
       const authToken = token || localStorage.getItem('token');
       if (!authToken) {
         throw new Error('未登录');
       }
 
+      // 如果指定了分类，使用分类查询
+      // 如果 availableOnly 为 true，使用 /available 端点（只返回有 mcpToolConfig 的技能）
+      // 否则使用根路径获取所有技能（包括没有 mcpToolConfig 的技能）
       const url = category 
         ? `${this.baseUrl}?category=${encodeURIComponent(category)}`
-        : `${this.baseUrl}/available`;
+        : (availableOnly ? `${this.baseUrl}/available` : this.baseUrl);
 
       const response = await fetch(url, {
         method: 'GET',

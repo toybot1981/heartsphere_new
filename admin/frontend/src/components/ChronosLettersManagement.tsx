@@ -3,6 +3,7 @@ import { adminApi } from '../services/api';
 import { showAlert } from "../utils/dialog";
 import { Button } from "../components/Button";
 import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
+import type { ContactForm } from '../services/api/admin/contactForms';
 
 interface ChronosLettersManagementProps {
     adminToken: string | null;
@@ -35,11 +36,17 @@ export const ChronosLettersManagement: React.FC<ChronosLettersManagementProps> =
     adminToken,
     onRefresh
 }) => {
+    const [activeTab, setActiveTab] = useState<'letters' | 'contactForms'>('letters');
     const [letters, setLetters] = useState<ChronosLetter[]>([]);
+    const [contactForms, setContactForms] = useState<ContactForm[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedLetter, setSelectedLetter] = useState<ChronosLetter | null>(null);
+    const [selectedContactForm, setSelectedContactForm] = useState<ContactForm | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [replying, setReplying] = useState(false);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [unprocessedOnly, setUnprocessedOnly] = useState(true);
 
     const loadUserFeedbacks = async () => {
         if (!adminToken) return;
@@ -56,8 +63,69 @@ export const ChronosLettersManagement: React.FC<ChronosLettersManagementProps> =
     };
 
     useEffect(() => {
-        loadUserFeedbacks();
-    }, [adminToken]);
+        if (activeTab === 'letters') {
+            loadUserFeedbacks();
+        } else {
+            loadContactForms();
+        }
+    }, [adminToken, activeTab, page, unprocessedOnly]);
+
+    const loadContactForms = async () => {
+        if (!adminToken) return;
+        setLoading(true);
+        try {
+            const result = await adminApi.contactForms.getAllContactForms(
+                page,
+                20,
+                unprocessedOnly ? true : undefined,
+                adminToken
+            );
+            setContactForms(result.content);
+            setTotalPages(result.totalPages);
+        } catch (error: any) {
+            console.error('加载联系表单失败:', error);
+            showAlert('加载联系表单失败: ' + (error.message || '未知错误'), '加载失败', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleContactFormClick = async (contactForm: ContactForm) => {
+        setSelectedContactForm(contactForm);
+        if (adminToken) {
+            try {
+                const detail = await adminApi.contactForms.getContactFormById(contactForm.id, adminToken);
+                setSelectedContactForm(detail);
+            } catch (error: any) {
+                console.error('加载联系表单详情失败:', error);
+            }
+        }
+    };
+
+    const handleMarkAsProcessed = async () => {
+        if (!adminToken || !selectedContactForm) {
+            showAlert('请选择要处理的联系表单', '提示', 'warning');
+            return;
+        }
+
+        setReplying(true);
+        try {
+            await adminApi.contactForms.markAsProcessed(
+                selectedContactForm.id,
+                '已处理',
+                adminToken
+            );
+            showAlert('标记成功', '成功', 'success');
+            setSelectedContactForm(null);
+            loadContactForms();
+            if (onRefresh) onRefresh();
+        } catch (error: any) {
+            console.error('标记失败:', error);
+            showAlert('标记失败: ' + (error.message || '未知错误'), '标记失败', 'error');
+        } finally {
+            setReplying(false);
+        }
+    };
 
     const formatTimestamp = (timestamp: number) => {
         const date = new Date(timestamp);
@@ -114,7 +182,34 @@ export const ChronosLettersManagement: React.FC<ChronosLettersManagementProps> =
     return (
         <div className="max-w-7xl mx-auto space-y-6">
             <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
-                <h2 className="text-lg font-bold text-slate-100 mb-5">超时空信箱管理 - 用户反馈</h2>
+                <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-lg font-bold text-slate-100">超时空信箱管理</h2>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setActiveTab('letters')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                activeTab === 'letters'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                        >
+                            用户反馈
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('contactForms')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                activeTab === 'contactForms'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                        >
+                            联系表单
+                        </button>
+                    </div>
+                </div>
+                
+                {activeTab === 'letters' ? (
+                    <>
                 
                 {loading ? (
                     <div className="text-center py-8 text-slate-400">加载中...</div>
@@ -218,6 +313,167 @@ export const ChronosLettersManagement: React.FC<ChronosLettersManagementProps> =
                             </div>
                         )}
                     </div>
+                )}
+                    </>
+                ) : (
+                    <>
+                        <div className="mb-4 flex items-center gap-4">
+                            <label className="flex items-center gap-2 text-sm text-slate-300">
+                                <input
+                                    type="checkbox"
+                                    checked={unprocessedOnly}
+                                    onChange={(e) => {
+                                        setUnprocessedOnly(e.target.checked);
+                                        setPage(0);
+                                    }}
+                                    className="rounded"
+                                />
+                                仅显示未处理
+                            </label>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="text-center py-8 text-slate-400">加载中...</div>
+                        ) : contactForms.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400">暂无联系表单</div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* 左侧：联系表单列表 */}
+                                <div className="space-y-3">
+                                    <h3 className="text-md font-semibold text-slate-200 mb-3">
+                                        联系表单列表 ({contactForms.length})
+                                    </h3>
+                                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                                        {contactForms.map((form) => (
+                                            <div
+                                                key={form.id}
+                                                onClick={() => handleContactFormClick(form)}
+                                                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                                    selectedContactForm?.id === form.id
+                                                        ? 'bg-slate-800 border-indigo-500'
+                                                        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                                                }`}
+                                            >
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-semibold text-slate-100 mb-1">
+                                                            {form.name}
+                                                        </div>
+                                                        <div className="text-xs text-slate-400 mb-2">
+                                                            {form.email} | {form.phone}
+                                                            {form.company && ` | ${form.company}`}
+                                                        </div>
+                                                    </div>
+                                                    {!form.isProcessed && (
+                                                        <span className="ml-2 px-2 py-1 text-xs bg-red-500/20 text-red-300 rounded">
+                                                            未处理
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-slate-300 line-clamp-2 mb-2">
+                                                    {form.message}
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    {new Date(form.createdAt).toLocaleString('zh-CN')}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* 分页 */}
+                                    {totalPages > 1 && (
+                                        <div className="flex items-center justify-center gap-2 mt-4">
+                                            <button
+                                                onClick={() => setPage(Math.max(0, page - 1))}
+                                                disabled={page === 0}
+                                                className="px-3 py-1 rounded bg-slate-800 text-slate-300 disabled:opacity-50"
+                                            >
+                                                上一页
+                                            </button>
+                                            <span className="text-sm text-slate-400">
+                                                {page + 1} / {totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                                                disabled={page >= totalPages - 1}
+                                                className="px-3 py-1 rounded bg-slate-800 text-slate-300 disabled:opacity-50"
+                                            >
+                                                下一页
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 右侧：联系表单详情 */}
+                                {selectedContactForm && (
+                                    <div className="space-y-4">
+                                        <h3 className="text-md font-semibold text-slate-200 mb-3">联系表单详情</h3>
+                                        <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                            <div className="mb-4">
+                                                <div className="text-xs text-slate-400 mb-1">姓名</div>
+                                                <div className="text-sm font-semibold text-slate-100">
+                                                    {selectedContactForm.name}
+                                                </div>
+                                            </div>
+                                            <div className="mb-4">
+                                                <div className="text-xs text-slate-400 mb-1">邮箱</div>
+                                                <div className="text-sm text-slate-200">
+                                                    {selectedContactForm.email}
+                                                </div>
+                                            </div>
+                                            <div className="mb-4">
+                                                <div className="text-xs text-slate-400 mb-1">电话</div>
+                                                <div className="text-sm text-slate-200">
+                                                    {selectedContactForm.phone}
+                                                </div>
+                                            </div>
+                                            {selectedContactForm.company && (
+                                                <div className="mb-4">
+                                                    <div className="text-xs text-slate-400 mb-1">公司</div>
+                                                    <div className="text-sm text-slate-200">
+                                                        {selectedContactForm.company}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="mb-4">
+                                                <div className="text-xs text-slate-400 mb-1">时间</div>
+                                                <div className="text-sm text-slate-200">
+                                                    {new Date(selectedContactForm.createdAt).toLocaleString('zh-CN')}
+                                                </div>
+                                            </div>
+                                            <div className="mb-4">
+                                                <div className="text-xs text-slate-400 mb-1">咨询内容</div>
+                                                <div className="text-sm text-slate-200 whitespace-pre-wrap bg-slate-900/50 p-3 rounded border border-slate-700">
+                                                    {selectedContactForm.message}
+                                                </div>
+                                            </div>
+                                            {selectedContactForm.processNotes && (
+                                                <div className="mb-4">
+                                                    <div className="text-xs text-slate-400 mb-1">处理备注</div>
+                                                    <div className="text-sm text-slate-200">
+                                                        {selectedContactForm.processNotes}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* 处理按钮 */}
+                                        {!selectedContactForm.isProcessed && (
+                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                                                <Button
+                                                    onClick={handleMarkAsProcessed}
+                                                    disabled={replying}
+                                                    className="w-full bg-indigo-600 hover:bg-indigo-500"
+                                                >
+                                                    {replying ? '处理中...' : '标记为已处理'}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

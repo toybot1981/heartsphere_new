@@ -1,0 +1,223 @@
+{
+  "metadata": {
+    "created_at": "2026-01-28T00:00:00Z",
+    "app_url": "http://localhost:3005/admin",
+    "test_scope": "技能管理自动化测试（专业创建器：AI 生成、文件导入、方式切换、到手动编辑）",
+    "priority": "high",
+    "prerequisites": [
+      "Admin 前端运行在 http://localhost:3005/admin",
+      "Admin 后端运行在 http://localhost:8085",
+      "管理员账号：admin / 指定密码（如 Tyx@19811009）",
+      "如需 AI 生成：Main 服务（如 8081）已启动，且 Admin 已配置访问 Main 的 API Key",
+      "Python 3.8+ 和 Playwright 已安装",
+      "web-automation-testing 技能可用"
+    ],
+    "notes": [
+      "本测试计划针对 Admin 技能管理专业创建器",
+      "使用中文 UI，步骤使用 text= 或稳定选择器",
+      "失败时可自动检查 admin 前后端日志，并使用 scripts/start/ 下脚本重启服务"
+    ]
+  },
+  "requirements": [
+    "管理员可以登录管理端",
+    "管理员可以进入技能管理并打开专业创建器",
+    "管理员可以使用 AI 生成技能",
+    "管理员可以使用文件导入（粘贴/上传）",
+    "管理员可以在三种创建方式之间切换",
+    "管理员可以从 AI 生成/文件导入结果进入手动编辑"
+  ],
+  "test_suites": [
+    {
+      "id": "suite_login_creator",
+      "name": "登录与打开创建器",
+      "description": "登录管理端并进入专业创建器",
+      "test_cases": [
+        "case_1_1",
+        "case_1_2",
+        "case_1_3"
+      ]
+    },
+    {
+      "id": "suite_ai_generate",
+      "name": "AI 生成",
+      "description": "AI 生成技能多种场景",
+      "test_cases": [
+        "case_2_1"
+      ]
+    },
+    {
+      "id": "suite_file_import",
+      "name": "文件导入",
+      "description": "文件导入（粘贴/上传）",
+      "test_cases": [
+        "case_3_1"
+      ]
+    },
+    {
+      "id": "suite_mode_switch",
+      "name": "方式切换",
+      "description": "三种创建方式之间切换",
+      "test_cases": [
+        "case_4_1"
+      ]
+    },
+    {
+      "id": "suite_to_manual",
+      "name": "到手动编辑",
+      "description": "从 AI 生成/文件导入到手动编辑",
+      "test_cases": [
+        "case_5_1"
+      ]
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "case_1_1",
+      "name": "登录管理端",
+      "description": "使用管理员账号登录 Admin 前端",
+      "steps": [
+        "navigate to http://localhost:3005/admin",
+        "wait for 3 seconds",
+        "wait for input[type=\"text\"]",
+        "type \"admin\" in input[type=\"text\"]",
+        "type \"Tyx@19811009\" in input[type=\"password\"]",
+        "wait for 1 second",
+        "click button:has-text(\"进入系统\")",
+        "wait for 5 seconds",
+        "verify text=系统概览"
+      ],
+      "expected_result": "登录成功，页面出现系统概览或管理端主界面",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_1_2",
+      "name": "进入技能管理",
+      "description": "从侧栏 AI 智能体 进入技能管理页面",
+      "steps": [
+        "navigate to http://localhost:3005/admin",
+        "wait for 3 seconds",
+        "click text=AI 智能体",
+        "wait for 2 seconds",
+        "click text=技能管理",
+        "wait for 5 seconds",
+        "verify text=技能管理"
+      ],
+      "expected_result": "进入技能管理页面，显示技能管理标题或专业创建器入口",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_1_3",
+      "name": "打开专业创建器",
+      "description": "在技能管理页面点击专业创建器",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for 5 seconds",
+        "verify text=AI 生成"
+      ],
+      "expected_result": "打开专业创建器，显示 AI 生成/文件导入/手动编辑等入口",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2_1",
+      "name": "AI 生成简单描述",
+      "description": "使用简单描述触发 AI 生成技能",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for 3 seconds",
+        "click text=AI 自动生成",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"一个查询天气的技能\" in textarea",
+        "wait for 1 second",
+        "click button:has-text(\"生成技能\")",
+        "wait for 30 seconds",
+        "verify text=skillId"
+      ],
+      "expected_result": "AI 生成成功，结果区域显示 skillId 或技能定义",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_3_1",
+      "name": "文件导入粘贴",
+      "description": "通过粘贴 JSON 内容导入技能",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for 3 seconds",
+        "click text=文件导入",
+        "wait for 3 seconds",
+        "click text=粘贴内容",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"{\\\"skillId\\\":\\\"test-paste-1\\\",\\\"name\\\":\\\"测试粘贴\\\",\\\"description\\\":\\\"测试\\\"}\" in textarea",
+        "wait for 1 second",
+        "click button:has-text(\"导入\")",
+        "wait for 5 seconds",
+        "verify text=test-paste-1"
+      ],
+      "expected_result": "解析成功，显示 skillId 或技能字段",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_4_1",
+      "name": "三种创建方式切换",
+      "description": "在 AI 生成、文件导入、手动编辑之间切换",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "wait for 专业创建器",
+        "wait for 专业创建器",
+        "click text=专业创建器",
+        "wait for 3 seconds",
+        "verify text=选择创建方式",
+        "wait for 文件导入",
+        "wait for 文件导入",
+        "click text=文件导入",
+        "wait for 3 seconds",
+        "verify text=粘贴",
+        "wait for 手动编辑",
+        "wait for 手动编辑",
+        "click text=手动编辑",
+        "wait for 3 seconds",
+        "verify text=技能ID"
+      ],
+      "expected_result": "三种方式均可切换，界面显示对应入口或表单",
+      "priority": "medium",
+      "status": "pending"
+    },
+    {
+      "id": "case_5_1",
+      "name": "从 AI 生成到手动编辑",
+      "description": "AI 生成完成后进入手动编辑",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for 3 seconds",
+        "click text=AI 自动生成",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"一个简单技能\" in textarea",
+        "wait for 1 second",
+        "click button:has-text(\"生成技能\")",
+        "wait for 25 seconds",
+        "click text=手动编辑",
+        "wait for 5 seconds",
+        "verify text=技能ID"
+      ],
+      "expected_result": "进入手动编辑，表单已填充技能字段",
+      "priority": "medium",
+      "status": "pending"
+    }
+  ]
+}

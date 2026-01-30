@@ -1,0 +1,61 @@
+name: 生产环境完整部署
+description: 生产环境部署流程，包含完整的安全检查
+environment: prod
+project: ""  # 通用流程，适用于所有项目
+steps:
+  - name: 安全扫描
+    scriptId: code-scan-security
+    order: 1
+    required: true
+    parallel: false
+    parameters:
+      severity: high
+  
+  - name: 代码扫描
+    scriptId: code-scan-sonar
+    order: 2
+    dependsOn: [1]
+    required: true
+    parallel: false
+    parameters:
+      module: ""
+  
+  - name: 全量测试
+    scriptId: test-all
+    order: 3
+    dependsOn: [2]
+    required: true
+    parallel: false
+    parameters:
+      module: ""
+      testType: all
+  
+  - name: 构建
+    scriptId: build-all
+    order: 4
+    dependsOn: [3]
+    required: true
+    parallel: false
+    parameters:
+      clean: true
+      skipTests: false
+  
+  - name: 部署后端到生产环境
+    scriptId: deploy-backend-prod
+    order: 5
+    dependsOn: [4]
+    required: true
+    parallel: false
+    parameters:
+      version: latest
+      module: ""
+  
+  - name: 部署前端到生产环境
+    scriptId: deploy-frontend-prod
+    order: 6
+    dependsOn: [4]
+    required: true
+    parallel: true
+    parameters:
+      version: latest
+      module: ""

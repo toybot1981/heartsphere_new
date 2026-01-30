@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "created_at": "2026-01-29T00:00:00Z",
+    "app_url": "http://localhost:3005/admin",
+    "test_scope": "技能创建器完整创建流程：登录、文件导入（固定内容）、单表视图、保存创建、从列表编辑验证与创建时数据一致",
+    "priority": "high",
+    "prerequisites": [
+      "Admin 前端运行在 http://localhost:3005/admin",
+      "Admin 后端运行在 http://localhost:8085",
+      "管理员账号：admin / 指定密码（如 Tyx@19811009）",
+      "Python 3.8+ 和 Playwright 已安装"
+    ],
+    "notes": [
+      "完整创建流程：登录→技能管理→专业创建器→文件导入（固定 skillId/name/description）→单表视图→保存创建→case_6 用数据库验证与创建时一致",
+      "使用中文 UI，步骤使用 text= 或稳定选择器"
+    ]
+  },
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "database": "heartsphere",
+    "user": "root",
+    "password": "123456"
+  },
+  "requirements": [
+    "管理员可以登录管理端并进入技能管理、专业创建器",
+    "文件导入（固定内容）后进入单表视图并保存创建",
+    "从列表编辑该技能时，查出的数据与创建时完全一致"
+  ],
+  "test_suites": [
+    {
+      "id": "suite_login_nav",
+      "name": "登录与导航",
+      "description": "登录并进入技能管理、打开专业创建器",
+      "test_cases": ["case_1", "case_2", "case_3"]
+    },
+    {
+      "id": "suite_single_table",
+      "name": "单表视图与保存",
+      "description": "文件导入后单表视图、保存创建",
+      "test_cases": ["case_4", "case_5"]
+    },
+    {
+      "id": "suite_verify_db",
+      "name": "数据库一致性验证",
+      "description": "从列表编辑该技能，验证与创建时数据一致",
+      "test_cases": ["case_6"]
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "case_1",
+      "name": "登录管理端",
+      "description": "使用管理员账号登录 Admin 前端",
+      "steps": [
+        "navigate to http://localhost:3005/admin",
+        "wait for 3 seconds",
+        "wait for input[type=\"text\"]",
+        "type \"admin\" in input[type=\"text\"]",
+        "type \"Tyx@19811009\" in input[type=\"password\"]",
+        "wait for 1 second",
+        "click button:has-text(\"进入系统\")",
+        "wait for 5 seconds",
+        "verify text=系统概览"
+      ],
+      "expected_result": "登录成功，页面出现系统概览或管理端主界面",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_2",
+      "name": "进入技能管理",
+      "description": "从侧栏进入技能管理页面",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "verify text=技能管理"
+      ],
+      "expected_result": "进入技能管理页面，显示技能管理标题",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_3",
+      "name": "打开专业创建器",
+      "description": "点击专业创建器，显示选择创建方式",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for text=选择创建方式",
+        "verify text=选择创建方式"
+      ],
+      "expected_result": "打开专业创建器，显示选择创建方式",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_4",
+      "name": "文件导入固定内容后进入单表视图",
+      "description": "文件导入方式、粘贴固定 YAML+Markdown（skillId/name/description 已知），应直接进入单表视图",
+      "steps": [
+        "navigate to http://localhost:3005/admin?section=skills",
+        "wait for 5 seconds",
+        "click text=专业创建器",
+        "wait for 3 seconds",
+        "click text=文件导入",
+        "wait for 3 seconds",
+        "click text=粘贴内容",
+        "wait for 2 seconds",
+        "wait for textarea",
+        "type \"---\\nskillId: e2e-verify-skill\\nname: E2E验证技能\\ndescription: 用于验证创建流程与数据库一致性的测试技能\\n---\\n# E2E验证指令\\n\\n本技能用于验证创建后从数据库查出的数据与创建时一致。\" in textarea",
+        "wait for 1 second",
+        "click button:has-text(\"导入\")",
+        "wait for 5 seconds",
+        "verify text=技能信息（单表视图）",
+        "verify text=e2e-verify-skill",
+        "verify text=E2E验证指令"
+      ],
+      "expected_result": "导入后进入单表视图，显示技能信息及 e2e-verify-skill、E2E验证指令",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_5",
+      "name": "单表视图中保存创建",
+      "description": "验证保存创建按钮并完成保存，返回列表",
+      "steps": [
+        "verify text=保存创建",
+        "click button:has-text(\"保存创建\")",
+        "wait for 5 seconds",
+        "verify text=技能管理",
+        "verify text=e2e-verify-skill"
+      ],
+      "expected_result": "保存后返回技能列表，列表中可见 e2e-verify-skill",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "case_6",
+      "name": "数据库与创建时数据一致",
+      "description": "通过数据库查询验证技能已持久化且 skill_id、name、description 与创建时完全一致",
+      "steps": [
+        "verify database: SELECT COUNT(*) FROM skill_definitions WHERE skill_id='e2e-verify-skill' expect 1",
+        "verify database: SELECT name FROM skill_definitions WHERE skill_id='e2e-verify-skill' expect E2E验证技能",
+        "verify database: SELECT description FROM skill_definitions WHERE skill_id='e2e-verify-skill' expect 用于验证创建流程与数据库一致性的测试技能"
+      ],
+      "expected_result": "数据库中该技能存在且 name、description 与创建时一致",
+      "priority": "high",
+      "status": "pending"
+    }
+  ]
+}

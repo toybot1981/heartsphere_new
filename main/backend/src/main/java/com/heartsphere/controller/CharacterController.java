@@ -66,45 +66,7 @@ public class CharacterController {
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        // 检查是否为游客（体验会员）
-        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-            // 游客模式：返回硬编码的系统预置角色（ID: 315-320）
-            logger.info("[CharacterController] 游客模式，返回预置角色");
-            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
-            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
-                systemCharacterRepository.findAllById(presetCharacterIds);
-            
-            // 将 SystemCharacter 转换为 CharacterDTO
-            List<CharacterDTO> characterDTOs = systemCharacters.stream()
-                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
-                .map(sc -> {
-                    CharacterDTO dto = new CharacterDTO();
-                    dto.setId(sc.getId());
-                    dto.setName(sc.getName());
-                    dto.setDescription(sc.getDescription());
-                    dto.setBio(sc.getBio());
-                    dto.setAvatarUrl(sc.getAvatarUrl());
-                    dto.setBackgroundUrl(sc.getBackgroundUrl());
-                    dto.setRole(sc.getRole());
-                    dto.setFirstMessage(sc.getFirstMessage());
-                    dto.setSystemInstruction(sc.getSystemInstruction());
-                    dto.setGender(sc.getGender());
-                    dto.setAge(sc.getAge());
-                    // 生成图片多分辨率版本
-                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
-                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
-                    }
-                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
-                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
-                    }
-                    return dto;
-                })
-                .collect(Collectors.toList());
-            
-            logger.info(String.format("[CharacterController] 返回 %d 个预置角色DTO", characterDTOs.size()));
-            return ResponseEntity.ok(characterDTOs);
-        }
-        
+        // 游客与正式用户统一：按当前用户在库中的角色返回
         // 检查是否处于共享模式
         Long ownerId;
         Long visitorId;
@@ -166,45 +128,6 @@ public class CharacterController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         logger.info(String.format("[CharacterController] 用户ID: %d, 用户名: %s", userDetails.getId(), userDetails.getUsername()));
         
-        // 检查是否为游客（体验会员）
-        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-            // 游客模式：返回硬编码的系统预置角色（ID: 315-320）
-            logger.info("[CharacterController] 游客模式，返回预置角色");
-            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
-            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
-                systemCharacterRepository.findAllById(presetCharacterIds);
-            
-            // 将 SystemCharacter 转换为 CharacterDTO
-            List<CharacterDTO> characterDTOs = systemCharacters.stream()
-                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
-                .map(sc -> {
-                    CharacterDTO dto = new CharacterDTO();
-                    dto.setId(sc.getId());
-                    dto.setName(sc.getName());
-                    dto.setDescription(sc.getDescription());
-                    dto.setBio(sc.getBio());
-                    dto.setAvatarUrl(sc.getAvatarUrl());
-                    dto.setBackgroundUrl(sc.getBackgroundUrl());
-                    dto.setRole(sc.getRole());
-                    dto.setFirstMessage(sc.getFirstMessage());
-                    dto.setSystemInstruction(sc.getSystemInstruction());
-                    dto.setGender(sc.getGender());
-                    dto.setAge(sc.getAge());
-                    // 生成图片多分辨率版本
-                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
-                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
-                    }
-                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
-                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
-                    }
-                    return dto;
-                })
-                .collect(Collectors.toList());
-            
-            logger.info(String.format("[CharacterController] 返回 %d 个预置角色DTO", characterDTOs.size()));
-            return ResponseEntity.ok(characterDTOs);
-        }
-        
         List<Character> characters = characterRepository.findByWorld_Id(worldId);
         logger.info(String.format("[CharacterController] 世界 %d 共有 %d 个角色", worldId, characters.size()));
         
@@ -225,48 +148,7 @@ public class CharacterController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        // 检查是否为游客（体验会员）
-        if (com.heartsphere.util.GuestAccessChecker.isGuest(membershipService)) {
-            // 游客模式：只返回预置角色（ID: 315-320），且只能访问场景ID 50
-            if (!eraId.equals(50L)) {
-                // 游客只能访问场景ID 50
-                return ResponseEntity.ok(new java.util.ArrayList<>());
-            }
-            // 返回硬编码的系统预置角色（ID: 315-320）
-            java.util.List<Long> presetCharacterIds = java.util.Arrays.asList(315L, 316L, 317L, 318L, 319L, 320L);
-            java.util.List<com.heartsphere.entity.SystemCharacter> systemCharacters = 
-                systemCharacterRepository.findAllById(presetCharacterIds);
-            
-            // 将 SystemCharacter 转换为 CharacterDTO
-            List<CharacterDTO> characterDTOs = systemCharacters.stream()
-                .filter(sc -> sc.getIsActive() != null && sc.getIsActive())
-                .map(sc -> {
-                    CharacterDTO dto = new CharacterDTO();
-                    dto.setId(sc.getId());
-                    dto.setName(sc.getName());
-                    dto.setDescription(sc.getDescription());
-                    dto.setBio(sc.getBio());
-                    dto.setAvatarUrl(sc.getAvatarUrl());
-                    dto.setBackgroundUrl(sc.getBackgroundUrl());
-                    dto.setRole(sc.getRole());
-                    dto.setFirstMessage(sc.getFirstMessage());
-                    dto.setSystemInstruction(sc.getSystemInstruction());
-                    dto.setGender(sc.getGender());
-                    dto.setAge(sc.getAge());
-                    // 生成图片多分辨率版本
-                    if (sc.getAvatarUrl() != null && imageUrlUtils != null) {
-                        dto.setAvatarVariants(imageUrlUtils.generateImageVariants(sc.getAvatarUrl()));
-                    }
-                    if (sc.getBackgroundUrl() != null && imageUrlUtils != null) {
-                        dto.setBackgroundVariants(imageUrlUtils.generateImageVariants(sc.getBackgroundUrl()));
-                    }
-                    return dto;
-                })
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(characterDTOs);
-        }
-        
+        // 游客与正式用户统一：按 era 查当前用户在库中的角色
         List<Character> characters = characterRepository.findByEra_Id(eraId);
         // 过滤出当前用户的角色
         List<CharacterDTO> characterDTOs = characters.stream()

@@ -274,159 +274,268 @@ export const PromptManagement: React.FC<PromptManagementProps> = ({ adminToken, 
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       {/* 头部操作栏 */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">提示词管理</h2>
-        <div className="flex gap-2">
-          <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">
-            + 创建模板
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+              提示词管理
+            </h2>
+            <p className="text-slate-400 text-sm">管理和优化AI提示词模板，提升生成质量</p>
+          </div>
+          <Button 
+            onClick={handleCreate} 
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            创建模板
           </Button>
         </div>
-      </div>
 
-      {/* 搜索和筛选 */}
-      <div className="flex gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="搜索模板名称..."
-          value={keyword}
-          onChange={(e) => {
-            setKeyword(e.target.value);
-            setPage(0);
-          }}
-          className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white"
-        />
-        <select
-          value={categoryCode}
-          onChange={(e) => {
-            setCategoryCode(e.target.value);
-            setPage(0);
-          }}
-          className="px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white"
-          style={{ fontFamily: 'inherit' }}
-        >
-          <option value="">全部分类</option>
-          {categories.map((cat) => (
-            <option key={cat.code} value={cat.code} style={{ fontFamily: 'inherit' }}>
-              {cat.name || cat.code}
-            </option>
-          ))}
-        </select>
+        {/* 搜索和筛选 */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="搜索模板名称..."
+              value={keyword}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
+              className="w-full pl-12 pr-4 py-3 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+            />
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            <select
+              value={categoryCode}
+              onChange={(e) => {
+                setCategoryCode(e.target.value);
+                setPage(0);
+              }}
+              className="pl-12 pr-10 py-3 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
+              style={{ fontFamily: 'inherit' }}
+            >
+              <option value="">全部分类</option>
+              {categories.map((cat) => (
+                <option key={cat.code} value={cat.code} style={{ fontFamily: 'inherit' }}>
+                  {cat.name || cat.code}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 模板列表 */}
       {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400">加载中...</div>
+        <div className="text-center py-20">
+          <div className="inline-flex items-center gap-3 text-slate-400">
+            <svg className="animate-spin h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>加载中...</span>
+          </div>
         </div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400">暂无模板</div>
+        <div className="text-center py-20">
+          <div className="inline-flex flex-col items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center">
+              <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-slate-400 text-lg mb-2">暂无模板</p>
+              <p className="text-slate-500 text-sm">点击"创建模板"开始创建您的第一个提示词模板</p>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {templates.map((template) => (
-            <div
-              key={template.id}
-              className="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-semibold text-lg">{template.name}</h3>
-                  <p className="text-sm text-gray-400">
-                    {categories.find((c) => c.code === template.categoryCode)?.name || template.categoryCode}
-                  </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {templates.map((template) => {
+            const category = categories.find((c) => c.code === template.categoryCode);
+            const categoryColors: Record<string, string> = {
+              'scenario-generation': 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
+              'character': 'from-purple-500/20 to-pink-500/20 border-purple-500/30',
+              'emotion': 'from-pink-500/20 to-rose-500/20 border-pink-500/30',
+              'memory': 'from-amber-500/20 to-orange-500/20 border-amber-500/30',
+              'intent': 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+              'response': 'from-indigo-500/20 to-blue-500/20 border-indigo-500/30',
+            };
+            const cardColor = categoryColors[template.categoryCode] || 'from-slate-500/20 to-slate-600/20 border-slate-500/30';
+            
+            return (
+              <div
+                key={template.id}
+                className={`group relative bg-gradient-to-br ${cardColor} backdrop-blur-sm border rounded-2xl p-6 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden`}
+              >
+                {/* 背景装饰 */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-3xl -mr-16 -mt-16"></div>
+                
+                {/* 状态标签 */}
+                <div className="absolute top-4 right-4">
+                  <span
+                    className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${
+                      template.isActive
+                        ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                        : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                    }`}
+                  >
+                    {template.isActive ? '✓ 启用' : '✗ 禁用'}
+                  </span>
                 </div>
-                <span
-                  className={`px-2 py-1 text-xs rounded ${
-                    template.isActive
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-gray-600/20 text-gray-400'
-                  }`}
-                >
-                  {template.isActive ? '启用' : '禁用'}
-                </span>
-              </div>
-              {template.description && (
-                <p className="text-sm text-gray-300 mb-3 line-clamp-2">{template.description}</p>
-              )}
-              <div className="mt-4 space-y-2">
-                {/* 上排四个按钮 */}
-                <div className="grid grid-cols-4 gap-2">
-                  <button
-                    onClick={() => handlePreview(template)}
-                    className="group relative flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-blue-400/20"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span>预览</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenGenerate(template)}
-                    className="group relative flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-purple-400/20"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>AI生成</span>
-                  </button>
-                  <button
-                    onClick={() => handleEdit(template)}
-                    className="group relative flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-amber-400/20"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>编辑</span>
-                  </button>
-                  <button
-                    onClick={() => handleCopy(template)}
-                    className="group relative flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-slate-500/20"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>复制</span>
-                  </button>
+
+                {/* 内容区域 */}
+                <div className="relative">
+                  {/* 分类标签 */}
+                  <div className="mb-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-300 bg-slate-800/50 rounded-lg">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      {category?.name || template.categoryCode}
+                    </span>
+                  </div>
+
+                  {/* 标题 */}
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-300 transition-colors">
+                    {template.name}
+                  </h3>
+
+                  {/* 描述 */}
+                  {template.description && (
+                    <p className="text-sm text-slate-300 mb-4 line-clamp-2 leading-relaxed">
+                      {template.description}
+                    </p>
+                  )}
+
+                  {/* 操作按钮 */}
+                  <div className="mt-6 space-y-2.5">
+                    {/* 上排四个按钮 */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handlePreview(template)}
+                          className="w-full flex items-center justify-center px-2.5 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-blue-500/80 to-blue-600/80 hover:from-blue-400 hover:to-blue-500 rounded-xl shadow-lg hover:shadow-blue-500/50 transition-all duration-200 hover:scale-105 active:scale-95 border border-blue-400/30 backdrop-blur-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-xs font-medium text-white bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-xl border border-slate-700/50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                          预览
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900/95 border-r border-b border-slate-700/50 rotate-45"></div>
+                        </div>
+                      </div>
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handleOpenGenerate(template)}
+                          className="w-full flex items-center justify-center px-2.5 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-purple-500/80 to-purple-600/80 hover:from-purple-400 hover:to-purple-500 rounded-xl shadow-lg hover:shadow-purple-500/50 transition-all duration-200 hover:scale-105 active:scale-95 border border-purple-400/30 backdrop-blur-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-xs font-medium text-white bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-xl border border-slate-700/50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                          AI生成
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900/95 border-r border-b border-slate-700/50 rotate-45"></div>
+                        </div>
+                      </div>
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handleEdit(template)}
+                          className="w-full flex items-center justify-center px-2.5 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-amber-500/80 to-amber-600/80 hover:from-amber-400 hover:to-amber-500 rounded-xl shadow-lg hover:shadow-amber-500/50 transition-all duration-200 hover:scale-105 active:scale-95 border border-amber-400/30 backdrop-blur-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-xs font-medium text-white bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-xl border border-slate-700/50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                          编辑
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900/95 border-r border-b border-slate-700/50 rotate-45"></div>
+                        </div>
+                      </div>
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handleCopy(template)}
+                          className="w-full flex items-center justify-center px-2.5 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-slate-600/80 to-slate-700/80 hover:from-slate-500 hover:to-slate-600 rounded-xl shadow-lg hover:shadow-slate-500/50 transition-all duration-200 hover:scale-105 active:scale-95 border border-slate-500/30 backdrop-blur-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-xs font-medium text-white bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-xl border border-slate-700/50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                          复制
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900/95 border-r border-b border-slate-700/50 rotate-45"></div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* 下排删除按钮 */}
+                    <button
+                      onClick={() => handleDelete(template)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-red-500/80 to-red-600/80 hover:from-red-400 hover:to-red-500 rounded-xl shadow-lg hover:shadow-red-500/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-red-400/30 backdrop-blur-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>删除</span>
+                    </button>
+                  </div>
                 </div>
-                {/* 下排删除按钮 */}
-                <button
-                  onClick={() => handleDelete(template)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-white bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-red-400/20"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span>删除</span>
-                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* 分页 */}
       {total > pageSize && (
-        <div className="flex justify-center items-center gap-4 mt-6">
+        <div className="flex justify-center items-center gap-4 mt-8">
           <Button
             onClick={() => setPage(page - 1)}
             disabled={page === 0}
-            className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
+            className="bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm border border-slate-700/50 rounded-xl px-6 py-2.5 transition-all"
           >
+            <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             上一页
           </Button>
-          <span className="text-gray-400">
-            第 {page + 1} 页，共 {Math.ceil(total / pageSize)} 页
-          </span>
+          <div className="px-6 py-2.5 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl">
+            <span className="text-slate-300 font-medium">
+              第 <span className="text-blue-400">{page + 1}</span> 页，共 <span className="text-blue-400">{Math.ceil(total / pageSize)}</span> 页
+            </span>
+          </div>
           <Button
             onClick={() => setPage(page + 1)}
             disabled={page + 1 >= Math.ceil(total / pageSize)}
-            className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
+            className="bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm border border-slate-700/50 rounded-xl px-6 py-2.5 transition-all"
           >
             下一页
+            <svg className="w-4 h-4 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Button>
         </div>
       )}

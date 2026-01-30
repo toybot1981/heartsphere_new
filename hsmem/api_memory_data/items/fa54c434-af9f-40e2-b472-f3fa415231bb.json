@@ -1,0 +1,15 @@
+{
+  "id": "fa54c434-af9f-40e2-b472-f3fa415231bb",
+  "resource_id": "a4eb497f-03c3-4c9e-a1dc-e4291eaec9d9",
+  "content": "我喜欢Python和TypeScript编程\n我每天都会写代码，这是我最喜欢的事情",
+  "summary": "用户有 2 个偏好",
+  "memory_type": "preference",
+  "importance": 0.7,
+  "categories": [
+    "preferences",
+    "user_profile"
+  ],
+  "metadata": {},
+  "created_at": "2026-01-15T23:20:03.680416",
+  "updated_at": "2026-01-15T23:20:03.680420"
+}

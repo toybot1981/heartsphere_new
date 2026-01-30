@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.heartsphere.billing.repository",
         "com.heartsphere.aiagent.repository",
         "com.heartsphere.ai.skill.repository",
+        "com.heartsphere.ai.mcp.repository",
         "com.heartsphere.heartconnect.repository",
         "com.heartsphere.heartconnect.portal.repository",
         "com.heartsphere.quickconnect.repository",

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SkillService, type SkillDefinition } from '../services/skill/SkillService';
+import { executeSkillForTest, isSkillTestExecutionConfigured, type SkillExecutionResultDTO } from '../services/skill/SkillTestExecutionService';
+import { SkillCreator } from './skill/SkillCreator';
 import { Button } from "./Button";
 import { InputGroup, TextInput, TextArea } from './AdminUIComponents';
 
@@ -26,13 +28,19 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
     category: '',
     skillType: 'ACTIVE',
     executionType: 'RULE_BASED',
-    functionSchema: '',
+    // 已移除：functionSchema (废弃，改用 mcpToolConfig)
     executionConfig: '',
     autoTriggerKeywords: '',
     maxUsagePerDay: -1,
     version: '1.0.0',
     author: '',
     isSystemSkill: false,
+    // 新增字段
+    license: '',
+    compatibility: '',
+    metadata: '',
+    skillContent: '',
+    mcpToolConfig: '',
   });
 
   useEffect(() => {
@@ -53,6 +61,17 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
     }
   };
 
+  const [showProfessionalCreator, setShowProfessionalCreator] = useState(false);
+  const [editingSkillIdForCreator, setEditingSkillIdForCreator] = useState<string | null>(null);
+
+  // 技能测试弹窗
+  const [testModalSkill, setTestModalSkill] = useState<SkillDefinition | null>(null);
+  const [testInput, setTestInput] = useState('');
+  const [testLog, setTestLog] = useState<string[]>([]);
+  const [testResult, setTestResult] = useState<SkillExecutionResultDTO | null>(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const skillTestConfigured = isSkillTestExecutionConfigured();
+
   const handleCreate = () => {
     setFormData({
       skillId: '',
@@ -61,36 +80,68 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
       category: '',
       skillType: 'ACTIVE',
       executionType: 'RULE_BASED',
-      functionSchema: '',
+      // 已移除：functionSchema (废弃，改用 mcpToolConfig)
       executionConfig: '',
       autoTriggerKeywords: '',
       maxUsagePerDay: -1,
       version: '1.0.0',
       author: '',
       isSystemSkill: false,
+      // 新增字段
+      license: '',
+      compatibility: '',
+      metadata: '',
+      skillContent: '',
+      mcpToolConfig: '',
     });
     setEditingSkill(null);
     setShowCreateDialog(true);
   };
 
+  const handleOpenProfessionalCreator = () => {
+    setShowProfessionalCreator(true);
+  };
+
   const handleEdit = (skill: SkillDefinition) => {
-    setFormData({
-      skillId: skill.skillId,
-      name: skill.name,
-      description: skill.description,
-      category: skill.category || '',
-      skillType: skill.skillType || 'ACTIVE',
-      executionType: skill.executionType || 'RULE_BASED',
-      functionSchema: skill.functionSchema || '',
-      executionConfig: '',
-      autoTriggerKeywords: skill.autoTriggerKeywords || '',
-      maxUsagePerDay: skill.maxUsagePerDay || -1,
-      version: skill.version || '1.0.0',
-      author: skill.author || '',
-      isSystemSkill: skill.isSystemSkill || false,
+    setEditingSkillIdForCreator(skill.skillId);
+    setShowProfessionalCreator(true);
+  };
+
+  const openTestModal = (skill: SkillDefinition) => {
+    setTestModalSkill(skill);
+    setTestInput('');
+    setTestLog([]);
+    setTestResult(null);
+    setTestLoading(false);
+  };
+
+  const closeTestModal = () => {
+    setTestModalSkill(null);
+    setTestInput('');
+    setTestLog([]);
+    setTestResult(null);
+    setTestLoading(false);
+  };
+
+  const runSkillTest = async () => {
+    if (!testModalSkill || testLoading) return;
+    setTestLoading(true);
+    setTestLog([]);
+    setTestResult(null);
+
+    const appendLog = (line: string) => {
+      setTestLog((prev) => [...prev, `${new Date().toLocaleTimeString('zh-CN')} ${line}`]);
+    };
+
+    const result = await executeSkillForTest({
+      skillId: testModalSkill.skillId,
+      inputText: testInput,
+      parameters: {},
+      onLog: appendLog,
     });
-    setEditingSkill(skill);
-    setShowCreateDialog(true);
+
+    setTestResult(result ?? null);
+    setTestLoading(false);
   };
 
   const handleDelete = async (skillId: string) => {
@@ -109,16 +160,16 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
 
   const handleSubmit = async () => {
     try {
+      // 仅支持指令驱动，保存时统一为 RULE_BASED
+      const payload = { ...formData, executionType: 'RULE_BASED' } as SkillDefinition;
       if (editingSkill) {
-        // 更新技能
-        await skillService.updateSkill(editingSkill.skillId, formData as SkillDefinition, adminToken);
+        await skillService.updateSkill(editingSkill.skillId, payload, adminToken);
       } else {
-        // 创建技能
         if (!formData.skillId || !formData.name) {
           alert('请填写技能ID和名称');
           return;
         }
-        await skillService.createSkill(formData as SkillDefinition, adminToken);
+        await skillService.createSkill(payload, adminToken);
       }
       setShowCreateDialog(false);
       setEditingSkill(null);
@@ -150,13 +201,36 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
     );
   }
 
+  if (showProfessionalCreator) {
+    return (
+      <SkillCreator
+        adminToken={adminToken}
+        onClose={() => {
+          setShowProfessionalCreator(false);
+          setEditingSkillIdForCreator(null);
+        }}
+        onSuccess={() => {
+          setShowProfessionalCreator(false);
+          setEditingSkillIdForCreator(null);
+          loadSkills();
+        }}
+        editingSkillId={editingSkillIdForCreator}
+      />
+    );
+  }
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">技能管理</h2>
-        <Button onClick={handleCreate} variant="primary">
-          + 创建技能
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleOpenProfessionalCreator} variant="primary">
+            ✨ 专业创建器
+          </Button>
+          <Button onClick={handleCreate} variant="secondary">
+            + 创建技能
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -228,8 +302,15 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
                         <span className="px-2 py-1 bg-slate-700 text-slate-400 rounded text-xs">自定义</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap min-w-[120px]">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap min-w-[160px]">
                       <div className="flex gap-2">
+                        <Button
+                          onClick={() => openTestModal(skill)}
+                          variant="ghost"
+                          className="text-sm text-emerald-400 hover:text-emerald-300"
+                        >
+                          测试
+                        </Button>
                         <Button
                           onClick={() => handleEdit(skill)}
                           variant="ghost"
@@ -255,6 +336,81 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
           </table>
         </div>
       </div>
+
+      {/* 技能测试弹窗 */}
+      {testModalSkill && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-lg border border-slate-800 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-white">
+                技能测试：{testModalSkill.name}（{testModalSkill.skillId}）
+              </h3>
+              <Button variant="ghost" onClick={closeTestModal} className="text-slate-400 hover:text-white">
+                关闭
+              </Button>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto space-y-4">
+              {!skillTestConfigured && (
+                <div className="p-3 bg-amber-950/30 border border-amber-800 rounded-lg text-amber-200 text-sm">
+                  未配置 Main 后端地址，无法执行测试。请在环境变量中设置 <code className="bg-slate-800 px-1 rounded">VITE_MAIN_BACKEND_URL</code>（如 http://localhost:8081），可选 <code className="bg-slate-800 px-1 rounded">VITE_MAIN_API_KEY</code>。
+                </div>
+              )}
+              <InputGroup label="输入内容（将作为参数传入技能）">
+                <TextArea
+                  value={testInput}
+                  onChange={(e) => setTestInput(e.target.value)}
+                  placeholder="输入测试内容，例如：今天北京天气怎么样？"
+                  rows={3}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500"
+                />
+              </InputGroup>
+              <div className="flex justify-end">
+                <Button
+                  onClick={runSkillTest}
+                  disabled={testLoading || !skillTestConfigured}
+                  variant="primary"
+                  className="text-sm"
+                >
+                  {testLoading ? '执行中…' : '执行技能'}
+                </Button>
+              </div>
+              {testLog.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">执行过程</label>
+                  <pre className="p-3 bg-slate-950 border border-slate-700 rounded-lg text-slate-300 text-sm overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                    {testLog.join('\n')}
+                  </pre>
+                </div>
+              )}
+              {testResult && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">执行结果</label>
+                  <div
+                    className={`p-3 rounded-lg border text-sm ${
+                      testResult.success
+                        ? 'bg-emerald-950/30 border-emerald-800 text-emerald-200'
+                        : 'bg-red-950/30 border-red-800 text-red-200'
+                    }`}
+                  >
+                    {testResult.success ? (
+                      <pre className="whitespace-pre-wrap break-words">
+                        {typeof testResult.result === 'object'
+                          ? JSON.stringify(testResult.result, null, 2)
+                          : String(testResult.result ?? '')}
+                      </pre>
+                    ) : (
+                      <p>{testResult.errorMessage ?? '执行失败'}</p>
+                    )}
+                    {testResult.executionTimeMs != null && (
+                      <p className="mt-2 text-slate-500 text-xs">耗时: {testResult.executionTimeMs} ms</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 创建/编辑对话框 */}
       {showCreateDialog && (
@@ -313,21 +469,8 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
                   </InputGroup>
                 </div>
 
+                {/* 执行配置：仅支持指令驱动（与 Claude Skill 一致），无需选择 */}
                 <div className="grid grid-cols-2 gap-4">
-                  <InputGroup label="执行类型">
-                    <select
-                      value={formData.executionType || 'RULE_BASED'}
-                      onChange={(e) => setFormData({ ...formData, executionType: e.target.value })}
-                      className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                    >
-                      <option value="RULE_BASED">规则 based</option>
-                      <option value="SCRIPT">脚本</option>
-                      <option value="API">API</option>
-                      <option value="GRAPH">Graph</option>
-                      <option value="DATABASE">数据库</option>
-                    </select>
-                  </InputGroup>
-
                   <InputGroup label="最大每日使用次数">
                     <TextInput
                       type="number"
@@ -336,22 +479,16 @@ export const SkillsManagement: React.FC<SkillsManagementProps> = ({ adminToken }
                       placeholder="-1 表示无限制"
                     />
                   </InputGroup>
+                  <div />
                 </div>
-
-                <InputGroup label="Function Schema (JSON)">
-                  <TextArea
-                    value={formData.functionSchema || ''}
-                    onChange={(e) => setFormData({ ...formData, functionSchema: e.target.value })}
-                    placeholder='{"type":"object","properties":{...}}'
-                    rows={5}
-                  />
-                </InputGroup>
-
-                <InputGroup label="执行配置 (JSON)">
+                <p className="text-slate-500 text-sm mb-2">
+                  技能由 AI 按指令执行，与 Claude Skill 一致。仅需多步骤 workflow 时可填写下方执行参数。
+                </p>
+                <InputGroup label="执行参数（可选）">
                   <TextArea
                     value={formData.executionConfig || ''}
                     onChange={(e) => setFormData({ ...formData, executionConfig: e.target.value })}
-                    placeholder='{"rule":"echo"}'
+                    placeholder='例如: {"workflow": {"default": {"steps": ["step1", "step2"]}}}'
                     rows={3}
                   />
                 </InputGroup>
