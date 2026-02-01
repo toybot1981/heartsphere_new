@@ -71,5 +71,10 @@ __pycache__/
 # 排除备份 SQL 文件，但保留迁移脚本
 sql/*.sql
 !sql/clean*.sql
+
+# 数据库完整导出/备份（不应进 Git，体积大）
+安装指南/db/*.sql
+deploy/sql/*.sql
+
 .build-cache/
 .deps-cache/
